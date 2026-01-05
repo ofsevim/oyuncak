@@ -6,8 +6,12 @@ import { Shapes, Search, Brain } from 'lucide-react';
 import ShapeMatcherGame from './ShapeMatcherGame';
 import OddOneOutGame from './OddOneOutGame';
 import MemoryFlipGame from './MemoryFlipGame';
+import AnimalSoundsGame from './AnimalSoundsGame';
+import CountingGame from './CountingGame';
+import ColoringBookGame from './ColoringBookGame';
+import { MousePointer2, Music, Hash, Palette } from 'lucide-react';
 
-type GameType = 'menu' | 'shapes' | 'oddone' | 'memory';
+type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'sounds' | 'counting' | 'coloring';
 
 const GamesMenu = () => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
@@ -37,46 +41,54 @@ const GamesMenu = () => {
       color: 'bg-secondary',
       description: 'Kartları çevir, eşleri bul!',
     },
+    {
+      id: 'sounds' as GameType,
+      title: 'Hayvan Sesleri',
+      emoji: '🐱',
+      icon: Music,
+      color: 'bg-orange-400',
+      description: 'Hayvanların seslerini dinle!',
+    },
+    {
+      id: 'counting' as GameType,
+      title: 'Sayma Oyunu',
+      emoji: '🔢',
+      icon: Hash,
+      color: 'bg-purple-500',
+      description: 'Nesneleri say, rakamı bul!',
+    },
+    {
+      id: 'coloring' as GameType,
+      title: 'Boyama Kitabı',
+      emoji: '🎨',
+      icon: Palette,
+      color: 'bg-pink-400',
+      description: 'Resimleri dilediğince boya!',
+    },
   ];
 
-  if (activeGame === 'shapes') {
-    return (
-      <div className="pb-32">
-        <button
-          onClick={() => setActiveGame('menu')}
-          className="mb-4 ml-4 px-4 py-2 bg-muted text-muted-foreground rounded-full font-bold btn-bouncy"
-        >
-          ← Oyunlara Dön
-        </button>
-        <ShapeMatcherGame />
-      </div>
-    );
-  }
+  const renderActiveGame = () => {
+    switch (activeGame) {
+      case 'shapes': return <ShapeMatcherGame />;
+      case 'oddone': return <OddOneOutGame />;
+      case 'memory': return <MemoryFlipGame />;
+      case 'sounds': return <AnimalSoundsGame />;
+      case 'counting': return <CountingGame />;
+      case 'coloring': return <ColoringBookGame />;
+      default: return null;
+    }
+  };
 
-  if (activeGame === 'oddone') {
+  if (activeGame !== 'menu') {
     return (
       <div className="pb-32">
         <button
           onClick={() => setActiveGame('menu')}
-          className="mb-4 ml-4 px-4 py-2 bg-muted text-muted-foreground rounded-full font-bold btn-bouncy"
+          className="mb-4 ml-4 px-6 py-3 bg-muted text-muted-foreground rounded-full font-bold btn-bouncy flex items-center gap-2"
         >
           ← Oyunlara Dön
         </button>
-        <OddOneOutGame />
-      </div>
-    );
-  }
-
-  if (activeGame === 'memory') {
-    return (
-      <div className="pb-32">
-        <button
-          onClick={() => setActiveGame('menu')}
-          className="mb-4 ml-4 px-4 py-2 bg-muted text-muted-foreground rounded-full font-bold btn-bouncy"
-        >
-          ← Oyunlara Dön
-        </button>
-        <MemoryFlipGame />
+        {renderActiveGame()}
       </div>
     );
   }
@@ -95,20 +107,20 @@ const GamesMenu = () => {
         Bir oyun seç ve eğlenmeye başla!
       </p>
 
-      <div className="grid gap-4 w-full max-w-md">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
         {games.map((game) => {
           const Icon = game.icon;
           return (
             <button
               key={game.id}
               onClick={() => setActiveGame(game.id)}
-              className={`${game.color} p-6 rounded-3xl shadow-playful text-left transition-all duration-200 hover:scale-105 active:scale-95`}
+              className={`${game.color} p-6 rounded-3xl shadow-playful text-left transition-all duration-200 hover:scale-105 active:scale-95 group`}
             >
               <div className="flex items-center gap-4">
-                <span className="text-5xl">{game.emoji}</span>
+                <span className="text-5xl group-hover:animate-bounce">{game.emoji}</span>
                 <div>
-                  <h3 className="text-xl font-bold text-white">{game.title}</h3>
-                  <p className="text-white/80 font-medium">{game.description}</p>
+                  <h3 className="text-xl font-extrabold text-white">{game.title}</h3>
+                  <p className="text-white/90 font-medium">{game.description}</p>
                 </div>
               </div>
             </button>

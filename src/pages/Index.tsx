@@ -5,6 +5,7 @@ import FloatingBubbles from '@/components/ui/FloatingBubbles';
 import Navigation from '@/components/Navigation';
 import DrawingCanvas from '@/components/DrawingCanvas';
 import GamesMenu from '@/components/games/GamesMenu';
+import StoryTime from '@/components/StoryTime';
 import { motion } from 'framer-motion';
 import { Pencil, Gamepad2, BookOpen, Sparkles } from 'lucide-react';
 
@@ -20,13 +21,7 @@ const Index = () => {
       case 'games':
         return <GamesMenu />;
       case 'story':
-        return (
-          <motion.div className="flex flex-col items-center justify-center gap-6 p-8 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <span className="text-6xl">🌸</span>
-            <h2 className="text-2xl font-extrabold text-foreground">Hikaye Zamanı</h2>
-            <p className="text-muted-foreground">Yakında interaktif hikayeler!</p>
-          </motion.div>
-        );
+        return <StoryTime />;
       default:
         return (
           <motion.div className="flex flex-col items-center justify-center gap-8 p-6 text-center min-h-[60vh]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>

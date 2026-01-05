@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Pencil, Gamepad2, Home, BookOpen } from 'lucide-react';
+import { playPopSound } from '@/utils/soundEffects';
 
 type Tab = 'home' | 'draw' | 'games' | 'story';
 
@@ -11,6 +12,10 @@ interface NavigationProps {
 }
 
 const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
+  const handleTabChange = (tab: Tab) => {
+    playPopSound();
+    onTabChange(tab);
+  };
   const tabs = [
     { id: 'home' as Tab, icon: Home, label: 'Ana Sayfa', color: 'bg-primary' },
     { id: 'draw' as Tab, icon: Pencil, label: 'Çiz', color: 'bg-accent' },
@@ -30,26 +35,23 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            
+
             return (
               <button
                 key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={`relative flex flex-col items-center gap-1 p-3 md:p-4 rounded-2xl transition-all duration-200 hover:scale-110 active:scale-95 ${
-                  isActive ? tab.color : 'bg-transparent'
-                }`}
+                onClick={() => handleTabChange(tab.id)}
+                className={`relative flex flex-col items-center gap-1 p-3 md:p-4 rounded-2xl transition-all duration-200 hover:scale-110 active:scale-95 ${isActive ? tab.color : 'bg-transparent'
+                  }`}
               >
                 <div className={isActive ? 'animate-float-up' : ''}>
                   <Icon
-                    className={`w-7 h-7 md:w-8 md:h-8 ${
-                      isActive ? 'text-white' : 'text-muted-foreground'
-                    }`}
+                    className={`w-7 h-7 md:w-8 md:h-8 ${isActive ? 'text-white' : 'text-muted-foreground'
+                      }`}
                   />
                 </div>
                 <span
-                  className={`text-xs md:text-sm font-bold ${
-                    isActive ? 'text-white' : 'text-muted-foreground'
-                  }`}
+                  className={`text-xs md:text-sm font-bold ${isActive ? 'text-white' : 'text-muted-foreground'
+                    }`}
                 >
                   {tab.label}
                 </span>
