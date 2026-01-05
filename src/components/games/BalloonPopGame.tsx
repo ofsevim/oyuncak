@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { speak, speakSuccess, speakTryAgain } from '@/utils/voiceFeedback';
-import { playPopSound } from '@/utils/soundEffects';
+import { speak } from '@/utils/voiceFeedback';
+import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 import confetti from 'canvas-confetti';
 
 const BALLOON_COLORS = [
@@ -32,15 +32,15 @@ const BalloonPopGame = () => {
     const startNewRound = useCallback(() => {
         const nextColor = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
         setTargetColor(nextColor);
-        speak(`Hadi ${nextColor.name} renkli balonları bulup patlatlım!`);
+        speak(`Hadi ${nextColor.name} renkli balonları bulup patlatalım!`);
 
-        // Generate initial batch of balloons coming from TOP
-        const initialBalloons: Balloon[] = Array.from({ length: 8 }).map((_, i) => ({
+        // Generate balloons from random positions across entire sky
+        const initialBalloons: Balloon[] = Array.from({ length: 10 }).map((_, i) => ({
             id: Date.now() + i,
             color: BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)],
-            x: Math.random() * 80 + 10,
-            duration: Math.random() * 4 + 6, // Slower fall for better realism
-            delay: Math.random() * 8,
+            x: Math.random() * 95, // 0-95% (full width)
+            duration: Math.random() * 4 + 6,
+            delay: Math.random() * 10, // Spread out over 10 seconds
         }));
         setBalloons(initialBalloons);
     }, []);
@@ -57,21 +57,21 @@ const BalloonPopGame = () => {
 
             if (score > 0 && (score + 1) % 5 === 0) {
                 confetti({ particleCount: 50, spread: 60 });
-                speakSuccess();
+                playSuccessSound();
                 setTimeout(startNewRound, 1500);
             }
         } else {
-            speakTryAgain();
+            playErrorSound();
         }
     };
 
     // Keep adding balloons if they run low
     useEffect(() => {
-        if (balloons.length < 5) {
+        if (balloons.length < 6) {
             const newBalloon: Balloon = {
                 id: Date.now() + Math.random(),
                 color: BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)],
-                x: Math.random() * 80 + 10,
+                x: Math.random() * 95,
                 duration: Math.random() * 4 + 6,
                 delay: 0,
             };
@@ -104,55 +104,61 @@ const BalloonPopGame = () => {
 
             {/* Game Area */}
             <AnimatePresence>
-                {balloons.map((balloon) => (
-                    <motion.div
-                        key={balloon.id}
-                        className="absolute cursor-pointer z-10"
-                        initial={{ y: '-20%', x: `${balloon.x}%` }}
-                        animate={{
-                            y: '120%',
-                            // Swaying animation (realistic side-to-side)
-                            x: [`${balloon.x}%`, `${balloon.x - 10}%`, `${balloon.x + 10}%`, `${balloon.x}%`],
-                            rotate: [-5, 5, -5, 5, -5],
-                        }}
-                        exit={{ scale: 2, opacity: 0 }}
-                        transition={{
-                            y: { duration: balloon.duration, delay: balloon.delay, ease: "linear" },
-                            x: { duration: 3, delay: balloon.delay, repeat: Infinity, ease: "easeInOut" },
-                            rotate: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-                            scale: { duration: 0.1 }
-                        }}
-                        onAnimationComplete={(definition) => {
-                            // If it reaches the bottom (y: 120%), remove it
-                            if (typeof definition === 'object' && 'y' in definition && definition.y === '120%') {
-                                setBalloons(prev => prev.filter(b => b.id !== balloon.id));
-                            }
-                        }}
-                        style={{ left: 0 }}
-                    >
-                        <button
-                            onClick={() => handlePop(balloon)}
-                            className="relative group active:scale-95 transition-transform"
-                        >
-                            {/* Balloon Body */}
-                            <div
-                                className="w-16 h-20 md:w-20 md:h-24 rounded-[45%_45%_50%_50%/40%_40%_60%_60%] relative shadow-lg"
-                                style={{ backgroundColor: balloon.color.value }}
-                            >
-                                {/* Shine effect */}
-                                <div className="absolute top-3 left-4 w-4 h-7 bg-white/40 rounded-full rotate-12 blur-[1px]" />
+                {balloons.map((balloon) => {
+                    // Unique sway parameters for each balloon
+                    const swayAmount = Math.random() * 15 + 5; // 5-20% sway
+                    const swayDuration = Math.random() * 2 + 2; // 2-4 seconds per sway cycle
+                    const rotateAmount = Math.random() * 10 + 5; // 5-15 degrees rotation
 
-                                {/* Knot */}
+                    return (
+                        <motion.div
+                            key={balloon.id}
+                            className="absolute cursor-pointer z-10"
+                            initial={{ y: '-25%', x: `${balloon.x}%` }}
+                            animate={{
+                                y: '125%',
+                                // Each balloon has unique swaying pattern
+                                x: [
+                                    `${balloon.x}%`,
+                                    `${balloon.x - swayAmount}%`,
+                                    `${balloon.x + swayAmount}%`,
+                                    `${balloon.x}%`
+                                ],
+                                rotate: [-rotateAmount, rotateAmount, -rotateAmount],
+                            }}
+                            exit={{ scale: 2, opacity: 0 }}
+                            transition={{
+                                y: { duration: balloon.duration, delay: balloon.delay, ease: "linear" },
+                                x: { duration: swayDuration, delay: balloon.delay, repeat: Infinity, ease: "easeInOut" },
+                                rotate: { duration: swayDuration * 1.2, repeat: Infinity, ease: "easeInOut" },
+                                scale: { duration: 0.15 }
+                            }}
+                            style={{ left: 0 }}
+                        >
+                            <button
+                                onClick={() => handlePop(balloon)}
+                                className="relative group active:scale-95 transition-transform"
+                            >
+                                {/* Balloon Body */}
                                 <div
-                                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-2 rounded-full"
-                                    style={{ backgroundColor: balloon.color.value, filter: 'brightness(0.9)' }}
-                                />
-                            </div>
-                            {/* Balloon String */}
-                            <div className="w-0.5 h-16 bg-gray-400/40 mx-auto rounded-full" />
-                        </button>
-                    </motion.div>
-                ))}
+                                    className="w-16 h-20 md:w-20 md:h-24 rounded-[45%_45%_50%_50%/40%_40%_60%_60%] relative shadow-lg"
+                                    style={{ backgroundColor: balloon.color.value }}
+                                >
+                                    {/* Shine effect */}
+                                    <div className="absolute top-3 left-4 w-4 h-7 bg-white/40 rounded-full rotate-12 blur-[1px]" />
+
+                                    {/* Knot */}
+                                    <div
+                                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-2 rounded-full"
+                                        style={{ backgroundColor: balloon.color.value, filter: 'brightness(0.9)' }}
+                                    />
+                                </div>
+                                {/* Balloon String */}
+                                <div className="w-0.5 h-16 bg-gray-400/40 mx-auto rounded-full" />
+                            </button>
+                        </motion.div>
+                    );
+                })}
             </AnimatePresence>
 
             {/* Clouds BG decoration */}
