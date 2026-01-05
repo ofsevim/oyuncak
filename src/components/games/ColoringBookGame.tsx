@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, PencilBrush, Path as FabricPath } from 'fabric';
+import { Canvas as FabricCanvas, PencilBrush, Path as FabricPath, IText as FabricText } from 'fabric';
 import { motion } from 'framer-motion';
-import { Trash2, Undo, Download } from 'lucide-react';
+import { Trash2, Undo, Download, Sparkles } from 'lucide-react';
 import { speakInstruction } from '@/utils/voiceFeedback';
+import { playPopSound } from '@/utils/soundEffects';
 
 const COLORS = [
     { name: 'Kırmızı', value: '#EF5350' },
@@ -18,18 +19,24 @@ const COLORS = [
 
 const PAGES = [
     {
-        name: 'Elma',
-        path: 'M 100,200 C 100,100 200,100 200,200 C 200,300 100,300 100,200 M 150,110 L 150,80'
+        name: 'Kelebek',
+        path: 'M 150,120 C 130,100 80,100 60,130 C 40,160 80,220 150,200 C 220,220 260,160 240,130 C 220,100 170,100 150,120 M 150,120 L 150,220 M 100,140 A 20,20 0 1,1 101,140 M 200,140 A 20,20 0 1,1 201,140'
     },
     {
-        name: 'Güneş',
-        path: 'M 150,150 m -50,0 a 50,50 0 1,0 100,0 a 50,50 0 1,0 -100,0 M 150,70 L 150,40 M 150,230 L 150,260 M 70,150 L 40,150 M 230,150 L 260,150'
+        name: 'Roket',
+        path: 'M 150,50 L 110,100 L 110,200 L 190,200 L 190,100 Z M 110,200 L 80,230 L 110,230 M 190,200 L 220,230 L 190,230 M 130,120 A 15,15 0 1,1 131,120'
     },
     {
-        name: 'Ev',
-        path: 'M 50,250 L 250,250 L 250,150 L 150,50 L 50,150 Z M 120,250 L 120,200 L 180,200 L 180,250'
+        name: 'Gemi',
+        path: 'M 50,180 L 250,180 L 220,230 L 80,230 Z M 100,180 L 100,80 L 180,180 M 100,80 L 140,80 L 100,110'
+    },
+    {
+        name: 'Araba',
+        path: 'M 50,200 L 50,160 L 100,160 L 130,120 L 220,120 L 250,160 L 250,200 Z M 80,200 A 20,20 0 1,0 80,240 A 20,20 0 1,0 80,200 M 220,200 A 20,20 0 1,0 220,240 A 20,20 0 1,0 220,200'
     }
 ];
+
+const STICKERS = ['✨', '🌸', '⭐️', '🎈', '💖', '🍀'];
 
 const ColoringBookGame = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -37,12 +44,15 @@ const ColoringBookGame = () => {
     const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
     const [activeColor, setActiveColor] = useState(COLORS[2].value);
     const [activePage, setActivePage] = useState(0);
+    const [isRainbow, setIsRainbow] = useState(false);
+    const rainbowIndexRef = useRef(0);
+    const RAINBOW_COLORS = ['#EF5350', '#FFA726', '#FFEE58', '#66BB6A', '#42A5F5', '#AB47BC'];
 
     useEffect(() => {
         if (!canvasRef.current || !containerRef.current) return;
 
-        const width = Math.min(containerRef.current.clientWidth - 32, 500);
-        const height = 400;
+        const width = Math.min(containerRef.current.clientWidth - 32, 550);
+        const height = 450;
 
         const canvas = new FabricCanvas(canvasRef.current, {
             width,
@@ -53,7 +63,7 @@ const ColoringBookGame = () => {
 
         const brush = new PencilBrush(canvas);
         brush.color = activeColor;
-        brush.width = 12;
+        brush.width = 15;
         canvas.freeDrawingBrush = brush;
 
         setFabricCanvas(canvas);
@@ -63,6 +73,25 @@ const ColoringBookGame = () => {
             canvas.dispose();
         };
     }, []);
+
+    useEffect(() => {
+        if (!fabricCanvas) return;
+
+        if (isRainbow) {
+            const handleMouseMove = () => {
+                if (fabricCanvas.freeDrawingBrush) {
+                    rainbowIndexRef.current = (rainbowIndexRef.current + 1) % RAINBOW_COLORS.length;
+                    fabricCanvas.freeDrawingBrush.color = RAINBOW_COLORS[rainbowIndexRef.current];
+                }
+            };
+            fabricCanvas.on('mouse:move', handleMouseMove);
+            return () => fabricCanvas.off('mouse:move', handleMouseMove);
+        } else {
+            if (fabricCanvas.freeDrawingBrush) {
+                fabricCanvas.freeDrawingBrush.color = activeColor;
+            }
+        }
+    }, [isRainbow, activeColor, fabricCanvas]);
 
     const loadPage = (canvas: FabricCanvas, pageIndex: number) => {
         canvas.clear();
@@ -76,15 +105,11 @@ const ColoringBookGame = () => {
             evented: false,
         });
 
-        // Center and scale to fit canvas
-        const margin = 40;
+        const margin = 60;
         const canvasWidth = canvas.width! - margin * 2;
         const canvasHeight = canvas.height! - margin * 2;
 
-        const scale = Math.min(
-            canvasWidth / path.width!,
-            canvasHeight / path.height!
-        );
+        const scale = Math.min(canvasWidth / path.width!, canvasHeight / path.height!);
 
         path.set({
             scaleX: scale,
@@ -95,7 +120,7 @@ const ColoringBookGame = () => {
 
         canvas.add(path);
         canvas.renderAll();
-        speakInstruction(`Hadi bu ${PAGES[pageIndex].name} resmini boyayalım!`);
+        speakInstruction(`Harika! ${PAGES[pageIndex].name} sayfasını seçtin. Hadi rengarenk boyayalım!`);
     };
 
     useEffect(() => {
@@ -104,66 +129,105 @@ const ColoringBookGame = () => {
         }
     }, [activePage, fabricCanvas]);
 
-    useEffect(() => {
-        if (fabricCanvas?.freeDrawingBrush) {
-            fabricCanvas.freeDrawingBrush.color = activeColor;
-        }
-    }, [activeColor, fabricCanvas]);
+    const addSticker = (emoji: string) => {
+        if (!fabricCanvas) return;
+        playPopSound();
+        fabricCanvas.isDrawingMode = false;
+        const sticker = new FabricText(emoji, {
+            fontSize: 60,
+            left: fabricCanvas.width! / 2,
+            top: fabricCanvas.height! / 2,
+        });
+        fabricCanvas.add(sticker);
+        fabricCanvas.setActiveObject(sticker);
+        fabricCanvas.renderAll();
+    };
 
     const handleSave = () => {
         if (!fabricCanvas) return;
         const link = document.createElement('a');
-        link.download = 'boyamam.png';
+        link.download = `boyama-${PAGES[activePage].name}.png`;
         link.href = fabricCanvas.toDataURL({ format: 'png' });
         link.click();
-        speakInstruction('Harika boyadın!');
+        speakInstruction('Resmin kaydedildi! Muhteşem oldu!');
     };
 
     return (
-        <motion.div className="flex flex-col items-center gap-6 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <h2 className="text-3xl font-extrabold">Boyama Kitabı</h2>
+        <motion.div className="flex flex-col items-center gap-6 p-4 max-w-4xl mx-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="text-center space-y-2">
+                <h2 className="text-4xl font-black text-foreground tracking-tight">🎨 Boyama Defteri</h2>
+                <p className="text-muted-foreground font-bold">En sevdiğin resmi seç ve hayallerini boya!</p>
+            </div>
 
-            <div className="flex gap-2 mb-2">
+            <div className="flex flex-wrap justify-center gap-3 bg-white p-3 rounded-[2rem] shadow-sm border-2 border-primary/10">
                 {PAGES.map((page, i) => (
                     <button
                         key={i}
-                        onClick={() => setActivePage(i)}
-                        className={`px-4 py-2 rounded-full font-bold transition-all ${activePage === i ? 'bg-primary text-white scale-110' : 'bg-muted text-muted-foreground'}`}
+                        onClick={() => { playPopSound(); setActivePage(i); }}
+                        className={`px-6 py-3 rounded-2xl font-black transition-all duration-200 ${activePage === i ? 'bg-primary text-white scale-105 shadow-lg' : 'bg-muted text-muted-foreground hover:bg-primary/10'}`}
                     >
                         {page.name}
                     </button>
                 ))}
             </div>
 
-            <div className="flex flex-wrap justify-center gap-2 mb-4">
-                {COLORS.map((c) => (
-                    <button
-                        key={c.value}
-                        onClick={() => setActiveColor(c.value)}
-                        className={`w-10 h-10 rounded-full border-4 transition-all ${activeColor === c.value ? 'border-foreground scale-110' : 'border-transparent'}`}
-                        style={{ backgroundColor: c.value }}
-                    />
-                ))}
-            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 w-full items-start">
+                {/* Canvas Area */}
+                <div className="flex flex-col items-center gap-4">
+                    <div ref={containerRef} className="bg-white rounded-[3rem] shadow-playful overflow-hidden border-8 border-white p-2">
+                        <canvas ref={canvasRef} />
+                    </div>
 
-            <div ref={containerRef} className="bg-white rounded-3xl shadow-playful overflow-hidden border-4 border-dashed border-primary/30">
-                <canvas ref={canvasRef} />
-            </div>
+                    <div className="flex flex-wrap justify-center gap-3">
+                        <button onClick={() => { playPopSound(); fabricCanvas?.clear(); loadPage(fabricCanvas!, activePage); }} className="flex items-center gap-2 px-6 py-4 bg-muted text-muted-foreground rounded-full font-bold hover:bg-destructive/10 hover:text-destructive transition-all">
+                            <Trash2 className="w-6 h-6" /> <span className="hidden sm:inline">Temizle</span>
+                        </button>
+                        <button onClick={() => { playPopSound(); const objs = fabricCanvas?.getObjects(); if (objs && objs.length > 1) fabricCanvas?.remove(objs[objs.length - 1]); }} className="flex items-center gap-2 px-6 py-4 bg-muted text-muted-foreground rounded-full font-bold">
+                            <Undo className="w-6 h-6" /> <span className="hidden sm:inline">Geri</span>
+                        </button>
+                        <button onClick={handleSave} className="flex items-center gap-3 px-10 py-4 bg-success text-white rounded-full font-black text-xl shadow-lg btn-bouncy">
+                            <Download className="w-6 h-6" /> Kaydet
+                        </button>
+                    </div>
+                </div>
 
-            <div className="flex gap-3">
-                <button onClick={() => fabricCanvas?.clear() && loadPage(fabricCanvas, activePage)} className="p-4 bg-muted rounded-full">
-                    <Trash2 className="w-6 h-6" />
-                </button>
-                <button onClick={() => {
-                    const objs = fabricCanvas?.getObjects();
-                    if (objs && objs.length > 1) fabricCanvas?.remove(objs[objs.length - 1]);
-                }} className="p-4 bg-muted rounded-full">
-                    <Undo className="w-6 h-6" />
-                </button>
-                <button onClick={handleSave} className="flex items-center gap-2 px-6 py-4 bg-success text-white rounded-full font-bold btn-bouncy">
-                    <Download className="w-6 h-6" />
-                    Kaydet
-                </button>
+                {/* Sidebar Tools */}
+                <div className="flex flex-col gap-6 bg-white p-6 rounded-[3rem] shadow-playful border-4 border-primary/5">
+                    <div className="space-y-4">
+                        <span className="text-sm font-black text-muted-foreground uppercase tracking-widest px-2">Renkler</span>
+                        <div className="grid grid-cols-4 gap-3">
+                            {COLORS.map((c) => (
+                                <button
+                                    key={c.value}
+                                    onClick={() => { playPopSound(); setActiveColor(c.value); setIsRainbow(false); fabricCanvas!.isDrawingMode = true; }}
+                                    className={`w-12 h-12 rounded-full border-4 transition-all duration-200 hover:scale-110 ${activeColor === c.value && !isRainbow ? 'border-primary scale-110 shadow-lg' : 'border-transparent'}`}
+                                    style={{ backgroundColor: c.value }}
+                                />
+                            ))}
+                            <button
+                                onClick={() => { playPopSound(); setIsRainbow(true); fabricCanvas!.isDrawingMode = true; }}
+                                className={`w-12 h-12 rounded-full rainbow-gradient border-4 flex items-center justify-center text-white transition-all ${isRainbow ? 'border-primary scale-110 shadow-lg' : 'border-transparent'}`}
+                            >
+                                <Sparkles className="w-6 h-6" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <span className="text-sm font-black text-muted-foreground uppercase tracking-widest px-2">Süsler</span>
+                        <div className="grid grid-cols-3 gap-3">
+                            {STICKERS.map((s) => (
+                                <button
+                                    key={s}
+                                    onClick={() => addSticker(s)}
+                                    className="text-4xl p-2 bg-muted/30 rounded-2xl hover:bg-primary/10 hover:scale-110 transition-all font-serif"
+                                >
+                                    {s}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
         </motion.div>
     );
