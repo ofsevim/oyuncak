@@ -1,4 +1,15 @@
 // Voice feedback utility using Web Speech API
+let voices: SpeechSynthesisVoice[] = [];
+
+const loadVoices = () => {
+  voices = window.speechSynthesis.getVoices();
+};
+
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();
+}
+
 export const speak = (text: string, lang: string = 'tr-TR') => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
@@ -6,23 +17,29 @@ export const speak = (text: string, lang: string = 'tr-TR') => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
 
-    // Get available voices
-    const voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      loadVoices();
+    }
 
-    // Try to find a Turkish female voice (commonly names like 'Tolga' are male, but Google/Microsoft often have female options)
-    // In many browsers, specific names or "female" in the voice name can identify them.
-    // For TR, we'll try to prioritize voices that are often female or just use the system default if not found.
+    // Detailed search for female voices in Turkish
     const femaleVoice = voices.find(voice =>
-      (voice.lang === lang || voice.lang.startsWith('tr')) &&
-      (voice.name.includes('Female') || voice.name.includes('Seda') || voice.name.includes('Zeynep') || voice.name.includes('Google') || voice.name.includes('Premium'))
+      voice.lang.includes('tr') &&
+      (voice.name.toLowerCase().includes('female') ||
+        voice.name.toLowerCase().includes('seda') ||
+        voice.name.toLowerCase().includes('zeynep') ||
+        voice.name.toLowerCase().includes('yeşim') ||
+        voice.name.toLowerCase().includes('yelda') ||
+        voice.name.toLowerCase().includes('google') ||
+        voice.name.toLowerCase().includes('soft'))
     );
 
     if (femaleVoice) {
       utterance.voice = femaleVoice;
     }
 
-    utterance.rate = 1.0;
-    utterance.pitch = 1.3; // Higher pitch for a more cheerful/female tone
+    // Fallback adjustments to make it sound more female/friendly
+    utterance.rate = 1.1;
+    utterance.pitch = 1.4;
     utterance.volume = 1;
 
     window.speechSynthesis.speak(utterance);

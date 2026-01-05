@@ -68,17 +68,29 @@ const ColoringBookGame = () => {
         canvas.clear();
         canvas.backgroundColor = '#ffffff';
 
-        // Scale the path to fit
         const path = new FabricPath(PAGES[pageIndex].path, {
             fill: 'transparent',
             stroke: '#424242',
             strokeWidth: 4,
             selectable: false,
             evented: false,
-            scaleX: 1.5,
-            scaleY: 1.5,
-            left: 50,
-            top: 50
+        });
+
+        // Center and scale to fit canvas
+        const margin = 40;
+        const canvasWidth = canvas.width! - margin * 2;
+        const canvasHeight = canvas.height! - margin * 2;
+
+        const scale = Math.min(
+            canvasWidth / path.width!,
+            canvasHeight / path.height!
+        );
+
+        path.set({
+            scaleX: scale,
+            scaleY: scale,
+            left: (canvas.width! - path.width! * scale) / 2,
+            top: (canvas.height! - path.height! * scale) / 2
         });
 
         canvas.add(path);
