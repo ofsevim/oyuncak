@@ -105,57 +105,48 @@ const BalloonPopGame = () => {
             {/* Game Area */}
             <AnimatePresence>
                 {balloons.map((balloon) => {
-                    // Unique sway parameters for each balloon
-                    const swayAmount = Math.random() * 15 + 5; // 5-20% sway
-                    const swayDuration = Math.random() * 2 + 2; // 2-4 seconds per sway cycle
-                    const rotateAmount = Math.random() * 10 + 5; // 5-15 degrees rotation
+                    const swayAmount = 20 + Math.random() * 20;
+                    const swayDuration = 2 + Math.random() * 2;
 
                     return (
                         <motion.div
                             key={balloon.id}
-                            className="absolute cursor-pointer z-10"
-                            initial={{ y: '-25%', x: `${balloon.x}%` }}
-                            animate={{
-                                y: '125%',
-                                // Each balloon has unique swaying pattern
-                                x: [
-                                    `${balloon.x}%`,
-                                    `${balloon.x - swayAmount}%`,
-                                    `${balloon.x + swayAmount}%`,
-                                    `${balloon.x}%`
-                                ],
-                                rotate: [-rotateAmount, rotateAmount, -rotateAmount],
-                            }}
-                            exit={{ scale: 2, opacity: 0 }}
+                            className="absolute z-10"
+                            style={{ left: `${balloon.x}%` }}
+                            initial={{ top: '-120px' }}
+                            animate={{ top: '110%' }}
+                            exit={{ scale: 1.5, opacity: 0 }}
                             transition={{
-                                y: { duration: balloon.duration, delay: balloon.delay, ease: "linear" },
-                                x: { duration: swayDuration, delay: balloon.delay, repeat: Infinity, ease: "easeInOut" },
-                                rotate: { duration: swayDuration * 1.2, repeat: Infinity, ease: "easeInOut" },
+                                top: { duration: balloon.duration, delay: balloon.delay, ease: "linear" },
                                 scale: { duration: 0.15 }
                             }}
-                            style={{ left: 0 }}
                         >
-                            <button
-                                onClick={() => handlePop(balloon)}
-                                className="relative group active:scale-95 transition-transform"
+                            {/* Swaying wrapper */}
+                            <motion.div
+                                animate={{ x: [-swayAmount, swayAmount, -swayAmount], rotate: [-8, 8, -8] }}
+                                transition={{ duration: swayDuration, repeat: Infinity, ease: "easeInOut" }}
                             >
-                                {/* Balloon Body */}
-                                <div
-                                    className="w-16 h-20 md:w-20 md:h-24 rounded-[45%_45%_50%_50%/40%_40%_60%_60%] relative shadow-lg"
-                                    style={{ backgroundColor: balloon.color.value }}
+                                <button
+                                    onClick={() => handlePop(balloon)}
+                                    className="relative group active:scale-90 transition-transform cursor-pointer"
                                 >
-                                    {/* Shine effect */}
-                                    <div className="absolute top-3 left-4 w-4 h-7 bg-white/40 rounded-full rotate-12 blur-[1px]" />
-
-                                    {/* Knot */}
+                                    {/* Balloon Body */}
                                     <div
-                                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-2 rounded-full"
-                                        style={{ backgroundColor: balloon.color.value, filter: 'brightness(0.9)' }}
-                                    />
-                                </div>
-                                {/* Balloon String */}
-                                <div className="w-0.5 h-16 bg-gray-400/40 mx-auto rounded-full" />
-                            </button>
+                                        className="w-14 h-18 md:w-16 md:h-20 rounded-[45%_45%_50%_50%/40%_40%_60%_60%] relative shadow-lg"
+                                        style={{ backgroundColor: balloon.color.value }}
+                                    >
+                                        {/* Shine */}
+                                        <div className="absolute top-2 left-3 w-3 h-5 bg-white/50 rounded-full rotate-12" />
+                                        {/* Knot */}
+                                        <div
+                                            className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-2 rounded-full"
+                                            style={{ backgroundColor: balloon.color.value, filter: 'brightness(0.85)' }}
+                                        />
+                                    </div>
+                                    {/* String */}
+                                    <div className="w-px h-12 bg-gray-400/50 mx-auto" />
+                                </button>
+                            </motion.div>
                         </motion.div>
                     );
                 })}
