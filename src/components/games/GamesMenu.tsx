@@ -9,20 +9,29 @@ import MemoryFlipGame from './MemoryFlipGame';
 import AnimalSoundsGame from './AnimalSoundsGame';
 import CountingGame from './CountingGame';
 import ColoringBookGame from './ColoringBookGame';
-import { MousePointer2, Music, Hash, Palette } from 'lucide-react';
+import BalloonPopGame from './BalloonPopGame';
+import { MousePointer2, Music, Hash, Palette, Wind } from 'lucide-react';
 
-type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'sounds' | 'counting' | 'coloring';
+type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'sounds' | 'counting' | 'coloring' | 'balloons';
 
 const GamesMenu = () => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
 
   const games = [
     {
+      id: 'balloons' as GameType,
+      title: 'Balon Patlat',
+      emoji: '🎈',
+      icon: Wind,
+      color: 'bg-primary',
+      description: 'Doğru renkli balonları yakala!',
+    },
+    {
       id: 'shapes' as GameType,
       title: 'Şekil Eşleştirme',
       emoji: '🔷',
       icon: Shapes,
-      color: 'bg-primary',
+      color: 'bg-accent',
       description: 'Şekilleri gölgelerine eşleştir!',
     },
     {
@@ -30,7 +39,7 @@ const GamesMenu = () => {
       title: 'Farklı Olanı Bul',
       emoji: '🔍',
       icon: Search,
-      color: 'bg-accent',
+      color: 'bg-destructive/80',
       description: 'Gruba uymayan resmi bul!',
     },
     {
@@ -75,6 +84,7 @@ const GamesMenu = () => {
       case 'sounds': return <AnimalSoundsGame />;
       case 'counting': return <CountingGame />;
       case 'coloring': return <ColoringBookGame />;
+      case 'balloons': return <BalloonPopGame />;
       default: return null;
     }
   };
