@@ -6,13 +6,13 @@ import { Shapes, Search, Brain } from 'lucide-react';
 import ShapeMatcherGame from './ShapeMatcherGame';
 import OddOneOutGame from './OddOneOutGame';
 import MemoryFlipGame from './MemoryFlipGame';
-import AnimalSoundsGame from './AnimalSoundsGame';
+import WhackAMoleGame from './WhackAMoleGame';
 import CountingGame from './CountingGame';
 import ColoringBookGame from './ColoringBookGame';
 import BalloonPopGame from './BalloonPopGame';
 import { Music, Hash, Palette, Wind } from 'lucide-react';
 
-type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'sounds' | 'counting' | 'coloring' | 'balloons';
+type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons';
 
 const GamesMenu = () => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
@@ -51,12 +51,12 @@ const GamesMenu = () => {
       description: 'Kartları çevir, eşleri bul!',
     },
     {
-      id: 'sounds' as GameType,
-      title: 'Hayvan Sesleri',
-      emoji: '🐱',
+      id: 'whack' as GameType,
+      title: 'Köstebek Yakala',
+      emoji: '🐹',
       icon: Music,
       color: 'bg-orange-400',
-      description: 'Hayvanların seslerini dinle!',
+      description: 'Hızlı ol, köstebekleri yakala!',
     },
     {
       id: 'counting' as GameType,
@@ -81,7 +81,7 @@ const GamesMenu = () => {
       case 'shapes': return <ShapeMatcherGame />;
       case 'oddone': return <OddOneOutGame />;
       case 'memory': return <MemoryFlipGame />;
-      case 'sounds': return <AnimalSoundsGame />;
+      case 'whack': return <WhackAMoleGame />;
       case 'counting': return <CountingGame />;
       case 'coloring': return <ColoringBookGame />;
       case 'balloons': return <BalloonPopGame />;

@@ -56,10 +56,35 @@ const ShapeMatcherGame = () => {
   const [draggedShape, setDraggedShape] = useState<Shape | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
+  const [shuffledShapes, setShuffledShapes] = useState<Shape[]>([]);
+  const [shuffledTargets, setShuffledTargets] = useState<Shape[]>([]);
 
   const currentLevel = LEVELS[level];
 
-  const handleDragStart = (shape: Shape) => setDraggedShape(shape);
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  };
+
+  const initLevel = useCallback((lvl: number) => {
+    const shapes = LEVELS[lvl].shapes;
+    setShuffledShapes(shuffleArray(shapes));
+    setShuffledTargets(shuffleArray(shapes));
+    setMatchedShapes([]);
+  }, []);
+
+  useState(() => {
+    initLevel(0);
+  });
+
+  const handleDragStart = (e: React.DragEvent, shape: Shape) => {
+    e.dataTransfer.setData('text/plain', shape.id);
+    setDraggedShape(shape);
+  };
 
   const handleDrop = useCallback((targetShapeId: string) => {
     if (draggedShape && draggedShape.id === targetShapeId) {
@@ -77,8 +102,21 @@ const ShapeMatcherGame = () => {
     setDraggedShape(null);
   }, [draggedShape, currentLevel.shapes.length, level]);
 
-  const handleNextLevel = () => { setShowSuccess(false); if (!gameComplete) { setLevel(p => p + 1); setMatchedShapes([]); } };
-  const handleRestart = () => { setLevel(0); setMatchedShapes([]); setGameComplete(false); setShowSuccess(false); };
+  const handleNextLevel = () => {
+    setShowSuccess(false);
+    if (!gameComplete) {
+      const nextLevel = level + 1;
+      setLevel(nextLevel);
+      initLevel(nextLevel);
+    }
+  };
+
+  const handleRestart = () => {
+    setLevel(0);
+    initLevel(0);
+    setGameComplete(false);
+    setShowSuccess(false);
+  };
 
   return (
     <motion.div className="flex flex-col items-center gap-6 p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -88,14 +126,14 @@ const ShapeMatcherGame = () => {
       </div>
       <p className="text-muted-foreground text-center font-semibold">Şekilleri sürükleyip gölgelerine bırak!</p>
       <div className="flex flex-wrap justify-center gap-4 p-4">
-        {currentLevel.shapes.map((shape) => !matchedShapes.includes(shape.id) && (
-          <div key={shape.id} draggable onDragStart={() => handleDragStart(shape)} className="cursor-grab p-2 bg-card rounded-2xl shadow-playful transition-transform hover:scale-110">
+        {shuffledShapes.map((shape) => !matchedShapes.includes(shape.id) && (
+          <div key={shape.id} draggable onDragStart={(e) => handleDragStart(e, shape)} className="cursor-grab p-2 bg-card rounded-2xl shadow-playful transition-transform hover:scale-110">
             <ShapeComponent type={shape.type} color={shape.color} />
           </div>
         ))}
       </div>
       <div className="flex flex-wrap justify-center gap-6 p-6 bg-muted rounded-3xl">
-        {currentLevel.shapes.map((shape) => (
+        {shuffledTargets.map((shape) => (
           <div key={shape.id} onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop(shape.id)} className={`p-3 rounded-2xl border-4 border-dashed ${matchedShapes.includes(shape.id) ? 'border-success bg-success/20' : 'border-muted-foreground/30'}`}>
             <ShapeComponent type={shape.type} color={shape.color} isShadow={!matchedShapes.includes(shape.id)} />
           </div>

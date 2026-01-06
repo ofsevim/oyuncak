@@ -16,18 +16,17 @@ const BALLOON_COLORS = [
 ];
 
 const GAME_TIME = 60; // 60 seconds per game
-const TARGET_SCORE = 30; // Win at 30 points
-const MAX_BALLOONS = 40; // Maximum concurrent balloons
-const INITIAL_BALLOONS = 15; // Başlangıçta ekrandaki balon sayısı
+const MAX_BALLOONS = 30; // Maximum concurrent balloons
+const INITIAL_BALLOONS = 5; // Başlangıçta ekrandaki balon sayısı (azaltıldı)
 
 interface Balloon {
-    id: number;
+    id: string;
     color: typeof BALLOON_COLORS[0];
     x: number;
     duration: number;
     delay: number;
-    swayAmount: number; // Sway miktarı - sabit
-    swayDuration: number; // Sway süresi - sabit
+    swayAmount: number;
+    swayDuration: number;
 }
 
 type GamePhase = 'start' | 'playing' | 'ended';
@@ -45,13 +44,13 @@ const BalloonPopGame = () => {
     // Tek bir balon oluştur - sway değerleri burada sabitlenir
     const createBalloon = useCallback((color: typeof BALLOON_COLORS[0], delay: number = 0): Balloon => {
         return {
-            id: Date.now() + Math.random() * 100000,
+            id: Math.random().toString(36).substr(2, 9) + Date.now(),
             color: color,
-            x: Math.random() * 85 + 5, // 5% - 90% arası
-            duration: Math.random() * 2 + 7, // 7-9 saniye
+            x: Math.random() * 85 + 5,
+            duration: Math.random() * 2 + 7,
             delay: delay,
-            swayAmount: 3 + Math.random() * 5, // 3-8px arası yumuşak sway
-            swayDuration: 3 + Math.random() * 2, // 3-5 saniye sway süresi (daha yavaş)
+            swayAmount: 3 + Math.random() * 5,
+            swayDuration: 3 + Math.random() * 2,
         };
     }, []);
 
@@ -67,7 +66,7 @@ const BalloonPopGame = () => {
         // Rastgele renkli balonlar
         for (let i = targetCount; i < INITIAL_BALLOONS; i++) {
             const randomColor = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
-            newBalloons.push(createBalloon(randomColor, Math.random() * 10));
+            newBalloons.push(createBalloon(randomColor, Math.random() * 3));
         }
 
         return newBalloons;
@@ -88,14 +87,18 @@ const BalloonPopGame = () => {
     const startNewRound = useCallback(() => {
         const nextColor = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
         setTargetColor(nextColor);
-        // Mevcut balonları temizle ve yeni balonlar ekle
+        // Mevcut balonları biraz seyrelt ve yeni renkten birkaç tane ekle
         setBalloons(prev => {
-            const newBalloons = generateBalloons(nextColor);
-            return [...prev.slice(0, 50), ...newBalloons]; // Max 50 eski balon tut
+            const currentBalloons = prev.slice(-10); // Sadece son 10 balonu tut
+            const newBalloons = [];
+            for (let i = 0; i < 5; i++) {
+                newBalloons.push(createBalloon(nextColor, Math.random() * 5));
+            }
+            return [...currentBalloons, ...newBalloons];
         });
         setRound(r => r + 1);
         speak(`${nextColor.name} balonları patlat!`);
-    }, [generateBalloons]);
+    }, [generateBalloons, createBalloon]);
 
     // Timer
     useEffect(() => {
@@ -135,7 +138,7 @@ const BalloonPopGame = () => {
 
                     return [...prev, ...newBalloons];
                 });
-            }, 500); // Her 500ms'de yeni balon ekle (daha yavaş)
+            }, 1200); // Her 1.2 saniyede yeni balon ekle (daha seyrek)
         }
 
         return () => {
@@ -143,28 +146,25 @@ const BalloonPopGame = () => {
         };
     }, [gamePhase, targetColor, createBalloon]);
 
-    // Ekrandan çıkan balonları temizle
+    // Ekrandan çıkan balonları temizle (Yedek mekanizma)
     useEffect(() => {
         if (gamePhase === 'playing') {
             const cleanupInterval = setInterval(() => {
                 setBalloons(prev => {
-                    // Çok eski balonları kaldır (10 saniyeden fazla)
-                    const now = Date.now();
-                    return prev.filter(b => now - b.id < 15000);
+                    // 15 saniyeden fazla süredir var olan balonları her ihtimale karşı temizle
+                    // (Normalde onAnimationComplete ile temizleniyorlar)
+                    if (prev.length > MAX_BALLOONS * 1.5) {
+                        return prev.slice(-MAX_BALLOONS);
+                    }
+                    return prev;
                 });
-            }, 2000);
+            }, 5000);
 
             return () => clearInterval(cleanupInterval);
         }
     }, [gamePhase]);
 
-    // Check for target score win
-    useEffect(() => {
-        if (score >= TARGET_SCORE && gamePhase === 'playing') {
-            setGamePhase('ended');
-            confetti({ particleCount: 200, spread: 120, origin: { y: 0.6 } });
-        }
-    }, [score, gamePhase]);
+
 
     const handlePop = (balloon: Balloon) => {
         if (gamePhase !== 'playing') return;
@@ -202,9 +202,9 @@ const BalloonPopGame = () => {
                 </div>
 
                 <div className="bg-white p-6 rounded-3xl shadow-playful space-y-3 text-center">
-                    <p className="text-lg font-bold text-foreground">🎯 Hedef: {TARGET_SCORE} balon patlat</p>
+                    <p className="text-lg font-bold text-foreground">🎯 Hedef: 1 dakikada en çok balonu patlat!</p>
                     <p className="text-lg font-bold text-foreground">⏱️ Süre: {GAME_TIME} saniye</p>
-                    <p className="text-sm text-muted-foreground">🎈 200+ balon yağmuru!</p>
+                    <p className="text-sm text-muted-foreground">🎈 7-9 saniye kuralı aktif!</p>
                 </div>
 
                 <button
@@ -219,7 +219,6 @@ const BalloonPopGame = () => {
 
     // END SCREEN
     if (gamePhase === 'ended') {
-        const won = score >= TARGET_SCORE;
         return (
             <motion.div
                 className="flex flex-col items-center justify-center gap-8 p-8 max-w-xl mx-auto min-h-[60vh]"
@@ -227,16 +226,16 @@ const BalloonPopGame = () => {
                 animate={{ opacity: 1, scale: 1 }}
             >
                 <div className="text-center space-y-4">
-                    <span className="text-8xl">{won ? '🏆' : '⏰'}</span>
+                    <span className="text-8xl">⏰</span>
                     <h2 className="text-4xl font-black text-foreground">
-                        {won ? 'TEBRİKLER!' : 'Süre Doldu!'}
+                        Süre Doldu!
                     </h2>
                 </div>
 
                 <div className="bg-white p-8 rounded-3xl shadow-playful space-y-4 text-center">
-                    <p className="text-3xl font-black text-primary">🎈 {score} Balon</p>
+                    <p className="text-3xl font-black text-primary">🎈 {score} Balon Patlattın!</p>
                     <p className="text-xl font-bold text-muted-foreground">🔄 {round} Tur Oynadın</p>
-                    {won && <p className="text-lg font-bold text-success">Hedefi {timeLeft} saniye kala yakaladın!</p>}
+                    <p className="text-lg font-bold text-success">Harika bir performans!</p>
                 </div>
 
                 <button
@@ -256,7 +255,7 @@ const BalloonPopGame = () => {
             <div className="absolute top-4 left-0 right-0 z-20 flex flex-col items-center gap-2 pointer-events-none">
                 <div className="flex items-center gap-4">
                     <div className="bg-white/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-sm border-2 border-primary/20">
-                        <span className="text-lg font-black text-primary">🎈 {score}/{TARGET_SCORE}</span>
+                        <span className="text-lg font-black text-primary">🎈 {score}</span>
                     </div>
                     <div className="bg-white/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-sm border-2 border-orange-200">
                         <span className={`text-lg font-black ${timeLeft <= 10 ? 'text-destructive animate-pulse' : 'text-orange-500'}`}>
@@ -296,6 +295,9 @@ const BalloonPopGame = () => {
                         transition={{
                             top: { duration: balloon.duration, delay: balloon.delay, ease: "linear" },
                             scale: { duration: 0.12 }
+                        }}
+                        onAnimationComplete={() => {
+                            setBalloons(prev => prev.filter(b => b.id !== balloon.id));
                         }}
                     >
                         <motion.div

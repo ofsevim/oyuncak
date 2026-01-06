@@ -10,6 +10,13 @@ const ROUNDS = [
   { items: [{ id: '1', emoji: '🐕' }, { id: '2', emoji: '🐈' }, { id: '3', emoji: '🐰' }, { id: '4', emoji: '🚗' }], oddOne: '4', hint: 'Hangisi hayvan değil?' },
   { items: [{ id: '1', emoji: '🍎' }, { id: '2', emoji: '🍌' }, { id: '3', emoji: '🏠' }, { id: '4', emoji: '🍇' }], oddOne: '3', hint: 'Hangisi meyve değil?' },
   { items: [{ id: '1', emoji: '✈️' }, { id: '2', emoji: '🚂' }, { id: '3', emoji: '🌸' }, { id: '4', emoji: '🚀' }], oddOne: '3', hint: 'Hangisi taşıt değil?' },
+  { items: [{ id: '1', emoji: '🔴' }, { id: '2', emoji: '🔵' }, { id: '3', emoji: '🟢' }, { id: '4', emoji: '📐' }], oddOne: '4', hint: 'Hangisi renk değil?' },
+  { items: [{ id: '1', emoji: '🦁' }, { id: '2', emoji: '🐯' }, { id: '3', emoji: '🦒' }, { id: '4', emoji: '🐳' }], oddOne: '4', hint: 'Hangisi karada yaşamaz?' },
+  { items: [{ id: '1', emoji: '🥦' }, { id: '2', emoji: '🥕' }, { id: '3', emoji: '🍦' }, { id: '4', emoji: '🌽' }], oddOne: '3', hint: 'Hangisi sebze değil?' },
+  { items: [{ id: '1', emoji: '🎸' }, { id: '2', emoji: '🎺' }, { id: '3', emoji: '🎻' }, { id: '4', emoji: '🔨' }], oddOne: '4', hint: 'Hangisi müzik aleti değil?' },
+  { items: [{ id: '1', emoji: '☀️' }, { id: '2', emoji: '☁️' }, { id: '3', emoji: '🌧️' }, { id: '4', emoji: '🍔' }], oddOne: '4', hint: 'Hangisi hava durumu değil?' },
+  { items: [{ id: '1', emoji: '⚽' }, { id: '2', emoji: '🏀' }, { id: '3', emoji: '🎾' }, { id: '4', emoji: '🧸' }], oddOne: '4', hint: 'Hangisi spor topu değil?' },
+  { items: [{ id: '1', emoji: '🐙' }, { id: '2', emoji: '🦀' }, { id: '3', emoji: '🐠' }, { id: '4', emoji: '🦋' }], oddOne: '4', hint: 'Hangisi denizde yaşamaz?' },
 ];
 
 const OddOneOutGame = () => {
