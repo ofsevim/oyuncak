@@ -5,11 +5,10 @@ import FloatingBubbles from '@/components/ui/FloatingBubbles';
 import Navigation from '@/components/Navigation';
 import DrawingCanvas from '@/components/DrawingCanvas';
 import GamesMenu from '@/components/games/GamesMenu';
-import StoryTime from '@/components/StoryTime';
 import { motion } from 'framer-motion';
-import { Pencil, Gamepad2, BookOpen, Sparkles } from 'lucide-react';
+import { Pencil, Gamepad2, Sparkles } from 'lucide-react';
 
-type Tab = 'home' | 'draw' | 'games' | 'story';
+type Tab = 'home' | 'draw' | 'games';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<Tab>('home');
@@ -20,8 +19,6 @@ const Index = () => {
         return <DrawingCanvas />;
       case 'games':
         return <GamesMenu />;
-      case 'story':
-        return <StoryTime />;
       default:
         return (
           <motion.div
@@ -47,11 +44,11 @@ const Index = () => {
                 Hoş Geldin! 👋
               </h1>
               <p className="text-xl md:text-2xl text-muted-foreground max-w-lg font-medium">
-                Hayal et, çiz, oyna ve neşeli hikayeler keşfet!
+                Hayal et, çiz ve eğlenceli oyunlar oyna!
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl mt-4">
+            <div className="grid grid-cols-2 gap-4 w-full max-w-xl mt-4">
               <button
                 onClick={() => setActiveTab('draw')}
                 className="flex flex-col items-center gap-3 p-6 bg-accent text-accent-foreground rounded-[2.5rem] shadow-playful btn-bouncy border-b-8 border-green-600/20"
@@ -70,16 +67,6 @@ const Index = () => {
                   <Gamepad2 className="w-10 h-10" />
                 </div>
                 <span className="font-black text-xl">Oyna</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('story')}
-                className="col-span-2 md:col-span-1 flex flex-col items-center gap-3 p-6 bg-purple text-purple-foreground rounded-[2.5rem] shadow-playful btn-bouncy border-b-8 border-purple-800/20"
-              >
-                <div className="bg-white/30 p-4 rounded-3xl">
-                  <BookOpen className="w-10 h-10" />
-                </div>
-                <span className="font-black text-xl">Anlat</span>
               </button>
             </div>
           </motion.div>

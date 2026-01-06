@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { speak, speakSuccess, speakTryAgain } from '@/utils/voiceFeedback';
+import { speak } from '@/utils/voiceFeedback';
+import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 import confetti from 'canvas-confetti';
 
 const ITEMS = ['🍎', '⭐️', '🚗', '🐱', '🍦', '🎈'];
@@ -18,11 +19,22 @@ const CountingGame = () => {
         setCount(newCount);
         setEmoji(newEmoji);
 
-        // Generate options including correct answer
+        // Generate options close to the correct answer (within ±2 range)
         const ops = new Set<number>();
         ops.add(newCount);
         while (ops.size < 3) {
-            ops.add(Math.floor(Math.random() * 9) + 1);
+            // Generate numbers within ±2 of correct answer, but stay in 1-7 range
+            const offset = Math.floor(Math.random() * 5) - 2; // -2 to +2
+            const option = Math.max(1, Math.min(7, newCount + offset));
+            if (option !== newCount) {
+                ops.add(option);
+            }
+        }
+        // If we couldn't get 3 unique options, add nearby numbers
+        if (ops.size < 3) {
+            for (let i = 1; i <= 7 && ops.size < 3; i++) {
+                ops.add(i);
+            }
         }
         setOptions(Array.from(ops).sort((a, b) => a - b));
 
@@ -35,15 +47,16 @@ const CountingGame = () => {
 
     const handleGuess = (guess: number) => {
         if (guess === count) {
+            playPopSound();
             confetti({
                 particleCount: 100,
                 spread: 70,
                 origin: { y: 0.6 }
             });
-            speakSuccess();
+            playSuccessSound();
             setTimeout(setupRound, 2000);
         } else {
-            speakTryAgain();
+            playErrorSound();
         }
     };
 

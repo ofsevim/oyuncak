@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
-import { speakInstruction, speakSuccess, speakTryAgain } from '@/utils/voiceFeedback';
+import { speakInstruction } from '@/utils/voiceFeedback';
+import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 
 const ANIMALS = ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁'];
 
@@ -39,13 +40,13 @@ const MemoryFlipGame = () => {
       const secondCard = cards.find(c => c.id === cardId);
 
       if (firstCard?.emoji === secondCard?.emoji) {
-        speakSuccess();
+        playPopSound(); playSuccessSound();
         setTimeout(() => {
           setCards(prev => prev.map(c => (c.id === first || c.id === second) ? { ...c, isMatched: true } : c));
           setFlippedCards([]); setIsChecking(false);
         }, 500);
       } else {
-        speakTryAgain();
+        playErrorSound();
         setTimeout(() => {
           setCards(prev => prev.map(c => (c.id === first || c.id === second) ? { ...c, isFlipped: false } : c));
           setFlippedCards([]); setIsChecking(false);

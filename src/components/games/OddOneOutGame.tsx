@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
-import { speakInstruction, speakSuccess, speakTryAgain } from '@/utils/voiceFeedback';
+import { speakInstruction } from '@/utils/voiceFeedback';
+import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 
 const ROUNDS = [
   { items: [{ id: '1', emoji: '🐕' }, { id: '2', emoji: '🐈' }, { id: '3', emoji: '🐰' }, { id: '4', emoji: '🚗' }], oddOne: '4', hint: 'Hangisi hayvan değil?' },
@@ -26,10 +27,10 @@ const OddOneOutGame = () => {
     if (selectedId) return;
     setSelectedId(itemId);
     if (itemId === round.oddOne) {
-      setIsCorrect(true); speakSuccess();
+      setIsCorrect(true); playPopSound(); playSuccessSound();
       setTimeout(() => { if (currentRound < ROUNDS.length - 1) setShowSuccess(true); else { setGameComplete(true); setShowSuccess(true); } }, 500);
     } else {
-      speakTryAgain(); setShake(true);
+      playErrorSound(); setShake(true);
       setTimeout(() => { setShake(false); setSelectedId(null); }, 600);
     }
   };

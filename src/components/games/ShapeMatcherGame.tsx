@@ -3,7 +3,8 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
-import { speakInstruction, speakSuccess, speakTryAgain } from '@/utils/voiceFeedback';
+import { speakInstruction } from '@/utils/voiceFeedback';
+import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 
 interface Shape {
   id: string;
@@ -32,7 +33,7 @@ const LEVELS = [
 
 const ShapeComponent = ({ type, color, size = 60, isShadow = false }: { type: string; color: string; size?: number; isShadow?: boolean }) => {
   const shadowStyle = isShadow ? { filter: 'brightness(0.3)' } : {};
-  
+
   switch (type) {
     case 'circle':
       return <div className="rounded-full" style={{ width: size, height: size, backgroundColor: color, ...shadowStyle }} />;
@@ -62,7 +63,8 @@ const ShapeMatcherGame = () => {
 
   const handleDrop = useCallback((targetShapeId: string) => {
     if (draggedShape && draggedShape.id === targetShapeId) {
-      speakSuccess();
+      playPopSound();
+      playSuccessSound();
       setMatchedShapes(prev => {
         const newMatched = [...prev, targetShapeId];
         if (newMatched.length === currentLevel.shapes.length) {
@@ -71,7 +73,7 @@ const ShapeMatcherGame = () => {
         }
         return newMatched;
       });
-    } else speakTryAgain();
+    } else playErrorSound();
     setDraggedShape(null);
   }, [draggedShape, currentLevel.shapes.length, level]);
 

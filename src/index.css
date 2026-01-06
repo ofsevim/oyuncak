@@ -129,6 +129,7 @@
 }
 
 @layer components {
+
   /* Floating bubbles animation */
   .bubble {
     @apply absolute rounded-full opacity-40 pointer-events-none;
@@ -190,15 +191,13 @@
 
   /* Rainbow gradient for magic brush */
   .rainbow-gradient {
-    background: linear-gradient(
-      90deg,
-      hsl(0, 85%, 65%),
-      hsl(45, 95%, 65%),
-      hsl(120, 70%, 55%),
-      hsl(200, 85%, 65%),
-      hsl(280, 60%, 70%),
-      hsl(350, 80%, 70%)
-    );
+    background: linear-gradient(90deg,
+        hsl(0, 85%, 65%),
+        hsl(45, 95%, 65%),
+        hsl(120, 70%, 55%),
+        hsl(200, 85%, 65%),
+        hsl(280, 60%, 70%),
+        hsl(350, 80%, 70%));
   }
 
   /* Canvas area styling */
@@ -217,6 +216,7 @@
 }
 
 @layer utilities {
+
   /* Wiggle animation for icons */
   .animate-wiggle {
     animation: wiggle 0.5s ease-in-out;
@@ -231,33 +231,59 @@
   .animate-pop-in {
     animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
+
+  /* Float up animation for active nav icons */
+  .animate-float-up {
+    animation: float-up 0.3s ease-out forwards;
+  }
+
+  /* Shake animation for wrong answers */
+  .animate-shake {
+    animation: shake 0.4s ease-in-out;
+  }
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0) translateX(0) rotate(0deg);
   }
+
   25% {
     transform: translateY(-20px) translateX(10px) rotate(5deg);
   }
+
   50% {
     transform: translateY(-10px) translateX(-5px) rotate(-3deg);
   }
+
   75% {
     transform: translateY(-25px) translateX(15px) rotate(3deg);
   }
 }
 
 @keyframes wiggle {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-10deg); }
-  75% { transform: rotate(10deg); }
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-10deg);
+  }
+
+  75% {
+    transform: rotate(10deg);
+  }
 }
 
 @keyframes glow {
   from {
     box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
   }
+
   to {
     box-shadow: 0 0 40px hsl(var(--primary) / 0.6);
   }
@@ -268,8 +294,39 @@
     opacity: 0;
     transform: scale(0.5);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes float-up {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-8px);
+  }
+
+  50% {
+    transform: translateX(8px);
+  }
+
+  75% {
+    transform: translateX(-4px);
   }
 }

@@ -1,10 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Pencil, Gamepad2, Home, BookOpen } from 'lucide-react';
+import { Pencil, Gamepad2, Home } from 'lucide-react';
 import { playPopSound } from '@/utils/soundEffects';
 
-type Tab = 'home' | 'draw' | 'games' | 'story';
+type Tab = 'home' | 'draw' | 'games';
 
 interface NavigationProps {
   activeTab: Tab;
@@ -20,7 +20,6 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
     { id: 'home' as Tab, icon: Home, label: 'Ana Sayfa', color: 'bg-primary' },
     { id: 'draw' as Tab, icon: Pencil, label: 'Çiz', color: 'bg-accent' },
     { id: 'games' as Tab, icon: Gamepad2, label: 'Oyunlar', color: 'bg-secondary' },
-    { id: 'story' as Tab, icon: BookOpen, label: 'Hikaye', color: 'bg-purple' },
   ];
 
   return (

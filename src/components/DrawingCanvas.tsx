@@ -66,6 +66,7 @@ const DrawingCanvas = () => {
       canvas.dispose();
       window.removeEventListener('resize', handleResize);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -148,6 +149,7 @@ const DrawingCanvas = () => {
     fabricCanvas.add(sticker);
     fabricCanvas.setActiveObject(sticker);
     fabricCanvas.renderAll();
+    setShowStickers(false); // Çıkartma penceresini kapat
     speakInstruction('Harika bir çıkartma!');
   };
 
@@ -166,7 +168,7 @@ const DrawingCanvas = () => {
 
   return (
     <motion.div
-      className="flex flex-col items-center gap-4 p-4 pb-32"
+      className="flex flex-col items-center gap-4 p-4 pb-40"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >

@@ -10,7 +10,7 @@ import AnimalSoundsGame from './AnimalSoundsGame';
 import CountingGame from './CountingGame';
 import ColoringBookGame from './ColoringBookGame';
 import BalloonPopGame from './BalloonPopGame';
-import { MousePointer2, Music, Hash, Palette, Wind } from 'lucide-react';
+import { Music, Hash, Palette, Wind } from 'lucide-react';
 
 type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'sounds' | 'counting' | 'coloring' | 'balloons';
 
