@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { speakInstruction } from '@/utils/voiceFeedback';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
@@ -66,35 +66,14 @@ const ShapeComponent = ({ type, color, size = 60, isShadow = false }: { type: st
   }
 };
 
-const DraggableShape = ({ shape, onMatch }: { shape: Shape; onMatch: (id: string, x: number, y: number) => void }) => {
-  const dragRef = useRef<HTMLDivElement>(null);
-
-  return (
-    <motion.div
-      ref={dragRef}
-      drag
-      dragConstraints={{ left: -500, right: 500, top: -500, bottom: 500 }}
-      dragElastic={0.1}
-      whileDrag={{ scale: 1.2, zIndex: 50 }}
-      onDragEnd={(event, info) => {
-        // info.point.x ve info.point.y ekran koordinatlarını verir
-        onMatch(shape.id, info.point.x, info.point.y);
-      }}
-      className="cursor-grab active:cursor-grabbing p-3 bg-white rounded-3xl shadow-playful touch-none"
-    >
-      <ShapeComponent type={shape.type} color={shape.color} />
-    </motion.div>
-  );
-};
-
 const ShapeMatcherGame = () => {
   const [level, setLevel] = useState(0);
   const [matchedShapes, setMatchedShapes] = useState<string[]>([]);
+  const [selectedShape, setSelectedShape] = useState<Shape | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [shuffledShapes, setShuffledShapes] = useState<Shape[]>([]);
   const [shuffledTargets, setShuffledTargets] = useState<Shape[]>([]);
-  const targetsRef = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const currentLevel = LEVELS[level];
 
@@ -104,29 +83,34 @@ const ShapeMatcherGame = () => {
     setShuffledShapes(shuffleArray(shapes));
     setShuffledTargets(shuffleArray(shapes));
     setMatchedShapes([]);
-    speakInstruction("Şekilleri gölgelerine taşı!");
+    setSelectedShape(null);
+    speakInstruction("Önce bir şekle tıkla, sonra gölgesine tıkla!");
   }, []);
 
   useEffect(() => {
     initLevel(level);
   }, [level, initLevel]);
 
-  const handleMatchAttempt = useCallback((shapeId: string, x: number, y: number) => {
-    const targetElement = targetsRef.current[shapeId];
-    if (!targetElement) return;
+  const handleShapeClick = (shape: Shape) => {
+    if (matchedShapes.includes(shape.id)) return;
+    playPopSound();
+    setSelectedShape(shape);
+  };
 
-    const rect = targetElement.getBoundingClientRect();
-    const isOverTarget = 
-      x >= rect.left && 
-      x <= rect.right && 
-      y >= rect.top && 
-      y <= rect.bottom;
+  const handleTargetClick = (targetShape: Shape) => {
+    if (matchedShapes.includes(targetShape.id)) return;
+    
+    if (!selectedShape) {
+      playErrorSound();
+      speakInstruction("Önce bir şekil seç!");
+      return;
+    }
 
-    if (isOverTarget) {
+    if (selectedShape.id === targetShape.id) {
       playPopSound();
       playSuccessSound();
       setMatchedShapes(prev => {
-        const newMatched = [...prev, shapeId];
+        const newMatched = [...prev, targetShape.id];
         if (newMatched.length === currentLevel.shapes.length) {
           if (level < LEVELS.length - 1) {
             setTimeout(() => setShowSuccess(true), 500);
@@ -137,20 +121,12 @@ const ShapeMatcherGame = () => {
         }
         return newMatched;
       });
+      setSelectedShape(null);
     } else {
-      // Yanlış hedefe veya boşluğa bırakıldıysa hata sesi
-      // Not: Tüm hedefleri kontrol edip yanlış bir hedefe bırakıp bırakmadığını da anlayabiliriz
-      const hitAnyTarget = Object.values(targetsRef.current).some(el => {
-        if (!el) return false;
-        const r = el.getBoundingClientRect();
-        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-      });
-      
-      if (hitAnyTarget) {
-        playErrorSound();
-      }
+      playErrorSound();
+      speakInstruction("Yanlış eşleşme, tekrar dene!");
     }
-  }, [currentLevel.shapes.length, level]);
+  };
 
   const handleNextLevel = () => {
     setShowSuccess(false);
@@ -167,50 +143,76 @@ const ShapeMatcherGame = () => {
   };
 
   return (
-    <motion.div className="flex flex-col items-center gap-8 p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.div className="flex flex-col items-center gap-8 p-4 pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <div className="flex items-center gap-4">
         <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">🔷 Şekil Eşleştirme</h2>
-        <span className="px-4 py-1 bg-primary text-white rounded-full text-sm font-black shadow-sm">Seviye {level + 1}</span>
+        <span className="px-4 py-2 bg-primary text-white rounded-full text-sm font-black shadow-sm">Seviye {level + 1}</span>
       </div>
       
-      <p className="text-lg text-muted-foreground text-center font-bold bg-white/50 px-6 py-2 rounded-full">
-        Şekilleri sürükle ve gölgelerin üzerine bırak!
-      </p>
+      <div className="text-center space-y-2">
+        <p className="text-lg text-muted-foreground font-bold bg-white/50 px-6 py-2 rounded-full">
+          {selectedShape ? '✅ Şimdi gölgesine tıkla!' : '👆 Önce bir şekil seç!'}
+        </p>
+      </div>
 
-      {/* Drag Area */}
-      <div className="flex flex-wrap justify-center gap-6 min-h-[120px] items-center w-full max-w-2xl p-4">
-        {shuffledShapes.map((shape) => !matchedShapes.includes(shape.id) && (
-          <DraggableShape 
-            key={`${level}-${shape.id}`} 
-            shape={shape} 
-            onMatch={handleMatchAttempt} 
-          />
-        ))}
+      {/* Shapes Area */}
+      <div className="w-full max-w-2xl">
+        <p className="text-center font-black text-foreground mb-3">Şekiller</p>
+        <div className="flex flex-wrap justify-center gap-6 p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-[2rem] border-4 border-blue-200/50">
+          <AnimatePresence>
+            {shuffledShapes.map((shape) => !matchedShapes.includes(shape.id) && (
+              <motion.button
+                key={`${level}-shape-${shape.id}`}
+                onClick={() => handleShapeClick(shape)}
+                className={`p-4 rounded-3xl transition-all duration-200 transform hover:scale-110 active:scale-95 ${
+                  selectedShape?.id === shape.id 
+                    ? 'bg-white shadow-2xl ring-4 ring-primary scale-110' 
+                    : 'bg-white shadow-playful hover:shadow-xl'
+                }`}
+                whileHover={{ y: -5 }}
+                whileTap={{ scale: 0.95 }}
+                layout
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+              >
+                <ShapeComponent type={shape.type} color={shape.color} size={65} />
+              </motion.button>
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Target Area */}
-      <div className="flex flex-wrap justify-center gap-8 p-10 bg-muted/30 rounded-[3rem] border-4 border-dashed border-muted-foreground/20 w-full max-w-2xl">
-        {shuffledTargets.map((shape) => (
-          <div 
-            key={shape.id} 
-            ref={el => targetsRef.current[shape.id] = el}
-            className={`p-4 rounded-[2rem] transition-all duration-300 ${
-              matchedShapes.includes(shape.id) 
-                ? 'bg-success/20 border-success shadow-inner scale-110' 
-                : 'bg-white/40 border-transparent'
-            } border-4`}
-          >
-            <ShapeComponent 
-              type={shape.type} 
-              color={shape.color} 
-              isShadow={!matchedShapes.includes(shape.id)} 
-            />
-          </div>
-        ))}
+      <div className="w-full max-w-2xl">
+        <p className="text-center font-black text-foreground mb-3">Gölgeler</p>
+        <div className="flex flex-wrap justify-center gap-8 p-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2rem] border-4 border-amber-200/50">
+          {shuffledTargets.map((shape) => (
+            <motion.button
+              key={`${level}-target-${shape.id}`}
+              onClick={() => handleTargetClick(shape)}
+              disabled={matchedShapes.includes(shape.id)}
+              className={`p-4 rounded-3xl transition-all duration-300 ${
+                matchedShapes.includes(shape.id) 
+                  ? 'bg-success/30 border-success shadow-inner scale-105 cursor-default' 
+                  : 'bg-white/60 border-transparent hover:bg-white hover:scale-105 cursor-pointer'
+              } border-4`}
+              whileHover={!matchedShapes.includes(shape.id) ? { scale: 1.1 } : {}}
+              whileTap={!matchedShapes.includes(shape.id) ? { scale: 0.95 } : {}}
+            >
+              <ShapeComponent 
+                type={shape.type} 
+                color={shape.color} 
+                size={65}
+                isShadow={!matchedShapes.includes(shape.id)} 
+              />
+            </motion.button>
+          ))}
+        </div>
       </div>
 
       <button onClick={handleRestart} className="px-8 py-4 bg-secondary text-secondary-foreground rounded-full font-black text-lg btn-bouncy shadow-lg border-b-4 border-yellow-600/20">
-        Yeniden Başla
+        🔄 Yeniden Başla
       </button>
 
       <SuccessPopup 
