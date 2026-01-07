@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, ArrowRight, RotateCcw, Volume2 } from 'lucide-react';
-import { speak } from '@/utils/voiceFeedback';
+import { speak, speakInstruction } from '@/utils/voiceFeedback';
 
 interface StoryStep {
     id: number;
@@ -74,14 +74,25 @@ const StoryTime = () => {
     const [currentStepId, setCurrentStepId] = useState(1);
     const currentStep = STORY[currentStepId];
 
+    // İlk açılışta hikayeyi oku
+    useEffect(() => {
+        speakInstruction(STORY[1].text);
+    }, []);
+
     const handleOptionClick = (nextStep: number) => {
         setCurrentStepId(nextStep);
         const nextText = STORY[nextStep].text;
-        speak(nextText);
+        // Küçük bir gecikme ile oku ki geçiş tamamlanmış olsun
+        setTimeout(() => speak(nextText), 100);
     };
 
     const readStory = () => {
         speak(currentStep.text);
+    };
+
+    const handleRestart = () => {
+        setCurrentStepId(1);
+        speak(STORY[1].text);
     };
 
     return (
@@ -141,7 +152,7 @@ const StoryTime = () => {
 
             {currentStepId !== 1 && (
                 <button
-                    onClick={() => setCurrentStepId(1)}
+                    onClick={handleRestart}
                     className="flex items-center gap-2 text-muted-foreground font-bold hover:text-foreground transition-colors"
                 >
                     <RotateCcw className="w-5 h-5" />

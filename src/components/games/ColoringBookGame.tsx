@@ -95,8 +95,30 @@ const ColoringBookGame = () => {
         setFabricCanvas(canvas);
         loadPage(canvas, activePage);
 
+        const handleResize = () => {
+            if (!containerRef.current) return;
+            const newWidth = Math.min(containerRef.current.clientWidth - 32, 550);
+            canvas.setDimensions({ width: newWidth, height });
+            // Sayfayı yeniden merkezle
+            const objs = canvas.getObjects();
+            const template = objs.find(o => o instanceof FabricPath);
+            if (template) {
+                const scale = Math.min((newWidth - 120) / template.width!, (height - 120) / template.height!);
+                template.set({
+                    scaleX: scale,
+                    scaleY: scale,
+                    left: (newWidth - template.width! * scale) / 2,
+                    top: (height - template.height! * scale) / 2
+                });
+                canvas.renderAll();
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+
         return () => {
             canvas.dispose();
+            window.removeEventListener('resize', handleResize);
         };
     }, []);
 
@@ -205,10 +227,39 @@ const ColoringBookGame = () => {
                     </div>
 
                     <div className="flex flex-wrap justify-center gap-3">
-                        <button onClick={() => { playPopSound(); fabricCanvas?.clear(); loadPage(fabricCanvas!, activePage); }} className="flex items-center gap-2 px-6 py-4 bg-muted text-muted-foreground rounded-full font-bold hover:bg-destructive/10 hover:text-destructive transition-all">
+                        <button 
+                            onClick={() => { 
+                                if (!fabricCanvas) return;
+                                playPopSound(); 
+                                // Sadece çizimleri temizle, şablonu koru
+                                const objects = fabricCanvas.getObjects();
+                                objects.forEach(obj => {
+                                    if (!(obj instanceof FabricPath)) {
+                                        fabricCanvas.remove(obj);
+                                    }
+                                });
+                                fabricCanvas.renderAll();
+                            }} 
+                            className="flex items-center gap-2 px-6 py-4 bg-muted text-muted-foreground rounded-full font-bold hover:bg-destructive/10 hover:text-destructive transition-all"
+                        >
                             <Trash2 className="w-6 h-6" /> <span className="hidden sm:inline">Temizle</span>
                         </button>
-                        <button onClick={() => { playPopSound(); const objs = fabricCanvas?.getObjects(); if (objs && objs.length > 1) fabricCanvas?.remove(objs[objs.length - 1]); }} className="flex items-center gap-2 px-6 py-4 bg-muted text-muted-foreground rounded-full font-bold">
+                        <button 
+                            onClick={() => { 
+                                if (!fabricCanvas) return;
+                                playPopSound(); 
+                                const objs = fabricCanvas.getObjects();
+                                // En son eklenen objeyi bul (şablon değilse sil)
+                                if (objs.length > 0) {
+                                    const lastObj = objs[objs.length - 1];
+                                    if (!(lastObj instanceof FabricPath)) {
+                                        fabricCanvas.remove(lastObj);
+                                        fabricCanvas.renderAll();
+                                    }
+                                }
+                            }} 
+                            className="flex items-center gap-2 px-6 py-4 bg-muted text-muted-foreground rounded-full font-bold"
+                        >
                             <Undo className="w-6 h-6" /> <span className="hidden sm:inline">Geri</span>
                         </button>
                         <button onClick={handleSave} className="flex items-center gap-3 px-10 py-4 bg-success text-white rounded-full font-black text-xl shadow-lg btn-bouncy">

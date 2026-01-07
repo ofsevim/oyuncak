@@ -56,8 +56,10 @@ const DrawingCanvas = () => {
     speakInstruction('Çizim yapmaya başla!');
 
     const handleResize = () => {
-      const newWidth = Math.min(container.clientWidth - 32, 600);
+      if (!containerRef.current) return;
+      const newWidth = Math.min(containerRef.current.clientWidth - 32, 600);
       canvas.setDimensions({ width: newWidth, height });
+      canvas.renderAll();
     };
 
     window.addEventListener('resize', handleResize);
