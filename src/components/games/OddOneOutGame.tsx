@@ -1,9 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
+
+// Fisher-Yates shuffle helper
+const shuffle = <T,>(array: T[]): T[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
 
 const ROUNDS = [
   { items: [{ id: '1', emoji: '🐕' }, { id: '2', emoji: '🐈' }, { id: '3', emoji: '🐰' }, { id: '4', emoji: '🚗' }], oddOne: '4', hint: 'Hangisi hayvan değil?' },
@@ -37,18 +47,15 @@ const OddOneOutGame = () => {
   const [shake, setShake] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [roundItems, setRoundItems] = useState<{ id: string; emoji: string }[]>([]);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // Fisher-Yates shuffle helper
-  const shuffle = <T,>(array: T[]): T[] => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
+  const clearAllTimeouts = () => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
   };
 
-  const initGame = () => {
+  const initGame = useCallback(() => {
+    clearAllTimeouts();
     const newShuffledRounds = shuffle(ROUNDS);
     setShuffledRounds(newShuffledRounds);
     setCurrentRoundIndex(0);
@@ -57,11 +64,22 @@ const OddOneOutGame = () => {
     setGameComplete(false);
     setShowSuccess(false);
     // İlk raundu ayarla
-    setRoundItems(shuffle(newShuffledRounds[0].items));
-  };
+    if (newShuffledRounds.length > 0) {
+      setRoundItems(shuffle(newShuffledRounds[0].items));
+    } else {
+      setRoundItems([]);
+    }
+  }, []);
 
   useEffect(() => {
     initGame();
+  }, [initGame]);
+
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current = [];
+    };
   }, []);
 
   const round = shuffledRounds[currentRoundIndex];
@@ -77,13 +95,15 @@ const OddOneOutGame = () => {
     setSelectedId(itemId);
     if (itemId === round.oddOne) {
       setIsCorrect(true); playPopSound(); playSuccessSound();
-      setTimeout(() => { 
+      const t = setTimeout(() => { 
         if (currentRoundIndex < shuffledRounds.length - 1) setShowSuccess(true); 
         else { setGameComplete(true); setShowSuccess(true); } 
       }, 500);
+      timeoutsRef.current.push(t);
     } else {
       playErrorSound(); setShake(true);
-      setTimeout(() => { setShake(false); setSelectedId(null); }, 600);
+      const t = setTimeout(() => { setShake(false); setSelectedId(null); }, 600);
+      timeoutsRef.current.push(t);
     }
   };
 

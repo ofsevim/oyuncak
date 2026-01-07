@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { speak } from '@/utils/voiceFeedback';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 import confetti from 'canvas-confetti';
 
@@ -38,8 +37,9 @@ const BalloonPopGame = () => {
     const [timeLeft, setTimeLeft] = useState(GAME_TIME);
     const [gamePhase, setGamePhase] = useState<GamePhase>('start');
     const [round, setRound] = useState(1);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const balloonSpawnRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const balloonSpawnRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const nextRoundTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Tek bir balon oluştur - sway değerleri burada sabitlenir
     const createBalloon = useCallback((color: typeof BALLOON_COLORS[0], delay: number = 0): Balloon => {
@@ -81,7 +81,6 @@ const BalloonPopGame = () => {
         const nextColor = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
         setTargetColor(nextColor);
         setBalloons(generateBalloons(nextColor));
-        speak(`Oyun başlıyor! ${nextColor.name} balonları patlat!`);
     }, [generateBalloons]);
 
     const startNewRound = useCallback(() => {
@@ -100,8 +99,14 @@ const BalloonPopGame = () => {
             return [...currentBalloons, ...newBalloons];
         });
         setRound(r => r + 1);
-        speak(`${nextColor.name} balonları patlat!`);
     }, [targetColor, createBalloon]);
+
+    // Unmount cleanup (özellikle timeout'lar için)
+    useEffect(() => {
+        return () => {
+            if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
+        };
+    }, []);
 
     // Timer
     useEffect(() => {
@@ -187,7 +192,8 @@ const BalloonPopGame = () => {
                         spread: 60,
                         origin: { y: 0.7 } 
                     });
-                    setTimeout(startNewRound, 1000);
+                    if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
+                    nextRoundTimeoutRef.current = setTimeout(startNewRound, 1000);
                 }
                 return newScore;
             });

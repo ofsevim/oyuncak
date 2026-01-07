@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
-import { speak } from '@/utils/voiceFeedback';
 
 const GAME_TIME = 30;
 const HOLES_COUNT = 9;
@@ -22,8 +21,8 @@ const WhackAMoleGame = () => {
     const [gamePhase, setGamePhase] = useState<'start' | 'playing' | 'ended'>('start');
     const [showSuccess, setShowSuccess] = useState(false);
 
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const moleRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const moleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const spawnMole = useCallback(() => {
         if (gamePhase !== 'playing') return;
@@ -67,7 +66,6 @@ const WhackAMoleGame = () => {
         setTimeLeft(GAME_TIME);
         setGamePhase('playing');
         setShowSuccess(false);
-        speak('Hadi köstebekleri yakalayalım!');
     }, []);
 
     useEffect(() => {

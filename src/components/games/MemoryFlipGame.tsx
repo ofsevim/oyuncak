@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
-import { speakInstruction } from '@/utils/voiceFeedback';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 
 const ALL_EMOJIS = [
@@ -21,8 +20,19 @@ const MemoryFlipGame = () => {
   const [moves, setMoves] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearAllTimeouts = useCallback(() => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+  }, []);
+
+  useEffect(() => {
+    return () => clearAllTimeouts();
+  }, [clearAllTimeouts]);
 
   const initializeGame = useCallback(() => {
+    clearAllTimeouts();
     const totalCards = gridSize * gridSize;
     const pairCount = Math.floor(totalCards / 2);
     
@@ -30,7 +40,7 @@ const MemoryFlipGame = () => {
     const shuffledAllEmojis = [...ALL_EMOJIS].sort(() => Math.random() - 0.5);
     const selectedEmojis = shuffledAllEmojis.slice(0, pairCount);
 
-    let gameEmojis = [...selectedEmojis, ...selectedEmojis];
+    const gameEmojis = [...selectedEmojis, ...selectedEmojis];
 
     // Tek sayıda kart varsa (3x3, 5x5), bir adet '⭐' ekle (eşsiz kart)
     if (totalCards % 2 !== 0) {
@@ -55,7 +65,7 @@ const MemoryFlipGame = () => {
     setMoves(0);
     setShowSuccess(false);
     setIsChecking(false);
-  }, [gridSize]);
+  }, [gridSize, clearAllTimeouts]);
 
   useEffect(() => { initializeGame(); }, [initializeGame]);
 
@@ -88,24 +98,31 @@ const MemoryFlipGame = () => {
       if (firstCard && secondCard && firstCard.emoji === secondCard.emoji) {
         playPopSound();
         playSuccessSound();
-        setTimeout(() => {
+        const t = setTimeout(() => {
           setCards(prev => prev.map(c => (c.id === firstId || c.id === secondId) ? { ...c, isMatched: true } : c));
           setFlippedCards([]);
           setIsChecking(false);
         }, 500);
+        timeoutsRef.current.push(t);
       } else {
         playErrorSound();
-        setTimeout(() => {
+        const t = setTimeout(() => {
           setCards(prev => prev.map(c => (c.id === firstId || c.id === secondId) ? { ...c, isFlipped: false } : c));
           setFlippedCards([]);
           setIsChecking(false);
         }, 1000);
+        timeoutsRef.current.push(t);
       }
     }
   };
 
   const allMatched = cards.length > 0 && cards.every(c => c.isMatched);
-  useEffect(() => { if (allMatched && !showSuccess) setTimeout(() => setShowSuccess(true), 500); }, [allMatched, showSuccess]);
+  useEffect(() => {
+    if (!allMatched || showSuccess) return;
+    const t = setTimeout(() => setShowSuccess(true), 500);
+    timeoutsRef.current.push(t);
+    return () => clearTimeout(t);
+  }, [allMatched, showSuccess]);
 
   return (
     <motion.div className="flex flex-col items-center gap-6 p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>

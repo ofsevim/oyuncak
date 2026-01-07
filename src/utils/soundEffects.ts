@@ -1,15 +1,23 @@
 // Simple procedural sound effects using Web Audio API
 let audioCtx: AudioContext | null = null;
 
-const getAudioCtx = () => {
+type WebkitAudioContextWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+
+const getAudioCtx = (): AudioContext | null => {
+    // SSR / test ortamlarında sessizce no-op
+    if (typeof window === 'undefined') return null;
+
     if (!audioCtx) {
-        audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const Ctx = window.AudioContext || (window as WebkitAudioContextWindow).webkitAudioContext;
+        if (!Ctx) return null;
+        audioCtx = new Ctx();
     }
     return audioCtx;
 };
 
 export const playPopSound = () => {
     const ctx = getAudioCtx();
+    if (!ctx) return;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
@@ -29,6 +37,7 @@ export const playPopSound = () => {
 
 export const playSuccessSound = () => {
     const ctx = getAudioCtx();
+    if (!ctx) return;
     const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
 
     notes.forEach((freq, i) => {
@@ -51,6 +60,7 @@ export const playSuccessSound = () => {
 
 export const playErrorSound = () => {
     const ctx = getAudioCtx();
+    if (!ctx) return;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 

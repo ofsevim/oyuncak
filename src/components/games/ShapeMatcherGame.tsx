@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
@@ -107,6 +107,7 @@ const ShapeMatcherGame = () => {
   const [gameComplete, setGameComplete] = useState(false);
   const [shuffledShapes, setShuffledShapes] = useState<Shape[]>([]);
   const [shuffledTargets, setShuffledTargets] = useState<Shape[]>([]);
+  const showSuccessTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentLevel = LEVELS[level];
 
@@ -122,6 +123,12 @@ const ShapeMatcherGame = () => {
   useEffect(() => {
     initLevel(level);
   }, [level, initLevel]);
+
+  useEffect(() => {
+    return () => {
+      if (showSuccessTimeoutRef.current) clearTimeout(showSuccessTimeoutRef.current);
+    };
+  }, []);
 
   const handleShapeClick = (shape: Shape, e?: React.MouseEvent | React.TouchEvent) => {
     e?.preventDefault(); // Prevent double firing on mobile
@@ -146,10 +153,12 @@ const ShapeMatcherGame = () => {
         const newMatched = [...prev, targetShape.id];
         if (newMatched.length === currentLevel.shapes.length) {
           if (level < LEVELS.length - 1) {
-            setTimeout(() => setShowSuccess(true), 500);
+            if (showSuccessTimeoutRef.current) clearTimeout(showSuccessTimeoutRef.current);
+            showSuccessTimeoutRef.current = setTimeout(() => setShowSuccess(true), 500);
           } else { 
             setGameComplete(true); 
-            setTimeout(() => setShowSuccess(true), 500); 
+            if (showSuccessTimeoutRef.current) clearTimeout(showSuccessTimeoutRef.current);
+            showSuccessTimeoutRef.current = setTimeout(() => setShowSuccess(true), 500);
           }
         }
         return newMatched;
@@ -171,6 +180,7 @@ const ShapeMatcherGame = () => {
     setLevel(0);
     setGameComplete(false);
     setShowSuccess(false);
+    if (showSuccessTimeoutRef.current) clearTimeout(showSuccessTimeoutRef.current);
     initLevel(0);
   };
 

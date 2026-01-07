@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Path as FabricPath } from 'fabric';
 import { motion } from 'framer-motion';
 import { Trash2, Download } from 'lucide-react';
@@ -119,39 +119,14 @@ const ColoringBookGame = () => {
     const [activeColor, setActiveColor] = useState(COLORS[2].value);
     const [activePage, setActivePage] = useState(0);
     const coloredRegionsRef = useRef<Map<string, string>>(new Map());
+    const activeColorRef = useRef(activeColor);
 
+    // Seçili rengi event handler'larda stale olmadan kullanabilmek için ref'e yaz
     useEffect(() => {
-        if (!canvasRef.current || !containerRef.current) return;
+        activeColorRef.current = activeColor;
+    }, [activeColor]);
 
-        const width = Math.min(containerRef.current.clientWidth - 32, 550);
-        const height = 450;
-
-        const canvas = new FabricCanvas(canvasRef.current, {
-            width,
-            height,
-            backgroundColor: '#ffffff',
-            selection: false,
-        });
-
-        setFabricCanvas(canvas);
-        loadPage(canvas, activePage);
-
-        const handleResize = () => {
-            if (!containerRef.current) return;
-            const newWidth = Math.min(containerRef.current.clientWidth - 32, 550);
-            canvas.setDimensions({ width: newWidth, height });
-            canvas.renderAll();
-        };
-
-        window.addEventListener('resize', handleResize);
-
-        return () => {
-            canvas.dispose();
-            window.removeEventListener('resize', handleResize);
-        };
-    }, []);
-
-    const loadPage = (canvas: FabricCanvas, pageIndex: number) => {
+    const loadPage = useCallback((canvas: FabricCanvas, pageIndex: number) => {
         canvas.clear();
         canvas.backgroundColor = '#ffffff';
         coloredRegionsRef.current.clear();
@@ -203,11 +178,12 @@ const ColoringBookGame = () => {
                 });
             }
 
-            // Tıklama eventi
+            // Tıklama -> seçili renkle bölgeyi doldur (taşma yok)
             path.on('mousedown', () => {
                 playPopSound();
-                path.set({ fill: activeColor });
-                coloredRegionsRef.current.set(`${pageIndex}-${index}`, activeColor);
+                const fillColor = activeColorRef.current;
+                path.set({ fill: fillColor });
+                coloredRegionsRef.current.set(`${pageIndex}-${index}`, fillColor);
                 canvas.renderAll();
             });
 
@@ -215,13 +191,45 @@ const ColoringBookGame = () => {
         });
 
         canvas.renderAll();
-    };
+    }, []);
+
+    useEffect(() => {
+        if (!canvasRef.current || !containerRef.current) return;
+
+        const width = Math.min(containerRef.current.clientWidth - 32, 550);
+        const height = 450;
+
+        const canvas = new FabricCanvas(canvasRef.current, {
+            width,
+            height,
+            backgroundColor: '#ffffff',
+            selection: false,
+        });
+
+        setFabricCanvas(canvas);
+        // İlk yükleme: sayfa 0
+        loadPage(canvas, 0);
+
+        const handleResize = () => {
+            if (!containerRef.current) return;
+            const newWidth = Math.min(containerRef.current.clientWidth - 32, 550);
+            canvas.setDimensions({ width: newWidth, height });
+            canvas.renderAll();
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            canvas.dispose();
+            window.removeEventListener('resize', handleResize);
+        };
+    }, [loadPage]);
 
     useEffect(() => {
         if (fabricCanvas) {
             loadPage(fabricCanvas, activePage);
         }
-    }, [activePage, fabricCanvas]);
+    }, [activePage, fabricCanvas, loadPage]);
 
     const handleClear = () => {
         if (!fabricCanvas) return;

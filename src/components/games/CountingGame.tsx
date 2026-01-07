@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { speak } from '@/utils/voiceFeedback';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 import confetti from 'canvas-confetti';
 
@@ -12,8 +11,9 @@ const CountingGame = () => {
     const [count, setCount] = useState(1);
     const [emoji, setEmoji] = useState('🍎');
     const [options, setOptions] = useState<number[]>([]);
+    const nextRoundTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const setupRound = () => {
+    const setupRound = useCallback(() => {
         // 1 ile 10 arasında rastgele bir sayı seç (eskiden 1-5 idi)
         const newCount = Math.floor(Math.random() * 10) + 1;
         const newEmoji = ITEMS[Math.floor(Math.random() * ITEMS.length)];
@@ -41,12 +41,14 @@ const CountingGame = () => {
         }
         
         setOptions(Array.from(ops).sort((a, b) => a - b));
-        speak(`Burada kaç tane ${newEmoji} var? Hadi sayalım!`);
-    };
+    }, []);
 
     useEffect(() => {
         setupRound();
-    }, []);
+        return () => {
+            if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
+        };
+    }, [setupRound]);
 
     const handleGuess = (guess: number) => {
         if (guess === count) {
@@ -57,7 +59,8 @@ const CountingGame = () => {
                 origin: { y: 0.6 }
             });
             playSuccessSound();
-            setTimeout(setupRound, 2000);
+            if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
+            nextRoundTimeoutRef.current = setTimeout(setupRound, 2000);
         } else {
             playErrorSound();
         }
