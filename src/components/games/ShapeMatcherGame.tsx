@@ -91,13 +91,15 @@ const ShapeMatcherGame = () => {
     initLevel(level);
   }, [level, initLevel]);
 
-  const handleShapeClick = (shape: Shape) => {
+  const handleShapeClick = (shape: Shape, e?: React.MouseEvent | React.TouchEvent) => {
+    e?.preventDefault(); // Prevent double firing on mobile
     if (matchedShapes.includes(shape.id)) return;
     playPopSound();
     setSelectedShape(shape);
   };
 
-  const handleTargetClick = (targetShape: Shape) => {
+  const handleTargetClick = (targetShape: Shape, e?: React.MouseEvent | React.TouchEvent) => {
+    e?.preventDefault(); // Prevent double firing on mobile
     if (matchedShapes.includes(targetShape.id)) return;
     
     if (!selectedShape) {
@@ -158,25 +160,31 @@ const ShapeMatcherGame = () => {
       {/* Shapes Area */}
       <div className="w-full max-w-2xl">
         <p className="text-center font-black text-foreground mb-3">Şekiller</p>
-        <div className="flex flex-wrap justify-center gap-6 p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-[2rem] border-4 border-blue-200/50">
+        <div className="flex flex-wrap justify-center gap-4 md:gap-6 p-4 md:p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-[2rem] border-4 border-blue-200/50">
           <AnimatePresence>
             {shuffledShapes.map((shape) => !matchedShapes.includes(shape.id) && (
               <motion.button
                 key={`${level}-shape-${shape.id}`}
-                onClick={() => handleShapeClick(shape)}
-                className={`p-4 rounded-3xl transition-all duration-200 transform hover:scale-110 active:scale-95 ${
+                onClick={(e) => handleShapeClick(shape, e)}
+                onTouchEnd={(e) => handleShapeClick(shape, e)}
+                type="button"
+                aria-label={`${shape.type} şeklini seç`}
+                className={`p-3 md:p-4 rounded-3xl transition-all duration-200 touch-manipulation select-none ${
                   selectedShape?.id === shape.id 
-                    ? 'bg-white shadow-2xl ring-4 ring-primary scale-110' 
-                    : 'bg-white shadow-playful hover:shadow-xl'
+                    ? 'bg-white shadow-2xl ring-4 ring-primary scale-105 md:scale-110' 
+                    : 'bg-white shadow-playful active:shadow-xl'
                 }`}
-                whileHover={{ y: -5 }}
+                style={{ 
+                  WebkitTapHighlightColor: 'transparent',
+                  touchAction: 'manipulation'
+                }}
                 whileTap={{ scale: 0.95 }}
                 layout
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
               >
-                <ShapeComponent type={shape.type} color={shape.color} size={65} />
+                <ShapeComponent type={shape.type} color={shape.color} size={60} />
               </motion.button>
             ))}
           </AnimatePresence>
@@ -186,24 +194,30 @@ const ShapeMatcherGame = () => {
       {/* Target Area */}
       <div className="w-full max-w-2xl">
         <p className="text-center font-black text-foreground mb-3">Gölgeler</p>
-        <div className="flex flex-wrap justify-center gap-8 p-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2rem] border-4 border-amber-200/50">
+        <div className="flex flex-wrap justify-center gap-6 md:gap-8 p-6 md:p-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2rem] border-4 border-amber-200/50">
           {shuffledTargets.map((shape) => (
             <motion.button
               key={`${level}-target-${shape.id}`}
-              onClick={() => handleTargetClick(shape)}
+              onClick={(e) => handleTargetClick(shape, e)}
+              onTouchEnd={(e) => handleTargetClick(shape, e)}
+              type="button"
               disabled={matchedShapes.includes(shape.id)}
-              className={`p-4 rounded-3xl transition-all duration-300 ${
+              aria-label={`${shape.type} gölgesi`}
+              className={`p-3 md:p-4 rounded-3xl transition-all duration-300 touch-manipulation select-none ${
                 matchedShapes.includes(shape.id) 
                   ? 'bg-success/30 border-success shadow-inner scale-105 cursor-default' 
-                  : 'bg-white/60 border-transparent hover:bg-white hover:scale-105 cursor-pointer'
+                  : 'bg-white/60 border-transparent active:bg-white active:scale-105 cursor-pointer'
               } border-4`}
-              whileHover={!matchedShapes.includes(shape.id) ? { scale: 1.1 } : {}}
+              style={{ 
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation'
+              }}
               whileTap={!matchedShapes.includes(shape.id) ? { scale: 0.95 } : {}}
             >
               <ShapeComponent 
                 type={shape.type} 
                 color={shape.color} 
-                size={65}
+                size={60}
                 isShadow={!matchedShapes.includes(shape.id)} 
               />
             </motion.button>
@@ -224,7 +238,5 @@ const ShapeMatcherGame = () => {
     </motion.div>
   );
 };
-
-export default ShapeMatcherGame;
 
 export default ShapeMatcherGame;
