@@ -10,10 +10,9 @@ import WhackAMoleGame from './WhackAMoleGame';
 import CountingGame from './CountingGame';
 import ColoringBookGame from './ColoringBookGame';
 import BalloonPopGame from './BalloonPopGame';
-import StoryTime from '../StoryTime';
-import { Music, Hash, Palette, Wind, BookOpen } from 'lucide-react';
+import { Music, Hash, Palette, Wind } from 'lucide-react';
 
-type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'story';
+type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons';
 
 const GamesMenu = () => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
@@ -34,14 +33,6 @@ const GamesMenu = () => {
       icon: Shapes,
       color: 'bg-accent',
       description: 'Şekilleri gölgelerine eşleştir!',
-    },
-    {
-      id: 'story' as GameType,
-      title: 'Hikaye Zamanı',
-      emoji: '📚',
-      icon: BookOpen,
-      color: 'bg-purple-400',
-      description: 'Kendi hikayeni seç ve dinle!',
     },
     {
       id: 'oddone' as GameType,
@@ -94,7 +85,6 @@ const GamesMenu = () => {
       case 'counting': return <CountingGame />;
       case 'coloring': return <ColoringBookGame />;
       case 'balloons': return <BalloonPopGame />;
-      case 'story': return <StoryTime />;
       default: return null;
     }
   };
