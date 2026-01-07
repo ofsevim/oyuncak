@@ -85,9 +85,12 @@ const BalloonPopGame = () => {
     }, [generateBalloons]);
 
     const startNewRound = useCallback(() => {
-        const nextColor = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
+        // Bir sonraki rengi rastgele seç ama mevcut renkten farklı olsun
+        const remainingColors = BALLOON_COLORS.filter(c => c.value !== targetColor.value);
+        const nextColor = remainingColors[Math.floor(Math.random() * remainingColors.length)];
+        
         setTargetColor(nextColor);
-        // Mevcut balonları biraz seyrelt ve yeni renkten birkaç tane ekle
+        // Mevcut balonları seyrelt ve yeni renkten ekle
         setBalloons(prev => {
             const currentBalloons = prev.slice(-10); // Sadece son 10 balonu tut
             const newBalloons = [];
@@ -98,7 +101,7 @@ const BalloonPopGame = () => {
         });
         setRound(r => r + 1);
         speak(`${nextColor.name} balonları patlat!`);
-    }, [generateBalloons, createBalloon]);
+    }, [targetColor, createBalloon]);
 
     // Timer
     useEffect(() => {
@@ -171,15 +174,23 @@ const BalloonPopGame = () => {
 
         if (balloon.color.value === targetColor.value) {
             playPopSound();
-            setScore(prev => prev + 1);
             setBalloons(prev => prev.filter(b => b.id !== balloon.id));
-
-            // Every 15 correct pops, new round
-            if ((score + 1) % 15 === 0 && score > 0) {
-                playSuccessSound();
-                confetti({ particleCount: 50, spread: 60 });
-                setTimeout(startNewRound, 1000);
-            }
+            
+            // Score state update is async, use functional update for reliable logic
+            setScore(prev => {
+                const newScore = prev + 1;
+                // Her 12 patlatmada bir yeni tur (puan bazlı)
+                if (newScore > 0 && newScore % 12 === 0) {
+                    playSuccessSound();
+                    confetti({ 
+                        particleCount: 50, 
+                        spread: 60,
+                        origin: { y: 0.7 } 
+                    });
+                    setTimeout(startNewRound, 1000);
+                }
+                return newScore;
+            });
         } else {
             playErrorSound();
         }

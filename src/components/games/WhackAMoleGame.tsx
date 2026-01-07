@@ -26,39 +26,47 @@ const WhackAMoleGame = () => {
     const moleRef = useRef<NodeJS.Timeout | null>(null);
 
     const spawnMole = useCallback(() => {
+        if (gamePhase !== 'playing') return;
+
+        // Mevcut timeoutları temizle
+        if (moleRef.current) clearTimeout(moleRef.current);
+
         const randomHole = Math.floor(Math.random() * HOLES_COUNT);
         const randomType = MOLE_TYPES[Math.random() < 0.1 ? 2 : Math.random() < 0.3 ? 1 : 0];
 
         setActiveHole(randomHole);
         setMoleType(randomType);
 
-        const duration = Math.max(600, 1500 - (score * 20)); // Gets faster as score increases
+        // Puan arttıkça hızlanan süre (min 600ms, max 1500ms)
+        const duration = Math.max(600, 1500 - (score * 25));
 
         moleRef.current = setTimeout(() => {
             setActiveHole(null);
-            if (gamePhase === 'playing') {
-                const nextDelay = Math.random() * 500 + 200;
-                setTimeout(spawnMole, nextDelay);
-            }
+            // Köstebek kaçtığında yeni bir tane çıkar (oyun devam ediyorsa)
+            const nextDelay = Math.random() * 400 + 200;
+            moleRef.current = setTimeout(spawnMole, nextDelay);
         }, duration);
     }, [score, gamePhase]);
 
-    const startGame = () => {
+    const startGame = useCallback(() => {
         setScore(0);
         setTimeLeft(GAME_TIME);
         setGamePhase('playing');
         setShowSuccess(false);
         speak('Hadi köstebekleri yakalayalım!');
-        spawnMole();
-    };
+        // spawnMole'u bir sonraki render döngüsünde başlat
+        setTimeout(spawnMole, 500);
+    }, [spawnMole]);
 
     useEffect(() => {
-        if (gamePhase === 'playing' && timeLeft > 0) {
+        if (gamePhase === 'playing') {
             timerRef.current = setInterval(() => {
                 setTimeLeft(prev => {
                     if (prev <= 1) {
                         setGamePhase('ended');
                         setShowSuccess(true);
+                        if (timerRef.current) clearInterval(timerRef.current);
+                        if (moleRef.current) clearTimeout(moleRef.current);
                         return 0;
                     }
                     return prev - 1;
@@ -69,15 +77,19 @@ const WhackAMoleGame = () => {
             if (timerRef.current) clearInterval(timerRef.current);
             if (moleRef.current) clearTimeout(moleRef.current);
         };
-    }, [gamePhase, timeLeft]);
+    }, [gamePhase]);
 
     const handleWhack = (index: number) => {
-        if (index === activeHole) {
+        if (index === activeHole && gamePhase === 'playing') {
             playPopSound();
             setScore(prev => prev + moleType.points);
             setActiveHole(null);
+            
             if (moleRef.current) clearTimeout(moleRef.current);
-            spawnMole();
+            
+            // Başarılı vuruştan sonra kısa bir ara verip yenisini çıkar
+            const nextDelay = Math.random() * 200 + 100;
+            moleRef.current = setTimeout(spawnMole, nextDelay);
         }
     };
 

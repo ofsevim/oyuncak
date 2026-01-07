@@ -14,30 +14,33 @@ const CountingGame = () => {
     const [options, setOptions] = useState<number[]>([]);
 
     const setupRound = () => {
-        const newCount = Math.floor(Math.random() * 5) + 1;
+        // 1 ile 10 arasında rastgele bir sayı seç (eskiden 1-5 idi)
+        const newCount = Math.floor(Math.random() * 10) + 1;
         const newEmoji = ITEMS[Math.floor(Math.random() * ITEMS.length)];
         setCount(newCount);
         setEmoji(newEmoji);
 
-        // Generate options close to the correct answer (within ±2 range)
+        // Doğru cevaba yakın şıklar üret (±3 aralığında)
         const ops = new Set<number>();
         ops.add(newCount);
+        
         while (ops.size < 3) {
-            // Generate numbers within ±2 of correct answer, but stay in 1-7 range
-            const offset = Math.floor(Math.random() * 5) - 2; // -2 to +2
-            const option = Math.max(1, Math.min(7, newCount + offset));
+            // Doğru cevabın çevresinden sayılar seç, ama 1-12 aralığında kalsın
+            const offset = Math.floor(Math.random() * 7) - 3; // -3 ile +3 arası
+            const option = Math.max(1, Math.min(12, newCount + offset));
             if (option !== newCount) {
                 ops.add(option);
             }
         }
-        // If we couldn't get 3 unique options, add nearby numbers
+
+        // Eğer hala 3 seçenek yoksa (nadiren olur), 1'den başlayarak doldur
         if (ops.size < 3) {
-            for (let i = 1; i <= 7 && ops.size < 3; i++) {
-                ops.add(i);
+            for (let i = 1; i <= 12 && ops.size < 3; i++) {
+                if (i !== newCount) ops.add(i);
             }
         }
+        
         setOptions(Array.from(ops).sort((a, b) => a - b));
-
         speak(`Burada kaç tane ${newEmoji} var? Hadi sayalım!`);
     };
 
@@ -71,22 +74,27 @@ const CountingGame = () => {
                 <p className="text-muted-foreground font-semibold">Ekranda kaç tane nesne görüyorsun?</p>
             </div>
 
-            <div className="card-playful p-10 w-full flex flex-wrap justify-center items-center gap-6 min-h-[200px]">
+            <div className="card-playful p-10 w-full flex flex-wrap justify-center items-center gap-6 min-h-[250px] bg-white/50 backdrop-blur-sm">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={`${count}-${emoji}`}
-                        className="flex flex-wrap justify-center gap-4"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
+                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-items-center"
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
                     >
                         {Array.from({ length: count }).map((_, i) => (
                             <motion.span
                                 key={i}
-                                className="text-7xl"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.1 }}
+                                className="text-6xl md:text-7xl drop-shadow-sm"
+                                initial={{ opacity: 0, scale: 0, rotate: -20 }}
+                                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                                transition={{ 
+                                    type: "spring",
+                                    stiffness: 260,
+                                    damping: 20,
+                                    delay: i * 0.05 
+                                }}
                             >
                                 {emoji}
                             </motion.span>

@@ -25,28 +25,37 @@ const MemoryFlipGame = () => {
   const initializeGame = useCallback(() => {
     const totalCards = gridSize * gridSize;
     const pairCount = Math.floor(totalCards / 2);
-    const selectedEmojis = ALL_EMOJIS.slice(0, pairCount);
+    
+    // Emojileri karıştır ve ihtiyacımız olan kadarını al
+    const shuffledAllEmojis = [...ALL_EMOJIS].sort(() => Math.random() - 0.5);
+    const selectedEmojis = shuffledAllEmojis.slice(0, pairCount);
 
     let gameEmojis = [...selectedEmojis, ...selectedEmojis];
 
-    // If odd number of cards (3x3, 5x5), add a special "star" card
+    // Tek sayıda kart varsa (3x3, 5x5), bir adet '⭐' ekle (eşsiz kart)
     if (totalCards % 2 !== 0) {
       gameEmojis.push('⭐');
     }
 
-    const shuffledCards = gameEmojis
-      .sort(() => Math.random() - 0.5)
-      .map((emoji, i) => ({
-        id: i,
-        emoji,
-        isFlipped: false,
-        isMatched: emoji === '⭐' // Star card is automatically matched/revealed or just matched
-      }));
+    // Fisher-Yates Karıştırma Algoritması
+    for (let i = gameEmojis.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [gameEmojis[i], gameEmojis[j]] = [gameEmojis[j], gameEmojis[i]];
+    }
 
-    setCards(shuffledCards);
+    const initialCards = gameEmojis.map((emoji, i) => ({
+      id: i,
+      emoji,
+      isFlipped: false,
+      isMatched: false // Başlangıçta hiçbir şey eşleşmiş değil
+    }));
+
+    setCards(initialCards);
     setFlippedCards([]);
     setMoves(0);
     setShowSuccess(false);
+    setIsChecking(false);
+    
     speakInstruction(`${gridSize}x${gridSize} oyun başlıyor! Kartları çevir ve eşini bul!`);
   }, [gridSize]);
 
@@ -57,27 +66,41 @@ const MemoryFlipGame = () => {
     const card = cards.find(c => c.id === cardId);
     if (!card || card.isFlipped || card.isMatched || flippedCards.length >= 2) return;
 
+    // '⭐' kartına tıklandığında ne olacak? 
+    // Eğer bu bir '⭐' ise ve başka kart açık değilse, otomatik eşleşsin
+    if (card.emoji === '⭐' && flippedCards.length === 0) {
+      playPopSound();
+      playSuccessSound();
+      setCards(prev => prev.map(c => c.id === cardId ? { ...c, isFlipped: true, isMatched: true } : c));
+      setMoves(p => p + 1);
+      return;
+    }
+
     const newFlipped = [...flippedCards, cardId];
     setFlippedCards(newFlipped);
     setCards(prev => prev.map(c => c.id === cardId ? { ...c, isFlipped: true } : c));
 
     if (newFlipped.length === 2) {
-      setIsChecking(true); setMoves(p => p + 1);
-      const [first, second] = newFlipped;
-      const firstCard = cards.find(c => c.id === first);
+      setIsChecking(true);
+      setMoves(p => p + 1);
+      const [firstId, secondId] = newFlipped;
+      const firstCard = cards.find(c => c.id === firstId);
       const secondCard = cards.find(c => c.id === cardId);
 
-      if (firstCard?.emoji === secondCard?.emoji) {
-        playPopSound(); playSuccessSound();
+      if (firstCard && secondCard && firstCard.emoji === secondCard.emoji) {
+        playPopSound();
+        playSuccessSound();
         setTimeout(() => {
-          setCards(prev => prev.map(c => (c.id === first || c.id === second) ? { ...c, isMatched: true } : c));
-          setFlippedCards([]); setIsChecking(false);
+          setCards(prev => prev.map(c => (c.id === firstId || c.id === secondId) ? { ...c, isMatched: true } : c));
+          setFlippedCards([]);
+          setIsChecking(false);
         }, 500);
       } else {
         playErrorSound();
         setTimeout(() => {
-          setCards(prev => prev.map(c => (c.id === first || c.id === second) ? { ...c, isFlipped: false } : c));
-          setFlippedCards([]); setIsChecking(false);
+          setCards(prev => prev.map(c => (c.id === firstId || c.id === secondId) ? { ...c, isFlipped: false } : c));
+          setFlippedCards([]);
+          setIsChecking(false);
         }, 1000);
       }
     }

@@ -75,15 +75,18 @@ const ShapeMatcherGame = () => {
     setShuffledShapes(shuffleArray(shapes));
     setShuffledTargets(shuffleArray(shapes));
     setMatchedShapes([]);
+    speakInstruction("Şekilleri gölgelerine sürükle!");
   }, []);
 
-  useState(() => {
+  // İlk açılışta seviyeyi yükle
+  useEffect(() => {
     initLevel(0);
-  });
+  }, [initLevel]);
 
   const handleDragStart = (e: React.DragEvent, shape: Shape) => {
     e.dataTransfer.setData('text/plain', shape.id);
     setDraggedShape(shape);
+    // Sürükleme başladığında feedback verilebilir
   };
 
   const handleDrop = useCallback((targetShapeId: string) => {
@@ -93,12 +96,18 @@ const ShapeMatcherGame = () => {
       setMatchedShapes(prev => {
         const newMatched = [...prev, targetShapeId];
         if (newMatched.length === currentLevel.shapes.length) {
-          if (level < LEVELS.length - 1) setTimeout(() => setShowSuccess(true), 300);
-          else { setGameComplete(true); setShowSuccess(true); }
+          if (level < LEVELS.length - 1) {
+            setTimeout(() => setShowSuccess(true), 500);
+          } else { 
+            setGameComplete(true); 
+            setTimeout(() => setShowSuccess(true), 500); 
+          }
         }
         return newMatched;
       });
-    } else playErrorSound();
+    } else {
+      playErrorSound();
+    }
     setDraggedShape(null);
   }, [draggedShape, currentLevel.shapes.length, level]);
 
