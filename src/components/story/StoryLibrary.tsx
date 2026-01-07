@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Shuffle } from "lucide-react";
+import { BookOpen, Shuffle, Filter } from "lucide-react";
 import type { Story } from "@/data/stories";
-import { STORIES } from "@/data/stories";
+import { STORIES, STORY_CATEGORIES } from "@/data/stories";
 import { loadStoryProgress } from "./storyProgress";
 import StoryReader from "./StoryReader";
 
@@ -10,12 +10,19 @@ import StoryReader from "./StoryReader";
  * Hikaye kütüphanesi:
  * - Kapak seçimi
  * - Rastgele hikaye
+ * - Kategori filtresi
  * - Devam et (localStorage ilerlemesi varsa)
  */
 export default function StoryLibrary() {
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
 
   const activeStory = useMemo(() => STORIES.find((s) => s.id === activeStoryId) ?? null, [activeStoryId]);
+
+  const filteredStories = useMemo(() => {
+    if (activeCategory === 'all') return STORIES;
+    return STORIES.filter(s => s.category === activeCategory);
+  }, [activeCategory]);
 
   const progressMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -24,13 +31,14 @@ export default function StoryLibrary() {
       if (typeof p === "number" && p > 0) map.set(s.id, p);
     }
     return map;
-  }, []); // Kütüphane ekranı render olduğunda bir kez okunması yeterli
+  }, []);
 
   const openStory = (story: Story) => setActiveStoryId(story.id);
 
   const openRandom = () => {
-    const idx = Math.floor(Math.random() * STORIES.length);
-    setActiveStoryId(STORIES[idx].id);
+    const stories = filteredStories.length > 0 ? filteredStories : STORIES;
+    const idx = Math.floor(Math.random() * stories.length);
+    setActiveStoryId(stories[idx].id);
   };
 
   if (activeStory) {
@@ -50,10 +58,27 @@ export default function StoryLibrary() {
           <h2 className="text-3xl md:text-4xl font-extrabold text-foreground">Hikaye Kitaplığı</h2>
         </div>
         <p className="text-muted-foreground font-semibold max-w-2xl">
-          Kapağı seç, sayfa sayfa oku. İstersen yarım bıraktığın yerden devam et.
+          {STORIES.length} hikaye seni bekliyor! Kapağı seç, sayfa sayfa oku.
         </p>
 
-        <div className="mt-2 flex flex-wrap justify-center gap-3">
+        {/* Kategori Filtreleri */}
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          {STORY_CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${
+                activeCategory === cat.id
+                  ? 'bg-primary text-white scale-105'
+                  : 'bg-muted hover:bg-muted/80'
+              }`}
+            >
+              {cat.emoji} {cat.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-wrap justify-center gap-3">
           <button
             onClick={openRandom}
             className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-black text-white shadow-lg hover:opacity-95 transition-opacity"
@@ -62,11 +87,16 @@ export default function StoryLibrary() {
             <Shuffle className="h-5 w-5" /> Rastgele Hikaye
           </button>
         </div>
+
+        <p className="text-sm text-muted-foreground">
+          {filteredStories.length} hikaye gösteriliyor
+        </p>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {STORIES.map((s) => {
+        {filteredStories.map((s) => {
           const savedPage = progressMap.get(s.id);
+          const categoryData = STORY_CATEGORIES.find(c => c.id === s.category);
           return (
             <button
               key={s.id}
@@ -84,9 +114,16 @@ export default function StoryLibrary() {
                       {s.coverEmoji}
                     </span>
                   </div>
-                  <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-black text-foreground shadow-sm">
-                    {s.durationLabel}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-black text-foreground shadow-sm">
+                      {s.durationLabel}
+                    </span>
+                    {categoryData && (
+                      <span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs font-bold text-primary">
+                        {categoryData.emoji} {categoryData.label}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-1">

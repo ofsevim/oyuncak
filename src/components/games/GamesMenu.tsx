@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shapes, Search, Brain } from 'lucide-react';
+import { Shapes, Search, Brain, Music, Hash, Palette, Wind, Piano, BookA, Puzzle, PawPrint, Calculator, Target, Gamepad2 } from 'lucide-react';
 import ShapeMatcherGame from './ShapeMatcherGame';
 import OddOneOutGame from './OddOneOutGame';
 import MemoryFlipGame from './MemoryFlipGame';
@@ -10,9 +10,15 @@ import WhackAMoleGame from './WhackAMoleGame';
 import CountingGame from './CountingGame';
 import ColoringBookGame from './ColoringBookGame';
 import BalloonPopGame from './BalloonPopGame';
-import { Music, Hash, Palette, Wind } from 'lucide-react';
+import PuzzleGame from './PuzzleGame';
+import PianoGame from './PianoGame';
+import AlphabetGame from './AlphabetGame';
+import AnimalSoundsGame from './AnimalSoundsGame';
+import MathGame from './MathGame';
+import DragMatchGame from './DragMatchGame';
+import RunnerGame from './RunnerGame';
 
-type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons';
+type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'puzzle' | 'piano' | 'alphabet' | 'animals' | 'math' | 'dragmatch' | 'runner';
 
 const GamesMenu = () => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
@@ -30,7 +36,7 @@ const GamesMenu = () => {
 
   useEffect(() => {
     if (!preferredGameId) return;
-    const allowed = ['balloons', 'shapes', 'oddone', 'memory', 'whack', 'counting', 'coloring'] as const;
+    const allowed = ['balloons', 'shapes', 'oddone', 'memory', 'whack', 'counting', 'coloring', 'puzzle', 'piano', 'alphabet', 'animals', 'math', 'dragmatch', 'runner'] as const;
     if ((allowed as readonly string[]).includes(preferredGameId)) {
       setActiveGame(preferredGameId as GameType);
     }
@@ -93,6 +99,62 @@ const GamesMenu = () => {
       color: 'bg-pink-400',
       description: 'Resimleri dilediğince boya!',
     },
+    {
+      id: 'puzzle' as GameType,
+      title: 'Yapboz',
+      emoji: '🧩',
+      icon: Puzzle,
+      color: 'bg-teal-500',
+      description: 'Parçaları yerleştir, resmi tamamla!',
+    },
+    {
+      id: 'piano' as GameType,
+      title: 'Piyano',
+      emoji: '🎹',
+      icon: Piano,
+      color: 'bg-indigo-500',
+      description: 'Melodiler çal, müzik yap!',
+    },
+    {
+      id: 'alphabet' as GameType,
+      title: 'Harf Öğren',
+      emoji: '🔤',
+      icon: BookA,
+      color: 'bg-rose-500',
+      description: 'A-B-C harflerini öğren!',
+    },
+    {
+      id: 'animals' as GameType,
+      title: 'Hayvan Sesleri',
+      emoji: '🐾',
+      icon: PawPrint,
+      color: 'bg-amber-500',
+      description: 'Hayvanları dinle ve tanı!',
+    },
+    {
+      id: 'math' as GameType,
+      title: 'Matematik',
+      emoji: '➕',
+      icon: Calculator,
+      color: 'bg-blue-600',
+      description: 'Toplama ve çıkarma işlemleri!',
+    },
+    {
+      id: 'dragmatch' as GameType,
+      title: 'Eşleştir',
+      emoji: '🎯',
+      icon: Target,
+      color: 'bg-cyan-500',
+      description: 'Hayvan-ses, renk-nesne eşleştir!',
+    },
+    {
+      id: 'runner' as GameType,
+      title: 'Koşucu',
+      emoji: '🏃',
+      icon: Gamepad2,
+      color: 'bg-emerald-500',
+      description: 'Engelleri atla, yıldız topla!',
+    },
   ];
 
   const renderActiveGame = () => {
@@ -104,6 +166,13 @@ const GamesMenu = () => {
       case 'counting': return <CountingGame />;
       case 'coloring': return <ColoringBookGame />;
       case 'balloons': return <BalloonPopGame />;
+      case 'puzzle': return <PuzzleGame />;
+      case 'piano': return <PianoGame />;
+      case 'alphabet': return <AlphabetGame />;
+      case 'animals': return <AnimalSoundsGame />;
+      case 'math': return <MathGame />;
+      case 'dragmatch': return <DragMatchGame />;
+      case 'runner': return <RunnerGame />;
       default: return null;
     }
   };

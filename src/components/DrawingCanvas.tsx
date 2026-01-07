@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, PencilBrush, Text as FabricText } from 'fabric';
-import { motion } from 'framer-motion';
-import { Trash2, Sparkles, Undo, Download, Smile } from 'lucide-react';
-import { speakInstruction } from '@/utils/voiceFeedback';
-import { playPopSound } from '@/utils/soundEffects';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trash2, Sparkles, Undo, Download, Smile, Image } from 'lucide-react';
+import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
+import DrawingGallery, { saveDrawing } from './DrawingGallery';
+import confetti from 'canvas-confetti';
 
 const COLORS = [
   { name: 'Kırmızı', value: '#EF5350' },
@@ -31,6 +32,7 @@ const DrawingCanvas = () => {
   const [isRainbow, setIsRainbow] = useState(false);
   const [brushSize, setBrushSize] = useState(8);
   const [showStickers, setShowStickers] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   const rainbowIndexRef = useRef(0);
 
   useEffect(() => {
@@ -53,7 +55,6 @@ const DrawingCanvas = () => {
     canvas.freeDrawingBrush = brush;
 
     setFabricCanvas(canvas);
-    speakInstruction('Çizim yapmaya başla!');
 
     const handleResize = () => {
       if (!containerRef.current) return;
@@ -104,7 +105,6 @@ const DrawingCanvas = () => {
     fabricCanvas.clear();
     fabricCanvas.backgroundColor = '#ffffff';
     fabricCanvas.renderAll();
-    speakInstruction('Temizlendi!');
   }, [fabricCanvas]);
 
   const handleUndo = useCallback(() => {
@@ -133,9 +133,6 @@ const DrawingCanvas = () => {
     if (fabricCanvas) {
       fabricCanvas.isDrawingMode = true;
     }
-    if (!isRainbow) {
-      speakInstruction('Gökkuşağı fırçası açık!');
-    }
   };
 
   const addSticker = (emoji: string) => {
@@ -151,11 +148,23 @@ const DrawingCanvas = () => {
     fabricCanvas.add(sticker);
     fabricCanvas.setActiveObject(sticker);
     fabricCanvas.renderAll();
-    setShowStickers(false); // Çıkartma penceresini kapat
-    speakInstruction('Harika bir çıkartma!');
+    setShowStickers(false);
   };
 
   const handleSave = () => {
+    if (!fabricCanvas) return;
+    const dataUrl = fabricCanvas.toDataURL({
+      format: 'png',
+      quality: 1,
+    });
+    // Galeriye kaydet
+    const name = `Çizim ${new Date().toLocaleDateString('tr-TR')}`;
+    saveDrawing(dataUrl, name);
+    playSuccessSound();
+    confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
+  };
+
+  const handleDownload = () => {
     if (!fabricCanvas) return;
     const dataUrl = fabricCanvas.toDataURL({
       format: 'png',
@@ -165,7 +174,6 @@ const DrawingCanvas = () => {
     link.download = 'benim-resmim.png';
     link.href = dataUrl;
     link.click();
-    speakInstruction('Resmin kaydedildi! Harika bir çizim!');
   };
 
   return (
@@ -282,7 +290,28 @@ const DrawingCanvas = () => {
           <Download className="w-5 h-5" />
           Kaydet
         </button>
+        <button
+          onClick={() => { playPopSound(); handleDownload(); }}
+          className="flex items-center gap-2 px-5 py-3 bg-primary text-white rounded-full font-bold btn-bouncy"
+        >
+          <Download className="w-5 h-5" />
+          İndir
+        </button>
+        <button
+          onClick={() => { playPopSound(); setShowGallery(true); }}
+          className="flex items-center gap-2 px-5 py-3 bg-secondary text-secondary-foreground rounded-full font-bold btn-bouncy"
+        >
+          <Image className="w-5 h-5" />
+          Galerim
+        </button>
       </div>
+
+      {/* Gallery Modal */}
+      <AnimatePresence>
+        {showGallery && (
+          <DrawingGallery onClose={() => setShowGallery(false)} />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
