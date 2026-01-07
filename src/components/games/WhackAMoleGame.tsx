@@ -48,15 +48,27 @@ const WhackAMoleGame = () => {
         }, duration);
     }, [score, gamePhase]);
 
+    // Oyun başladığında veya bittiğinde köstebek üretimini kontrol et
+    useEffect(() => {
+        if (gamePhase === 'playing') {
+            const initialTimeout = setTimeout(spawnMole, 500);
+            return () => {
+                clearTimeout(initialTimeout);
+                if (moleRef.current) clearTimeout(moleRef.current);
+            };
+        } else {
+            setActiveHole(null);
+            if (moleRef.current) clearTimeout(moleRef.current);
+        }
+    }, [gamePhase, spawnMole]);
+
     const startGame = useCallback(() => {
         setScore(0);
         setTimeLeft(GAME_TIME);
         setGamePhase('playing');
         setShowSuccess(false);
         speak('Hadi köstebekleri yakalayalım!');
-        // spawnMole'u bir sonraki render döngüsünde başlat
-        setTimeout(spawnMole, 500);
-    }, [spawnMole]);
+    }, []);
 
     useEffect(() => {
         if (gamePhase === 'playing') {
@@ -66,7 +78,6 @@ const WhackAMoleGame = () => {
                         setGamePhase('ended');
                         setShowSuccess(true);
                         if (timerRef.current) clearInterval(timerRef.current);
-                        if (moleRef.current) clearTimeout(moleRef.current);
                         return 0;
                     }
                     return prev - 1;
@@ -75,7 +86,6 @@ const WhackAMoleGame = () => {
         }
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
-            if (moleRef.current) clearTimeout(moleRef.current);
         };
     }, [gamePhase]);
 

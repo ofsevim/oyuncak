@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { speakInstruction } from '@/utils/voiceFeedback';
@@ -30,6 +30,15 @@ const LEVELS = [
     ],
   },
 ];
+
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
 
 const ShapeComponent = ({ type, color, size = 60, isShadow = false }: { type: string; color: string; size?: number; isShadow?: boolean }) => {
   const shadowStyle = isShadow ? { filter: 'brightness(0.3)' } : {};
@@ -61,16 +70,8 @@ const ShapeMatcherGame = () => {
 
   const currentLevel = LEVELS[level];
 
-  const shuffleArray = <T,>(array: T[]): T[] => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-  };
-
   const initLevel = useCallback((lvl: number) => {
+    if (!LEVELS[lvl]) return;
     const shapes = LEVELS[lvl].shapes;
     setShuffledShapes(shuffleArray(shapes));
     setShuffledTargets(shuffleArray(shapes));
@@ -78,15 +79,14 @@ const ShapeMatcherGame = () => {
     speakInstruction("Şekilleri gölgelerine sürükle!");
   }, []);
 
-  // İlk açılışta seviyeyi yükle
+  // İlk açılışta ve seviye değiştiğinde yükle
   useEffect(() => {
-    initLevel(0);
-  }, [initLevel]);
+    initLevel(level);
+  }, [level, initLevel]);
 
   const handleDragStart = (e: React.DragEvent, shape: Shape) => {
     e.dataTransfer.setData('text/plain', shape.id);
     setDraggedShape(shape);
-    // Sürükleme başladığında feedback verilebilir
   };
 
   const handleDrop = useCallback((targetShapeId: string) => {
@@ -114,17 +114,15 @@ const ShapeMatcherGame = () => {
   const handleNextLevel = () => {
     setShowSuccess(false);
     if (!gameComplete) {
-      const nextLevel = level + 1;
-      setLevel(nextLevel);
-      initLevel(nextLevel);
+      setLevel(prev => prev + 1);
     }
   };
 
   const handleRestart = () => {
     setLevel(0);
-    initLevel(0);
     setGameComplete(false);
     setShowSuccess(false);
+    initLevel(0);
   };
 
   return (
