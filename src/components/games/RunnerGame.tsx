@@ -96,19 +96,27 @@ const RunnerGame = () => {
   useEffect(() => {
     if (gameState !== 'playing') return;
 
+    let lastObstacleTime = 0;
+    const minObstacleGap = 1500; // En az 1.5 saniye arayla engel gelsin
+
     gameLoopRef.current = setInterval(() => {
-      // Engel spawn
-      if (Math.random() < 0.02) {
-        const types: ('rock' | 'bird' | 'cactus')[] = ['rock', 'bird', 'cactus'];
+      const now = Date.now();
+      
+      // Engel spawn - sadece yeterli boşluk varsa
+      if (now - lastObstacleTime > minObstacleGap && Math.random() < 0.03) {
+        // Sadece yer engelleri (zıplayarak geçilebilir)
+        // Kuşlar artık yok - çocuklar için daha kolay
+        const types: ('rock' | 'cactus')[] = ['rock', 'cactus'];
         setObstacles(prev => [...prev, {
           id: obstacleIdRef.current++,
           x: 100,
           type: types[Math.floor(Math.random() * types.length)],
         }]);
+        lastObstacleTime = now;
       }
 
-      // Collectible spawn
-      if (Math.random() < 0.01) {
+      // Collectible spawn - havada veya yerde
+      if (Math.random() < 0.015) {
         const types: ('star' | 'coin' | 'heart')[] = ['star', 'coin', 'heart'];
         setCollectibles(prev => [...prev, {
           id: collectibleIdRef.current++,
@@ -132,8 +140,8 @@ const RunnerGame = () => {
       // Skor
       setScore(prev => prev + 1);
 
-      // Hız artışı
-      setSpeed(prev => Math.min(prev + 0.001, 12));
+      // Hız artışı (daha yavaş)
+      setSpeed(prev => Math.min(prev + 0.0005, 10));
     }, 50);
 
     return () => {
@@ -145,20 +153,13 @@ const RunnerGame = () => {
   useEffect(() => {
     if (gameState !== 'playing') return;
 
-    // Engel çarpışması
+    // Engel çarpışması - sadece yer engelleri var, zıplayarak geç
     for (const obstacle of obstacles) {
       if (obstacle.x > 5 && obstacle.x < 20) {
-        // Kuş için zıplama gerekli, diğerleri için eğilme veya zıplama
-        if (obstacle.type === 'bird') {
-          if (!isDucking && !isJumping) {
-            endGame();
-            return;
-          }
-        } else {
-          if (!isJumping) {
-            endGame();
-            return;
-          }
+        // Yer engeli - zıplayarak geçilir
+        if (!isJumping) {
+          endGame();
+          return;
         }
       }
     }
@@ -168,6 +169,7 @@ const RunnerGame = () => {
       const remaining: Collectible[] = [];
       for (const c of prev) {
         if (c.x > 5 && c.x < 20) {
+          // Havadaki yıldızı zıplayarak, yerdekini yürüyerek topla
           const canCollect = c.y === 1 ? isJumping : !isJumping;
           if (canCollect) {
             playSuccessSound();
@@ -179,7 +181,7 @@ const RunnerGame = () => {
       }
       return remaining;
     });
-  }, [obstacles, collectibles, isJumping, isDucking, gameState, endGame]);
+  }, [obstacles, collectibles, isJumping, gameState, endGame]);
 
   // Klavye kontrolü
   useEffect(() => {
@@ -243,8 +245,7 @@ const RunnerGame = () => {
         
         <div className="text-center text-sm text-muted-foreground">
           <p>⬆️ veya SPACE: Zıpla</p>
-          <p>⬇️: Eğil</p>
-          <p>📱 Mobil: Ekrana dokun</p>
+          <p>📱 Mobil: Ekrana dokun = Zıpla</p>
         </div>
       </motion.div>
     );
@@ -278,8 +279,7 @@ const RunnerGame = () => {
         <motion.div
           className="absolute left-8 text-5xl"
           animate={{
-            bottom: isJumping ? 100 : isDucking ? 16 : 48,
-            scaleY: isDucking ? 0.5 : 1,
+            bottom: isJumping ? 100 : 48,
           }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
@@ -293,7 +293,7 @@ const RunnerGame = () => {
             className="absolute text-4xl"
             style={{
               left: `${obstacle.x}%`,
-              bottom: obstacle.type === 'bird' ? 80 : 48,
+              bottom: 48,
             }}
           >
             {OBSTACLE_EMOJIS[obstacle.type]}
@@ -336,15 +336,9 @@ const RunnerGame = () => {
       <div className="flex gap-4">
         <button
           onClick={jump}
-          className="px-8 py-4 bg-primary text-white rounded-full font-black text-xl btn-bouncy"
+          className="px-12 py-5 bg-primary text-white rounded-full font-black text-2xl btn-bouncy shadow-lg"
         >
-          ⬆️ Zıpla
-        </button>
-        <button
-          onClick={duck}
-          className="px-8 py-4 bg-secondary text-secondary-foreground rounded-full font-black text-xl btn-bouncy"
-        >
-          ⬇️ Eğil
+          ⬆️ Zıpla!
         </button>
       </div>
       

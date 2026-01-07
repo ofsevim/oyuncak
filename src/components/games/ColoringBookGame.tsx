@@ -308,8 +308,8 @@ const ColoringBookGame = () => {
             const isLine = region.kind === 'outline' || region.kind === 'detail';
             const path = new FabricPath(region.path, {
                 fill: 'transparent',
-                stroke: isLine ? '#3B3B3B' : 'rgba(0,0,0,0)',
-                strokeWidth: isLine ? 5 : 0,
+                stroke: '#3B3B3B',
+                strokeWidth: isLine ? 4 : 2,
                 strokeLineCap: 'round',
                 strokeLineJoin: 'round',
                 selectable: false,
