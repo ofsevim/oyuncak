@@ -55,8 +55,6 @@ const MemoryFlipGame = () => {
     setMoves(0);
     setShowSuccess(false);
     setIsChecking(false);
-    
-    speakInstruction(`${gridSize}x${gridSize} oyun başlıyor! Kartları çevir ve eşini bul!`);
   }, [gridSize]);
 
   useEffect(() => { initializeGame(); }, [initializeGame]);

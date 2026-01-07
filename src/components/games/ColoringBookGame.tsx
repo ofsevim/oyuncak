@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, PencilBrush, Path as FabricPath, IText as FabricText } from 'fabric';
+import { Canvas as FabricCanvas, Path as FabricPath } from 'fabric';
 import { motion } from 'framer-motion';
-import { Trash2, Undo, Download, Sparkles } from 'lucide-react';
-import { speakInstruction } from '@/utils/voiceFeedback';
+import { Trash2, Download } from 'lucide-react';
 import { playPopSound } from '@/utils/soundEffects';
 
 const COLORS = [
@@ -15,54 +14,103 @@ const COLORS = [
     { name: 'Mavi', value: '#42A5F5' },
     { name: 'Mor', value: '#AB47BC' },
     { name: 'Pembe', value: '#EC407A' },
+    { name: 'Kahverengi', value: '#8D6E63' },
+    { name: 'Beyaz', value: '#FFFFFF' },
 ];
 
+// Her sayfa için ayrı boyama bölgeleri
 const PAGES = [
     {
         name: 'Kedi',
-        // Cute cat face with ears, eyes, nose, mouth and whiskers
-        path: `M 150,50 L 110,100 L 110,120 L 150,110 L 190,120 L 190,100 Z
-           M 100,120 Q 80,180 100,220 Q 120,260 150,260 Q 180,260 200,220 Q 220,180 200,120 Z
-           M 120,160 A 8,8 0 1,0 121,160 M 180,160 A 8,8 0 1,0 181,160
-           M 150,185 L 145,195 L 155,195 Z
-           M 145,200 Q 150,210 155,200
-           M 100,180 L 70,175 M 100,190 L 70,195 M 100,200 L 75,210
-           M 200,180 L 230,175 M 200,190 L 230,195 M 200,200 L 225,210`
+        regions: [
+            { path: 'M 150,50 L 110,100 L 110,120 L 150,110 L 190,120 L 190,100 Z', name: 'Kulaklar' },
+            { path: 'M 100,120 Q 80,180 100,220 Q 120,260 150,260 Q 180,260 200,220 Q 220,180 200,120 Z', name: 'Yüz' },
+            { path: 'M 120,160 A 8,8 0 1,0 121,160', name: 'Sol Göz' },
+            { path: 'M 180,160 A 8,8 0 1,0 181,160', name: 'Sağ Göz' },
+            { path: 'M 150,185 L 145,195 L 155,195 Z', name: 'Burun' },
+        ]
     },
     {
         name: 'Kelebek',
-        // Beautiful butterfly with detailed wings
-        path: `M 150,100 Q 100,80 80,120 Q 60,160 80,200 Q 100,240 150,220
-           M 150,100 Q 200,80 220,120 Q 240,160 220,200 Q 200,240 150,220
-           M 150,100 L 150,250
-           M 150,100 Q 140,80 135,60 M 150,100 Q 160,80 165,60
-           M 100,140 A 12,12 0 1,0 101,140 M 200,140 A 12,12 0 1,0 201,140
-           M 95,180 A 8,8 0 1,0 96,180 M 205,180 A 8,8 0 1,0 206,180`
+        regions: [
+            { path: 'M 150,100 Q 100,80 80,120 Q 60,160 80,200 Q 100,240 150,220 Z', name: 'Sol Üst Kanat' },
+            { path: 'M 150,100 Q 200,80 220,120 Q 240,160 220,200 Q 200,240 150,220 Z', name: 'Sağ Üst Kanat' },
+            { path: 'M 150,100 L 150,250', name: 'Gövde' },
+            { path: 'M 100,140 A 12,12 0 1,0 101,140', name: 'Sol Nokta' },
+            { path: 'M 200,140 A 12,12 0 1,0 201,140', name: 'Sağ Nokta' },
+        ]
     },
     {
         name: 'Çiçek',
-        // Flower with petals, center and stem with leaves
-        path: `M 150,80 Q 180,100 170,130 Q 200,120 190,150 Q 220,160 190,180 Q 200,210 170,200 Q 180,230 150,220
-           Q 120,230 130,200 Q 100,210 110,180 Q 80,160 110,150 Q 100,120 130,130 Q 120,100 150,80
-           M 150,150 A 25,25 0 1,0 151,150
-           M 150,220 L 150,300
-           M 150,250 Q 120,240 100,260 M 150,270 Q 180,260 200,280`
+        regions: [
+            { path: 'M 150,80 Q 180,100 170,130 Q 200,120 190,150 Q 220,160 190,180 Q 200,210 170,200 Q 180,230 150,220 Q 120,230 130,200 Q 100,210 110,180 Q 80,160 110,150 Q 100,120 130,130 Q 120,100 150,80 Z', name: 'Taç Yaprakları' },
+            { path: 'M 150,150 A 25,25 0 1,0 151,150', name: 'Merkez' },
+            { path: 'M 150,220 L 150,300', name: 'Gövde' },
+            { path: 'M 150,250 Q 120,240 100,260', name: 'Sol Yaprak' },
+            { path: 'M 150,270 Q 180,260 200,280', name: 'Sağ Yaprak' },
+        ]
     },
     {
         name: 'Yıldız',
-        // 5-pointed star
-        path: `M 150,40 L 170,100 L 235,100 L 185,140 L 205,205 L 150,170 L 95,205 L 115,140 L 65,100 L 130,100 Z
-           M 150,90 A 15,15 0 1,0 151,90`
+        regions: [
+            { path: 'M 150,40 L 170,100 L 235,100 L 185,140 L 205,205 L 150,170 L 95,205 L 115,140 L 65,100 L 130,100 Z', name: 'Yıldız' },
+            { path: 'M 150,90 A 15,15 0 1,0 151,90', name: 'Merkez' },
+        ]
     },
     {
         name: 'Kalp',
-        // Heart shape
-        path: `M 150,230 Q 80,180 80,120 Q 80,70 115,70 Q 150,70 150,110 Q 150,70 185,70 Q 220,70 220,120 Q 220,180 150,230
-           M 130,110 A 8,8 0 1,0 131,110`
+        regions: [
+            { path: 'M 150,230 Q 80,180 80,120 Q 80,70 115,70 Q 150,70 150,110 Q 150,70 185,70 Q 220,70 220,120 Q 220,180 150,230 Z', name: 'Kalp' },
+            { path: 'M 130,110 A 8,8 0 1,0 131,110', name: 'Nokta' },
+        ]
+    },
+    {
+        name: 'Güneş',
+        regions: [
+            { path: 'M 150,150 A 50,50 0 1,0 151,150', name: 'Yüz' },
+            { path: 'M 150,50 L 150,80', name: 'Işın 1' },
+            { path: 'M 150,220 L 150,250', name: 'Işın 2' },
+            { path: 'M 250,150 L 220,150', name: 'Işın 3' },
+            { path: 'M 80,150 L 50,150', name: 'Işın 4' },
+        ]
+    },
+    {
+        name: 'Ev',
+        regions: [
+            { path: 'M 150,60 L 220,120 L 220,240 L 80,240 L 80,120 Z', name: 'Bina' },
+            { path: 'M 120,180 L 120,240 L 180,240 L 180,180 Z', name: 'Kapı' },
+            { path: 'M 130,140 L 130,160 L 150,160 L 150,140 Z', name: 'Sol Pencere' },
+            { path: 'M 170,140 L 170,160 L 190,160 L 190,140 Z', name: 'Sağ Pencere' },
+        ]
+    },
+    {
+        name: 'Ağaç',
+        regions: [
+            { path: 'M 150,100 A 40,40 0 1,0 151,100', name: 'Üst Yaprak' },
+            { path: 'M 130,120 A 35,35 0 1,0 131,120', name: 'Sol Yaprak' },
+            { path: 'M 170,120 A 35,35 0 1,0 171,120', name: 'Sağ Yaprak' },
+            { path: 'M 150,140 L 150,260 L 160,260 L 160,140 Z', name: 'Gövde' },
+        ]
+    },
+    {
+        name: 'Araba',
+        regions: [
+            { path: 'M 80,180 L 100,140 L 200,140 L 220,180 L 220,220 L 80,220 Z', name: 'Kasa' },
+            { path: 'M 110,180 A 25,25 0 1,0 111,180', name: 'Sol Tekerlek' },
+            { path: 'M 190,180 A 25,25 0 1,0 191,180', name: 'Sağ Tekerlek' },
+            { path: 'M 120,140 L 120,160 L 140,160 L 140,140 Z', name: 'Sol Cam' },
+            { path: 'M 160,140 L 160,160 L 180,160 L 180,140 Z', name: 'Sağ Cam' },
+        ]
+    },
+    {
+        name: 'Uçak',
+        regions: [
+            { path: 'M 150,100 L 170,180 L 220,200 L 220,220 L 150,200 L 80,220 L 80,200 L 130,180 Z', name: 'Gövde' },
+            { path: 'M 150,100 L 150,140', name: 'Kuyruk' },
+            { path: 'M 120,160 L 180,160', name: 'Kanat' },
+        ]
     }
 ];
-
-const STICKERS = ['✨', '🌸', '⭐️', '🎈', '💖', '🍀', '🌈', '🦋'];
 
 const ColoringBookGame = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -70,9 +118,7 @@ const ColoringBookGame = () => {
     const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
     const [activeColor, setActiveColor] = useState(COLORS[2].value);
     const [activePage, setActivePage] = useState(0);
-    const [isRainbow, setIsRainbow] = useState(false);
-    const rainbowIndexRef = useRef(0);
-    const RAINBOW_COLORS = ['#EF5350', '#FFA726', '#FFEE58', '#66BB6A', '#42A5F5', '#AB47BC'];
+    const coloredRegionsRef = useRef<Map<string, string>>(new Map());
 
     useEffect(() => {
         if (!canvasRef.current || !containerRef.current) return;
@@ -84,13 +130,8 @@ const ColoringBookGame = () => {
             width,
             height,
             backgroundColor: '#ffffff',
-            isDrawingMode: true,
+            selection: false,
         });
-
-        const brush = new PencilBrush(canvas);
-        brush.color = activeColor;
-        brush.width = 15;
-        canvas.freeDrawingBrush = brush;
 
         setFabricCanvas(canvas);
         loadPage(canvas, activePage);
@@ -99,19 +140,7 @@ const ColoringBookGame = () => {
             if (!containerRef.current) return;
             const newWidth = Math.min(containerRef.current.clientWidth - 32, 550);
             canvas.setDimensions({ width: newWidth, height });
-            // Sayfayı yeniden merkezle
-            const objs = canvas.getObjects();
-            const template = objs.find(o => o instanceof FabricPath);
-            if (template) {
-                const scale = Math.min((newWidth - 120) / template.width!, (height - 120) / template.height!);
-                template.set({
-                    scaleX: scale,
-                    scaleY: scale,
-                    left: (newWidth - template.width! * scale) / 2,
-                    top: (height - template.height! * scale) / 2
-                });
-                canvas.renderAll();
-            }
+            canvas.renderAll();
         };
 
         window.addEventListener('resize', handleResize);
@@ -122,53 +151,70 @@ const ColoringBookGame = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (!fabricCanvas) return;
-
-        if (isRainbow) {
-            const handleMouseMove = () => {
-                if (fabricCanvas.freeDrawingBrush) {
-                    rainbowIndexRef.current = (rainbowIndexRef.current + 1) % RAINBOW_COLORS.length;
-                    fabricCanvas.freeDrawingBrush.color = RAINBOW_COLORS[rainbowIndexRef.current];
-                }
-            };
-            fabricCanvas.on('mouse:move', handleMouseMove);
-            return () => fabricCanvas.off('mouse:move', handleMouseMove);
-        } else {
-            if (fabricCanvas.freeDrawingBrush) {
-                fabricCanvas.freeDrawingBrush.color = activeColor;
-            }
-        }
-    }, [isRainbow, activeColor, fabricCanvas]);
-
     const loadPage = (canvas: FabricCanvas, pageIndex: number) => {
         canvas.clear();
         canvas.backgroundColor = '#ffffff';
+        coloredRegionsRef.current.clear();
 
-        const path = new FabricPath(PAGES[pageIndex].path, {
-            fill: 'transparent',
-            stroke: '#424242',
-            strokeWidth: 4,
-            selectable: false,
-            evented: false,
-        });
-
+        const page = PAGES[pageIndex];
         const margin = 60;
         const canvasWidth = canvas.width! - margin * 2;
         const canvasHeight = canvas.height! - margin * 2;
 
-        const scale = Math.min(canvasWidth / path.width!, canvasHeight / path.height!);
+        page.regions.forEach((region, index) => {
+            const path = new FabricPath(region.path, {
+                fill: 'transparent',
+                stroke: '#424242',
+                strokeWidth: 3,
+                selectable: false,
+                evented: true,
+                hoverCursor: 'pointer',
+                objectCaching: false,
+            });
 
-        path.set({
-            scaleX: scale,
-            scaleY: scale,
-            left: (canvas.width! - path.width! * scale) / 2,
-            top: (canvas.height! - path.height! * scale) / 2
+            // Ölçeklendirme - son region eklendiğinde tüm path'leri ayarla
+            const allPaths: FabricPath[] = [];
+            canvas.getObjects().forEach(obj => {
+                if (obj instanceof FabricPath) allPaths.push(obj);
+            });
+            allPaths.push(path);
+
+            if (index === page.regions.length - 1) {
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                allPaths.forEach(p => {
+                    const bound = p.getBoundingRect();
+                    minX = Math.min(minX, bound.left);
+                    minY = Math.min(minY, bound.top);
+                    maxX = Math.max(maxX, bound.left + bound.width);
+                    maxY = Math.max(maxY, bound.top + bound.height);
+                });
+
+                const contentWidth = maxX - minX;
+                const contentHeight = maxY - minY;
+                const scale = Math.min(canvasWidth / contentWidth, canvasHeight / contentHeight) * 0.8;
+
+                allPaths.forEach(p => {
+                    p.set({
+                        scaleX: scale,
+                        scaleY: scale,
+                        left: (p.left! - minX) * scale + margin,
+                        top: (p.top! - minY) * scale + margin,
+                    });
+                });
+            }
+
+            // Tıklama eventi
+            path.on('mousedown', () => {
+                playPopSound();
+                path.set({ fill: activeColor });
+                coloredRegionsRef.current.set(`${pageIndex}-${index}`, activeColor);
+                canvas.renderAll();
+            });
+
+            canvas.add(path);
         });
 
-        canvas.add(path);
         canvas.renderAll();
-        speakInstruction(`Harika! ${PAGES[pageIndex].name} sayfasını seçtin. Hadi rengarenk boyayalım!`);
     };
 
     useEffect(() => {
@@ -177,18 +223,10 @@ const ColoringBookGame = () => {
         }
     }, [activePage, fabricCanvas]);
 
-    const addSticker = (emoji: string) => {
+    const handleClear = () => {
         if (!fabricCanvas) return;
         playPopSound();
-        fabricCanvas.isDrawingMode = false;
-        const sticker = new FabricText(emoji, {
-            fontSize: 60,
-            left: fabricCanvas.width! / 2,
-            top: fabricCanvas.height! / 2,
-        });
-        fabricCanvas.add(sticker);
-        fabricCanvas.setActiveObject(sticker);
-        fabricCanvas.renderAll();
+        loadPage(fabricCanvas, activePage);
     };
 
     const handleSave = () => {
@@ -197,14 +235,13 @@ const ColoringBookGame = () => {
         link.download = `boyama-${PAGES[activePage].name}.png`;
         link.href = fabricCanvas.toDataURL({ format: 'png' });
         link.click();
-        speakInstruction('Resmin kaydedildi! Muhteşem oldu!');
     };
 
     return (
-        <motion.div className="flex flex-col items-center gap-6 p-4 max-w-4xl mx-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <motion.div className="flex flex-col items-center gap-6 p-4 pb-32 max-w-4xl mx-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="text-center space-y-2">
                 <h2 className="text-4xl font-black text-foreground tracking-tight">🎨 Boyama Defteri</h2>
-                <p className="text-muted-foreground font-bold">En sevdiğin resmi seç ve hayallerini boya!</p>
+                <p className="text-muted-foreground font-bold">Bir renk seç, şekle tıkla ve boya!</p>
             </div>
 
             <div className="flex flex-wrap justify-center gap-3 bg-white p-3 rounded-[2rem] shadow-sm border-2 border-primary/10">
@@ -228,39 +265,10 @@ const ColoringBookGame = () => {
 
                     <div className="flex flex-wrap justify-center gap-3">
                         <button 
-                            onClick={() => { 
-                                if (!fabricCanvas) return;
-                                playPopSound(); 
-                                // Sadece çizimleri temizle, şablonu koru
-                                const objects = fabricCanvas.getObjects();
-                                objects.forEach(obj => {
-                                    if (!(obj instanceof FabricPath)) {
-                                        fabricCanvas.remove(obj);
-                                    }
-                                });
-                                fabricCanvas.renderAll();
-                            }} 
+                            onClick={handleClear}
                             className="flex items-center gap-2 px-6 py-4 bg-muted text-muted-foreground rounded-full font-bold hover:bg-destructive/10 hover:text-destructive transition-all"
                         >
                             <Trash2 className="w-6 h-6" /> <span className="hidden sm:inline">Temizle</span>
-                        </button>
-                        <button 
-                            onClick={() => { 
-                                if (!fabricCanvas) return;
-                                playPopSound(); 
-                                const objs = fabricCanvas.getObjects();
-                                // En son eklenen objeyi bul (şablon değilse sil)
-                                if (objs.length > 0) {
-                                    const lastObj = objs[objs.length - 1];
-                                    if (!(lastObj instanceof FabricPath)) {
-                                        fabricCanvas.remove(lastObj);
-                                        fabricCanvas.renderAll();
-                                    }
-                                }
-                            }} 
-                            className="flex items-center gap-2 px-6 py-4 bg-muted text-muted-foreground rounded-full font-bold"
-                        >
-                            <Undo className="w-6 h-6" /> <span className="hidden sm:inline">Geri</span>
                         </button>
                         <button onClick={handleSave} className="flex items-center gap-3 px-10 py-4 bg-success text-white rounded-full font-black text-xl shadow-lg btn-bouncy">
                             <Download className="w-6 h-6" /> Kaydet
@@ -268,40 +276,28 @@ const ColoringBookGame = () => {
                     </div>
                 </div>
 
-                {/* Sidebar Tools */}
+                {/* Sidebar - Colors */}
                 <div className="flex flex-col gap-6 bg-white p-6 rounded-[3rem] shadow-playful border-4 border-primary/5">
                     <div className="space-y-4">
-                        <span className="text-sm font-black text-muted-foreground uppercase tracking-widest px-2">Renkler</span>
-                        <div className="grid grid-cols-4 gap-3">
+                        <span className="text-sm font-black text-muted-foreground uppercase tracking-widest px-2">🎨 Renkler</span>
+                        <div className="grid grid-cols-3 gap-3">
                             {COLORS.map((c) => (
                                 <button
                                     key={c.value}
-                                    onClick={() => { playPopSound(); setActiveColor(c.value); setIsRainbow(false); fabricCanvas!.isDrawingMode = true; }}
-                                    className={`w-12 h-12 rounded-full border-4 transition-all duration-200 hover:scale-110 ${activeColor === c.value && !isRainbow ? 'border-primary scale-110 shadow-lg' : 'border-transparent'}`}
+                                    onClick={() => { 
+                                        playPopSound(); 
+                                        setActiveColor(c.value);
+                                    }}
+                                    className={`w-14 h-14 rounded-full border-4 transition-all duration-200 hover:scale-110 ${activeColor === c.value ? 'border-primary scale-110 shadow-lg ring-2 ring-offset-2 ring-primary' : 'border-gray-200'}`}
                                     style={{ backgroundColor: c.value }}
+                                    aria-label={`${c.name} rengi seç`}
                                 />
                             ))}
-                            <button
-                                onClick={() => { playPopSound(); setIsRainbow(true); fabricCanvas!.isDrawingMode = true; }}
-                                className={`w-12 h-12 rounded-full rainbow-gradient border-4 flex items-center justify-center text-white transition-all ${isRainbow ? 'border-primary scale-110 shadow-lg' : 'border-transparent'}`}
-                            >
-                                <Sparkles className="w-6 h-6" />
-                            </button>
                         </div>
-                    </div>
-
-                    <div className="space-y-4">
-                        <span className="text-sm font-black text-muted-foreground uppercase tracking-widest px-2">Süsler</span>
-                        <div className="grid grid-cols-3 gap-3">
-                            {STICKERS.map((s) => (
-                                <button
-                                    key={s}
-                                    onClick={() => addSticker(s)}
-                                    className="text-4xl p-2 bg-muted/30 rounded-2xl hover:bg-primary/10 hover:scale-110 transition-all font-serif"
-                                >
-                                    {s}
-                                </button>
-                            ))}
+                        <div className="mt-4 p-4 bg-primary/10 rounded-2xl text-center">
+                            <p className="text-sm font-bold text-primary">
+                                💡 {COLORS.find(c => c.value === activeColor)?.name}
+                            </p>
                         </div>
                     </div>
                 </div>

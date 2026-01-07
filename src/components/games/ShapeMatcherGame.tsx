@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
-import { speakInstruction } from '@/utils/voiceFeedback';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 
 interface Shape {
@@ -14,6 +13,7 @@ interface Shape {
 
 const LEVELS = [
   {
+    name: 'Başlangıç',
     shapes: [
       { id: '1', type: 'circle' as const, color: '#EF5350' },
       { id: '2', type: 'square' as const, color: '#42A5F5' },
@@ -21,12 +21,45 @@ const LEVELS = [
     ],
   },
   {
+    name: 'Kolay',
     shapes: [
       { id: '1', type: 'circle' as const, color: '#FFA726' },
       { id: '2', type: 'square' as const, color: '#AB47BC' },
       { id: '3', type: 'triangle' as const, color: '#EC407A' },
       { id: '4', type: 'star' as const, color: '#FFEE58' },
-      { id: '5', type: 'pentagon' as const, color: '#4FC3F7' },
+    ],
+  },
+  {
+    name: 'Orta',
+    shapes: [
+      { id: '1', type: 'circle' as const, color: '#4FC3F7' },
+      { id: '2', type: 'square' as const, color: '#66BB6A' },
+      { id: '3', type: 'triangle' as const, color: '#FFA726' },
+      { id: '4', type: 'star' as const, color: '#AB47BC' },
+      { id: '5', type: 'pentagon' as const, color: '#EF5350' },
+    ],
+  },
+  {
+    name: 'Zor',
+    shapes: [
+      { id: '1', type: 'circle' as const, color: '#EC407A' },
+      { id: '2', type: 'square' as const, color: '#FFEE58' },
+      { id: '3', type: 'triangle' as const, color: '#4FC3F7' },
+      { id: '4', type: 'star' as const, color: '#66BB6A' },
+      { id: '5', type: 'pentagon' as const, color: '#FFA726' },
+      { id: '6', type: 'circle' as const, color: '#AB47BC' },
+    ],
+  },
+  {
+    name: 'Uzman',
+    shapes: [
+      { id: '1', type: 'circle' as const, color: '#EF5350' },
+      { id: '2', type: 'square' as const, color: '#42A5F5' },
+      { id: '3', type: 'triangle' as const, color: '#66BB6A' },
+      { id: '4', type: 'star' as const, color: '#FFEE58' },
+      { id: '5', type: 'pentagon' as const, color: '#AB47BC' },
+      { id: '6', type: 'circle' as const, color: '#FFA726' },
+      { id: '7', type: 'square' as const, color: '#EC407A' },
     ],
   },
 ];
@@ -84,7 +117,6 @@ const ShapeMatcherGame = () => {
     setShuffledTargets(shuffleArray(shapes));
     setMatchedShapes([]);
     setSelectedShape(null);
-    speakInstruction("Önce bir şekle tıkla, sonra gölgesine tıkla!");
   }, []);
 
   useEffect(() => {
@@ -104,7 +136,6 @@ const ShapeMatcherGame = () => {
     
     if (!selectedShape) {
       playErrorSound();
-      speakInstruction("Önce bir şekil seç!");
       return;
     }
 
@@ -126,7 +157,6 @@ const ShapeMatcherGame = () => {
       setSelectedShape(null);
     } else {
       playErrorSound();
-      speakInstruction("Yanlış eşleşme, tekrar dene!");
     }
   };
 

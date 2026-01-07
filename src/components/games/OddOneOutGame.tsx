@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
-import { speakInstruction } from '@/utils/voiceFeedback';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 
 const ROUNDS = [
@@ -17,6 +16,16 @@ const ROUNDS = [
   { items: [{ id: '1', emoji: '☀️' }, { id: '2', emoji: '☁️' }, { id: '3', emoji: '🌧️' }, { id: '4', emoji: '🍔' }], oddOne: '4', hint: 'Hangisi hava durumu değil?' },
   { items: [{ id: '1', emoji: '⚽' }, { id: '2', emoji: '🏀' }, { id: '3', emoji: '🎾' }, { id: '4', emoji: '🧸' }], oddOne: '4', hint: 'Hangisi spor topu değil?' },
   { items: [{ id: '1', emoji: '🐙' }, { id: '2', emoji: '🦀' }, { id: '3', emoji: '🐠' }, { id: '4', emoji: '🦋' }], oddOne: '4', hint: 'Hangisi denizde yaşamaz?' },
+  { items: [{ id: '1', emoji: '🍕' }, { id: '2', emoji: '🍔' }, { id: '3', emoji: '🌭' }, { id: '4', emoji: '👕' }], oddOne: '4', hint: 'Hangisi yemek değil?' },
+  { items: [{ id: '1', emoji: '📚' }, { id: '2', emoji: '📖' }, { id: '3', emoji: '📝' }, { id: '4', emoji: '🍕' }], oddOne: '4', hint: 'Hangisi okul malzemesi değil?' },
+  { items: [{ id: '1', emoji: '🌲' }, { id: '2', emoji: '🌳' }, { id: '3', emoji: '🌴' }, { id: '4', emoji: '🚲' }], oddOne: '4', hint: 'Hangisi ağaç değil?' },
+  { items: [{ id: '1', emoji: '👕' }, { id: '2', emoji: '👖' }, { id: '3', emoji: '👗' }, { id: '4', emoji: '🍌' }], oddOne: '4', hint: 'Hangisi kıyafet değil?' },
+  { items: [{ id: '1', emoji: '🌙' }, { id: '2', emoji: '⭐' }, { id: '3', emoji: '☀️' }, { id: '4', emoji: '🏠' }], oddOne: '4', hint: 'Hangisi gökyüzünde değil?' },
+  { items: [{ id: '1', emoji: '🍓' }, { id: '2', emoji: '🍉' }, { id: '3', emoji: '🍊' }, { id: '4', emoji: '🥖' }], oddOne: '4', hint: 'Hangisi meyve değil?' },
+  { items: [{ id: '1', emoji: '🐝' }, { id: '2', emoji: '🦋' }, { id: '3', emoji: '🐞' }, { id: '4', emoji: '🐘' }], oddOne: '4', hint: 'Hangisi böcek değil?' },
+  { items: [{ id: '1', emoji: '🎨' }, { id: '2', emoji: '🖌️' }, { id: '3', emoji: '✏️' }, { id: '4', emoji: '⚽' }], oddOne: '4', hint: 'Hangisi çizim aracı değil?' },
+  { items: [{ id: '1', emoji: '❄️' }, { id: '2', emoji: '☃️' }, { id: '3', emoji: '🌨️' }, { id: '4', emoji: '🔥' }], oddOne: '4', hint: 'Hangisi soğukla ilgili değil?' },
+  { items: [{ id: '1', emoji: '🏖️' }, { id: '2', emoji: '🏝️' }, { id: '3', emoji: '⛱️' }, { id: '4', emoji: '⛷️' }], oddOne: '4', hint: 'Hangisi plajla ilgili değil?' },
 ];
 
 const OddOneOutGame = () => {
@@ -59,7 +68,6 @@ const OddOneOutGame = () => {
   
   useEffect(() => { 
     if (round) {
-      speakInstruction(round.hint);
       setRoundItems(shuffle(round.items));
     }
   }, [currentRoundIndex, round]);
