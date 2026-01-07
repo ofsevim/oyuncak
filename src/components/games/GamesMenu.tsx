@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shapes, Search, Brain } from 'lucide-react';
 import ShapeMatcherGame from './ShapeMatcherGame';
@@ -16,6 +16,25 @@ type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'whack' | 'counting' |
 
 const GamesMenu = () => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
+  const [preferredGameId, setPreferredGameId] = useState<string | null>(null);
+
+  // Home'dan "önerilen oyuna" tıklanınca otomatik aç
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("oyuncak.preferredGameId");
+      if (raw) setPreferredGameId(JSON.parse(raw));
+    } catch {
+      setPreferredGameId(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!preferredGameId) return;
+    const allowed = ['balloons', 'shapes', 'oddone', 'memory', 'whack', 'counting', 'coloring'] as const;
+    if ((allowed as readonly string[]).includes(preferredGameId)) {
+      setActiveGame(preferredGameId as GameType);
+    }
+  }, [preferredGameId]);
 
   const games = [
     {

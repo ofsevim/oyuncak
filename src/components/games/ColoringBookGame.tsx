@@ -18,8 +18,24 @@ const COLORS = [
     { name: 'Beyaz', value: '#FFFFFF' },
 ];
 
-// Her sayfa için ayrı boyama bölgeleri
-const PAGES = [
+type RegionKind = 'fill' | 'detail';
+
+type PageRegion = {
+    /** SVG path data */
+    path: string;
+    /** Kullanıcı için açıklama */
+    name: string;
+    /** Boyanabilir mi? (detail: sadece çizgi) */
+    kind?: RegionKind;
+};
+
+type ColoringPage = {
+    name: string;
+    regions: PageRegion[];
+};
+
+// Her sayfa için ayrı boyama bölgeleri (daha iyi line-art + kapalı bölgeler)
+const PAGES: ColoringPage[] = [
     {
         name: 'Kedi',
         regions: [
@@ -35,9 +51,13 @@ const PAGES = [
         regions: [
             { path: 'M 150,100 Q 100,80 80,120 Q 60,160 80,200 Q 100,240 150,220 Z', name: 'Sol Üst Kanat' },
             { path: 'M 150,100 Q 200,80 220,120 Q 240,160 220,200 Q 200,240 150,220 Z', name: 'Sağ Üst Kanat' },
-            { path: 'M 150,100 L 150,250', name: 'Gövde' },
+            // Gövde (kapalı bölge)
+            { path: 'M 145,105 Q 150,95 155,105 L 160,245 Q 150,260 140,245 Z', name: 'Gövde' },
             { path: 'M 100,140 A 12,12 0 1,0 101,140', name: 'Sol Nokta' },
             { path: 'M 200,140 A 12,12 0 1,0 201,140', name: 'Sağ Nokta' },
+            // Antenler (detay)
+            { path: 'M 148,100 Q 140,78 132,62', name: 'Anten Sol', kind: 'detail' },
+            { path: 'M 152,100 Q 160,78 168,62', name: 'Anten Sağ', kind: 'detail' },
         ]
     },
     {
@@ -45,9 +65,11 @@ const PAGES = [
         regions: [
             { path: 'M 150,80 Q 180,100 170,130 Q 200,120 190,150 Q 220,160 190,180 Q 200,210 170,200 Q 180,230 150,220 Q 120,230 130,200 Q 100,210 110,180 Q 80,160 110,150 Q 100,120 130,130 Q 120,100 150,80 Z', name: 'Taç Yaprakları' },
             { path: 'M 150,150 A 25,25 0 1,0 151,150', name: 'Merkez' },
-            { path: 'M 150,220 L 150,300', name: 'Gövde' },
-            { path: 'M 150,250 Q 120,240 100,260', name: 'Sol Yaprak' },
-            { path: 'M 150,270 Q 180,260 200,280', name: 'Sağ Yaprak' },
+            // Gövde (kapalı şerit)
+            { path: 'M 145,220 Q 150,215 155,220 L 160,300 Q 150,310 140,300 Z', name: 'Gövde' },
+            // Yapraklar (kapalı)
+            { path: 'M 150,250 Q 118,235 98,258 Q 120,285 150,270 Q 138,260 150,250 Z', name: 'Sol Yaprak' },
+            { path: 'M 150,270 Q 182,255 202,278 Q 180,305 150,290 Q 162,280 150,270 Z', name: 'Sağ Yaprak' },
         ]
     },
     {
@@ -68,10 +90,15 @@ const PAGES = [
         name: 'Güneş',
         regions: [
             { path: 'M 150,150 A 50,50 0 1,0 151,150', name: 'Yüz' },
-            { path: 'M 150,50 L 150,80', name: 'Işın 1' },
-            { path: 'M 150,220 L 150,250', name: 'Işın 2' },
-            { path: 'M 250,150 L 220,150', name: 'Işın 3' },
-            { path: 'M 80,150 L 50,150', name: 'Işın 4' },
+            // Işınlar (kapalı üçgenler)
+            { path: 'M 150,35 L 165,80 L 135,80 Z', name: 'Işın Üst' },
+            { path: 'M 150,265 L 165,220 L 135,220 Z', name: 'Işın Alt' },
+            { path: 'M 265,150 L 220,165 L 220,135 Z', name: 'Işın Sağ' },
+            { path: 'M 35,150 L 80,165 L 80,135 Z', name: 'Işın Sol' },
+            { path: 'M 245,70 L 210,100 L 225,55 Z', name: 'Işın Sağ-Üst' },
+            { path: 'M 55,75 L 90,105 L 75,55 Z', name: 'Işın Sol-Üst' },
+            { path: 'M 245,230 L 210,200 L 225,245 Z', name: 'Işın Sağ-Alt' },
+            { path: 'M 55,225 L 90,195 L 75,245 Z', name: 'Işın Sol-Alt' },
         ]
     },
     {
@@ -105,9 +132,12 @@ const PAGES = [
     {
         name: 'Uçak',
         regions: [
-            { path: 'M 150,100 L 170,180 L 220,200 L 220,220 L 150,200 L 80,220 L 80,200 L 130,180 Z', name: 'Gövde' },
-            { path: 'M 150,100 L 150,140', name: 'Kuyruk' },
-            { path: 'M 120,160 L 180,160', name: 'Kanat' },
+            // Daha düzgün uçak gövdesi
+            { path: 'M 150,85 Q 158,105 162,125 L 210,165 Q 222,175 215,188 L 165,182 L 150,200 L 135,182 L 85,188 Q 78,175 90,165 L 138,125 Q 142,105 150,85 Z', name: 'Gövde' },
+            // Kanatlar (kapalı)
+            { path: 'M 150,150 L 210,180 L 205,205 L 150,185 L 95,205 L 90,180 Z', name: 'Kanatlar' },
+            // Kuyruk (kapalı)
+            { path: 'M 150,115 L 170,95 L 170,120 L 150,135 L 130,120 L 130,95 Z', name: 'Kuyruk' },
         ]
     }
 ];
@@ -140,10 +170,12 @@ const ColoringBookGame = () => {
             const path = new FabricPath(region.path, {
                 fill: 'transparent',
                 stroke: '#424242',
-                strokeWidth: 3,
+                strokeWidth: 4,
+                strokeLineCap: 'round',
+                strokeLineJoin: 'round',
                 selectable: false,
-                evented: true,
-                hoverCursor: 'pointer',
+                evented: region.kind !== 'detail',
+                hoverCursor: region.kind === 'detail' ? 'default' : 'pointer',
                 objectCaching: false,
             });
 
@@ -179,13 +211,15 @@ const ColoringBookGame = () => {
             }
 
             // Tıklama -> seçili renkle bölgeyi doldur (taşma yok)
-            path.on('mousedown', () => {
-                playPopSound();
-                const fillColor = activeColorRef.current;
-                path.set({ fill: fillColor });
-                coloredRegionsRef.current.set(`${pageIndex}-${index}`, fillColor);
-                canvas.renderAll();
-            });
+            if (region.kind !== 'detail') {
+                path.on('mousedown', () => {
+                    playPopSound();
+                    const fillColor = activeColorRef.current;
+                    path.set({ fill: fillColor });
+                    coloredRegionsRef.current.set(`${pageIndex}-${index}`, fillColor);
+                    canvas.renderAll();
+                });
+            }
 
             canvas.add(path);
         });

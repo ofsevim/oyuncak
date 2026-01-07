@@ -1,10 +1,12 @@
 import { motion } from "framer-motion";
 import { BookOpen, Gamepad2, Pencil, Sparkles, ShieldCheck, Zap } from "lucide-react";
+import { FEATURED } from "@/data/featured";
 
 type Props = {
   onGoDraw: () => void;
   onGoGames: () => void;
   onGoStories: () => void;
+  onGoFeaturedGame?: (gameId: "balloons" | "shapes" | "oddone" | "memory" | "whack" | "counting" | "coloring") => void;
 };
 
 /**
@@ -13,7 +15,7 @@ type Props = {
  * - Güven veren kısa bloklar
  * - Çocuk dostu, modern vitrin
  */
-export default function Home({ onGoDraw, onGoGames, onGoStories }: Props) {
+export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGame }: Props) {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-32">
       {/* Hero */}
@@ -121,9 +123,9 @@ export default function Home({ onGoDraw, onGoGames, onGoStories }: Props) {
       <section className="mt-8 card-playful p-6 border-4 border-primary/10">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-xl font-black text-foreground">En sevilenler</h3>
+            <h3 className="text-xl font-black text-foreground">Öne çıkanlar</h3>
             <p className="text-sm font-semibold text-muted-foreground">
-              Oyunlar, boyama ve hikayeler tek yerde — her gün biraz daha iyi.
+              “Popüler” demiyoruz; kürate ediyoruz. En keyifli içerikleri burada topladık.
             </p>
           </div>
           <div className="flex gap-3">
@@ -131,6 +133,70 @@ export default function Home({ onGoDraw, onGoGames, onGoStories }: Props) {
             <span className="rounded-full bg-white/70 px-4 py-2 text-sm font-black text-foreground shadow-sm">🎨 Yaratıcılık</span>
             <span className="rounded-full bg-white/70 px-4 py-2 text-sm font-black text-foreground shadow-sm">📚 Okuma</span>
           </div>
+        </div>
+      </section>
+
+      {/* Featured grid */}
+      <section className="mt-8">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h3 className="text-2xl font-black text-foreground">Yeni & Önerilen</h3>
+            <p className="text-sm font-semibold text-muted-foreground">
+              Kısa, net, “bir daha oynayayım” dedirten seçimler.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
+          {FEATURED.map((item) => (
+            <div
+              key={item.id}
+              className="relative overflow-hidden rounded-[2.5rem] border-4 border-primary/10 bg-white/60 backdrop-blur-sm p-6 shadow-playful"
+            >
+              <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient}`} aria-hidden="true" />
+              <div className="relative flex flex-col gap-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="grid place-items-center rounded-2xl bg-white/70 p-3 shadow-sm">
+                      <span className="text-4xl" aria-hidden="true">
+                        {item.emoji}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-extrabold text-foreground">{item.title}</h4>
+                      <p className="text-sm font-semibold text-muted-foreground">{item.subtitle}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {item.badges.map((b) => (
+                    <span
+                      key={b}
+                      className="rounded-full bg-white/70 px-3 py-1 text-xs font-black text-foreground shadow-sm"
+                    >
+                      {b}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    onClick={() => {
+                      if (item.tab === "games" && item.gameId && onGoFeaturedGame) return onGoFeaturedGame(item.gameId);
+                      if (item.tab === "games") return onGoGames();
+                      if (item.tab === "draw") return onGoDraw();
+                      return onGoStories();
+                    }}
+                    className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 font-black text-white shadow-lg btn-bouncy"
+                    aria-label={`${item.title} aç`}
+                  >
+                    {item.cta}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>

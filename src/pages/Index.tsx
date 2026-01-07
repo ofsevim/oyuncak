@@ -6,6 +6,7 @@ import Navigation from '@/components/Navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Home from '@/components/home/Home';
+import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 
 type Tab = 'home' | 'draw' | 'games' | 'story';
 
@@ -16,6 +17,7 @@ const StoryTime = lazy(() => import('@/components/StoryTime'));
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [preferredGameId, setPreferredGameId] = useLocalStorageState<string | null>("oyuncak.preferredGameId", null);
 
   const content = useMemo(() => {
     switch (activeTab) {
@@ -31,10 +33,14 @@ const Index = () => {
             onGoDraw={() => setActiveTab('draw')}
             onGoGames={() => setActiveTab('games')}
             onGoStories={() => setActiveTab('story')}
+            onGoFeaturedGame={(gameId) => {
+              setPreferredGameId(gameId);
+              setActiveTab("games");
+            }}
           />
         );
     }
-  }, [activeTab]);
+  }, [activeTab, setPreferredGameId]);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
