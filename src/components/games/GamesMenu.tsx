@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shapes, Search, Brain, Hash, Palette, Wind, Piano, BookA, Puzzle, PawPrint, Calculator, Target, Gamepad2, Rat } from 'lucide-react';
-import ShapeMatcherGame from './ShapeMatcherGame';
+import { Search, Brain, Hash, Palette, Wind, Piano, BookA, Puzzle, Calculator, Gamepad2, Rat, Shapes } from 'lucide-react';
 import OddOneOutGame from './OddOneOutGame';
 import MemoryFlipGame from './MemoryFlipGame';
 import WhackAMoleGame from './WhackAMoleGame';
@@ -13,12 +12,11 @@ import BalloonPopGame from './BalloonPopGame';
 import PuzzleGame from './PuzzleGame';
 import PianoGame from './PianoGame';
 import AlphabetGame from './AlphabetGame';
-import AnimalSoundsGame from './AnimalSoundsGame';
 import MathGame from './MathGame';
-import DragMatchGame from './DragMatchGame';
 import RunnerGame from './RunnerGame';
+import TetrisGame from './TetrisGame';
 
-type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'puzzle' | 'piano' | 'alphabet' | 'animals' | 'math' | 'dragmatch' | 'runner';
+type GameType = 'menu' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'puzzle' | 'piano' | 'alphabet' | 'math' | 'runner' | 'tetris';
 
 const GamesMenu = () => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
@@ -36,7 +34,7 @@ const GamesMenu = () => {
 
   useEffect(() => {
     if (!preferredGameId) return;
-    const allowed = ['balloons', 'shapes', 'oddone', 'memory', 'whack', 'counting', 'coloring', 'puzzle', 'piano', 'alphabet', 'animals', 'math', 'dragmatch', 'runner'] as const;
+    const allowed = ['balloons', 'oddone', 'memory', 'whack', 'counting', 'coloring', 'puzzle', 'piano', 'alphabet', 'math', 'runner', 'tetris'] as const;
     if ((allowed as readonly string[]).includes(preferredGameId)) {
       setActiveGame(preferredGameId as GameType);
     }
@@ -50,14 +48,6 @@ const GamesMenu = () => {
       icon: Wind,
       color: 'bg-primary',
       description: 'Doğru renkli balonları yakala!',
-    },
-    {
-      id: 'shapes' as GameType,
-      title: 'Şekil Eşleştirme',
-      emoji: '🔷',
-      icon: Shapes,
-      color: 'bg-accent',
-      description: 'Şekilleri gölgelerine eşleştir!',
     },
     {
       id: 'oddone' as GameType,
@@ -101,11 +91,11 @@ const GamesMenu = () => {
     },
     {
       id: 'puzzle' as GameType,
-      title: 'Sayı Bulmacası',
+      title: 'Puzzle',
       emoji: '🧩',
       icon: Puzzle,
       color: 'bg-teal-500',
-      description: 'Sayıları sıraya diz!',
+      description: 'Resim parçalarını birleştir!',
     },
     {
       id: 'piano' as GameType,
@@ -124,28 +114,12 @@ const GamesMenu = () => {
       description: 'A-B-C harflerini öğren!',
     },
     {
-      id: 'animals' as GameType,
-      title: 'Hayvan Sesleri',
-      emoji: '🐾',
-      icon: PawPrint,
-      color: 'bg-amber-500',
-      description: 'Hayvanları dinle ve tanı!',
-    },
-    {
       id: 'math' as GameType,
       title: 'Matematik',
       emoji: '➕',
       icon: Calculator,
       color: 'bg-blue-600',
       description: 'Toplama ve çıkarma işlemleri!',
-    },
-    {
-      id: 'dragmatch' as GameType,
-      title: 'Eşleştir',
-      emoji: '🎯',
-      icon: Target,
-      color: 'bg-cyan-500',
-      description: 'Hayvan-ses, renk-nesne eşleştir!',
     },
     {
       id: 'runner' as GameType,
@@ -155,11 +129,18 @@ const GamesMenu = () => {
       color: 'bg-emerald-500',
       description: 'Engelleri atla, yıldız topla!',
     },
+    {
+      id: 'tetris' as GameType,
+      title: 'Tetris',
+      emoji: '🧱',
+      icon: Shapes,
+      color: 'bg-blue-400',
+      description: 'Blokları yerleştir, puanları yakala!',
+    },
   ];
 
   const renderActiveGame = () => {
     switch (activeGame) {
-      case 'shapes': return <ShapeMatcherGame />;
       case 'oddone': return <OddOneOutGame />;
       case 'memory': return <MemoryFlipGame />;
       case 'whack': return <WhackAMoleGame />;
@@ -169,10 +150,9 @@ const GamesMenu = () => {
       case 'puzzle': return <PuzzleGame />;
       case 'piano': return <PianoGame />;
       case 'alphabet': return <AlphabetGame />;
-      case 'animals': return <AnimalSoundsGame />;
       case 'math': return <MathGame />;
-      case 'dragmatch': return <DragMatchGame />;
       case 'runner': return <RunnerGame />;
+      case 'tetris': return <TetrisGame />;
       default: return null;
     }
   };

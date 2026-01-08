@@ -16,27 +16,57 @@ const NOTES = [
   { note: 'C2', freq: 523.25, color: '#EF4444', label: 'Do', keyColor: 'bg-red-500' },
 ];
 
-// Basit melodiler
+// Melodiler (- = es/susma) - Her biri 20-35 nota
 const MELODIES = [
   {
     name: '🐸 Küçük Kurbağa',
-    notes: ['C', 'D', 'E', 'C', 'C', 'D', 'E', 'C', 'E', 'F', 'G', 'E', 'F', 'G'],
+    notes: ['C', 'D', 'E', 'C', '-', 'C', 'D', 'E', 'C', '-', 'E', 'F', 'G', '-', 'E', 'F', 'G', '-',
+      'G', 'A', 'G', 'F', 'E', 'C', '-', 'G', 'A', 'G', 'F', 'E', 'C', '-', 'C', 'G', 'C'],
     difficulty: 'Kolay',
   },
   {
     name: '⭐ Twinkle Twinkle',
-    notes: ['C', 'C', 'G', 'G', 'A', 'A', 'G', 'F', 'F', 'E', 'E', 'D', 'D', 'C'],
-    difficulty: 'Kolay',
+    notes: ['C', 'C', 'G', 'G', 'A', 'A', 'G', '-', 'F', 'F', 'E', 'E', 'D', 'D', 'C', '-',
+      'G', 'G', 'F', 'F', 'E', 'E', 'D', '-', 'G', 'G', 'F', 'F', 'E', 'E', 'D', '-',
+      'C', 'C', 'G', 'G', 'A', 'A', 'G', '-', 'F', 'F', 'E', 'E', 'D', 'D', 'C'],
+    difficulty: 'Orta',
   },
   {
     name: '🎶 Mary Had a Lamb',
-    notes: ['E', 'D', 'C', 'D', 'E', 'E', 'E', 'D', 'D', 'D', 'E', 'G', 'G'],
+    notes: ['E', 'D', 'C', 'D', 'E', 'E', 'E', '-', 'D', 'D', 'D', '-', 'E', 'G', 'G', '-',
+      'E', 'D', 'C', 'D', 'E', 'E', 'E', '-', 'E', 'D', 'D', 'E', 'D', 'C'],
     difficulty: 'Kolay',
   },
   {
-    name: '🎵 Do Re Mi',
-    notes: ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C2'],
+    name: '🎵 Do Re Mi Fa Sol',
+    notes: ['C', 'D', 'E', 'F', 'G', '-', 'G', '-', 'C', 'D', 'E', 'F', 'G', '-', 'G', '-',
+      'G', 'F', 'E', 'D', 'C', '-', 'C', '-', 'G', 'F', 'E', 'D', 'C', '-', 'C'],
     difficulty: 'Çok Kolay',
+  },
+  {
+    name: '🔔 Okul Zili',
+    notes: ['E', 'D', 'C', 'D', 'E', 'E', 'E', '-', 'D', 'D', 'E', 'D', 'C', '-',
+      'E', 'D', 'C', 'D', 'E', 'E', 'E', '-', 'E', 'D', 'D', 'E', 'D', 'C', '-', 'C'],
+    difficulty: 'Kolay',
+  },
+  {
+    name: '🎂 Happy Birthday',
+    notes: ['C', 'C', 'D', 'C', '-', 'F', 'E', '-', '-', 'C', 'C', 'D', 'C', '-', 'G', 'F', '-', '-',
+      'C', 'C', 'C2', 'A', '-', 'F', 'E', 'D', '-', '-', 'B', 'B', 'A', 'F', '-', 'G', 'F'],
+    difficulty: 'Orta',
+  },
+  {
+    name: '🎄 Jingle Bells',
+    notes: ['E', 'E', 'E', '-', 'E', 'E', 'E', '-', 'E', 'G', 'C', 'D', 'E', '-', '-',
+      'F', 'F', 'F', 'F', 'F', 'E', 'E', 'E', 'E', 'D', 'D', 'E', 'D', '-', 'G', '-',
+      'E', 'E', 'E', '-', 'E', 'E', 'E', '-', 'E', 'G', 'C', 'D', 'E'],
+    difficulty: 'Orta',
+  },
+  {
+    name: '💃 Can Can',
+    notes: ['C', 'D', 'E', 'F', 'G', '-', 'G', '-', 'G', '-', 'G', '-', 'A', 'G', 'F', 'E', 'D', 'C', '-',
+      'C', 'D', 'E', 'F', 'G', '-', 'G', '-', 'A', 'B', 'C2', '-', 'G', 'E', 'C'],
+    difficulty: 'Zor',
   },
 ];
 
@@ -89,11 +119,25 @@ const PianoGame = () => {
 
     // Melodi modunda mı?
     if (currentMelody && melodyIndex < currentMelody.notes.length) {
-      if (noteData.note === currentMelody.notes[melodyIndex]) {
-        setMelodyIndex(prev => prev + 1);
+      // Es'leri atla
+      let checkIndex = melodyIndex;
+      while (checkIndex < currentMelody.notes.length && currentMelody.notes[checkIndex] === '-') {
+        checkIndex++;
+      }
+
+      if (checkIndex < currentMelody.notes.length && noteData.note === currentMelody.notes[checkIndex]) {
+        const newIndex = checkIndex + 1;
+        setMelodyIndex(newIndex);
         setCorrectNotes(prev => prev + 1);
 
-        if (melodyIndex + 1 === currentMelody.notes.length) {
+        // Kalan es'leri de atla ve tamamlanıp tamamlanmadığını kontrol et
+        let finalIndex = newIndex;
+        while (finalIndex < currentMelody.notes.length && currentMelody.notes[finalIndex] === '-') {
+          finalIndex++;
+        }
+        setMelodyIndex(finalIndex);
+
+        if (finalIndex >= currentMelody.notes.length) {
           // Melodi tamamlandı!
           playSuccessSound();
           setShowSuccess(true);
@@ -113,10 +157,17 @@ const PianoGame = () => {
     setIsPlaying(true);
 
     for (let i = 0; i < melody.notes.length; i++) {
-      const noteData = NOTES.find(n => n.note === melody.notes[i]);
-      if (noteData) {
-        playNote(noteData.freq, noteData.note);
-        await new Promise(resolve => setTimeout(resolve, 500));
+      const note = melody.notes[i];
+
+      if (note === '-') {
+        // Es (susma) - sadece bekle
+        await new Promise(resolve => setTimeout(resolve, 350));
+      } else {
+        const noteData = NOTES.find(n => n.note === note);
+        if (noteData) {
+          playNote(noteData.freq, noteData.note);
+          await new Promise(resolve => setTimeout(resolve, 450));
+        }
       }
     }
 
@@ -211,8 +262,8 @@ const PianoGame = () => {
               key={note.note}
               onClick={() => handleKeyClick(note)}
               className={`relative rounded-b-xl md:rounded-b-2xl transition-all duration-75 shadow-lg ${activeNotes.has(note.note)
-                  ? 'translate-y-1 brightness-125'
-                  : 'hover:brightness-110'
+                ? 'translate-y-1 brightness-125'
+                : 'hover:brightness-110'
                 } ${note.keyColor}`}
               style={{
                 width: 'clamp(40px, 10vw, 70px)',
