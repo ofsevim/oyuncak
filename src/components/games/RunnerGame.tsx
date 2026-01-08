@@ -47,7 +47,7 @@ const RunnerGame = () => {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [speed, setSpeed] = useState(5);
-  
+
   const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const obstacleIdRef = useRef(0);
   const collectibleIdRef = useRef(0);
@@ -61,7 +61,7 @@ const RunnerGame = () => {
     setTimeout(() => {
       setIsJumping(false);
       playerY.current = 0;
-    }, 500);
+    }, 300); // Daha hızlı zıplama - 300ms
   }, [isJumping, isDucking, gameState]);
 
   const duck = useCallback(() => {
@@ -101,7 +101,7 @@ const RunnerGame = () => {
 
     gameLoopRef.current = setInterval(() => {
       const now = Date.now();
-      
+
       // Engel spawn - sadece yeterli boşluk varsa
       if (now - lastObstacleTime > minObstacleGap && Math.random() < 0.03) {
         // Sadece yer engelleri (zıplayarak geçilebilir)
@@ -131,7 +131,7 @@ const RunnerGame = () => {
         .map(o => ({ ...o, x: o.x - speed }))
         .filter(o => o.x > -10)
       );
-      
+
       setCollectibles(prev => prev
         .map(c => ({ ...c, x: c.x - speed }))
         .filter(c => c.x > -10)
@@ -210,7 +210,7 @@ const RunnerGame = () => {
         <p className="text-muted-foreground font-semibold text-center">
           Engelleri atla, yıldızları topla!
         </p>
-        
+
         <div className="space-y-3">
           <p className="font-bold text-center text-foreground">Karakter Seç:</p>
           <div className="flex gap-3">
@@ -218,31 +218,30 @@ const RunnerGame = () => {
               <button
                 key={char.id}
                 onClick={() => { playPopSound(); setCharacter(char); }}
-                className={`p-4 rounded-2xl text-4xl transition-all ${
-                  character.id === char.id
-                    ? 'bg-primary scale-110 ring-4 ring-primary/50'
-                    : 'bg-muted hover:scale-105'
-                }`}
+                className={`p-4 rounded-2xl text-4xl transition-all ${character.id === char.id
+                  ? 'bg-primary scale-110 ring-4 ring-primary/50'
+                  : 'bg-muted hover:scale-105'
+                  }`}
               >
                 {char.emoji}
               </button>
             ))}
           </div>
         </div>
-        
+
         {highScore > 0 && (
           <p className="text-lg font-bold text-muted-foreground">
             🏆 En Yüksek: {highScore}
           </p>
         )}
-        
+
         <button
           onClick={startGame}
           className="px-12 py-5 bg-success text-white text-2xl font-black rounded-full shadow-lg btn-bouncy"
         >
           Başla! 🚀
         </button>
-        
+
         <div className="text-center text-sm text-muted-foreground">
           <p>⬆️ veya SPACE: Zıpla</p>
           <p>📱 Mobil: Ekrana dokun = Zıpla</p>
@@ -267,25 +266,25 @@ const RunnerGame = () => {
       </div>
 
       {/* Oyun alanı */}
-      <div 
+      <div
         className="relative w-full max-w-lg h-48 bg-gradient-to-b from-sky-200 to-sky-100 dark:from-sky-900 dark:to-sky-800 rounded-3xl overflow-hidden shadow-playful"
         onClick={jump}
         onContextMenu={(e) => { e.preventDefault(); duck(); }}
       >
         {/* Zemin */}
         <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-green-500 to-green-400" />
-        
+
         {/* Karakter */}
         <motion.div
           className="absolute left-8 text-5xl"
           animate={{
             bottom: isJumping ? 100 : 48,
           }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 25 }}
         >
           {character.emoji}
         </motion.div>
-        
+
         {/* Engeller */}
         {obstacles.map((obstacle) => (
           <motion.div
@@ -299,7 +298,7 @@ const RunnerGame = () => {
             {OBSTACLE_EMOJIS[obstacle.type]}
           </motion.div>
         ))}
-        
+
         {/* Toplanabilirler */}
         {collectibles.map((c) => (
           <motion.div
@@ -315,7 +314,7 @@ const RunnerGame = () => {
             {COLLECTIBLE_EMOJIS[c.type]}
           </motion.div>
         ))}
-        
+
         {/* Game Over overlay */}
         {gameState === 'gameover' && (
           <motion.div
@@ -331,7 +330,7 @@ const RunnerGame = () => {
           </motion.div>
         )}
       </div>
-      
+
       {/* Mobil kontroller */}
       <div className="flex gap-4">
         <button
@@ -341,7 +340,7 @@ const RunnerGame = () => {
           ⬆️ Zıpla!
         </button>
       </div>
-      
+
       {gameState === 'gameover' && (
         <div className="flex gap-4">
           <button

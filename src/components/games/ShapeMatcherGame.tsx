@@ -82,13 +82,13 @@ const ShapeComponent = ({ type, color, size = 60, isShadow = false }: { type: st
     case 'square':
       return <div className="rounded-xl shadow-sm" style={{ width: size, height: size, backgroundColor: color, ...shadowStyle }} />;
     case 'triangle':
-      return <div style={{ 
-        width: 0, 
-        height: 0, 
-        borderLeft: `${size / 2}px solid transparent`, 
-        borderRight: `${size / 2}px solid transparent`, 
-        borderBottom: `${size}px solid ${color}`, 
-        ...shadowStyle 
+      return <div style={{
+        width: 0,
+        height: 0,
+        borderLeft: `${size / 2}px solid transparent`,
+        borderRight: `${size / 2}px solid transparent`,
+        borderBottom: `${size}px solid ${color}`,
+        ...shadowStyle
       }} />;
     case 'star':
       return <svg width={size} height={size} viewBox="0 0 24 24" style={shadowStyle}><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill={color} /></svg>;
@@ -140,7 +140,7 @@ const ShapeMatcherGame = () => {
   const handleTargetClick = (targetShape: Shape, e?: React.MouseEvent | React.TouchEvent) => {
     e?.preventDefault(); // Prevent double firing on mobile
     if (matchedShapes.includes(targetShape.id)) return;
-    
+
     if (!selectedShape) {
       playErrorSound();
       return;
@@ -155,8 +155,8 @@ const ShapeMatcherGame = () => {
           if (level < LEVELS.length - 1) {
             if (showSuccessTimeoutRef.current) clearTimeout(showSuccessTimeoutRef.current);
             showSuccessTimeoutRef.current = setTimeout(() => setShowSuccess(true), 500);
-          } else { 
-            setGameComplete(true); 
+          } else {
+            setGameComplete(true);
             if (showSuccessTimeoutRef.current) clearTimeout(showSuccessTimeoutRef.current);
             showSuccessTimeoutRef.current = setTimeout(() => setShowSuccess(true), 500);
           }
@@ -190,9 +190,9 @@ const ShapeMatcherGame = () => {
         <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">🔷 Şekil Eşleştirme</h2>
         <span className="px-4 py-2 bg-primary text-white rounded-full text-sm font-black shadow-sm">Seviye {level + 1}</span>
       </div>
-      
+
       <div className="text-center space-y-2">
-        <p className="text-lg text-muted-foreground font-bold bg-white/50 px-6 py-2 rounded-full">
+        <p className="text-lg text-muted-foreground font-bold bg-card/50 px-6 py-2 rounded-full">
           {selectedShape ? '✅ Şimdi gölgesine tıkla!' : '👆 Önce bir şekil seç!'}
         </p>
       </div>
@@ -200,7 +200,7 @@ const ShapeMatcherGame = () => {
       {/* Shapes Area */}
       <div className="w-full max-w-2xl">
         <p className="text-center font-black text-foreground mb-3">Şekiller</p>
-        <div className="flex flex-wrap justify-center gap-4 md:gap-6 p-4 md:p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-[2rem] border-4 border-blue-200/50">
+        <div className="flex flex-wrap justify-center gap-4 md:gap-6 p-4 md:p-6 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 rounded-[2rem] border-4 border-blue-200/50 dark:border-blue-800/50">
           <AnimatePresence>
             {shuffledShapes.map((shape) => !matchedShapes.includes(shape.id) && (
               <motion.button
@@ -209,12 +209,11 @@ const ShapeMatcherGame = () => {
                 onTouchEnd={(e) => handleShapeClick(shape, e)}
                 type="button"
                 aria-label={`${shape.type} şeklini seç`}
-                className={`p-3 md:p-4 rounded-3xl transition-all duration-200 touch-manipulation select-none ${
-                  selectedShape?.id === shape.id 
-                    ? 'bg-white shadow-2xl ring-4 ring-primary scale-105 md:scale-110' 
-                    : 'bg-white shadow-playful active:shadow-xl'
-                }`}
-                style={{ 
+                className={`p-3 md:p-4 rounded-3xl transition-all duration-200 touch-manipulation select-none ${selectedShape?.id === shape.id
+                    ? 'bg-card shadow-2xl ring-4 ring-primary scale-105 md:scale-110'
+                    : 'bg-card shadow-playful active:shadow-xl'
+                  }`}
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   touchAction: 'manipulation'
                 }}
@@ -234,7 +233,7 @@ const ShapeMatcherGame = () => {
       {/* Target Area */}
       <div className="w-full max-w-2xl">
         <p className="text-center font-black text-foreground mb-3">Gölgeler</p>
-        <div className="flex flex-wrap justify-center gap-6 md:gap-8 p-6 md:p-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2rem] border-4 border-amber-200/50">
+        <div className="flex flex-wrap justify-center gap-6 md:gap-8 p-6 md:p-8 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/50 dark:to-orange-950/50 rounded-[2rem] border-4 border-amber-200/50 dark:border-amber-800/50">
           {shuffledTargets.map((shape) => (
             <motion.button
               key={`${level}-target-${shape.id}`}
@@ -243,22 +242,21 @@ const ShapeMatcherGame = () => {
               type="button"
               disabled={matchedShapes.includes(shape.id)}
               aria-label={`${shape.type} gölgesi`}
-              className={`p-3 md:p-4 rounded-3xl transition-all duration-300 touch-manipulation select-none ${
-                matchedShapes.includes(shape.id) 
-                  ? 'bg-success/30 border-success shadow-inner scale-105 cursor-default' 
-                  : 'bg-white/60 border-transparent active:bg-white active:scale-105 cursor-pointer'
-              } border-4`}
-              style={{ 
+              className={`p-3 md:p-4 rounded-3xl transition-all duration-300 touch-manipulation select-none ${matchedShapes.includes(shape.id)
+                  ? 'bg-success/30 border-success shadow-inner scale-105 cursor-default'
+                  : 'bg-card/60 border-transparent active:bg-card active:scale-105 cursor-pointer'
+                } border-4`}
+              style={{
                 WebkitTapHighlightColor: 'transparent',
                 touchAction: 'manipulation'
               }}
               whileTap={!matchedShapes.includes(shape.id) ? { scale: 0.95 } : {}}
             >
-              <ShapeComponent 
-                type={shape.type} 
-                color={shape.color} 
+              <ShapeComponent
+                type={shape.type}
+                color={shape.color}
                 size={60}
-                isShadow={!matchedShapes.includes(shape.id)} 
+                isShadow={!matchedShapes.includes(shape.id)}
               />
             </motion.button>
           ))}
@@ -269,11 +267,11 @@ const ShapeMatcherGame = () => {
         🔄 Yeniden Başla
       </button>
 
-      <SuccessPopup 
-        isOpen={showSuccess} 
-        onClose={handleNextLevel} 
-        message={gameComplete ? 'Süpersin! Tüm şekilleri bildin!' : 'Harika gidiyorsun!'} 
-        level={gameComplete ? undefined : level + 1} 
+      <SuccessPopup
+        isOpen={showSuccess}
+        onClose={handleNextLevel}
+        message={gameComplete ? 'Süpersin! Tüm şekilleri bildin!' : 'Harika gidiyorsun!'}
+        level={gameComplete ? undefined : level + 1}
       />
     </motion.div>
   );

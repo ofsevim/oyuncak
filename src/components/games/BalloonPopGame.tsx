@@ -87,7 +87,7 @@ const BalloonPopGame = () => {
         // Bir sonraki rengi rastgele seç ama mevcut renkten farklı olsun
         const remainingColors = BALLOON_COLORS.filter(c => c.value !== targetColor.value);
         const nextColor = remainingColors[Math.floor(Math.random() * remainingColors.length)];
-        
+
         setTargetColor(nextColor);
         // Mevcut balonları seyrelt ve yeni renkten ekle
         setBalloons(prev => {
@@ -180,17 +180,17 @@ const BalloonPopGame = () => {
         if (balloon.color.value === targetColor.value) {
             playPopSound();
             setBalloons(prev => prev.filter(b => b.id !== balloon.id));
-            
+
             // Score state update is async, use functional update for reliable logic
             setScore(prev => {
                 const newScore = prev + 1;
                 // Her 12 patlatmada bir yeni tur (puan bazlı)
                 if (newScore > 0 && newScore % 12 === 0) {
                     playSuccessSound();
-                    confetti({ 
-                        particleCount: 50, 
+                    confetti({
+                        particleCount: 50,
                         spread: 60,
-                        origin: { y: 0.7 } 
+                        origin: { y: 0.7 }
                     });
                     if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
                     nextRoundTimeoutRef.current = setTimeout(startNewRound, 1000);
@@ -218,17 +218,10 @@ const BalloonPopGame = () => {
                     </p>
                 </div>
 
-<<<<<<< Updated upstream
-                <div className="bg-white p-6 rounded-3xl shadow-playful space-y-3 text-center">
-                    <p className="text-lg font-bold text-foreground">🎯 Hedef: 1 dakikada en çok balonu patlat!</p>
-                    <p className="text-lg font-bold text-foreground">⏱️ Süre: {GAME_TIME} saniye</p>
-                    <p className="text-sm text-muted-foreground">🎈 7-9 saniye kuralı aktif!</p>
-=======
                 <div className="bg-card p-6 rounded-3xl shadow-playful space-y-3 text-center">
-                    <p className="text-lg font-bold text-card-foreground">🎯 Hedef: {TARGET_SCORE} balon patlat</p>
+                    <p className="text-lg font-bold text-card-foreground">🎯 Hedef: 1 dakikada en çok balonu patlat!</p>
                     <p className="text-lg font-bold text-card-foreground">⏱️ Süre: {GAME_TIME} saniye</p>
-                    <p className="text-sm text-muted-foreground">🎈 200+ balon yağmuru!</p>
->>>>>>> Stashed changes
+                    <p className="text-sm text-muted-foreground">🎈 Balonlar yağıyor!</p>
                 </div>
 
                 <button
@@ -256,13 +249,8 @@ const BalloonPopGame = () => {
                     </h2>
                 </div>
 
-<<<<<<< Updated upstream
-                <div className="bg-white p-8 rounded-3xl shadow-playful space-y-4 text-center">
-                    <p className="text-3xl font-black text-primary">🎈 {score} Balon Patlattın!</p>
-=======
                 <div className="bg-card p-8 rounded-3xl shadow-playful space-y-4 text-center">
-                    <p className="text-3xl font-black text-primary">🎈 {score} Balon</p>
->>>>>>> Stashed changes
+                    <p className="text-3xl font-black text-primary">🎈 {score} Balon Patlattın!</p>
                     <p className="text-xl font-bold text-muted-foreground">🔄 {round} Tur Oynadın</p>
                     <p className="text-lg font-bold text-success">Harika bir performans!</p>
                 </div>
@@ -279,19 +267,19 @@ const BalloonPopGame = () => {
 
     // PLAYING SCREEN
     return (
-        <div className="relative w-full max-w-2xl mx-auto h-[75vh] bg-gradient-to-b from-sky-100 to-sky-50 rounded-[3rem] shadow-inner overflow-hidden border-8 border-white">
+        <div className="relative w-full max-w-2xl mx-auto h-[75vh] bg-gradient-to-b from-sky-100 to-sky-50 dark:from-sky-900 dark:to-sky-800 rounded-[3rem] shadow-inner overflow-hidden border-8 border-card">
             {/* Score and Target UI */}
             <div className="absolute top-4 left-0 right-0 z-20 flex flex-col items-center gap-2 pointer-events-none">
                 <div className="flex items-center gap-4">
-                    <div className="bg-white/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-sm border-2 border-primary/20">
+                    <div className="bg-card/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-sm border-2 border-primary/20">
                         <span className="text-lg font-black text-primary">🎈 {score}</span>
                     </div>
-                    <div className="bg-white/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-sm border-2 border-orange-200">
+                    <div className="bg-card/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-sm border-2 border-orange-200 dark:border-orange-400/50">
                         <span className={`text-lg font-black ${timeLeft <= 10 ? 'text-destructive animate-pulse' : 'text-orange-500'}`}>
                             ⏱️ {timeLeft}s
                         </span>
                     </div>
-                    <div className="bg-white/70 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-muted-foreground font-bold">
+                    <div className="bg-card/70 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-muted-foreground font-bold">
                         {balloons.length} 🎈
                     </div>
                 </div>
@@ -300,7 +288,7 @@ const BalloonPopGame = () => {
                     key={targetColor.name}
                     initial={{ y: -20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="flex items-center gap-3 bg-white px-6 py-2 rounded-2xl shadow-playful border-2 border-primary/5"
+                    className="flex items-center gap-3 bg-card px-6 py-2 rounded-2xl shadow-playful border-2 border-primary/20"
                 >
                     <span className="text-xl font-black text-foreground">{targetColor.name}</span>
                     <div

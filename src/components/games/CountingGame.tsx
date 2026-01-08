@@ -23,7 +23,7 @@ const CountingGame = () => {
         // Doğru cevaba yakın şıklar üret (±3 aralığında)
         const ops = new Set<number>();
         ops.add(newCount);
-        
+
         while (ops.size < 3) {
             // Doğru cevabın çevresinden sayılar seç, ama 1-12 aralığında kalsın
             const offset = Math.floor(Math.random() * 7) - 3; // -3 ile +3 arası
@@ -39,7 +39,7 @@ const CountingGame = () => {
                 if (i !== newCount) ops.add(i);
             }
         }
-        
+
         setOptions(Array.from(ops).sort((a, b) => a - b));
     }, []);
 
@@ -77,7 +77,7 @@ const CountingGame = () => {
                 <p className="text-muted-foreground font-semibold">Ekranda kaç tane nesne görüyorsun?</p>
             </div>
 
-            <div className="card-playful p-10 w-full flex flex-wrap justify-center items-center gap-6 min-h-[250px] bg-white/50 backdrop-blur-sm">
+            <div className="card-playful p-10 w-full flex flex-wrap justify-center items-center gap-6 min-h-[250px] bg-card/50 backdrop-blur-sm">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={`${count}-${emoji}`}
@@ -92,11 +92,11 @@ const CountingGame = () => {
                                 className="text-6xl md:text-7xl drop-shadow-sm"
                                 initial={{ opacity: 0, scale: 0, rotate: -20 }}
                                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                                transition={{ 
+                                transition={{
                                     type: "spring",
                                     stiffness: 260,
                                     damping: 20,
-                                    delay: i * 0.05 
+                                    delay: i * 0.05
                                 }}
                             >
                                 {emoji}

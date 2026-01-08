@@ -92,9 +92,9 @@ const WhackAMoleGame = () => {
             playPopSound();
             setScore(prev => prev + moleType.points);
             setActiveHole(null);
-            
+
             if (moleRef.current) clearTimeout(moleRef.current);
-            
+
             // Başarılı vuruştan sonra kısa bir ara verip yenisini çıkar
             const nextDelay = Math.random() * 200 + 100;
             moleRef.current = setTimeout(spawnMole, nextDelay);
@@ -126,10 +126,10 @@ const WhackAMoleGame = () => {
             animate={{ opacity: 1 }}
         >
             <div className="flex gap-4 items-center">
-                <div className="bg-white px-6 py-2 rounded-full shadow-playful border-2 border-primary/20">
+                <div className="bg-card px-6 py-2 rounded-full shadow-playful border-2 border-primary/20">
                     <span className="text-2xl font-black text-primary">Score: {score}</span>
                 </div>
-                <div className="bg-white px-6 py-2 rounded-full shadow-playful border-2 border-orange-200">
+                <div className="bg-card px-6 py-2 rounded-full shadow-playful border-2 border-orange-200 dark:border-orange-400/50">
                     <span className="text-2xl font-black text-orange-500">⏱️ {timeLeft}s</span>
                 </div>
             </div>
