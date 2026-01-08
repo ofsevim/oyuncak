@@ -6,6 +6,7 @@ import { Shapes, Search, Brain, Music, Hash, Palette, Wind, Piano, BookA, Puzzle
 import ShapeMatcherGame from './ShapeMatcherGame';
 import OddOneOutGame from './OddOneOutGame';
 import MemoryFlipGame from './MemoryFlipGame';
+<<<<<<< Updated upstream
 import WhackAMoleGame from './WhackAMoleGame';
 import CountingGame from './CountingGame';
 import ColoringBookGame from './ColoringBookGame';
@@ -19,6 +20,14 @@ import DragMatchGame from './DragMatchGame';
 import RunnerGame from './RunnerGame';
 
 type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'puzzle' | 'piano' | 'alphabet' | 'animals' | 'math' | 'dragmatch' | 'runner';
+=======
+import CountingGame from './CountingGame';
+import ColoringBookGame from './ColoringBookGame';
+import BalloonPopGame from './BalloonPopGame';
+import { Hash, Palette, Wind } from 'lucide-react';
+
+type GameType = 'menu' | 'shapes' | 'oddone' | 'memory' | 'counting' | 'coloring' | 'balloons';
+>>>>>>> Stashed changes
 
 const GamesMenu = () => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
@@ -75,6 +84,7 @@ const GamesMenu = () => {
       color: 'bg-secondary',
       description: 'Kartları çevir, eşleri bul!',
     },
+<<<<<<< Updated upstream
     {
       id: 'whack' as GameType,
       title: 'Köstebek Yakala',
@@ -83,6 +93,9 @@ const GamesMenu = () => {
       color: 'bg-orange-400',
       description: 'Hızlı ol, köstebekleri yakala!',
     },
+=======
+
+>>>>>>> Stashed changes
     {
       id: 'counting' as GameType,
       title: 'Sayma Oyunu',
@@ -162,7 +175,11 @@ const GamesMenu = () => {
       case 'shapes': return <ShapeMatcherGame />;
       case 'oddone': return <OddOneOutGame />;
       case 'memory': return <MemoryFlipGame />;
+<<<<<<< Updated upstream
       case 'whack': return <WhackAMoleGame />;
+=======
+
+>>>>>>> Stashed changes
       case 'counting': return <CountingGame />;
       case 'coloring': return <ColoringBookGame />;
       case 'balloons': return <BalloonPopGame />;

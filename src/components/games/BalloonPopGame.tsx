@@ -218,10 +218,17 @@ const BalloonPopGame = () => {
                     </p>
                 </div>
 
+<<<<<<< Updated upstream
                 <div className="bg-white p-6 rounded-3xl shadow-playful space-y-3 text-center">
                     <p className="text-lg font-bold text-foreground">🎯 Hedef: 1 dakikada en çok balonu patlat!</p>
                     <p className="text-lg font-bold text-foreground">⏱️ Süre: {GAME_TIME} saniye</p>
                     <p className="text-sm text-muted-foreground">🎈 7-9 saniye kuralı aktif!</p>
+=======
+                <div className="bg-card p-6 rounded-3xl shadow-playful space-y-3 text-center">
+                    <p className="text-lg font-bold text-card-foreground">🎯 Hedef: {TARGET_SCORE} balon patlat</p>
+                    <p className="text-lg font-bold text-card-foreground">⏱️ Süre: {GAME_TIME} saniye</p>
+                    <p className="text-sm text-muted-foreground">🎈 200+ balon yağmuru!</p>
+>>>>>>> Stashed changes
                 </div>
 
                 <button
@@ -249,8 +256,13 @@ const BalloonPopGame = () => {
                     </h2>
                 </div>
 
+<<<<<<< Updated upstream
                 <div className="bg-white p-8 rounded-3xl shadow-playful space-y-4 text-center">
                     <p className="text-3xl font-black text-primary">🎈 {score} Balon Patlattın!</p>
+=======
+                <div className="bg-card p-8 rounded-3xl shadow-playful space-y-4 text-center">
+                    <p className="text-3xl font-black text-primary">🎈 {score} Balon</p>
+>>>>>>> Stashed changes
                     <p className="text-xl font-bold text-muted-foreground">🔄 {round} Tur Oynadın</p>
                     <p className="text-lg font-bold text-success">Harika bir performans!</p>
                 </div>
