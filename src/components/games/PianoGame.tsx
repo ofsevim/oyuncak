@@ -255,8 +255,8 @@ const PianoGame = () => {
       )}
 
       {/* Renkli Piyano */}
-      <div className="bg-gradient-to-b from-gray-800 to-gray-900 p-4 md:p-6 rounded-3xl shadow-2xl">
-        <div className="flex gap-1 md:gap-2">
+      <div className="bg-gradient-to-b from-gray-800 to-gray-900 p-2 md:p-6 rounded-3xl shadow-2xl w-full max-w-fit overflow-x-auto">
+        <div className="flex gap-0.5 md:gap-2 justify-center">
           {NOTES.map((note) => (
             <motion.button
               key={note.note}

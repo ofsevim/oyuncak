@@ -24,7 +24,7 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 p-3 md:p-4">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 p-3 md:p-4 p-safe">
       <div className="max-w-lg mx-auto">
         <motion.div
           className="card-playful flex justify-around items-center p-1.5 md:p-2"

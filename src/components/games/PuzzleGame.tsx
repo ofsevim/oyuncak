@@ -43,9 +43,22 @@ const PuzzleGame = () => {
     const [completedLevels, setCompletedLevels] = useState(0);
     const puzzleRef = useRef<HTMLDivElement>(null);
 
+    const [gridSize, setGridSize] = useState(300);
+
     const difficulty = DIFFICULTIES[currentLevel] || DIFFICULTIES[0];
-    const pieceWidth = 300 / difficulty.cols;
-    const pieceHeight = 300 / difficulty.rows;
+    const pieceWidth = gridSize / difficulty.cols;
+    const pieceHeight = gridSize / difficulty.rows;
+
+    // Ekran boyutuna göre grid'i ayarla
+    useEffect(() => {
+        const updateSize = () => {
+            const width = Math.min(window.innerWidth - 64, 300);
+            setGridSize(width);
+        };
+        updateSize();
+        window.addEventListener('resize', updateSize);
+        return () => window.removeEventListener('resize', updateSize);
+    }, []);
 
     // Puzzle'ı başlat
     const startPuzzle = useCallback((level: number) => {
@@ -134,14 +147,14 @@ const PuzzleGame = () => {
     // Puzzle parça şekli (SVG clip-path benzeri border)
     const getPieceStyle = (row: number, col: number, isPlaced: boolean) => {
         const baseStyle: React.CSSProperties = {
-            width: pieceWidth + 10,
-            height: pieceHeight + 10,
+            width: pieceWidth + 5,
+            height: pieceHeight + 5,
             backgroundImage: `url(${currentImage.src})`,
-            backgroundSize: `${300}px ${300}px`,
+            backgroundSize: `${gridSize}px ${gridSize}px`,
             backgroundPosition: `-${col * pieceWidth}px -${row * pieceHeight}px`,
             borderRadius: '8px',
             boxShadow: isPlaced ? 'none' : '0 4px 12px rgba(0,0,0,0.3)',
-            border: isPlaced ? 'none' : '3px solid rgba(255,255,255,0.8)',
+            border: isPlaced ? 'none' : '2px solid rgba(255,255,255,0.8)',
         };
         return baseStyle;
     };
@@ -170,8 +183,8 @@ const PuzzleGame = () => {
                                 onClick={() => isUnlocked && startPuzzle(index)}
                                 disabled={!isUnlocked}
                                 className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${isUnlocked
-                                        ? 'bg-primary/10 hover:bg-primary/20 hover:scale-105'
-                                        : 'bg-muted opacity-50 cursor-not-allowed'
+                                    ? 'bg-primary/10 hover:bg-primary/20 hover:scale-105'
+                                    : 'bg-muted opacity-50 cursor-not-allowed'
                                     }`}
                             >
                                 <div
@@ -261,12 +274,16 @@ const PuzzleGame = () => {
                 <div
                     ref={puzzleRef}
                     className="relative bg-gray-200 dark:bg-gray-700 rounded-2xl shadow-playful overflow-hidden"
-                    style={{ width: 320, height: 320, padding: 10 }}
+                    style={{ width: gridSize + 20, height: gridSize + 20, padding: 10 }}
                 >
                     {/* Grid çizgileri ve hedef alanları */}
                     <div
-                        className="grid gap-0 w-[300px] h-[300px] rounded-lg overflow-hidden"
-                        style={{ gridTemplateColumns: `repeat(${difficulty.cols}, 1fr)` }}
+                        className="grid gap-0 rounded-lg overflow-hidden"
+                        style={{
+                            gridTemplateColumns: `repeat(${difficulty.cols}, 1fr)`,
+                            width: gridSize,
+                            height: gridSize
+                        }}
                     >
                         {Array.from({ length: difficulty.cols * difficulty.rows }).map((_, index) => {
                             const row = Math.floor(index / difficulty.cols);
@@ -277,8 +294,8 @@ const PuzzleGame = () => {
                                 <div
                                     key={index}
                                     className={`relative transition-all ${draggedPiece !== null && !placedPiece
-                                            ? 'bg-primary/30 hover:bg-primary/50 cursor-pointer'
-                                            : 'bg-gray-300 dark:bg-gray-600'
+                                        ? 'bg-primary/30 hover:bg-primary/50 cursor-pointer'
+                                        : 'bg-gray-300 dark:bg-gray-600'
                                         }`}
                                     style={{
                                         width: pieceWidth,
@@ -321,8 +338,8 @@ const PuzzleGame = () => {
                             <motion.div
                                 key={piece.id}
                                 className={`cursor-grab active:cursor-grabbing rounded-lg overflow-hidden transition-all ${draggedPiece === piece.id
-                                        ? 'scale-110 ring-4 ring-primary shadow-xl z-10'
-                                        : 'hover:scale-105 hover:shadow-lg'
+                                    ? 'scale-110 ring-4 ring-primary shadow-xl z-10'
+                                    : 'hover:scale-105 hover:shadow-lg'
                                     }`}
                                 style={getPieceStyle(piece.row, piece.col, false)}
                                 draggable

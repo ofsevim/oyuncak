@@ -125,6 +125,16 @@
   body {
     @apply bg-background text-foreground font-nunito;
     font-family: 'Nunito', sans-serif;
+    overscroll-behavior-y: none;
+    /* Pull-to-refresh gibi istenmeyen mobil davranışlarını önler */
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
+    /* Çift dokunma gecikmesini önler */
+    -webkit-tap-highlight-color: transparent;
+    /* Mobil tıklama vurgusunu kaldırır */
   }
 }
 
@@ -212,6 +222,15 @@
     @apply fixed inset-0 flex items-center justify-center z-50;
     background: hsl(var(--background) / 0.9);
     backdrop-filter: blur(8px);
+  }
+
+  /* Safe Area Utilities */
+  .p-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .h-safe-screen {
+    height: 100dvh;
   }
 }
 

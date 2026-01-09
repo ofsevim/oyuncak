@@ -38,7 +38,23 @@ const TetrisGame = () => {
     const [linesClearedTotal, setLinesClearedTotal] = useState(0);
     const [gameState, setGameState] = useState<'menu' | 'playing' | 'gameover'>('menu');
     const [dropTime, setDropTime] = useState(INITIAL_DROP_TIME);
+    const [scale, setScale] = useState(1);
     const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Ekran boyutuna göre ölçekle
+    useEffect(() => {
+        const updateScale = () => {
+            const width = window.innerWidth;
+            if (width < 380) {
+                setScale(Math.min(1, (width - 40) / 300));
+            } else {
+                setScale(1);
+            }
+        };
+        updateScale();
+        window.addEventListener('resize', updateScale);
+        return () => window.removeEventListener('resize', updateScale);
+    }, []);
 
     // Rastgele yeni parça oluştur
     const spawnPiece = useCallback(() => {
@@ -248,7 +264,10 @@ const TetrisGame = () => {
                 <div className="text-3xl">🧱</div>
             </div>
 
-            <div className="relative bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-playful border-4 border-white">
+            <div
+                className="relative bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-playful border-4 border-white origin-top"
+                style={{ transform: `scale(${scale})` }}
+            >
                 {/* Grid Alanı */}
                 <div
                     className="grid gap-[1px] bg-slate-200 rounded-lg overflow-hidden relative"

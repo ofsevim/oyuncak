@@ -138,7 +138,11 @@ const WhackAMoleGame = () => {
                 {Array.from({ length: HOLES_COUNT }).map((_, i) => (
                     <div
                         key={i}
-                        className="relative w-24 h-24 md:w-32 md:h-32 bg-amber-950 rounded-full overflow-hidden shadow-inner flex items-center justify-center"
+                        className="relative bg-amber-950 rounded-full overflow-hidden shadow-inner flex items-center justify-center"
+                        style={{
+                            width: 'clamp(80px, 25vw, 128px)',
+                            height: 'clamp(80px, 25vw, 128px)',
+                        }}
                     >
                         <div className="absolute bottom-0 w-full h-1/2 bg-amber-900/40 rounded-full blur-sm" />
                         <AnimatePresence>

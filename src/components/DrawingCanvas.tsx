@@ -40,7 +40,8 @@ const DrawingCanvas = () => {
 
     const container = containerRef.current;
     const width = Math.min(container.clientWidth - 32, 600);
-    const height = Math.min(window.innerHeight - 350, 400);
+    // Yüksekliği ekran yüksekliğine göre daha dinamik hesapla
+    const height = Math.min(window.innerHeight * 0.45, 400);
 
     const canvas = new FabricCanvas(canvasRef.current, {
       width,
@@ -59,7 +60,8 @@ const DrawingCanvas = () => {
     const handleResize = () => {
       if (!containerRef.current) return;
       const newWidth = Math.min(containerRef.current.clientWidth - 32, 600);
-      canvas.setDimensions({ width: newWidth, height });
+      const newHeight = Math.min(window.innerHeight * 0.45, 400);
+      canvas.setDimensions({ width: newWidth, height: newHeight });
       canvas.renderAll();
     };
 

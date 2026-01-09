@@ -422,135 +422,141 @@ const RunnerGame = () => {
       </div>
 
       {/* Oyun alanı */}
-      <div
-        className={`relative w-full max-w-lg h-48 bg-gradient-to-b from-sky-200 to-sky-100 dark:from-sky-900 dark:to-sky-800 rounded-3xl overflow-hidden shadow-playful cursor-pointer select-none ${hasShield || isFrenzy ? 'ring-4 ring-yellow-400 animate-pulse' : ''}`}
-        onClick={jump}
-        onTouchStart={(e) => { e.preventDefault(); jump(); }}
-      >
-        {/* Zemin */}
-        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-green-500 to-green-400" />
-
-        {/* Karakter */}
-        <motion.div
-          className="absolute left-8 flex items-center justify-center pointer-events-none"
-          animate={{
-            bottom: isJumping ? GAME_CONFIG.JUMP_HEIGHT : GAME_CONFIG.GROUND_Y,
-            filter: isFrenzy ? [
-              'hue-rotate(0deg) brightness(1.2)',
-              'hue-rotate(360deg) brightness(1.5)',
-              'hue-rotate(0deg) brightness(1.2)'
-            ] : 'none'
+      <div className="w-full max-w-lg flex justify-center overflow-hidden">
+        <div
+          className={`relative w-[512px] h-48 bg-gradient-to-b from-sky-200 to-sky-100 dark:from-sky-900 dark:to-sky-800 rounded-3xl overflow-hidden shadow-playful cursor-pointer select-none origin-center ${hasShield || isFrenzy ? 'ring-4 ring-yellow-400 animate-pulse' : ''}`}
+          style={{
+            transform: `scale(${Math.min(1, (window.innerWidth - 32) / 512)})`,
+            flexShrink: 0
           }}
-          transition={{
-            bottom: { type: 'spring', stiffness: 500, damping: 25 },
-            filter: { duration: 1, repeat: Infinity, ease: "linear" }
-          }}
+          onClick={jump}
+          onTouchStart={(e) => { e.preventDefault(); jump(); }}
         >
-          {/* Karakter Emojisi */}
-          <span className={`text-5xl relative z-10 ${isFrenzy ? 'drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]' : ''}`}>
-            {character.emoji}
-          </span>
+          {/* Zemin */}
+          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-green-500 to-green-400" />
 
-          {/* Havalı Enerji Kalkanı (Aura) */}
-          {(hasShield || isFrenzy) && (
-            <motion.div
-              className={`absolute w-20 h-20 rounded-full border-4 backdrop-blur-[1px] ${isFrenzy
-                ? 'border-yellow-400 bg-yellow-300/30'
-                : 'border-blue-400/50 bg-blue-300/20'
-                }`}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.5, 0.8, 0.5],
-                rotate: 360
-              }}
-              transition={{
-                duration: isFrenzy ? 0.5 : 1,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-            >
-              <div className={`absolute inset-0 rounded-full ${isFrenzy
-                ? 'shadow-[0_0_30px_rgba(234,179,8,0.8)]'
-                : 'shadow-[0_0_20px_rgba(59,130,246,0.6)]'
-                }`} />
-              <div className={`absolute inset-2 rounded-full border-2 border-dashed animate-spin-slow ${isFrenzy ? 'border-yellow-200/60' : 'border-blue-200/40'
-                }`} />
-
-              {isFrenzy && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <motion.span
-                    animate={{ scale: [1, 1.5, 1], rotate: [0, 180, 360] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="text-xl"
-                  >
-                    ✨
-                  </motion.span>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </motion.div>
-
-        {/* Engeller */}
-        {obstacles.map((obstacle) => (
-          <div
-            key={obstacle.id}
-            className="absolute flex flex-col items-center"
-            style={{
-              left: `${obstacle.x}%`,
-              bottom: GAME_CONFIG.GROUND_Y,
-            }}
-          >
-            {obstacle.type === 'rock' ? (
-              <div className="w-10 h-8 bg-gradient-to-b from-gray-400 to-gray-600 rounded-full shadow-lg border-2 border-gray-700" />
-            ) : (
-              <div className="flex flex-col items-center">
-                <div className="w-4 h-10 bg-gradient-to-b from-green-400 to-green-600 rounded-t-full shadow-lg border-2 border-green-700" />
-                <div className="w-3 h-2 bg-green-700 rounded-b" />
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* Toplanabilirler */}
-        {collectibles.map((collectible) => (
+          {/* Karakter */}
           <motion.div
-            key={collectible.id}
-            className="absolute"
-            style={{
-              left: `${collectible.x}%`,
-              bottom: collectible.y === 1 ? GAME_CONFIG.JUMP_HEIGHT : GAME_CONFIG.GROUND_Y,
+            className="absolute left-8 flex items-center justify-center pointer-events-none"
+            animate={{
+              bottom: isJumping ? GAME_CONFIG.JUMP_HEIGHT : GAME_CONFIG.GROUND_Y,
+              filter: isFrenzy ? [
+                'hue-rotate(0deg) brightness(1.2)',
+                'hue-rotate(360deg) brightness(1.5)',
+                'hue-rotate(0deg) brightness(1.2)'
+              ] : 'none'
             }}
-            animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
-            transition={{ repeat: Infinity, duration: 0.5 }}
+            transition={{
+              bottom: { type: 'spring', stiffness: 500, damping: 25 },
+              filter: { duration: 1, repeat: Infinity, ease: "linear" }
+            }}
           >
-            {collectible.type === 'star' ? (
-              // Yıldız - sarı yıldız
-              <div className="w-8 h-8 bg-yellow-400 shadow-lg" style={{
-                clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
-              }} />
-            ) : collectible.type === 'coin' ? (
-              // Coin - altın para
-              <div className="w-7 h-7 bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-600 rounded-full shadow-lg border-2 border-yellow-700 flex items-center justify-center">
-                <span className="text-yellow-800 font-black text-xs">$</span>
-              </div>
-            ) : (
-              // Kalp - kırmızı kalp
-              <div className="text-3xl">❤️</div>
+            {/* Karakter Emojisi */}
+            <span className={`text-5xl relative z-10 ${isFrenzy ? 'drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]' : ''}`}>
+              {character.emoji}
+            </span>
+
+            {/* Havalı Enerji Kalkanı (Aura) */}
+            {(hasShield || isFrenzy) && (
+              <motion.div
+                className={`absolute w-20 h-20 rounded-full border-4 backdrop-blur-[1px] ${isFrenzy
+                  ? 'border-yellow-400 bg-yellow-300/30'
+                  : 'border-blue-400/50 bg-blue-300/20'
+                  }`}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.5, 0.8, 0.5],
+                  rotate: 360
+                }}
+                transition={{
+                  duration: isFrenzy ? 0.5 : 1,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+              >
+                <div className={`absolute inset-0 rounded-full ${isFrenzy
+                  ? 'shadow-[0_0_30px_rgba(234,179,8,0.8)]'
+                  : 'shadow-[0_0_20px_rgba(59,130,246,0.6)]'
+                  }`} />
+                <div className={`absolute inset-2 rounded-full border-2 border-dashed animate-spin-slow ${isFrenzy ? 'border-yellow-200/60' : 'border-blue-200/40'
+                  }`} />
+
+                {isFrenzy && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.span
+                      animate={{ scale: [1, 1.5, 1], rotate: [0, 180, 360] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="text-xl"
+                    >
+                      ✨
+                    </motion.span>
+                  </div>
+                )}
+              </motion.div>
             )}
           </motion.div>
-        ))}
 
-        {/* Tıklama ipucu */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-muted-foreground/60 font-bold">
-          Zıplamak için tıkla!
+          {/* Engeller */}
+          {obstacles.map((obstacle) => (
+            <div
+              key={obstacle.id}
+              className="absolute flex flex-col items-center"
+              style={{
+                left: `${obstacle.x}%`,
+                bottom: GAME_CONFIG.GROUND_Y,
+              }}
+            >
+              {obstacle.type === 'rock' ? (
+                <div className="w-10 h-8 bg-gradient-to-b from-gray-400 to-gray-600 rounded-full shadow-lg border-2 border-gray-700" />
+              ) : (
+                <div className="flex flex-col items-center">
+                  <div className="w-4 h-10 bg-gradient-to-b from-green-400 to-green-600 rounded-t-full shadow-lg border-2 border-green-700" />
+                  <div className="w-3 h-2 bg-green-700 rounded-b" />
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Toplanabilirler */}
+          {collectibles.map((collectible) => (
+            <motion.div
+              key={collectible.id}
+              className="absolute"
+              style={{
+                left: `${collectible.x}%`,
+                bottom: collectible.y === 1 ? GAME_CONFIG.JUMP_HEIGHT : GAME_CONFIG.GROUND_Y,
+              }}
+              animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 0.5 }}
+            >
+              {collectible.type === 'star' ? (
+                // Yıldız - sarı yıldız
+                <div className="w-8 h-8 bg-yellow-400 shadow-lg" style={{
+                  clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
+                }} />
+              ) : collectible.type === 'coin' ? (
+                // Coin - altın para
+                <div className="w-7 h-7 bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-600 rounded-full shadow-lg border-2 border-yellow-700 flex items-center justify-center">
+                  <span className="text-yellow-800 font-black text-xs">$</span>
+                </div>
+              ) : (
+                // Kalp - kırmızı kalp
+                <div className="text-3xl">❤️</div>
+              )}
+            </motion.div>
+          ))}
+
+          {/* Tıklama ipucu */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-muted-foreground/60 font-bold">
+            Zıplamak için tıkla!
+          </div>
         </div>
       </div>
 
       <button
         onClick={() => setGameState('menu')}
-        className="px-6 py-3 bg-muted text-muted-foreground rounded-full font-bold"
+        className="px-6 py-3 bg-muted text-muted-foreground rounded-full font-bold mt-4"
       >
         ⏸️ Durdur
       </button>
