@@ -1,567 +1,394 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 import confetti from 'canvas-confetti';
 
 interface Obstacle {
-  id: number;
-  x: number;
-  type: 'rock' | 'cactus';
+    id: number;
+    x: number;
+    type: 'rock' | 'bird' | 'cactus';
 }
 
 interface Collectible {
-  id: number;
-  x: number;
-  y: number;
-  type: 'star' | 'coin' | 'heart';
+    id: number;
+    x: number;
+    y: number;
+    type: 'star' | 'coin' | 'heart';
 }
 
 const CHARACTERS = [
-  { id: 'bunny', emoji: '🐰', name: 'Tavşan' },
-  { id: 'fox', emoji: '🦊', name: 'Tilki' },
-  { id: 'cat', emoji: '🐱', name: 'Kedi' },
-  { id: 'dog', emoji: '🐶', name: 'Köpek' },
+    { id: 'bunny', emoji: '🐰', name: 'Tavşan' },
+    { id: 'fox', emoji: '🦊', name: 'Tilki' },
+    { id: 'cat', emoji: '🐱', name: 'Kedi' },
+    { id: 'dog', emoji: '🐶', name: 'Köpek' },
 ];
 
-// Oyun sabitleri
-const GAME_CONFIG = {
-  INITIAL_SPEED: 4,
-  MAX_SPEED: 12,
-  SPEED_INCREMENT: 0.003,
-  JUMP_DURATION: 280,
-  JUMP_HEIGHT: 130,
-  GROUND_Y: 48,
-  PLAYER_X: 8,
-  HITBOX_START: 5,
-  HITBOX_END: 18,
-  MIN_OBSTACLE_GAP: 1800,
-  OBSTACLE_SPAWN_CHANCE: 0.025,
-  COLLECTIBLE_SPAWN_CHANCE: 0.008, // Daha az kalp ve yıldız (Zorluk arttı)
-  INITIAL_LIVES: 3,
-  MAX_LIVES: 5,
-  SHIELD_DURATION: 3000,
-  FRENZY_DURATION: 5000,
+const OBSTACLE_EMOJIS = {
+    rock: '🪨',
+    bird: '🦅',
+    cactus: '🌵',
+};
+
+const COLLECTIBLE_EMOJIS = {
+    star: '⭐',
+    coin: '🪙',
+    heart: '❤️',
 };
 
 const RunnerGame = () => {
-  const [gameState, setGameState] = useState<'menu' | 'playing' | 'gameover'>('menu');
-  const [character, setCharacter] = useState(CHARACTERS[0]);
-  const [isJumping, setIsJumping] = useState(false);
-  const [obstacles, setObstacles] = useState<Obstacle[]>([]);
-  const [collectibles, setCollectibles] = useState<Collectible[]>([]);
-  const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
-  const [speed, setSpeed] = useState(GAME_CONFIG.INITIAL_SPEED);
-  const [lives, setLives] = useState(GAME_CONFIG.INITIAL_LIVES);
-  const [hasShield, setHasShield] = useState(false);
-  const [isFrenzy, setIsFrenzy] = useState(false);
-  const [lastObstacleX, setLastObstacleX] = useState(0);
+    const [gameState, setGameState] = useState<'menu' | 'playing' | 'gameover'>('menu');
+    const [character, setCharacter] = useState(CHARACTERS[0]);
+    const [isJumping, setIsJumping] = useState(false);
+    const [isDucking, setIsDucking] = useState(false);
+    const [isSuper, setIsSuper] = useState(false);
+    const [obstacles, setObstacles] = useState<Obstacle[]>([]);
+    const [collectibles, setCollectibles] = useState<Collectible[]>([]);
+    const [score, setScore] = useState(0);
+    const [highScore, setHighScore] = useState(0);
+    const [speed, setSpeed] = useState(5);
 
-  // Refs for game loop
-  const animationFrameRef = useRef<number | null>(null);
-  const lastTimeRef = useRef<number>(0);
-  const lastObstacleTimeRef = useRef<number>(0);
-  const obstacleIdRef = useRef(0);
-  const collectibleIdRef = useRef(0);
-  const isJumpingRef = useRef(false);
-  const speedRef = useRef(GAME_CONFIG.INITIAL_SPEED);
-  const scoreRef = useRef(0);
-  const livesRef = useRef(GAME_CONFIG.INITIAL_LIVES);
-  const hasShieldRef = useRef(false);
-  const isFrenzyRef = useRef(false);
+    const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const obstacleIdRef = useRef(0);
+    const collectibleIdRef = useRef(0);
+    const playerY = useRef(0);
+    const superTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync refs with state
-  useEffect(() => { isJumpingRef.current = isJumping; }, [isJumping]);
-  useEffect(() => { speedRef.current = speed; }, [speed]);
-  useEffect(() => { scoreRef.current = score; }, [score]);
-  useEffect(() => { livesRef.current = lives; }, [lives]);
-  useEffect(() => { hasShieldRef.current = hasShield; }, [hasShield]);
-  useEffect(() => { isFrenzyRef.current = isFrenzy; }, [isFrenzy]);
-
-  // Zıplama fonksiyonu
-  const jump = useCallback(() => {
-    if (isJumpingRef.current || gameState !== 'playing') return;
-    playPopSound();
-    setIsJumping(true);
-    isJumpingRef.current = true;
-
-    setTimeout(() => {
-      setIsJumping(false);
-      isJumpingRef.current = false;
-    }, GAME_CONFIG.JUMP_DURATION);
-  }, [gameState]);
-
-  // Oyunu başlat
-  const startGame = useCallback(() => {
-    setGameState('playing');
-    setScore(0);
-    setSpeed(GAME_CONFIG.INITIAL_SPEED);
-    setObstacles([]);
-    setCollectibles([]);
-    setIsJumping(false);
-    setLives(GAME_CONFIG.INITIAL_LIVES);
-    setHasShield(false);
-    setIsFrenzy(false);
-    scoreRef.current = 0;
-    speedRef.current = GAME_CONFIG.INITIAL_SPEED;
-    isJumpingRef.current = false;
-    livesRef.current = GAME_CONFIG.INITIAL_LIVES;
-    hasShieldRef.current = false;
-    isFrenzyRef.current = false;
-    lastTimeRef.current = 0;
-    lastObstacleTimeRef.current = 0;
-    obstacleIdRef.current = 0;
-    collectibleIdRef.current = 0;
-  }, []);
-
-  // Can kaybet
-  const loseLife = useCallback(() => {
-    if (hasShieldRef.current || isFrenzyRef.current) return; // Kalkan veya Frenzy varsa hasar almaz
-
-    playErrorSound();
-    setLives(prev => {
-      const newLives = prev - 1;
-      livesRef.current = newLives;
-
-      if (newLives <= 0) {
-        // Oyun bitti
-        setGameState('gameover');
-        if (scoreRef.current > highScore) {
-          setHighScore(scoreRef.current);
-          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        }
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-          animationFrameRef.current = null;
-        }
-      } else {
-        // Geçici koruma
-        setHasShield(true);
-        hasShieldRef.current = true;
+    const jump = useCallback(() => {
+        if (isJumping || isDucking || gameState !== 'playing') return;
+        playPopSound();
+        setIsJumping(true);
+        playerY.current = 1;
         setTimeout(() => {
-          setHasShield(false);
-          hasShieldRef.current = false;
-        }, GAME_CONFIG.SHIELD_DURATION);
-      }
+            setIsJumping(false);
+            playerY.current = 0;
+        }, 500);
+    }, [isJumping, isDucking, gameState]);
 
-      return newLives;
-    });
-  }, [highScore]);
+    const duck = useCallback(() => {
+        if (isJumping || isDucking || gameState !== 'playing') return;
+        setIsDucking(true);
+        setTimeout(() => setIsDucking(false), 400);
+    }, [isJumping, isDucking, gameState]);
 
-  // Ana oyun döngüsü
-  useEffect(() => {
-    if (gameState !== 'playing') return;
+    const startGame = () => {
+        setGameState('playing');
+        setScore(0);
+        setSpeed(5);
+        setObstacles([]);
+        setCollectibles([]);
+        setIsJumping(false);
+        setIsDucking(false);
+        setIsSuper(false);
+    };
 
-    const gameLoop = (currentTime: number) => {
-      if (!lastTimeRef.current) lastTimeRef.current = currentTime;
-
-      const deltaTime = currentTime - lastTimeRef.current;
-      lastTimeRef.current = currentTime;
-
-      const updateInterval = 50;
-      const updates = Math.floor(deltaTime / updateInterval) || 1;
-
-      for (let i = 0; i < updates; i++) {
-        // Engel spawn
-        if (currentTime - lastObstacleTimeRef.current > GAME_CONFIG.MIN_OBSTACLE_GAP) {
-          if (Math.random() < GAME_CONFIG.OBSTACLE_SPAWN_CHANCE) {
-            const types: ('rock' | 'cactus')[] = ['rock', 'cactus'];
-            setObstacles(prev => [...prev, {
-              id: obstacleIdRef.current++,
-              x: 100,
-              type: types[Math.floor(Math.random() * types.length)],
-            }]);
-            lastObstacleTimeRef.current = currentTime;
-          }
+    const endGame = useCallback(() => {
+        playErrorSound();
+        setGameState('gameover');
+        setIsSuper(false);
+        if (score > highScore) {
+            setHighScore(score);
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
         }
-
-        // Collectible spawn
-        if (Math.random() < GAME_CONFIG.COLLECTIBLE_SPAWN_CHANCE) {
-          const types: ('star' | 'coin' | 'heart')[] = ['star', 'coin', 'heart'];
-          setCollectibles(prev => [...prev, {
-            id: collectibleIdRef.current++,
-            x: 100,
-            y: Math.random() > 0.5 ? 0 : 1,
-            type: types[Math.floor(Math.random() * types.length)],
-          }]);
+        if (gameLoopRef.current) {
+            clearInterval(gameLoopRef.current);
         }
+    }, [score, highScore]);
 
-        // Hız hesapla
-        const currentSpeed = speedRef.current;
+    // Game loop
+    useEffect(() => {
+        if (gameState !== 'playing') return;
 
-        // Hareket ve çarpışma kontrolü
-        setObstacles(prev => {
-          const updated = prev
-            .map(o => ({ ...o, x: o.x - currentSpeed * 0.3 }))
-            .filter(o => o.x > -10);
+        let lastObstacleTime = 0;
+        const minObstacleGap = 1500; // En az 1.5 saniye arayla engel gelsin
 
-          // Çarpışma kontrolü
-          for (const obstacle of updated) {
-            if (obstacle.x > GAME_CONFIG.HITBOX_START && obstacle.x < GAME_CONFIG.HITBOX_END) {
-              if (!isJumpingRef.current) {
-                if (isFrenzyRef.current) {
-                  // Frenzy modunda engel yok edilir ve puan verilir
-                  playSuccessSound();
-                  setScore(s => s + 100);
-                  return updated.filter(o => o.id !== obstacle.id);
-                } else {
-                  loseLife();
-                  return updated.filter(o => o.id !== obstacle.id);
-                }
-              }
+        gameLoopRef.current = setInterval(() => {
+            const now = Date.now();
+
+            // Engel spawn - sadece yeterli boşluk varsa
+            if (now - lastObstacleTime > minObstacleGap && Math.random() < 0.03) {
+                const types: ('rock' | 'cactus')[] = ['rock', 'cactus'];
+                setObstacles(prev => [...prev, {
+                    id: obstacleIdRef.current++,
+                    x: 100,
+                    type: types[Math.floor(Math.random() * types.length)],
+                }]);
+                lastObstacleTime = now;
             }
-          }
 
-          return updated;
-        });
+            // Collectible spawn - havada veya yerde
+            if (Math.random() < 0.015) {
+                const types: ('star' | 'coin' | 'heart')[] = ['star', 'coin', 'heart'];
+                setCollectibles(prev => [...prev, {
+                    id: collectibleIdRef.current++,
+                    x: 100,
+                    y: Math.random() > 0.5 ? 0 : 1, // 0: yerde, 1: havada
+                    type: types[Math.floor(Math.random() * types.length)],
+                }]);
+            }
 
-        // Collectibles hareket ve toplama
+            // Hareket
+            setObstacles(prev => prev
+                .map(o => ({ ...o, x: o.x - speed }))
+                .filter(o => o.x > -10)
+            );
+
+            setCollectibles(prev => prev
+                .map(c => ({ ...c, x: c.x - speed }))
+                .filter(c => c.x > -10)
+            );
+
+            // Skor
+            setScore(prev => prev + 1);
+
+            // Hız artışı (daha yavaş)
+            setSpeed(prev => Math.min(prev + 0.0005, 10));
+        }, 50);
+
+        return () => {
+            if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+        };
+    }, [gameState, speed]);
+
+    // Çarpışma kontrolü
+    useEffect(() => {
+        if (gameState !== 'playing') return;
+
+        // Engel çarpışması
+        for (const obstacle of obstacles) {
+            if (obstacle.x > 5 && obstacle.x < 20) {
+                // Süper güç aktifse engellerden geçebilir!
+                if (!isJumping && !isSuper) {
+                    endGame();
+                    return;
+                }
+            }
+        }
+
+        // Collectible toplama
         setCollectibles(prev => {
-          const remaining: Collectible[] = [];
+            const remaining: Collectible[] = [];
+            for (const c of prev) {
+                if (c.x > 5 && c.x < 20) {
+                    const canCollect = c.y === 1 ? isJumping : !isJumping;
+                    if (canCollect) {
+                        playSuccessSound();
 
-          for (const c of prev) {
-            const newX = c.x - currentSpeed * 0.3;
+                        // Yıldız toplandıysa süper güç ver
+                        if (c.type === 'star') {
+                            setIsSuper(true);
+                            if (superTimeoutRef.current) clearTimeout(superTimeoutRef.current);
+                            superTimeoutRef.current = setTimeout(() => setIsSuper(false), 5000);
+                        }
 
-            if (newX < -10) continue;
-
-            // Toplama kontrolü
-            if (newX > GAME_CONFIG.HITBOX_START && newX < GAME_CONFIG.HITBOX_END) {
-              const canCollect = c.y === 1 ? isJumpingRef.current : !isJumpingRef.current;
-              if (canCollect) {
-                playSuccessSound();
-
-                if (c.type === 'heart') {
-                  // Kalp: Can ekle
-                  setLives(l => {
-                    const newLives = Math.min(l + 1, GAME_CONFIG.MAX_LIVES);
-                    livesRef.current = newLives;
-                    return newLives;
-                  });
-                } else if (c.type === 'star') {
-                  // Yıldız: Süper Mod (5 saniye)
-                  setIsFrenzy(true);
-                  isFrenzyRef.current = true;
-                  setScore(s => s + 50);
-                  setTimeout(() => {
-                    setIsFrenzy(false);
-                    isFrenzyRef.current = false;
-                  }, GAME_CONFIG.FRENZY_DURATION);
-                } else {
-                  // Coin: Puan
-                  setScore(s => s + 25);
+                        setScore(s => s + (c.type === 'star' ? 100 : c.type === 'coin' ? 25 : 10));
+                        continue;
+                    }
                 }
-                continue;
-              }
+                remaining.push(c);
             }
-
-            remaining.push({ ...c, x: newX });
-          }
-
-          return remaining;
+            return remaining;
         });
+    }, [obstacles, collectibles, isJumping, isSuper, gameState, endGame]);
 
-        // Skor artışı
-        setScore(s => s + 1);
+    // Klavye kontrolü
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                jump();
+            } else if (e.code === 'ArrowDown') {
+                e.preventDefault();
+                duck();
+            }
+        };
 
-        // Hız artışı
-        setSpeed(s => Math.min(s + GAME_CONFIG.SPEED_INCREMENT, GAME_CONFIG.MAX_SPEED));
-      }
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [jump, duck]);
 
-      animationFrameRef.current = requestAnimationFrame(gameLoop);
-    };
-
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [gameState, loseLife]);
-
-  // Klavye kontrolü
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' || e.code === 'ArrowUp') {
-        e.preventDefault();
-        if (gameState === 'playing') jump();
-        else if (gameState === 'menu' || gameState === 'gameover') startGame();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [jump, startGame, gameState]);
-
-  // Menü ekranı
-  if (gameState === 'menu') {
-    return (
-      <motion.div
-        className="flex flex-col items-center gap-6 p-4 pb-32"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h2 className="text-3xl font-black text-foreground">🏃 Koşucu</h2>
-        <p className="text-muted-foreground font-semibold text-center">
-          Engelleri atla, güçleri topla!
-        </p>
-
-        {/* Power-up açıklamaları */}
-        <div className="bg-card/50 p-4 rounded-2xl space-y-3 text-sm">
-          <p className="flex items-center gap-2"><span className="text-xl">❤️</span> <span className="font-bold">Kalp:</span> +1 Can</p>
-          <p className="flex items-center gap-2">
-            <span className="w-6 h-6 bg-yellow-400 shadow-sm" style={{ clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' }} />
-            <span className="font-bold">Yıldız:</span> Süper Mod (5 saniye ölümsüzlük + bonus puan)
-          </p>
-          <p className="flex items-center gap-2">
-            <span className="w-5 h-5 bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-600 rounded-full border-2 border-yellow-700 flex items-center justify-center text-xs font-black text-yellow-800">$</span>
-            <span className="font-bold">Coin:</span> +25 Puan
-          </p>
-        </div>
-
-        {/* Karakter seçimi */}
-        <div className="flex gap-3">
-          {CHARACTERS.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => { playPopSound(); setCharacter(c); }}
-              className={`p-4 rounded-2xl text-4xl transition-all ${character.id === c.id
-                ? 'bg-primary scale-110 shadow-lg'
-                : 'bg-muted hover:scale-105'
-                }`}
-            >
-              {c.emoji}
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={startGame}
-          className="px-10 py-4 bg-primary text-white text-xl font-black rounded-full shadow-lg btn-bouncy"
-        >
-          🚀 BAŞLA!
-        </button>
-
-        {highScore > 0 && (
-          <p className="text-muted-foreground font-bold">
-            🏆 En Yüksek Skor: <span className="text-primary">{highScore}</span>
-          </p>
-        )}
-      </motion.div>
-    );
-  }
-
-  // Oyun bitti ekranı
-  if (gameState === 'gameover') {
-    return (
-      <motion.div
-        className="flex flex-col items-center gap-6 p-4 pb-32"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-      >
-        <span className="text-7xl">😵</span>
-        <h2 className="text-3xl font-black text-foreground">Oyun Bitti!</h2>
-
-        <div className="bg-primary/10 border-2 border-primary/30 p-6 rounded-2xl shadow-playful text-center space-y-2">
-          <p className="text-2xl font-black text-primary">Skor: {score}</p>
-          {score >= highScore && score > 0 && (
-            <p className="text-success font-bold">🎉 Yeni Rekor!</p>
-          )}
-        </div>
-
-        <button
-          onClick={startGame}
-          className="px-10 py-4 bg-primary text-white text-xl font-black rounded-full shadow-lg btn-bouncy"
-        >
-          🔄 Tekrar Oyna
-        </button>
-
-        <button
-          onClick={() => setGameState('menu')}
-          className="px-6 py-3 bg-muted text-muted-foreground rounded-full font-bold"
-        >
-          Ana Menü
-        </button>
-      </motion.div>
-    );
-  }
-
-  // Oyun ekranı
-  return (
-    <motion.div
-      className="flex flex-col items-center gap-4 p-4 pb-32"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
-      {/* Skor ve Canlar */}
-      <div className="flex items-center gap-4">
-        <span className="px-4 py-2 bg-primary text-white rounded-full font-black">
-          ⭐ {score}
-        </span>
-
-        {/* Can göstergesi */}
-        <div className="flex gap-1 px-3 py-2 bg-red-100 dark:bg-red-900/30 rounded-full">
-          {Array.from({ length: GAME_CONFIG.MAX_LIVES }).map((_, i) => (
-            <span
-              key={i}
-              className={`text-xl transition-all ${i < lives ? 'opacity-100' : 'opacity-20'}`}
-            >
-              ❤️
-            </span>
-          ))}
-        </div>
-
-        {/* Frenzy göstergesi */}
-        {isFrenzy && (
-          <span className="px-3 py-2 bg-yellow-400 text-yellow-900 rounded-full font-bold text-sm animate-pulse">
-            ✨ SÜPER MOD!
-          </span>
-        )}
-      </div>
-
-      {/* Oyun alanı */}
-      <div className="w-full max-w-lg flex justify-center overflow-hidden">
-        <div
-          className={`relative w-[512px] h-48 bg-gradient-to-b from-sky-200 to-sky-100 dark:from-sky-900 dark:to-sky-800 rounded-3xl overflow-hidden shadow-playful cursor-pointer select-none origin-center ${hasShield || isFrenzy ? 'ring-4 ring-yellow-400 animate-pulse' : ''}`}
-          style={{
-            transform: `scale(${Math.min(1, (window.innerWidth - 32) / 512)})`,
-            flexShrink: 0
-          }}
-          onClick={jump}
-          onTouchStart={(e) => { e.preventDefault(); jump(); }}
-        >
-          {/* Zemin */}
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-green-500 to-green-400" />
-
-          {/* Karakter */}
-          <motion.div
-            className="absolute left-8 flex items-center justify-center pointer-events-none"
-            animate={{
-              bottom: isJumping ? GAME_CONFIG.JUMP_HEIGHT : GAME_CONFIG.GROUND_Y,
-              filter: isFrenzy ? [
-                'hue-rotate(0deg) brightness(1.2)',
-                'hue-rotate(360deg) brightness(1.5)',
-                'hue-rotate(0deg) brightness(1.2)'
-              ] : 'none'
-            }}
-            transition={{
-              bottom: { type: 'spring', stiffness: 500, damping: 25 },
-              filter: { duration: 1, repeat: Infinity, ease: "linear" }
-            }}
-          >
-            {/* Karakter Emojisi */}
-            <span className={`text-5xl relative z-10 ${isFrenzy ? 'drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]' : ''}`}>
-              {character.emoji}
-            </span>
-
-            {/* Havalı Enerji Kalkanı (Aura) */}
-            {(hasShield || isFrenzy) && (
-              <motion.div
-                className={`absolute w-20 h-20 rounded-full border-4 backdrop-blur-[1px] ${isFrenzy
-                  ? 'border-yellow-400 bg-yellow-300/30'
-                  : 'border-blue-400/50 bg-blue-300/20'
-                  }`}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 0.8, 0.5],
-                  rotate: 360
-                }}
-                transition={{
-                  duration: isFrenzy ? 0.5 : 1,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-              >
-                <div className={`absolute inset-0 rounded-full ${isFrenzy
-                  ? 'shadow-[0_0_30px_rgba(234,179,8,0.8)]'
-                  : 'shadow-[0_0_20px_rgba(59,130,246,0.6)]'
-                  }`} />
-                <div className={`absolute inset-2 rounded-full border-2 border-dashed animate-spin-slow ${isFrenzy ? 'border-yellow-200/60' : 'border-blue-200/40'
-                  }`} />
-
-                {isFrenzy && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <motion.span
-                      animate={{ scale: [1, 1.5, 1], rotate: [0, 180, 360] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="text-xl"
-                    >
-                      ✨
-                    </motion.span>
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </motion.div>
-
-          {/* Engeller */}
-          {obstacles.map((obstacle) => (
-            <div
-              key={obstacle.id}
-              className="absolute flex flex-col items-center"
-              style={{
-                left: `${obstacle.x}%`,
-                bottom: GAME_CONFIG.GROUND_Y,
-              }}
-            >
-              {obstacle.type === 'rock' ? (
-                <div className="w-10 h-8 bg-gradient-to-b from-gray-400 to-gray-600 rounded-full shadow-lg border-2 border-gray-700" />
-              ) : (
-                <div className="flex flex-col items-center">
-                  <div className="w-4 h-10 bg-gradient-to-b from-green-400 to-green-600 rounded-t-full shadow-lg border-2 border-green-700" />
-                  <div className="w-3 h-2 bg-green-700 rounded-b" />
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* Toplanabilirler */}
-          {collectibles.map((collectible) => (
+    if (gameState === 'menu') {
+        return (
             <motion.div
-              key={collectible.id}
-              className="absolute"
-              style={{
-                left: `${collectible.x}%`,
-                bottom: collectible.y === 1 ? GAME_CONFIG.JUMP_HEIGHT : GAME_CONFIG.GROUND_Y,
-              }}
-              animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 0.5 }}
+                className="flex flex-col items-center gap-6 p-4 pb-32"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
             >
-              {collectible.type === 'star' ? (
-                // Yıldız - sarı yıldız
-                <div className="w-8 h-8 bg-yellow-400 shadow-lg" style={{
-                  clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
-                }} />
-              ) : collectible.type === 'coin' ? (
-                // Coin - altın para
-                <div className="w-7 h-7 bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-600 rounded-full shadow-lg border-2 border-yellow-700 flex items-center justify-center">
-                  <span className="text-yellow-800 font-black text-xs">$</span>
+                <h2 className="text-3xl font-black text-foreground">🏃 Koşucu</h2>
+                <p className="text-muted-foreground font-semibold text-center">
+                    Engelleri atla, yıldızları topla!
+                </p>
+
+                <div className="space-y-3">
+                    <p className="font-bold text-center text-foreground">Karakter Seç:</p>
+                    <div className="flex gap-3">
+                        {CHARACTERS.map((char) => (
+                            <button
+                                key={char.id}
+                                onClick={() => { playPopSound(); setCharacter(char); }}
+                                className={`p-4 rounded-2xl text-4xl transition-all ${character.id === char.id
+                                    ? 'bg-primary scale-110 ring-4 ring-primary/50'
+                                    : 'bg-muted hover:scale-105'
+                                    }`}
+                            >
+                                {char.emoji}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-              ) : (
-                // Kalp - kırmızı kalp
-                <div className="text-3xl">❤️</div>
-              )}
+
+                {highScore > 0 && (
+                    <p className="text-lg font-bold text-muted-foreground">
+                        🏆 En Yüksek: {highScore}
+                    </p>
+                )}
+
+                <button
+                    onClick={startGame}
+                    className="px-12 py-5 bg-success text-white text-2xl font-black rounded-full shadow-lg btn-bouncy"
+                >
+                    Başla! 🚀
+                </button>
+
+                <div className="text-center text-sm text-muted-foreground">
+                    <p>⬆️ veya SPACE: Zıpla</p>
+                    <p>📱 Mobil: Ekrana dokun = Zıpla</p>
+                </div>
             </motion.div>
-          ))}
+        );
+    }
 
-          {/* Tıklama ipucu */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-muted-foreground/60 font-bold">
-            Zıplamak için tıkla!
-          </div>
-        </div>
-      </div>
+    return (
+        <motion.div
+            className="flex flex-col items-center gap-4 p-4 pb-32"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+        >
+            <div className="flex gap-4">
+                <span className="px-4 py-2 bg-primary/10 rounded-full font-black text-primary">
+                    Skor: {score}
+                </span>
+                <span className="px-4 py-2 bg-muted rounded-full font-black text-muted-foreground">
+                    🏆 {highScore}
+                </span>
+            </div>
 
-      <button
-        onClick={() => setGameState('menu')}
-        className="px-6 py-3 bg-muted text-muted-foreground rounded-full font-bold mt-4"
-      >
-        ⏸️ Durdur
-      </button>
-    </motion.div>
-  );
+            {/* Oyun alanı */}
+            <div
+                className="relative w-full max-w-lg h-48 bg-gradient-to-b from-sky-200 to-sky-100 dark:from-sky-900 dark:to-sky-800 rounded-3xl overflow-hidden shadow-playful"
+                onClick={jump}
+                onContextMenu={(e) => { e.preventDefault(); duck(); }}
+            >
+                {/* Zemin */}
+                <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-green-500 to-green-400" />
+
+                {/* Süper Güç Yazısı - Absolute konumlandırma ile layout kayması engellendi */}
+                <AnimatePresence>
+                    {isSuper && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20, scale: 0.5 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.5 }}
+                            className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-yellow-400 text-yellow-900 px-4 py-1 rounded-full font-black text-sm shadow-lg border-2 border-white animate-pulse"
+                        >
+                            🌟 SÜPER GÜÇ!
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Karakter */}
+                <motion.div
+                    className="absolute left-8 text-5xl z-20"
+                    animate={{
+                        bottom: isJumping ? 100 : 48,
+                        scale: isSuper ? [1, 1.2, 1] : 1,
+                        filter: isSuper ? 'drop-shadow(0 0 10px rgba(255,215,0,0.8))' : 'none'
+                    }}
+                    transition={{
+                        bottom: { type: 'spring', stiffness: 300, damping: 20 },
+                        scale: { repeat: Infinity, duration: 0.5 }
+                    }}
+                >
+                    {character.emoji}
+                </motion.div>
+
+                {/* Engeller */}
+                {obstacles.map((obstacle) => (
+                    <motion.div
+                        key={obstacle.id}
+                        className="absolute text-4xl"
+                        style={{
+                            left: `${obstacle.x}%`,
+                            bottom: 48,
+                            opacity: isSuper ? 0.6 : 1 // Süper güçte engeller şeffaflaşır
+                        }}
+                    >
+                        {OBSTACLE_EMOJIS[obstacle.type]}
+                    </motion.div>
+                ))}
+
+                {/* Toplanabilirler */}
+                {collectibles.map((c) => (
+                    <motion.div
+                        key={c.id}
+                        className="absolute text-3xl"
+                        style={{
+                            left: `${c.x}%`,
+                            bottom: c.y === 1 ? 100 : 48,
+                        }}
+                        animate={{ rotate: [0, 360] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                    >
+                        {COLLECTIBLE_EMOJIS[c.type]}
+                    </motion.div>
+                ))}
+
+                {/* Game Over overlay */}
+                {gameState === 'gameover' && (
+                    <motion.div
+                        className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-4 z-40"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                    >
+                        <p className="text-4xl font-black text-white">Game Over!</p>
+                        <p className="text-2xl font-bold text-white">Skor: {score}</p>
+                        {score === highScore && score > 0 && (
+                            <p className="text-xl font-bold text-yellow-400">🏆 Yeni Rekor!</p>
+                        )}
+                    </motion.div>
+                )}
+            </div>
+
+            {/* Mobil kontroller */}
+            <div className="flex gap-4">
+                <button
+                    onClick={jump}
+                    className="px-12 py-5 bg-primary text-white rounded-full font-black text-2xl btn-bouncy shadow-lg"
+                >
+                    ⬆️ Zıpla!
+                </button>
+            </div>
+
+            {gameState === 'gameover' && (
+                <div className="flex gap-4">
+                    <button
+                        onClick={startGame}
+                        className="px-8 py-4 bg-success text-white rounded-full font-black text-xl btn-bouncy"
+                    >
+                        🔄 Tekrar
+                    </button>
+                    <button
+                        onClick={() => setGameState('menu')}
+                        className="px-8 py-4 bg-muted text-muted-foreground rounded-full font-bold"
+                    >
+                        ← Menü
+                    </button>
+                </div>
+            )}
+        </motion.div>
+    );
 };
 
 export default RunnerGame;
+
