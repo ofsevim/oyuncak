@@ -63,7 +63,7 @@ const RunnerGame = () => {
         setTimeout(() => {
             setIsJumping(false);
             playerY.current = 0;
-        }, 500);
+        }, 400);
     }, [isJumping, isDucking, gameState]);
 
     const duck = useCallback(() => {
@@ -306,7 +306,7 @@ const RunnerGame = () => {
                         filter: isSuper ? 'drop-shadow(0 0 10px rgba(255,215,0,0.8))' : 'none'
                     }}
                     transition={{
-                        bottom: { type: 'spring', stiffness: 300, damping: 20 },
+                        bottom: { type: 'spring', stiffness: 400, damping: 25 },
                         scale: { repeat: Infinity, duration: 0.5 }
                     }}
                 >
