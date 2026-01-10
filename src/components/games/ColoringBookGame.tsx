@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Download, ChevronLeft, ChevronRight, Eraser } from 'lucide-react';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
 
@@ -56,6 +56,8 @@ const ColoringBookGame = () => {
     const [canvasSize, setCanvasSize] = useState({ width: 500, height: 500 });
     const [isLoading, setIsLoading] = useState(true);
     const [isEraser, setIsEraser] = useState(false);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [isHovering, setIsHovering] = useState(false);
 
     // Canvas boyutunu hesapla
     useEffect(() => {
@@ -306,19 +308,48 @@ const ColoringBookGame = () => {
                 ref={containerRef}
                 className="relative bg-white rounded-2xl shadow-playful overflow-hidden border-4 border-primary/20 w-full"
                 style={{ maxWidth: 550 }}
+                onMouseMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+                }}
+                onMouseEnter={() => setIsHovering(true)}
+                onMouseLeave={() => setIsHovering(false)}
             >
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
                         <span className="text-2xl animate-spin">🎨</span>
                     </div>
                 )}
+                <AnimatePresence>
+                    {isHovering && !isLoading && (
+                        <motion.div
+                            className="fixed pointer-events-none z-50 rounded-full border-2 border-white shadow-lg mix-blend-difference"
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{
+                                opacity: 1,
+                                scale: 1,
+                                x: mousePos.x - 12,
+                                y: mousePos.y - 12,
+                                backgroundColor: isEraser ? '#FFFFFF' : activeColor,
+                            }}
+                            exit={{ opacity: 0, scale: 0 }}
+                            style={{
+                                position: 'absolute',
+                                left: 0,
+                                top: 0,
+                                width: 24,
+                                height: 24,
+                            }}
+                        />
+                    )}
+                </AnimatePresence>
                 <canvas
                     ref={canvasRef}
                     width={canvasSize.width}
                     height={canvasSize.height}
                     onClick={handleCanvasClick}
                     onTouchStart={handleCanvasClick}
-                    className="cursor-pointer w-full h-auto"
+                    className="cursor-none w-full h-auto"
                 />
             </div>
 

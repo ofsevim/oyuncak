@@ -21,6 +21,9 @@ const WhackAMoleGame = () => {
     const [moleType, setMoleType] = useState(MOLE_TYPES[0]);
     const [gamePhase, setGamePhase] = useState<'start' | 'playing' | 'ended'>('start');
     const [showSuccess, setShowSuccess] = useState(false);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [isHovering, setIsHovering] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const moleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -140,7 +143,39 @@ const WhackAMoleGame = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 p-6 bg-amber-900/20 rounded-[3rem] shadow-inner border-8 border-amber-900/10">
+            <div
+                ref={containerRef}
+                className="grid grid-cols-3 gap-4 p-6 bg-amber-900/20 rounded-[3rem] shadow-inner border-8 border-amber-900/10 relative overflow-hidden"
+                onMouseMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+                }}
+                onMouseEnter={() => setIsHovering(true)}
+                onMouseLeave={() => setIsHovering(false)}
+            >
+                <AnimatePresence>
+                    {isHovering && gamePhase === 'playing' && (
+                        <motion.div
+                            className="fixed pointer-events-none z-50 text-4xl"
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{
+                                opacity: 1,
+                                scale: 1,
+                                x: mousePos.x - 20,
+                                y: mousePos.y - 20,
+                            }}
+                            exit={{ opacity: 0, scale: 0 }}
+                            style={{
+                                position: 'absolute',
+                                left: 0,
+                                top: 0,
+                            }}
+                        >
+                            🔨
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 {Array.from({ length: HOLES_COUNT }).map((_, i) => (
                     <div
                         key={i}
@@ -158,7 +193,7 @@ const WhackAMoleGame = () => {
                                     animate={{ y: 0 }}
                                     exit={{ y: 100 }}
                                     onClick={() => handleWhack(i)}
-                                    className="text-5xl md:text-7xl cursor-pointer z-10 select-none"
+                                    className="text-5xl md:text-7xl cursor-none z-10 select-none"
                                 >
                                     {moleType.emoji}
                                 </motion.button>

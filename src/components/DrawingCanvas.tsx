@@ -33,6 +33,8 @@ const DrawingCanvas = () => {
   const [brushSize, setBrushSize] = useState(8);
   const [showStickers, setShowStickers] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = useState(false);
   const rainbowIndexRef = useRef(0);
 
   useEffect(() => {
@@ -158,6 +160,7 @@ const DrawingCanvas = () => {
     const dataUrl = fabricCanvas.toDataURL({
       format: 'png',
       quality: 1,
+      multiplier: 1,
     });
     // Galeriye kaydet
     const name = `Çizim ${new Date().toLocaleDateString('tr-TR')}`;
@@ -171,6 +174,7 @@ const DrawingCanvas = () => {
     const dataUrl = fabricCanvas.toDataURL({
       format: 'png',
       quality: 1,
+      multiplier: 1,
     });
     const link = document.createElement('a');
     link.download = 'benim-resmim.png';
@@ -261,11 +265,40 @@ const DrawingCanvas = () => {
       {/* Canvas */}
       <div
         ref={containerRef}
-        className="w-full flex justify-center"
+        className="w-full flex justify-center relative"
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+        }}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
       >
+        <AnimatePresence>
+          {isHovering && fabricCanvas?.isDrawingMode && (
+            <motion.div
+              className="fixed pointer-events-none z-50 rounded-full border-2 border-white shadow-lg mix-blend-difference"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                x: mousePos.x - brushSize / 2,
+                y: mousePos.y - brushSize / 2,
+                backgroundColor: isRainbow ? RAINBOW_COLORS[rainbowIndexRef.current] : activeColor,
+                width: brushSize,
+                height: brushSize,
+              }}
+              exit={{ opacity: 0, scale: 0 }}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+              }}
+            />
+          )}
+        </AnimatePresence>
         <canvas
           ref={canvasRef}
-          className="drawing-canvas shadow-playful"
+          className="drawing-canvas shadow-playful cursor-none"
         />
       </div>
 
