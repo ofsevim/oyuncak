@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 import confetti from 'canvas-confetti';
+import { getNextRandomIndex, getNextRandom, shuffleArray } from '@/utils/shuffle';
 
 const ITEMS = ['🍎', '⭐️', '🚗', '🐱', '🍦', '🎈'];
 
@@ -12,11 +13,17 @@ const CountingGame = () => {
     const [emoji, setEmoji] = useState('🍎');
     const [options, setOptions] = useState<number[]>([]);
     const nextRoundTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastCountRef = useRef<number | null>(null);
+    const lastEmojiRef = useRef<string | null>(null);
 
     const setupRound = useCallback(() => {
-        // 1 ile 10 arasında rastgele bir sayı seç (eskiden 1-5 idi)
-        const newCount = Math.floor(Math.random() * 10) + 1;
-        const newEmoji = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+        // 1 ile 10 arasında rastgele bir sayı seç
+        const newCount = getNextRandomIndex(10, lastCountRef.current === null ? null : lastCountRef.current - 1) + 1;
+        const newEmoji = getNextRandom(ITEMS, lastEmojiRef.current);
+
+        lastCountRef.current = newCount;
+        lastEmojiRef.current = newEmoji;
+
         setCount(newCount);
         setEmoji(newEmoji);
 
@@ -25,7 +32,6 @@ const CountingGame = () => {
         ops.add(newCount);
 
         while (ops.size < 3) {
-            // Doğru cevabın çevresinden sayılar seç, ama 1-12 aralığında kalsın
             const offset = Math.floor(Math.random() * 7) - 3; // -3 ile +3 arası
             const option = Math.max(1, Math.min(12, newCount + offset));
             if (option !== newCount) {
@@ -33,14 +39,7 @@ const CountingGame = () => {
             }
         }
 
-        // Eğer hala 3 seçenek yoksa (nadiren olur), 1'den başlayarak doldur
-        if (ops.size < 3) {
-            for (let i = 1; i <= 12 && ops.size < 3; i++) {
-                if (i !== newCount) ops.add(i);
-            }
-        }
-
-        setOptions(Array.from(ops).sort((a, b) => a - b));
+        setOptions(shuffleArray(Array.from(ops)));
     }, []);
 
     useEffect(() => {

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 import confetti from 'canvas-confetti';
+import { shuffleArray } from '@/utils/shuffle';
 
 interface MatchPair {
   id: string;
@@ -75,20 +76,11 @@ const DragMatchGame = () => {
 
   const currentCategory = CATEGORIES[categoryIndex];
 
-  const shuffleArray = useCallback(<T,>(array: T[]): T[] => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  }, []);
-
   const initializeRound = useCallback(() => {
     setMatchedPairs(new Set());
     setSelectedLeft(null);
     setShuffledRight(shuffleArray(currentCategory.pairs));
-  }, [currentCategory.pairs, shuffleArray]);
+  }, [currentCategory.pairs]);
 
   // İlk yüklemede ve kategori değiştiğinde
   useState(() => {
@@ -103,7 +95,7 @@ const DragMatchGame = () => {
 
   const handleRightClick = (pairId: string) => {
     if (!selectedLeft || matchedPairs.has(pairId)) return;
-    
+
     if (selectedLeft === pairId) {
       // Doğru eşleşme!
       playSuccessSound();
@@ -112,7 +104,7 @@ const DragMatchGame = () => {
       setMatchedPairs(newMatched);
       setScore(prev => prev + 10);
       setSelectedLeft(null);
-      
+
       // Tümü eşleşti mi?
       if (newMatched.size === currentCategory.pairs.length) {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -151,24 +143,23 @@ const DragMatchGame = () => {
       animate={{ opacity: 1, y: 0 }}
     >
       <h2 className="text-3xl font-black text-foreground">🎯 Eşleştir</h2>
-      
+
       {/* Kategori seçimi */}
       <div className="flex flex-wrap justify-center gap-2">
         {CATEGORIES.map((cat, index) => (
           <button
             key={cat.id}
             onClick={() => changeCategory(index)}
-            className={`px-4 py-2 rounded-xl font-bold transition-all ${
-              categoryIndex === index
+            className={`px-4 py-2 rounded-xl font-bold transition-all ${categoryIndex === index
                 ? 'bg-primary text-white scale-105'
                 : 'bg-muted hover:bg-muted/80'
-            }`}
+              }`}
           >
             {cat.emoji} {cat.name}
           </button>
         ))}
       </div>
-      
+
       <div className="flex gap-4">
         <span className="px-4 py-2 bg-primary/10 rounded-full font-black text-primary">
           Puan: {score}
@@ -177,7 +168,7 @@ const DragMatchGame = () => {
           ✓ {matchedPairs.size}/{currentCategory.pairs.length}
         </span>
       </div>
-      
+
       {showCelebration ? (
         <motion.div
           className="text-center py-12"
@@ -197,13 +188,12 @@ const DragMatchGame = () => {
                 key={pair.id}
                 onClick={() => handleLeftClick(pair.id)}
                 disabled={matchedPairs.has(pair.id)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-playful transition-all ${
-                  matchedPairs.has(pair.id)
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-playful transition-all ${matchedPairs.has(pair.id)
                     ? 'bg-success/20 opacity-50'
                     : selectedLeft === pair.id
                       ? 'bg-primary text-white scale-105 ring-4 ring-primary/50'
                       : 'bg-card hover:scale-105'
-                }`}
+                  }`}
                 whileTap={{ scale: 0.95 }}
               >
                 <span className="text-3xl">{pair.left.emoji}</span>
@@ -211,7 +201,7 @@ const DragMatchGame = () => {
               </motion.button>
             ))}
           </div>
-          
+
           {/* Sağ taraf (karışık) */}
           <div className="flex flex-col gap-3">
             {(shuffledRight.length > 0 ? shuffledRight : currentCategory.pairs).map((pair) => (
@@ -219,11 +209,10 @@ const DragMatchGame = () => {
                 key={pair.id}
                 onClick={() => handleRightClick(pair.id)}
                 disabled={matchedPairs.has(pair.id)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-playful transition-all ${
-                  matchedPairs.has(pair.id)
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-playful transition-all ${matchedPairs.has(pair.id)
                     ? 'bg-success/20 opacity-50'
                     : 'bg-card hover:scale-105 hover:bg-secondary'
-                }`}
+                  }`}
                 whileTap={{ scale: 0.95 }}
               >
                 <span className="text-3xl">{pair.right.emoji}</span>
@@ -233,7 +222,7 @@ const DragMatchGame = () => {
           </div>
         </div>
       )}
-      
+
       <button
         onClick={initializeRound}
         className="px-6 py-3 bg-muted text-muted-foreground rounded-full font-bold"
@@ -245,4 +234,3 @@ const DragMatchGame = () => {
 };
 
 export default DragMatchGame;
-

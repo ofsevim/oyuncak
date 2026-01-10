@@ -64,14 +64,7 @@ const LEVELS = [
   },
 ];
 
-const shuffleArray = <T,>(array: T[]): T[] => {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
-};
+import { smartShuffle, shuffleArray } from '@/utils/shuffle';
 
 const ShapeComponent = ({ type, color, size = 60, isShadow = false }: { type: string; color: string; size?: number; isShadow?: boolean }) => {
   const shadowStyle = isShadow ? { filter: 'brightness(0.3)', opacity: 0.3 } : {};
@@ -114,7 +107,7 @@ const ShapeMatcherGame = () => {
   const initLevel = useCallback((lvl: number) => {
     if (!LEVELS[lvl]) return;
     const shapes = LEVELS[lvl].shapes;
-    setShuffledShapes(shuffleArray(shapes));
+    setShuffledShapes(smartShuffle(shapes, 'type'));
     setShuffledTargets(shuffleArray(shapes));
     setMatchedShapes([]);
     setSelectedShape(null);
@@ -210,8 +203,8 @@ const ShapeMatcherGame = () => {
                 type="button"
                 aria-label={`${shape.type} şeklini seç`}
                 className={`p-3 md:p-4 rounded-3xl transition-all duration-200 touch-manipulation select-none ${selectedShape?.id === shape.id
-                    ? 'bg-card shadow-2xl ring-4 ring-primary scale-105 md:scale-110'
-                    : 'bg-card shadow-playful active:shadow-xl'
+                  ? 'bg-card shadow-2xl ring-4 ring-primary scale-105 md:scale-110'
+                  : 'bg-card shadow-playful active:shadow-xl'
                   }`}
                 style={{
                   WebkitTapHighlightColor: 'transparent',
@@ -243,8 +236,8 @@ const ShapeMatcherGame = () => {
               disabled={matchedShapes.includes(shape.id)}
               aria-label={`${shape.type} gölgesi`}
               className={`p-3 md:p-4 rounded-3xl transition-all duration-300 touch-manipulation select-none ${matchedShapes.includes(shape.id)
-                  ? 'bg-success/30 border-success shadow-inner scale-105 cursor-default'
-                  : 'bg-card/60 border-transparent active:bg-card active:scale-105 cursor-pointer'
+                ? 'bg-success/30 border-success shadow-inner scale-105 cursor-default'
+                : 'bg-card/60 border-transparent active:bg-card active:scale-105 cursor-pointer'
                 } border-4`}
               style={{
                 WebkitTapHighlightColor: 'transparent',

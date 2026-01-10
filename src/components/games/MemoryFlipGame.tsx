@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
+import { shuffleArray } from '@/utils/shuffle';
 
 const ALL_EMOJIS = [
   '🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐮',
@@ -35,10 +36,9 @@ const MemoryFlipGame = () => {
     clearAllTimeouts();
     const totalCards = gridSize * gridSize;
     const pairCount = Math.floor(totalCards / 2);
-    
+
     // Emojileri karıştır ve ihtiyacımız olan kadarını al
-    const shuffledAllEmojis = [...ALL_EMOJIS].sort(() => Math.random() - 0.5);
-    const selectedEmojis = shuffledAllEmojis.slice(0, pairCount);
+    const selectedEmojis = shuffleArray(ALL_EMOJIS).slice(0, pairCount);
 
     const gameEmojis = [...selectedEmojis, ...selectedEmojis];
 
@@ -47,17 +47,11 @@ const MemoryFlipGame = () => {
       gameEmojis.push('⭐');
     }
 
-    // Fisher-Yates Karıştırma Algoritması
-    for (let i = gameEmojis.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [gameEmojis[i], gameEmojis[j]] = [gameEmojis[j], gameEmojis[i]];
-    }
-
-    const initialCards = gameEmojis.map((emoji, i) => ({
+    const initialCards = shuffleArray(gameEmojis).map((emoji, i) => ({
       id: i,
       emoji,
       isFlipped: false,
-      isMatched: false // Başlangıçta hiçbir şey eşleşmiş değil
+      isMatched: false
     }));
 
     setCards(initialCards);
@@ -74,8 +68,6 @@ const MemoryFlipGame = () => {
     const card = cards.find(c => c.id === cardId);
     if (!card || card.isFlipped || card.isMatched || flippedCards.length >= 2) return;
 
-    // '⭐' kartına tıklandığında ne olacak? 
-    // Eğer bu bir '⭐' ise ve başka kart açık değilse, otomatik eşleşsin
     if (card.emoji === '⭐' && flippedCards.length === 0) {
       playPopSound();
       playSuccessSound();

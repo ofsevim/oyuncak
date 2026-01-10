@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 import confetti from 'canvas-confetti';
+import { getNextRandom, shuffleArray } from '@/utils/shuffle';
 
 const ALPHABET = [
   { letter: 'A', word: 'Arı', emoji: '🐝', color: 'bg-red-400' },
@@ -46,6 +47,7 @@ const AlphabetGame = () => {
   const [score, setScore] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [showResult, setShowResult] = useState<'correct' | 'wrong' | null>(null);
+  const lastLetterRef = useRef<typeof ALPHABET[0] | null>(null);
 
   const currentLetter = ALPHABET[currentIndex];
 
@@ -60,9 +62,9 @@ const AlphabetGame = () => {
   };
 
   const generateQuiz = useCallback(() => {
-    const randomIndex = Math.floor(Math.random() * ALPHABET.length);
-    const correct = ALPHABET[randomIndex];
-    
+    const correct = getNextRandom(ALPHABET, lastLetterRef.current);
+    lastLetterRef.current = correct;
+
     // 3 yanlış seçenek
     const wrongOptions: string[] = [];
     while (wrongOptions.length < 3) {
@@ -73,8 +75,8 @@ const AlphabetGame = () => {
     }
 
     // Karıştır
-    const allOptions = [correct.letter, ...wrongOptions].sort(() => Math.random() - 0.5);
-    
+    const allOptions = shuffleArray([correct.letter, ...wrongOptions]);
+
     setQuizLetter(correct);
     setQuizOptions(allOptions);
     setShowResult(null);
@@ -82,9 +84,9 @@ const AlphabetGame = () => {
 
   const handleQuizAnswer = (answer: string) => {
     if (showResult) return;
-    
+
     setTotalQuestions(prev => prev + 1);
-    
+
     if (answer === quizLetter?.letter) {
       playSuccessSound();
       setScore(prev => prev + 1);
@@ -119,17 +121,15 @@ const AlphabetGame = () => {
       <div className="flex gap-2 bg-muted p-1 rounded-2xl">
         <button
           onClick={() => setMode('explore')}
-          className={`px-6 py-2 rounded-xl font-bold transition-all ${
-            mode === 'explore' ? 'bg-primary text-white' : 'hover:bg-card'
-          }`}
+          className={`px-6 py-2 rounded-xl font-bold transition-all ${mode === 'explore' ? 'bg-primary text-white' : 'hover:bg-card'
+            }`}
         >
           📚 Keşfet
         </button>
         <button
           onClick={startQuiz}
-          className={`px-6 py-2 rounded-xl font-bold transition-all ${
-            mode === 'quiz' ? 'bg-primary text-white' : 'hover:bg-card'
-          }`}
+          className={`px-6 py-2 rounded-xl font-bold transition-all ${mode === 'quiz' ? 'bg-primary text-white' : 'hover:bg-card'
+            }`}
         >
           🎯 Quiz
         </button>
@@ -180,11 +180,10 @@ const AlphabetGame = () => {
                 <button
                   key={item.letter}
                   onClick={() => { playPopSound(); setCurrentIndex(index); }}
-                  className={`w-10 h-10 rounded-xl font-bold transition-all ${
-                    index === currentIndex
+                  className={`w-10 h-10 rounded-xl font-bold transition-all ${index === currentIndex
                       ? 'bg-primary text-white scale-110'
                       : 'bg-muted hover:bg-muted/80'
-                  }`}
+                    }`}
                 >
                   {item.letter}
                 </button>
@@ -215,7 +214,7 @@ const AlphabetGame = () => {
                 <p className="text-xl font-bold text-muted-foreground">
                   Bu hangi harfle başlar?
                 </p>
-                
+
                 <div className="text-center space-y-2">
                   <span className="text-8xl">{quizLetter.emoji}</span>
                   <p className="text-3xl font-black text-foreground">{quizLetter.word}</p>
@@ -227,15 +226,14 @@ const AlphabetGame = () => {
                       key={option}
                       onClick={() => handleQuizAnswer(option)}
                       disabled={showResult !== null}
-                      className={`w-24 h-24 text-4xl font-black rounded-2xl shadow-playful transition-all ${
-                        showResult
+                      className={`w-24 h-24 text-4xl font-black rounded-2xl shadow-playful transition-all ${showResult
                           ? option === quizLetter.letter
                             ? 'bg-success text-white'
                             : showResult === 'wrong' && option === quizOptions.find(o => o !== quizLetter.letter)
                               ? 'bg-destructive text-white'
                               : 'bg-muted'
                           : 'bg-card hover:scale-105'
-                      }`}
+                        }`}
                     >
                       {option}
                     </button>
@@ -261,4 +259,3 @@ const AlphabetGame = () => {
 };
 
 export default AlphabetGame;
-

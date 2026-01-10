@@ -5,15 +5,7 @@ import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 
-// Fisher-Yates shuffle helper
-const shuffle = <T,>(array: T[]): T[] => {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
-};
+import { smartShuffle, shuffleArray } from '@/utils/shuffle';
 
 const ROUNDS = [
   { items: [{ id: '1', emoji: '🐕' }, { id: '2', emoji: '🐈' }, { id: '3', emoji: '🐰' }, { id: '4', emoji: '🚗' }], oddOne: '4', hint: 'Hangisi hayvan değil?' },
@@ -56,7 +48,7 @@ const OddOneOutGame = () => {
 
   const initGame = useCallback(() => {
     clearAllTimeouts();
-    const newShuffledRounds = shuffle(ROUNDS);
+    const newShuffledRounds = smartShuffle(ROUNDS, 'hint');
     setShuffledRounds(newShuffledRounds);
     setCurrentRoundIndex(0);
     setSelectedId(null);
@@ -65,7 +57,7 @@ const OddOneOutGame = () => {
     setShowSuccess(false);
     // İlk raundu ayarla
     if (newShuffledRounds.length > 0) {
-      setRoundItems(shuffle(newShuffledRounds[0].items));
+      setRoundItems(shuffleArray(newShuffledRounds[0].items));
     } else {
       setRoundItems([]);
     }
@@ -83,10 +75,10 @@ const OddOneOutGame = () => {
   }, []);
 
   const round = shuffledRounds[currentRoundIndex];
-  
-  useEffect(() => { 
+
+  useEffect(() => {
     if (round) {
-      setRoundItems(shuffle(round.items));
+      setRoundItems(shuffleArray(round.items));
     }
   }, [currentRoundIndex, round]);
 
@@ -95,9 +87,9 @@ const OddOneOutGame = () => {
     setSelectedId(itemId);
     if (itemId === round.oddOne) {
       setIsCorrect(true); playPopSound(); playSuccessSound();
-      const t = setTimeout(() => { 
-        if (currentRoundIndex < shuffledRounds.length - 1) setShowSuccess(true); 
-        else { setGameComplete(true); setShowSuccess(true); } 
+      const t = setTimeout(() => {
+        if (currentRoundIndex < shuffledRounds.length - 1) setShowSuccess(true);
+        else { setGameComplete(true); setShowSuccess(true); }
       }, 500);
       timeoutsRef.current.push(t);
     } else {
@@ -107,15 +99,15 @@ const OddOneOutGame = () => {
     }
   };
 
-  const handleNextRound = () => { 
-    setShowSuccess(false); 
-    if (!gameComplete) { 
-      setCurrentRoundIndex(p => p + 1); 
-      setSelectedId(null); 
-      setIsCorrect(false); 
-    } 
+  const handleNextRound = () => {
+    setShowSuccess(false);
+    if (!gameComplete) {
+      setCurrentRoundIndex(p => p + 1);
+      setSelectedId(null);
+      setIsCorrect(false);
+    }
   };
-  
+
   const handleRestart = () => initGame();
 
   if (!round) return null;

@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 import confetti from 'canvas-confetti';
+import { getNextRandom, shuffleArray } from '@/utils/shuffle';
 
 // Hayvanlar ve ses frekansları (basit synth ile taklit)
 const ANIMALS = [
@@ -32,22 +33,22 @@ const AnimalSoundsGame = () => {
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [showResult, setShowResult] = useState<'correct' | 'wrong' | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const lastAnimalRef = useRef<typeof ANIMALS[0] | null>(null);
 
   const getAudioContext = useCallback(() => {
     if (!audioCtxRef.current) {
-      audioCtxRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     return audioCtxRef.current;
   }, []);
 
   const playAnimalSound = useCallback((animal: typeof ANIMALS[0]) => {
     const ctx = getAudioContext();
-    
+
     animal.freq.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      // Hayvan tipine göre farklı dalga formu
       switch (animal.type) {
         case 'meow':
         case 'baa':
@@ -67,7 +68,7 @@ const AnimalSoundsGame = () => {
 
       const startTime = ctx.currentTime + i * 0.15;
       osc.frequency.setValueAtTime(freq, startTime);
-      
+
       if (animal.freq.length > 1) {
         osc.frequency.linearRampToValueAtTime(
           animal.freq[(i + 1) % animal.freq.length],
@@ -96,10 +97,9 @@ const AnimalSoundsGame = () => {
   };
 
   const generateQuiz = useCallback(() => {
-    const randomIndex = Math.floor(Math.random() * ANIMALS.length);
-    const correct = ANIMALS[randomIndex];
-    
-    // 3 yanlış seçenek
+    const correct = getNextRandom(ANIMALS, lastAnimalRef.current);
+    lastAnimalRef.current = correct;
+
     const wrongOptions: typeof ANIMALS = [];
     while (wrongOptions.length < 3) {
       const randAnimal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
@@ -108,14 +108,12 @@ const AnimalSoundsGame = () => {
       }
     }
 
-    // Karıştır
-    const allOptions = [correct, ...wrongOptions].sort(() => Math.random() - 0.5);
-    
+    const allOptions = shuffleArray([correct, ...wrongOptions]);
+
     setQuizAnimal(correct);
     setQuizOptions(allOptions);
     setShowResult(null);
 
-    // Sesi çal
     setTimeout(() => {
       playAnimalSound(correct);
     }, 500);
@@ -123,9 +121,9 @@ const AnimalSoundsGame = () => {
 
   const handleQuizAnswer = (animal: typeof ANIMALS[0]) => {
     if (showResult) return;
-    
+
     setTotalQuestions(prev => prev + 1);
-    
+
     if (animal.id === quizAnimal?.id) {
       playSuccessSound();
       setScore(prev => prev + 1);
@@ -162,60 +160,44 @@ const AnimalSoundsGame = () => {
     >
       <h2 className="text-3xl font-black text-foreground">🐾 Hayvan Sesleri</h2>
 
-      {/* Mod seçimi */}
       <div className="flex gap-2 bg-muted p-1 rounded-2xl">
         <button
           onClick={() => setMode('explore')}
-          className={`px-6 py-2 rounded-xl font-bold transition-all ${
-            mode === 'explore' ? 'bg-primary text-white' : 'hover:bg-card'
-          }`}
+          className={`px-6 py-2 rounded-xl font-bold transition-all ${mode === 'explore' ? 'bg-primary text-white' : 'hover:bg-card'
+            }`}
         >
           🔊 Dinle
         </button>
         <button
           onClick={startQuiz}
-          className={`px-6 py-2 rounded-xl font-bold transition-all ${
-            mode === 'quiz' ? 'bg-primary text-white' : 'hover:bg-card'
-          }`}
+          className={`px-6 py-2 rounded-xl font-bold transition-all ${mode === 'quiz' ? 'bg-primary text-white' : 'hover:bg-card'
+            }`}
         >
           🎯 Tahmin Et
         </button>
       </div>
 
       {mode === 'explore' ? (
-        /* Keşfet Modu */
         <div className="grid grid-cols-3 md:grid-cols-4 gap-4 max-w-lg">
           {ANIMALS.map((animal) => (
             <motion.button
               key={animal.id}
               onClick={() => handleAnimalClick(animal)}
-              className={`flex flex-col items-center gap-2 p-4 rounded-2xl shadow-playful transition-all ${
-                activeAnimal === animal.id
+              className={`flex flex-col items-center gap-2 p-4 rounded-2xl shadow-playful transition-all ${activeAnimal === animal.id
                   ? 'bg-primary scale-110'
                   : 'bg-card hover:scale-105'
-              }`}
+                }`}
               whileTap={{ scale: 0.95 }}
             >
               <span className="text-5xl">{animal.emoji}</span>
-              <span className={`text-sm font-bold ${
-                activeAnimal === animal.id ? 'text-white' : 'text-foreground'
-              }`}>
+              <span className={`text-sm font-bold ${activeAnimal === animal.id ? 'text-white' : 'text-foreground'
+                }`}>
                 {animal.name}
               </span>
-              {activeAnimal === animal.id && (
-                <motion.span
-                  className="text-xs text-white/80"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  {animal.sound}
-                </motion.span>
-              )}
             </motion.button>
           ))}
         </div>
       ) : (
-        /* Quiz Modu */
         <div className="flex flex-col items-center gap-6">
           <div className="flex gap-4">
             <span className="px-4 py-2 bg-success text-white rounded-full font-black">
@@ -251,18 +233,16 @@ const AnimalSoundsGame = () => {
                       key={animal.id}
                       onClick={() => handleQuizAnswer(animal)}
                       disabled={showResult !== null}
-                      className={`flex flex-col items-center gap-2 p-6 rounded-2xl shadow-playful transition-all ${
-                        showResult
+                      className={`flex flex-col items-center gap-2 p-6 rounded-2xl shadow-playful transition-all ${showResult
                           ? animal.id === quizAnimal.id
-                            ? 'bg-success'
+                            ? 'bg-success text-white'
                             : 'bg-muted'
                           : 'bg-card hover:scale-105'
-                      }`}
+                        }`}
                     >
                       <span className="text-6xl">{animal.emoji}</span>
-                      <span className={`font-bold ${
-                        showResult && animal.id === quizAnimal.id ? 'text-white' : 'text-foreground'
-                      }`}>
+                      <span className={`font-bold ${showResult && animal.id === quizAnimal.id ? 'text-white' : 'text-foreground'
+                        }`}>
                         {animal.name}
                       </span>
                     </button>
@@ -293,4 +273,3 @@ const AnimalSoundsGame = () => {
 };
 
 export default AnimalSoundsGame;
-

@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
 import confetti from 'canvas-confetti';
+import { getNextRandomIndex, shuffleArray } from '@/utils/shuffle';
 
 type Operation = '+' | '-';
 type Difficulty = 'easy' | 'medium' | 'hard';
@@ -32,6 +33,8 @@ const MathGame = () => {
   const [timeLeft, setTimeLeft] = useState(15);
   const [gameStarted, setGameStarted] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastNum1Ref = useRef<number | null>(null);
+  const lastNum2Ref = useRef<number | null>(null);
 
   const getDifficultyConfig = useCallback(() => {
     return DIFFICULTIES.find(d => d.id === difficulty)!;
@@ -41,17 +44,20 @@ const MathGame = () => {
     const config = getDifficultyConfig();
     const [min, max] = config.range;
     const operation = config.ops[Math.floor(Math.random() * config.ops.length)];
-    
-    let num1 = Math.floor(Math.random() * (max - min + 1)) + min;
-    let num2 = Math.floor(Math.random() * (max - min + 1)) + min;
-    
+
+    let num1 = getNextRandomIndex(max - min + 1, lastNum1Ref.current === null ? null : lastNum1Ref.current - min) + min;
+    let num2 = getNextRandomIndex(max - min + 1, lastNum2Ref.current === null ? null : lastNum2Ref.current - min) + min;
+
+    lastNum1Ref.current = num1;
+    lastNum2Ref.current = num2;
+
     // Çıkarmada negatif sonuç olmasın
     if (operation === '-' && num2 > num1) {
       [num1, num2] = [num2, num1];
     }
-    
+
     const answer = operation === '+' ? num1 + num2 : num1 - num2;
-    
+
     // Seçenekler oluştur
     const wrongAnswers: number[] = [];
     while (wrongAnswers.length < 3) {
@@ -61,9 +67,9 @@ const MathGame = () => {
         wrongAnswers.push(wrong);
       }
     }
-    
-    const allOptions = [answer, ...wrongAnswers].sort(() => Math.random() - 0.5);
-    
+
+    const allOptions = shuffleArray([answer, ...wrongAnswers]);
+
     setQuestion({ num1, num2, operation, answer });
     setOptions(allOptions);
     setShowResult(null);
@@ -80,20 +86,20 @@ const MathGame = () => {
 
   const handleAnswer = (selected: number) => {
     if (showResult || !question) return;
-    
+
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-    
+
     setTotalQuestions(prev => prev + 1);
-    
+
     if (selected === question.answer) {
       playSuccessSound();
       const bonus = Math.ceil(timeLeft / 3);
       setScore(prev => prev + 10 + bonus);
       setStreak(prev => prev + 1);
       setShowResult('correct');
-      
+
       if (streak >= 2) {
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
       }
@@ -102,7 +108,7 @@ const MathGame = () => {
       setStreak(0);
       setShowResult('wrong');
     }
-    
+
     setTimeout(() => {
       generateQuestion();
     }, 1500);
@@ -111,7 +117,7 @@ const MathGame = () => {
   // Timer
   useEffect(() => {
     if (!gameStarted || showResult) return;
-    
+
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -126,7 +132,7 @@ const MathGame = () => {
         return prev - 1;
       });
     }, 1000);
-    
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -143,24 +149,23 @@ const MathGame = () => {
         <p className="text-muted-foreground font-semibold text-center">
           Toplama ve çıkarma işlemlerini çöz!
         </p>
-        
+
         <div className="space-y-3 w-full max-w-sm">
           <p className="font-bold text-center text-foreground">Zorluk Seç:</p>
           {DIFFICULTIES.map((d) => (
             <button
               key={d.id}
               onClick={() => setDifficulty(d.id)}
-              className={`w-full px-6 py-4 rounded-2xl font-bold text-lg transition-all ${
-                difficulty === d.id
+              className={`w-full px-6 py-4 rounded-2xl font-bold text-lg transition-all ${difficulty === d.id
                   ? 'bg-primary text-white scale-105'
                   : 'bg-muted hover:bg-muted/80'
-              }`}
+                }`}
             >
               {d.label}
             </button>
           ))}
         </div>
-        
+
         <button
           onClick={startGame}
           className="px-12 py-5 bg-success text-white text-2xl font-black rounded-full shadow-lg btn-bouncy"
@@ -178,7 +183,7 @@ const MathGame = () => {
       animate={{ opacity: 1, y: 0 }}
     >
       <h2 className="text-3xl font-black text-foreground">🔢 Matematik</h2>
-      
+
       {/* Skor ve Timer */}
       <div className="flex flex-wrap justify-center gap-3">
         <span className="px-4 py-2 bg-primary/10 rounded-full font-black text-primary">
@@ -187,13 +192,12 @@ const MathGame = () => {
         <span className="px-4 py-2 bg-orange-100 dark:bg-orange-900/30 rounded-full font-black text-orange-500">
           🔥 Seri: {streak}
         </span>
-        <span className={`px-4 py-2 rounded-full font-black ${
-          timeLeft <= 5 ? 'bg-destructive text-white animate-pulse' : 'bg-muted text-muted-foreground'
-        }`}>
+        <span className={`px-4 py-2 rounded-full font-black ${timeLeft <= 5 ? 'bg-destructive text-white animate-pulse' : 'bg-muted text-muted-foreground'
+          }`}>
           ⏱️ {timeLeft}s
         </span>
       </div>
-      
+
       {question && (
         <AnimatePresence mode="wait">
           <motion.div
@@ -213,7 +217,7 @@ const MathGame = () => {
                 <span className="text-muted-foreground">?</span>
               </div>
             </div>
-            
+
             {/* Seçenekler */}
             <div className="grid grid-cols-2 gap-4">
               {options.map((option, index) => (
@@ -221,19 +225,18 @@ const MathGame = () => {
                   key={index}
                   onClick={() => handleAnswer(option)}
                   disabled={showResult !== null}
-                  className={`w-24 h-24 text-3xl font-black rounded-2xl shadow-playful transition-all ${
-                    showResult
+                  className={`w-24 h-24 text-3xl font-black rounded-2xl shadow-playful transition-all ${showResult
                       ? option === question.answer
                         ? 'bg-success text-white scale-110'
                         : 'bg-muted'
                       : 'bg-card hover:scale-105 hover:bg-primary hover:text-white'
-                  }`}
+                    }`}
                 >
                   {option}
                 </button>
               ))}
             </div>
-            
+
             {showResult && (
               <motion.p
                 className={`text-2xl font-black ${showResult === 'correct' ? 'text-success' : 'text-destructive'}`}
@@ -246,7 +249,7 @@ const MathGame = () => {
           </motion.div>
         </AnimatePresence>
       )}
-      
+
       <button
         onClick={() => setGameStarted(false)}
         className="px-6 py-3 bg-muted text-muted-foreground rounded-full font-bold"
@@ -258,4 +261,3 @@ const MathGame = () => {
 };
 
 export default MathGame;
-

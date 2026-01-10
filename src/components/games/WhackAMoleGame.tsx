@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
+import { getNextRandomIndex, getNextRandom } from '@/utils/shuffle';
 
 const GAME_TIME = 30;
 const HOLES_COUNT = 9;
@@ -23,6 +24,8 @@ const WhackAMoleGame = () => {
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const moleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastHoleRef = useRef<number | null>(null);
+    const lastMoleTypeRef = useRef<typeof MOLE_TYPES[0] | null>(null);
 
     const spawnMole = useCallback(() => {
         if (gamePhase !== 'playing') return;
@@ -30,8 +33,11 @@ const WhackAMoleGame = () => {
         // Mevcut timeoutları temizle
         if (moleRef.current) clearTimeout(moleRef.current);
 
-        const randomHole = Math.floor(Math.random() * HOLES_COUNT);
-        const randomType = MOLE_TYPES[Math.random() < 0.1 ? 2 : Math.random() < 0.3 ? 1 : 0];
+        const randomHole = getNextRandomIndex(HOLES_COUNT, lastHoleRef.current);
+        const randomType = getNextRandom(MOLE_TYPES, lastMoleTypeRef.current);
+
+        lastHoleRef.current = randomHole;
+        lastMoleTypeRef.current = randomType;
 
         setActiveHole(randomHole);
         setMoleType(randomType);
