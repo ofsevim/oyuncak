@@ -145,7 +145,7 @@ const WhackAMoleGame = () => {
 
             <div
                 ref={containerRef}
-                className="grid grid-cols-3 gap-4 p-6 bg-amber-900/20 rounded-[3rem] shadow-inner border-8 border-amber-900/10 relative overflow-hidden"
+                className="grid grid-cols-3 gap-4 p-6 bg-amber-900/20 rounded-[3rem] shadow-inner border-8 border-amber-900/10 relative overflow-hidden cursor-none"
                 onMouseMove={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
@@ -153,28 +153,18 @@ const WhackAMoleGame = () => {
                 onMouseEnter={() => setIsHovering(true)}
                 onMouseLeave={() => setIsHovering(false)}
             >
-                <AnimatePresence>
-                    {isHovering && gamePhase === 'playing' && (
-                        <motion.div
-                            className="fixed pointer-events-none z-50 text-4xl"
-                            initial={{ opacity: 0, scale: 0 }}
-                            animate={{
-                                opacity: 1,
-                                scale: 1,
-                                x: mousePos.x - 20,
-                                y: mousePos.y - 20,
-                            }}
-                            exit={{ opacity: 0, scale: 0 }}
-                            style={{
-                                position: 'absolute',
-                                left: 0,
-                                top: 0,
-                            }}
-                        >
-                            🔨
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {/* Custom cursor - simple div without AnimatePresence */}
+                {isHovering && gamePhase === 'playing' && (
+                    <div
+                        className="absolute pointer-events-none z-50 text-4xl"
+                        style={{
+                            left: mousePos.x - 20,
+                            top: mousePos.y - 20,
+                        }}
+                    >
+                        🔨
+                    </div>
+                )}
 
                 {Array.from({ length: HOLES_COUNT }).map((_, i) => (
                     <div

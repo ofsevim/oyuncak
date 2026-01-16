@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { BookOpen, Shuffle, Filter } from "lucide-react";
 import type { Story } from "@/data/stories";
 import { STORIES, STORY_CATEGORIES } from "@/data/stories";
@@ -47,11 +46,7 @@ export default function StoryLibrary() {
   }
 
   return (
-    <motion.div
-      className="mx-auto w-full max-w-5xl px-4 pb-32"
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
+    <div className="mx-auto w-full max-w-5xl px-4 pb-32 animate-fade-in">
       <div className="flex flex-col items-center gap-3 text-center">
         <div className="flex items-center gap-3">
           <BookOpen className="h-8 w-8 text-primary" />
@@ -67,11 +62,10 @@ export default function StoryLibrary() {
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${
-                activeCategory === cat.id
+              className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${activeCategory === cat.id
                   ? 'bg-primary text-white scale-105'
                   : 'bg-muted hover:bg-muted/80'
-              }`}
+                }`}
             >
               {cat.emoji} {cat.label}
             </button>
@@ -148,7 +142,7 @@ export default function StoryLibrary() {
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 }
 

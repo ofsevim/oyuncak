@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { Trash2, Download, X, Image } from 'lucide-react';
 import { playPopSound } from '@/utils/soundEffects';
 
@@ -72,18 +72,12 @@ export default function DrawingGallery({ onClose }: DrawingGalleryProps) {
   };
 
   return (
-    <motion.div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <div
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in"
       onClick={onClose}
     >
-      <motion.div
+      <div
         className="bg-card rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -115,10 +109,9 @@ export default function DrawingGallery({ onClose }: DrawingGalleryProps) {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {drawings.map((drawing) => (
-                <motion.div
+                <div
                   key={drawing.id}
-                  className="relative group"
-                  whileHover={{ scale: 1.02 }}
+                  className="relative group transition-transform hover:scale-105"
                 >
                   <button
                     onClick={() => setSelectedDrawing(drawing)}
@@ -149,53 +142,45 @@ export default function DrawingGallery({ onClose }: DrawingGalleryProps) {
                       </button>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           )}
         </div>
 
         {/* Lightbox */}
-        <AnimatePresence>
-          {selectedDrawing && (
-            <motion.div
-              className="absolute inset-0 bg-black/80 flex items-center justify-center p-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedDrawing(null)}
+        {selectedDrawing && (
+          <div
+            className="absolute inset-0 bg-black/80 flex items-center justify-center p-8 animate-fade-in"
+            onClick={() => setSelectedDrawing(null)}
+          >
+            <div
+              className="relative max-w-full max-h-full animate-pop-in"
             >
-              <motion.div
-                className="relative max-w-full max-h-full"
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.8 }}
-              >
-                <img
-                  src={selectedDrawing.dataUrl}
-                  alt={selectedDrawing.name}
-                  className="max-w-full max-h-[70vh] rounded-2xl shadow-2xl"
-                />
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDownload(selectedDrawing); }}
-                    className="px-6 py-3 bg-primary text-white rounded-full font-bold flex items-center gap-2"
-                  >
-                    <Download className="w-5 h-5" /> İndir
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(selectedDrawing.id); }}
-                    className="px-6 py-3 bg-destructive text-white rounded-full font-bold flex items-center gap-2"
-                  >
-                    <Trash2 className="w-5 h-5" /> Sil
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </motion.div>
+              <img
+                src={selectedDrawing.dataUrl}
+                alt={selectedDrawing.name}
+                className="max-w-full max-h-[70vh] rounded-2xl shadow-2xl"
+              />
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3">
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDownload(selectedDrawing); }}
+                  className="px-6 py-3 bg-primary text-white rounded-full font-bold flex items-center gap-2"
+                >
+                  <Download className="w-5 h-5" /> İndir
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDelete(selectedDrawing.id); }}
+                  className="px-6 py-3 bg-destructive text-white rounded-full font-bold flex items-center gap-2"
+                >
+                  <Trash2 className="w-5 h-5" /> Sil
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

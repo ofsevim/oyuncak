@@ -54,6 +54,8 @@ const RunnerGame = () => {
     const collectibleIdRef = useRef(0);
     const playerY = useRef(0);
     const superTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastObstacleTimeRef = useRef(0);
+    const speedRef = useRef(5);
 
     const jump = useCallback(() => {
         if (isJumping || isDucking || gameState !== 'playing') return;
@@ -76,6 +78,8 @@ const RunnerGame = () => {
         setGameState('playing');
         setScore(0);
         setSpeed(5);
+        speedRef.current = 5;
+        lastObstacleTimeRef.current = 0;
         setObstacles([]);
         setCollectibles([]);
         setIsJumping(false);
@@ -96,25 +100,30 @@ const RunnerGame = () => {
         }
     }, [score, highScore]);
 
+    // Speed ref'i güncelle
+    useEffect(() => {
+        speedRef.current = speed;
+    }, [speed]);
+
     // Game loop
     useEffect(() => {
         if (gameState !== 'playing') return;
 
-        let lastObstacleTime = 0;
         const minObstacleGap = 1500; // En az 1.5 saniye arayla engel gelsin
 
         gameLoopRef.current = setInterval(() => {
             const now = Date.now();
+            const currentSpeed = speedRef.current;
 
             // Engel spawn - sadece yeterli boşluk varsa
-            if (now - lastObstacleTime > minObstacleGap && Math.random() < 0.03) {
+            if (now - lastObstacleTimeRef.current > minObstacleGap && Math.random() < 0.03) {
                 const types: ('rock' | 'cactus')[] = ['rock', 'cactus'];
                 setObstacles(prev => [...prev, {
                     id: obstacleIdRef.current++,
                     x: 100,
                     type: types[Math.floor(Math.random() * types.length)],
                 }]);
-                lastObstacleTime = now;
+                lastObstacleTimeRef.current = now;
             }
 
             // Collectible spawn - havada veya yerde
@@ -130,12 +139,12 @@ const RunnerGame = () => {
 
             // Hareket
             setObstacles(prev => prev
-                .map(o => ({ ...o, x: o.x - speed }))
+                .map(o => ({ ...o, x: o.x - currentSpeed }))
                 .filter(o => o.x > -10)
             );
 
             setCollectibles(prev => prev
-                .map(c => ({ ...c, x: c.x - speed }))
+                .map(c => ({ ...c, x: c.x - currentSpeed }))
                 .filter(c => c.x > -10)
             );
 
@@ -149,7 +158,7 @@ const RunnerGame = () => {
         return () => {
             if (gameLoopRef.current) clearInterval(gameLoopRef.current);
         };
-    }, [gameState, speed]);
+    }, [gameState]);
 
     // Çarpışma kontrolü
     useEffect(() => {

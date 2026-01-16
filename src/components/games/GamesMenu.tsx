@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { Search, Brain, Hash, Palette, Wind, Piano, BookA, Puzzle, Calculator, Gamepad2, Rat, Shapes } from 'lucide-react';
 import OddOneOutGame from './OddOneOutGame';
 import MemoryFlipGame from './MemoryFlipGame';
@@ -172,11 +171,7 @@ const GamesMenu = () => {
   }
 
   return (
-    <motion.div
-      className="flex flex-col items-center gap-6 p-4 pb-32"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
+    <div className="flex flex-col items-center gap-6 p-4 pb-32 animate-fade-in">
       <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">
         🎮 Oyunlar
       </h2>
@@ -205,7 +200,7 @@ const GamesMenu = () => {
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 };
 

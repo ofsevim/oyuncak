@@ -17,7 +17,7 @@ type Props = {
  */
 export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGame }: Props) {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-32">
+    <div className="mx-auto w-full max-w-6xl px-4 pb-32 animate-fade-in">
       {/* Hero */}
       <motion.section
         className="relative overflow-hidden rounded-[3rem] border-4 border-primary/10 bg-white/50 backdrop-blur-sm shadow-playful"

@@ -33,6 +33,7 @@ const TetrisGame = () => {
         type: TetrominoKey;
         shape: number[][];
     } | null>(null);
+    const [nextPieceType, setNextPieceType] = useState<TetrominoKey | null>(null);
     const [score, setScore] = useState(0);
     const [level, setLevel] = useState(1);
     const [linesClearedTotal, setLinesClearedTotal] = useState(0);
@@ -57,14 +58,18 @@ const TetrisGame = () => {
     }, []);
 
     // Rastgele yeni parça oluştur
-    const spawnPiece = useCallback(() => {
+    const spawnPiece = useCallback((forcedType?: TetrominoKey) => {
         const keys = Object.keys(TETROMINOS) as TetrominoKey[];
-        const type = keys[Math.floor(Math.random() * keys.length)];
+        const type = forcedType ?? keys[Math.floor(Math.random() * keys.length)];
         const piece = {
             pos: { x: Math.floor(COLS / 2) - 1, y: 0 },
             type,
             shape: TETROMINOS[type].shape,
         };
+
+        // Sonraki parçayı belirle
+        const nextType = keys[Math.floor(Math.random() * keys.length)];
+        setNextPieceType(nextType);
 
         // Çarpışma kontrolü (Oyun Bitti?)
         if (checkCollision(piece.pos.x, piece.pos.y, piece.shape)) {
@@ -160,20 +165,26 @@ const TetrisGame = () => {
 
         setGrid(filteredGrid);
 
-        // Yeni parça spawn etmeden önce grid'in en üst satırını kontrol et (opsiyonel ama güvenli)
-        const nextKeys = Object.keys(TETROMINOS) as TetrominoKey[];
-        const nextType = nextKeys[Math.floor(Math.random() * nextKeys.length)];
-        const nextPiece = {
-            pos: { x: Math.floor(COLS / 2) - 1, y: -1 }, // Bir tık yukarıdan başla
-            type: nextType,
-            shape: TETROMINOS[nextType].shape,
-        };
+        // Önceden belirlenmiş sonraki parçayı kullan
+        if (nextPieceType) {
+            const nextPiece = {
+                pos: { x: Math.floor(COLS / 2) - 1, y: -1 },
+                type: nextPieceType,
+                shape: TETROMINOS[nextPieceType].shape,
+            };
 
-        if (checkCollision(nextPiece.pos.x, 0, nextPiece.shape, filteredGrid)) {
-            setGameState('gameover');
-            playErrorSound();
+            if (checkCollision(nextPiece.pos.x, 0, nextPiece.shape, filteredGrid)) {
+                setGameState('gameover');
+                playErrorSound();
+            } else {
+                // Yeni sonraki parça belirle
+                const keys = Object.keys(TETROMINOS) as TetrominoKey[];
+                const newNextType = keys[Math.floor(Math.random() * keys.length)];
+                setNextPieceType(newNextType);
+                setActivePiece(nextPiece);
+            }
         } else {
-            setActivePiece(nextPiece);
+            spawnPiece();
         }
     }, [activePiece, grid, level]);
 
@@ -244,6 +255,7 @@ const TetrisGame = () => {
         setLevel(1);
         setLinesClearedTotal(0);
         setDropTime(INITIAL_DROP_TIME);
+        setNextPieceType(null);
         setGameState('playing');
         spawnPiece();
     };
@@ -261,7 +273,24 @@ const TetrisGame = () => {
                         <span className="text-2xl font-black text-indigo-500">{level}</span>
                     </div>
                 </div>
-                <div className="text-3xl">🧱</div>
+                {/* Sonraki Blok Önizleme */}
+                <div className="flex flex-col items-center gap-1">
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sonraki</span>
+                    <div className="bg-slate-100 p-2 rounded-xl min-w-[50px] min-h-[35px] flex items-center justify-center">
+                        {nextPieceType && (
+                            <div className="grid gap-[1px]" style={{ gridTemplateColumns: `repeat(${TETROMINOS[nextPieceType].shape[0].length}, 8px)` }}>
+                                {TETROMINOS[nextPieceType].shape.map((row, r) =>
+                                    row.map((cell, c) => (
+                                        <div
+                                            key={`next-${r}-${c}`}
+                                            className={`w-2 h-2 rounded-[1px] ${cell ? TETROMINOS[nextPieceType].color : 'bg-transparent'}`}
+                                        />
+                                    ))
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             <div

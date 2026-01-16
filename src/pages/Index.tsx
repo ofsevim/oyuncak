@@ -1,9 +1,8 @@
 'use client';
 
-import { Suspense, lazy, useMemo, useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import FloatingBubbles from '@/components/ui/FloatingBubbles';
 import Navigation from '@/components/Navigation';
-import { AnimatePresence, motion } from 'framer-motion';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Home from '@/components/home/Home';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -21,7 +20,7 @@ const Index = () => {
   const [, setPreferredGameId] = useLocalStorageState<string | null>("oyuncak.preferredGameId", null);
 
 
-  const content = useMemo(() => {
+  const renderContent = () => {
     switch (activeTab) {
       case 'draw':
         return <DrawingCanvas />;
@@ -42,7 +41,7 @@ const Index = () => {
           />
         );
     }
-  }, [activeTab, setPreferredGameId]);
+  };
 
 
 
@@ -58,17 +57,7 @@ const Index = () => {
             </div>
           }
         >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.18 }}
-            >
-              {content}
-            </motion.div>
-          </AnimatePresence>
+          {renderContent()}
         </Suspense>
       </main>
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
@@ -77,3 +66,4 @@ const Index = () => {
 };
 
 export default Index;
+

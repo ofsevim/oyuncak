@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, PencilBrush, Text as FabricText } from 'fabric';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Sparkles, Undo, Download, Smile, Image } from 'lucide-react';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
 import DrawingGallery, { saveDrawing } from './DrawingGallery';
@@ -183,11 +182,7 @@ const DrawingCanvas = () => {
   };
 
   return (
-    <motion.div
-      className="flex flex-col items-center gap-4 p-4 pb-40"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
+    <div className="flex flex-col items-center gap-4 p-4 pb-40 animate-fade-in">
       <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">
         🎨 Çizim Alanı
       </h2>
@@ -225,11 +220,7 @@ const DrawingCanvas = () => {
       </div>
 
       {showStickers && (
-        <motion.div
-          className="flex flex-wrap justify-center gap-3 p-4 bg-muted/50 rounded-2xl max-w-md"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
+        <div className="flex flex-wrap justify-center gap-3 p-4 bg-muted/50 rounded-2xl max-w-md animate-pop-in">
           {STICKERS.map((emoji) => (
             <button
               key={emoji}
@@ -239,7 +230,7 @@ const DrawingCanvas = () => {
               {emoji}
             </button>
           ))}
-        </motion.div>
+        </div>
       )}
 
       {/* Brush size */}
@@ -273,33 +264,25 @@ const DrawingCanvas = () => {
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
-        <AnimatePresence>
-          {isHovering && fabricCanvas?.isDrawingMode && (
-            <motion.div
-              className="fixed pointer-events-none z-50 rounded-full border-2 border-white shadow-lg mix-blend-difference"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                x: mousePos.x - brushSize / 2,
-                y: mousePos.y - brushSize / 2,
-                backgroundColor: isRainbow ? RAINBOW_COLORS[rainbowIndexRef.current] : activeColor,
-                width: brushSize,
-                height: brushSize,
-              }}
-              exit={{ opacity: 0, scale: 0 }}
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-              }}
-            />
-          )}
-        </AnimatePresence>
-        <canvas
-          ref={canvasRef}
-          className="drawing-canvas shadow-playful cursor-none"
-        />
+        {/* Custom cursor - simple div without AnimatePresence */}
+        {isHovering && fabricCanvas?.isDrawingMode && (
+          <div
+            className="absolute pointer-events-none z-50 rounded-full border-2 border-white shadow-lg transition-colors duration-100"
+            style={{
+              left: mousePos.x - brushSize / 2,
+              top: mousePos.y - brushSize / 2,
+              width: brushSize,
+              height: brushSize,
+              backgroundColor: isRainbow ? RAINBOW_COLORS[rainbowIndexRef.current] : activeColor,
+            }}
+          />
+        )}
+        <div className="shadow-playful rounded-3xl overflow-hidden border-4 border-dashed border-primary/30">
+          <canvas
+            ref={canvasRef}
+            className="drawing-canvas cursor-none"
+          />
+        </div>
       </div>
 
       {/* Action buttons */}
@@ -342,12 +325,10 @@ const DrawingCanvas = () => {
       </div>
 
       {/* Gallery Modal */}
-      <AnimatePresence>
-        {showGallery && (
-          <DrawingGallery onClose={() => setShowGallery(false)} />
-        )}
-      </AnimatePresence>
-    </motion.div>
+      {showGallery && (
+        <DrawingGallery onClose={() => setShowGallery(false)} />
+      )}
+    </div>
   );
 };
 

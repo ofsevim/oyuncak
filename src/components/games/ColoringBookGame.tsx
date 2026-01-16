@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Trash2, Download, ChevronLeft, ChevronRight, Eraser } from 'lucide-react';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
 
@@ -320,29 +320,19 @@ const ColoringBookGame = () => {
                         <span className="text-2xl animate-spin">🎨</span>
                     </div>
                 )}
-                <AnimatePresence>
-                    {isHovering && !isLoading && (
-                        <motion.div
-                            className="fixed pointer-events-none z-50 rounded-full border-2 border-white shadow-lg mix-blend-difference"
-                            initial={{ opacity: 0, scale: 0 }}
-                            animate={{
-                                opacity: 1,
-                                scale: 1,
-                                x: mousePos.x - 12,
-                                y: mousePos.y - 12,
-                                backgroundColor: isEraser ? '#FFFFFF' : activeColor,
-                            }}
-                            exit={{ opacity: 0, scale: 0 }}
-                            style={{
-                                position: 'absolute',
-                                left: 0,
-                                top: 0,
-                                width: 24,
-                                height: 24,
-                            }}
-                        />
-                    )}
-                </AnimatePresence>
+                {/* Custom cursor - simple div without AnimatePresence */}
+                {isHovering && !isLoading && (
+                    <div
+                        className="absolute pointer-events-none z-50 rounded-full border border-white shadow-lg transition-colors duration-100"
+                        style={{
+                            left: mousePos.x - 6,
+                            top: mousePos.y - 6,
+                            width: 12,
+                            height: 12,
+                            backgroundColor: isEraser ? '#FFFFFF' : activeColor,
+                        }}
+                    />
+                )}
                 <canvas
                     ref={canvasRef}
                     width={canvasSize.width}
