@@ -175,14 +175,14 @@ const AlphabetGame = () => {
             </div>
 
             {/* Harf listesi */}
-            <div className="flex flex-wrap justify-center gap-2 max-w-md">
+            <div className="flex flex-wrap justify-center gap-1.5 md:gap-2 max-w-full px-2">
               {ALPHABET.map((item, index) => (
                 <button
                   key={item.letter}
                   onClick={() => { playPopSound(); setCurrentIndex(index); }}
-                  className={`w-10 h-10 rounded-xl font-bold transition-all ${index === currentIndex
-                      ? 'bg-primary text-white scale-110'
-                      : 'bg-muted hover:bg-muted/80'
+                  className={`w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl font-bold transition-all text-sm md:text-base ${index === currentIndex
+                    ? 'bg-primary text-white scale-110 shadow-md'
+                    : 'bg-muted hover:bg-muted/80'
                     }`}
                 >
                   {item.letter}
@@ -227,12 +227,12 @@ const AlphabetGame = () => {
                       onClick={() => handleQuizAnswer(option)}
                       disabled={showResult !== null}
                       className={`w-24 h-24 text-4xl font-black rounded-2xl shadow-playful transition-all ${showResult
-                          ? option === quizLetter.letter
-                            ? 'bg-success text-white'
-                            : showResult === 'wrong' && option === quizOptions.find(o => o !== quizLetter.letter)
-                              ? 'bg-destructive text-white'
-                              : 'bg-muted'
-                          : 'bg-card hover:scale-105'
+                        ? option === quizLetter.letter
+                          ? 'bg-success text-white'
+                          : showResult === 'wrong' && option === quizOptions.find(o => o !== quizLetter.letter)
+                            ? 'bg-destructive text-white'
+                            : 'bg-muted'
+                        : 'bg-card hover:scale-105'
                         }`}
                     >
                       {option}

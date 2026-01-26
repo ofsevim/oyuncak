@@ -188,14 +188,14 @@ const DrawingCanvas = () => {
       </h2>
 
       {/* Color palette */}
-      <div className="flex flex-wrap justify-center gap-2 max-w-md">
+      <div className="flex flex-wrap justify-center gap-2 max-w-full px-2">
         {COLORS.map((color) => (
           <button
             key={color.value}
             onClick={() => handleColorSelect(color.value)}
-            className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-4 transition-all duration-200 hover:scale-125 active:scale-95 ${activeColor === color.value && !isRainbow && fabricCanvas?.isDrawingMode
-              ? 'border-foreground scale-110'
-              : 'border-transparent'
+            className={`w-9 h-9 md:w-12 md:h-12 rounded-full border-2 md:border-4 transition-all duration-200 active:scale-75 ${activeColor === color.value && !isRainbow && fabricCanvas?.isDrawingMode
+              ? 'border-foreground scale-110 shadow-md'
+              : 'border-white/50'
               }`}
             style={{ backgroundColor: color.value }}
             title={color.name}
@@ -203,19 +203,19 @@ const DrawingCanvas = () => {
         ))}
         <button
           onClick={toggleRainbow}
-          className={`w-10 h-10 md:w-12 md:h-12 rounded-full rainbow-gradient border-4 flex items-center justify-center transition-all duration-200 hover:scale-125 active:scale-95 ${isRainbow ? 'border-foreground scale-110' : 'border-transparent'
+          className={`w-9 h-9 md:w-12 md:h-12 rounded-full rainbow-gradient border-2 md:border-4 flex items-center justify-center transition-all duration-200 active:scale-75 ${isRainbow ? 'border-foreground scale-110 shadow-md' : 'border-white/50'
             }`}
           title="Gökkuşağı"
         >
-          <Sparkles className="w-5 h-5 text-white" />
+          <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-white" />
         </button>
         <button
           onClick={() => setShowStickers(!showStickers)}
-          className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-orange-400 border-4 flex items-center justify-center transition-all duration-200 hover:scale-125 active:scale-95 ${showStickers ? 'border-foreground scale-110' : 'border-transparent'
+          className={`w-9 h-9 md:w-12 md:h-12 rounded-full bg-orange-400 border-2 md:border-4 flex items-center justify-center transition-all duration-200 active:scale-75 ${showStickers ? 'border-foreground scale-110 shadow-md' : 'border-white/50'
             }`}
           title="Stickerlar"
         >
-          <Smile className="w-5 h-5 text-white" />
+          <Smile className="w-4 h-4 md:w-5 md:h-5 text-white" />
         </button>
       </div>
 
@@ -256,16 +256,16 @@ const DrawingCanvas = () => {
       {/* Canvas */}
       <div
         ref={containerRef}
-        className="w-full flex justify-center relative"
+        className="w-full flex justify-center relative touch-none"
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
         }}
-        onMouseEnter={() => setIsHovering(true)}
+        onMouseEnter={() => !('ontouchstart' in window) && setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
-        {/* Custom cursor - simple div without AnimatePresence */}
-        {isHovering && fabricCanvas?.isDrawingMode && (
+        {/* Custom cursor - only on non-touch devices */}
+        {isHovering && fabricCanvas?.isDrawingMode && !('ontouchstart' in window) && (
           <div
             className="absolute pointer-events-none z-50 rounded-full border-2 border-white shadow-lg transition-colors duration-100"
             style={{
@@ -280,7 +280,7 @@ const DrawingCanvas = () => {
         <div className="shadow-playful rounded-3xl overflow-hidden border-4 border-dashed border-primary/30">
           <canvas
             ref={canvasRef}
-            className="drawing-canvas cursor-none"
+            className="drawing-canvas touch-none"
           />
         </div>
       </div>

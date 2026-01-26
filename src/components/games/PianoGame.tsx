@@ -254,43 +254,48 @@ const PianoGame = () => {
         </div>
       )}
 
-      {/* Renkli Piyano */}
-      <div className="bg-gradient-to-b from-gray-800 to-gray-900 p-2 md:p-6 rounded-3xl shadow-2xl w-full max-w-fit overflow-x-auto">
-        <div className="flex gap-0.5 md:gap-2 justify-center">
-          {NOTES.map((note) => (
-            <motion.button
-              key={note.note}
-              onClick={() => handleKeyClick(note)}
-              className={`relative rounded-b-xl md:rounded-b-2xl transition-all duration-75 shadow-lg ${activeNotes.has(note.note)
-                ? 'translate-y-1 brightness-125'
-                : 'hover:brightness-110'
-                } ${note.keyColor}`}
-              style={{
-                width: 'clamp(40px, 10vw, 70px)',
-                height: 'clamp(100px, 25vw, 180px)',
-              }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {/* Işık efekti */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-3/4 h-4 bg-white/30 rounded-full blur-sm" />
+      {/* Renkli Piyano Container */}
+      <div className="w-full max-w-4xl overflow-x-auto pb-4 px-2 no-scrollbar">
+        <div className="bg-gradient-to-b from-gray-800 to-gray-900 p-2 md:p-6 rounded-3xl shadow-2xl inline-flex min-w-full justify-center">
+          <div className="flex gap-1 md:gap-2">
+            {NOTES.map((note) => (
+              <motion.button
+                key={note.note}
+                onClick={() => handleKeyClick(note)}
+                className={`relative rounded-b-xl md:rounded-b-2xl transition-all duration-75 shadow-lg ${activeNotes.has(note.note)
+                  ? 'translate-y-1 brightness-125'
+                  : 'active:brightness-110'
+                  } ${note.keyColor}`}
+                style={{
+                  width: 'clamp(44px, 11vw, 70px)',
+                  height: 'clamp(150px, 30vw, 220px)',
+                }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {/* Işık efekti */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-3/4 h-4 bg-white/30 rounded-full blur-sm" />
 
-              {/* Nota ismi */}
-              <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white font-black text-sm md:text-lg drop-shadow-lg">
-                {note.label}
-              </span>
+                {/* Nota ismi */}
+                <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white font-black text-xs md:text-lg drop-shadow-lg whitespace-nowrap">
+                  {note.label}
+                </span>
 
-              {/* Aktif göstergesi */}
-              {activeNotes.has(note.note) && (
-                <motion.div
-                  className="absolute inset-0 bg-white/30 rounded-b-xl md:rounded-b-2xl"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                />
-              )}
-            </motion.button>
-          ))}
+                {/* Aktif göstergesi */}
+                {activeNotes.has(note.note) && (
+                  <motion.div
+                    className="absolute inset-0 bg-white/30 rounded-b-xl md:rounded-b-2xl"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  />
+                )}
+              </motion.button>
+            ))}
+          </div>
         </div>
+        <p className="text-[10px] text-muted-foreground text-center mt-2 md:hidden">
+          ↔️ Tüm notaları görmek için kaydırabilirsin
+        </p>
       </div>
 
       {/* Melodiler */}

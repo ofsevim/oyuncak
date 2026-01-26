@@ -178,19 +178,19 @@ const AnimalSoundsGame = () => {
       </div>
 
       {mode === 'explore' ? (
-        <div className="grid grid-cols-3 md:grid-cols-4 gap-4 max-w-lg">
+        <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-4 max-w-full px-2">
           {ANIMALS.map((animal) => (
             <motion.button
               key={animal.id}
               onClick={() => handleAnimalClick(animal)}
-              className={`flex flex-col items-center gap-2 p-4 rounded-2xl shadow-playful transition-all ${activeAnimal === animal.id
-                  ? 'bg-primary scale-110'
-                  : 'bg-card hover:scale-105'
+              className={`flex flex-col items-center gap-1 md:gap-2 p-3 md:p-4 rounded-xl md:rounded-2xl shadow-playful transition-all active:scale-90 ${activeAnimal === animal.id
+                ? 'bg-primary scale-105 shadow-lg'
+                : 'bg-card'
                 }`}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.9 }}
             >
-              <span className="text-5xl">{animal.emoji}</span>
-              <span className={`text-sm font-bold ${activeAnimal === animal.id ? 'text-white' : 'text-foreground'
+              <span className="text-4xl md:text-5xl">{animal.emoji}</span>
+              <span className={`text-[10px] md:text-sm font-bold ${activeAnimal === animal.id ? 'text-white' : 'text-muted-foreground'
                 }`}>
                 {animal.name}
               </span>
@@ -234,10 +234,10 @@ const AnimalSoundsGame = () => {
                       onClick={() => handleQuizAnswer(animal)}
                       disabled={showResult !== null}
                       className={`flex flex-col items-center gap-2 p-6 rounded-2xl shadow-playful transition-all ${showResult
-                          ? animal.id === quizAnimal.id
-                            ? 'bg-success text-white'
-                            : 'bg-muted'
-                          : 'bg-card hover:scale-105'
+                        ? animal.id === quizAnimal.id
+                          ? 'bg-success text-white'
+                          : 'bg-muted'
+                        : 'bg-card hover:scale-105'
                         }`}
                     >
                       <span className="text-6xl">{animal.emoji}</span>

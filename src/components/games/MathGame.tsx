@@ -157,8 +157,8 @@ const MathGame = () => {
               key={d.id}
               onClick={() => setDifficulty(d.id)}
               className={`w-full px-6 py-4 rounded-2xl font-bold text-lg transition-all ${difficulty === d.id
-                  ? 'bg-primary text-white scale-105'
-                  : 'bg-muted hover:bg-muted/80'
+                ? 'bg-primary text-white scale-105'
+                : 'bg-muted hover:bg-muted/80'
                 }`}
             >
               {d.label}
@@ -207,9 +207,9 @@ const MathGame = () => {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
           >
-            {/* Soru */}
-            <div className="bg-card p-8 rounded-3xl shadow-playful">
-              <div className="flex items-center gap-4 text-5xl md:text-6xl font-black">
+            {/* Soru Area */}
+            <div className="bg-card p-6 md:p-8 rounded-3xl shadow-playful border-2 border-primary/10">
+              <div className="flex items-center gap-3 md:gap-4 text-4xl md:text-6xl font-black">
                 <span className="text-primary">{question.num1}</span>
                 <span className="text-foreground">{question.operation}</span>
                 <span className="text-primary">{question.num2}</span>
@@ -226,10 +226,10 @@ const MathGame = () => {
                   onClick={() => handleAnswer(option)}
                   disabled={showResult !== null}
                   className={`w-24 h-24 text-3xl font-black rounded-2xl shadow-playful transition-all ${showResult
-                      ? option === question.answer
-                        ? 'bg-success text-white scale-110'
-                        : 'bg-muted'
-                      : 'bg-card hover:scale-105 hover:bg-primary hover:text-white'
+                    ? option === question.answer
+                      ? 'bg-success text-white scale-110'
+                      : 'bg-muted'
+                    : 'bg-card hover:scale-105 hover:bg-primary hover:text-white'
                     }`}
                 >
                   {option}

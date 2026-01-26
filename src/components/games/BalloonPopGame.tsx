@@ -267,19 +267,19 @@ const BalloonPopGame = () => {
 
     // PLAYING SCREEN
     return (
-        <div className="relative w-full max-w-2xl mx-auto h-[75vh] bg-gradient-to-b from-sky-100 to-sky-50 dark:from-sky-900 dark:to-sky-800 rounded-[3rem] shadow-inner overflow-hidden border-8 border-card">
+        <div className="relative w-full max-w-2xl mx-auto h-[65vh] md:h-[75vh] bg-gradient-to-b from-sky-100 to-sky-50 dark:from-sky-900 dark:to-sky-800 rounded-[2rem] md:rounded-[3rem] shadow-inner overflow-hidden border-4 md:border-8 border-card">
             {/* Score and Target UI */}
-            <div className="absolute top-4 left-0 right-0 z-20 flex flex-col items-center gap-2 pointer-events-none">
-                <div className="flex items-center gap-4">
-                    <div className="bg-card/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-sm border-2 border-primary/20">
-                        <span className="text-lg font-black text-primary">🎈 {score}</span>
+            <div className="absolute top-2 md:top-4 left-0 right-0 z-20 flex flex-col items-center gap-1 md:gap-2 pointer-events-none px-2">
+                <div className="flex items-center gap-2 md:gap-4">
+                    <div className="bg-card/90 backdrop-blur-sm px-3 md:px-5 py-1 md:py-2 rounded-full shadow-sm border-2 border-primary/20">
+                        <span className="text-sm md:text-lg font-black text-primary">🎈 {score}</span>
                     </div>
-                    <div className="bg-card/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-sm border-2 border-orange-200 dark:border-orange-400/50">
-                        <span className={`text-lg font-black ${timeLeft <= 10 ? 'text-destructive animate-pulse' : 'text-orange-500'}`}>
+                    <div className="bg-card/90 backdrop-blur-sm px-3 md:px-5 py-1 md:py-2 rounded-full shadow-sm border-2 border-orange-200 dark:border-orange-400/50">
+                        <span className={`text-sm md:text-lg font-black ${timeLeft <= 10 ? 'text-destructive animate-pulse' : 'text-orange-500'}`}>
                             ⏱️ {timeLeft}s
                         </span>
                     </div>
-                    <div className="bg-card/70 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-muted-foreground font-bold">
+                    <div className="bg-card/70 backdrop-blur-sm px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs text-muted-foreground font-bold">
                         {balloons.length} 🎈
                     </div>
                 </div>
@@ -288,14 +288,14 @@ const BalloonPopGame = () => {
                     key={targetColor.name}
                     initial={{ y: -20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="flex items-center gap-3 bg-card px-6 py-2 rounded-2xl shadow-playful border-2 border-primary/20"
+                    className="flex items-center gap-2 md:gap-3 bg-card px-4 md:px-6 py-1 md:py-2 rounded-xl md:rounded-2xl shadow-playful border-2 border-primary/20"
                 >
-                    <span className="text-xl font-black text-foreground">{targetColor.name}</span>
+                    <span className="text-sm md:text-xl font-black text-foreground">{targetColor.name}</span>
                     <div
-                        className="w-8 h-8 rounded-full shadow-inner ring-2 ring-offset-1 ring-white"
+                        className="w-5 h-5 md:w-8 md:h-8 rounded-full shadow-inner ring-2 ring-offset-1 ring-white"
                         style={{ backgroundColor: targetColor.value }}
                     />
-                    <span className="text-lg font-black text-foreground">PATLAT!</span>
+                    <span className="text-sm md:text-lg font-black text-foreground">PATLAT!</span>
                 </motion.div>
             </div>
 
@@ -320,7 +320,7 @@ const BalloonPopGame = () => {
                         <motion.div
                             animate={{
                                 x: [-balloon.swayAmount, balloon.swayAmount, -balloon.swayAmount],
-                                rotate: [-2, 2, -2] // Daha az dönüş
+                                rotate: [-2, 2, -2]
                             }}
                             transition={{
                                 duration: balloon.swayDuration,
@@ -333,16 +333,16 @@ const BalloonPopGame = () => {
                                 className="relative group active:scale-90 transition-transform cursor-pointer"
                             >
                                 <div
-                                    className="w-10 h-14 md:w-12 md:h-16 rounded-[45%_45%_50%_50%/40%_40%_60%_60%] relative shadow-md"
+                                    className="w-8 h-11 md:w-12 md:h-16 rounded-[45%_45%_50%_50%/40%_40%_60%_60%] relative shadow-md"
                                     style={{ backgroundColor: balloon.color.value }}
                                 >
-                                    <div className="absolute top-1.5 left-1.5 w-1.5 h-3 bg-white/50 rounded-full rotate-12" />
+                                    <div className="absolute top-1 left-1 w-1 h-2 md:top-1.5 md:left-1.5 md:w-1.5 md:h-3 bg-white/50 rounded-full rotate-12" />
                                     <div
-                                        className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1 rounded-full"
+                                        className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-0.5 md:w-1.5 md:h-1 rounded-full"
                                         style={{ backgroundColor: balloon.color.value, filter: 'brightness(0.85)' }}
                                     />
                                 </div>
-                                <div className="w-px h-8 bg-gray-400/40 mx-auto" />
+                                <div className="w-px h-6 md:h-8 bg-gray-400/40 mx-auto" />
                             </button>
                         </motion.div>
                     </motion.div>
@@ -351,9 +351,9 @@ const BalloonPopGame = () => {
 
             {/* Clouds */}
             <div className="absolute inset-0 pointer-events-none opacity-40">
-                <div className="absolute top-24 left-8 text-5xl">☁️</div>
-                <div className="absolute top-36 right-16 text-4xl">☁️</div>
-                <div className="absolute bottom-24 left-1/3 text-6xl">☁️</div>
+                <div className="absolute top-24 left-8 text-3xl md:text-5xl">☁️</div>
+                <div className="absolute top-36 right-16 text-2xl md:text-4xl">☁️</div>
+                <div className="absolute bottom-24 left-1/3 text-4xl md:text-6xl">☁️</div>
             </div>
         </div>
     );

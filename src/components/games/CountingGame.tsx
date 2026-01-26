@@ -76,11 +76,11 @@ const CountingGame = () => {
                 <p className="text-muted-foreground font-semibold">Ekranda kaç tane nesne görüyorsun?</p>
             </div>
 
-            <div className="card-playful p-10 w-full flex flex-wrap justify-center items-center gap-6 min-h-[250px] bg-card/50 backdrop-blur-sm">
+            <div className="card-playful p-4 md:p-10 w-full flex flex-wrap justify-center items-center gap-4 md:gap-6 min-h-[200px] md:min-h-[250px] bg-card/50 backdrop-blur-sm overflow-hidden">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={`${count}-${emoji}`}
-                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-items-center"
+                        className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-5 gap-3 md:gap-6 justify-items-center"
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.8, opacity: 0 }}
@@ -88,7 +88,7 @@ const CountingGame = () => {
                         {Array.from({ length: count }).map((_, i) => (
                             <motion.span
                                 key={i}
-                                className="text-6xl md:text-7xl drop-shadow-sm"
+                                className="text-5xl md:text-7xl drop-shadow-sm"
                                 initial={{ opacity: 0, scale: 0, rotate: -20 }}
                                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                                 transition={{
@@ -105,12 +105,12 @@ const CountingGame = () => {
                 </AnimatePresence>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-4 md:gap-6">
                 {options.map((option) => (
                     <button
                         key={option}
                         onClick={() => handleGuess(option)}
-                        className="w-20 h-20 bg-secondary text-secondary-foreground text-3xl font-black rounded-3xl shadow-playful hover:scale-110 active:scale-90 transition-all border-b-8 border-yellow-600"
+                        className="w-16 h-16 md:w-20 md:h-20 bg-secondary text-secondary-foreground text-2xl md:text-3xl font-black rounded-2xl md:rounded-3xl shadow-playful active:scale-90 transition-all border-b-4 md:border-b-8 border-yellow-600/50"
                     >
                         {option}
                     </button>

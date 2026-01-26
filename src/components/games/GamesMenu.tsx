@@ -180,21 +180,25 @@ const GamesMenu = () => {
         Bir oyun seç ve eğlenmeye başla!
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 w-full max-w-5xl px-2">
         {games.map((game) => {
           const Icon = game.icon;
           return (
             <button
               key={game.id}
               onClick={() => setActiveGame(game.id)}
-              className={`${game.color} p-6 rounded-3xl shadow-playful text-left transition-all duration-200 hover:scale-105 active:scale-95 group`}
+              className={`${game.color} p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-playful text-left transition-all duration-200 active:scale-95 group relative overflow-hidden`}
             >
-              <div className="flex items-center gap-4">
-                <span className="text-5xl group-hover:animate-bounce">{game.emoji}</span>
-                <div>
-                  <h3 className="text-xl font-extrabold text-white">{game.title}</h3>
-                  <p className="text-white/90 font-medium">{game.description}</p>
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4">
+                <span className="text-3xl md:text-5xl group-hover:animate-bounce">{game.emoji}</span>
+                <div className="flex flex-col">
+                  <h3 className="text-sm md:text-xl font-extrabold text-white leading-tight">{game.title}</h3>
+                  <p className="text-[10px] md:text-sm text-white/90 font-medium hidden md:block">{game.description}</p>
                 </div>
+              </div>
+              {/* Mobile decor */}
+              <div className="absolute -right-2 -bottom-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Icon className="w-12 h-12 md:w-20 md:h-20 text-white" />
               </div>
             </button>
           );

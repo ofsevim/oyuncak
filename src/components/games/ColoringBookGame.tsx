@@ -303,16 +303,16 @@ const ColoringBookGame = () => {
                 )}
             </p>
 
-            {/* Canvas */}
+            {/* Canvas Container */}
             <div
                 ref={containerRef}
-                className="relative bg-white rounded-2xl shadow-playful overflow-hidden border-4 border-primary/20 w-full"
+                className="relative bg-white rounded-2xl shadow-playful overflow-hidden border-4 border-primary/20 w-full touch-none"
                 style={{ maxWidth: 550 }}
                 onMouseMove={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
                 }}
-                onMouseEnter={() => setIsHovering(true)}
+                onMouseEnter={() => !('ontouchstart' in window) && setIsHovering(true)}
                 onMouseLeave={() => setIsHovering(false)}
             >
                 {isLoading && (
@@ -320,8 +320,8 @@ const ColoringBookGame = () => {
                         <span className="text-2xl animate-spin">🎨</span>
                     </div>
                 )}
-                {/* Custom cursor - simple div without AnimatePresence */}
-                {isHovering && !isLoading && (
+                {/* Custom cursor - only on non-touch devices */}
+                {isHovering && !isLoading && !('ontouchstart' in window) && (
                     <div
                         className="absolute pointer-events-none z-50 rounded-full border border-white shadow-lg transition-colors duration-100"
                         style={{
@@ -339,7 +339,7 @@ const ColoringBookGame = () => {
                     height={canvasSize.height}
                     onClick={handleCanvasClick}
                     onTouchStart={handleCanvasClick}
-                    className="cursor-none w-full h-auto"
+                    className="w-full h-auto touch-none"
                 />
             </div>
 
