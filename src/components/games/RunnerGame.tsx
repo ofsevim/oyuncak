@@ -48,6 +48,8 @@ const RunnerGame = () => {
     const [score, setScore] = useState(0);
     const [highScore, setHighScore] = useState(0);
     const [speed, setSpeed] = useState(5);
+    const [lives, setLives] = useState(3);
+    const [isInvincible, setIsInvincible] = useState(false);
 
     const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const obstacleIdRef = useRef(0);
@@ -85,6 +87,8 @@ const RunnerGame = () => {
         setIsJumping(false);
         setIsDucking(false);
         setIsSuper(false);
+        setLives(3);
+        setIsInvincible(false);
     };
 
     const endGame = useCallback(() => {
@@ -166,10 +170,20 @@ const RunnerGame = () => {
 
         // Engel çarpışması
         for (const obstacle of obstacles) {
-            if (obstacle.x > 5 && obstacle.x < 20) {
-                // Süper güç aktifse engellerden geçebilir!
-                if (!isJumping && !isSuper) {
-                    endGame();
+            if (obstacle.x > 5 && obstacle.x < 22) {
+                // Süper güç veya dokunulmazlık aktifse engellerden geçebilir!
+                if (!isJumping && !isSuper && !isInvincible) {
+                    if (lives <= 1) {
+                        setLives(0);
+                        endGame();
+                    } else {
+                        playErrorSound();
+                        setLives(prev => prev - 1);
+                        setIsInvincible(true);
+                        // Engeli kaldır
+                        setObstacles(prev => prev.filter(o => o.id !== obstacle.id));
+                        setTimeout(() => setIsInvincible(false), 1500);
+                    }
                     return;
                 }
             }
@@ -191,7 +205,12 @@ const RunnerGame = () => {
                             superTimeoutRef.current = setTimeout(() => setIsSuper(false), 5000);
                         }
 
-                        setScore(s => s + (c.type === 'star' ? 100 : c.type === 'coin' ? 25 : 10));
+                        // Kalp toplandıysa can ver
+                        if (c.type === 'heart') {
+                            setLives(l => Math.min(l + 1, 5));
+                        }
+
+                        setScore(s => s + (c.type === 'star' ? 100 : c.type === 'coin' ? 25 : 50));
                         continue;
                     }
                 }
@@ -199,7 +218,7 @@ const RunnerGame = () => {
             }
             return remaining;
         });
-    }, [obstacles, collectibles, isJumping, isSuper, gameState, endGame]);
+    }, [obstacles, collectibles, isJumping, isSuper, isInvincible, lives, gameState, endGame]);
 
     // Klavye kontrolü
     useEffect(() => {
@@ -275,6 +294,13 @@ const RunnerGame = () => {
             animate={{ opacity: 1 }}
         >
             <div className="flex gap-4">
+                <div className="flex gap-1 items-center bg-card/80 px-3 py-1.5 rounded-full shadow-sm">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <span key={i} className={`text-xl transition-opacity ${i < lives ? 'opacity-100 scale-110' : 'opacity-20 grayscale'}`}>
+                            ❤️
+                        </span>
+                    ))}
+                </div>
                 <span className="px-4 py-2 bg-primary/10 rounded-full font-black text-primary">
                     Skor: {score}
                 </span>
@@ -312,11 +338,15 @@ const RunnerGame = () => {
                     animate={{
                         bottom: isJumping ? 100 : 48,
                         scale: isSuper ? [1, 1.2, 1] : 1,
-                        filter: isSuper ? 'drop-shadow(0 0 10px rgba(255,215,0,0.8))' : 'none'
+                        filter: isSuper
+                            ? 'drop-shadow(0 0 10px rgba(255,215,0,0.8))'
+                            : isInvincible ? 'opacity(0.5)' : 'none',
+                        opacity: isInvincible ? [1, 0.4, 1] : 1
                     }}
                     transition={{
                         bottom: { type: 'spring', stiffness: 400, damping: 25 },
-                        scale: { repeat: Infinity, duration: 0.5 }
+                        scale: { repeat: Infinity, duration: 0.5 },
+                        opacity: { repeat: isInvincible ? Infinity : 0, duration: 0.2 }
                     }}
                 >
                     {character.emoji}

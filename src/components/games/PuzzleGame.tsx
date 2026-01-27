@@ -328,24 +328,26 @@ const PuzzleGame = () => {
                 </div>
 
                 {/* Parça Havuzu */}
-                <div className="flex-1 max-sm">
+                <div className="flex-1 w-full max-w-sm">
                     <p className="text-sm font-bold text-muted-foreground mb-3 text-center lg:text-left">
-                        📦 Parçalar - Sürükle ve bırak!
+                        📦 Parçalar - Önce bir parçaya, sonra boşluğa tıkla!
                     </p>
 
-                    <div className="flex flex-wrap gap-3 justify-center lg:justify-start p-4 bg-card rounded-2xl shadow-sm min-h-[200px]">
+                    <div className="flex flex-wrap gap-3 justify-center lg:justify-start p-4 bg-card rounded-2xl shadow-sm min-h-[150px] md:min-h-[200px]">
                         {unplacedPieces.map((piece) => (
                             <motion.div
                                 key={piece.id}
-                                className={`cursor-grab active:cursor-grabbing rounded-lg overflow-hidden transition-all ${draggedPiece === piece.id
-                                    ? 'scale-110 ring-4 ring-primary shadow-xl z-10'
+                                className={`cursor-pointer rounded-lg overflow-hidden transition-all touch-none select-none ${draggedPiece === piece.id
+                                    ? 'scale-110 ring-4 ring-primary shadow-xl z-20'
                                     : 'hover:scale-105 hover:shadow-lg'
                                     }`}
                                 style={getPieceStyle(piece.row, piece.col, false)}
-                                draggable
-                                onDragStart={() => handleDragStart(piece.id)}
-                                onTouchStart={() => handleDragStart(piece.id)}
-                                onClick={() => {
+                                onTouchStart={(e) => {
+                                    e.preventDefault(); // Varsayılan basılı tutma / menü açma davranışını engelle
+                                    handleDragStart(piece.id);
+                                }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     if (draggedPiece === piece.id) {
                                         setDraggedPiece(null);
                                     } else {
@@ -358,16 +360,20 @@ const PuzzleGame = () => {
                         ))}
 
                         {unplacedPieces.length === 0 && (
-                            <p className="text-center text-muted-foreground w-full">
+                            <p className="text-center text-muted-foreground w-full py-8">
                                 Tüm parçalar yerleştirildi! 🎉
                             </p>
                         )}
                     </div>
 
                     {draggedPiece !== null && (
-                        <p className="text-sm text-primary font-bold mt-4 text-center animate-pulse">
-                            👆 Parça seçili - Puzzle&apos;da yerine tıkla!
-                        </p>
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-sm text-primary font-bold mt-4 text-center animate-pulse"
+                        >
+                            👆 Parça seçildi - Puzzle&apos;daki yerine tıkla!
+                        </motion.p>
                     )}
                 </div>
             </div>
