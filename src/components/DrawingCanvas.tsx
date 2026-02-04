@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, PencilBrush, Text as FabricText } from 'fabric';
-import { Trash2, Sparkles, Undo, Download, Smile, Image } from 'lucide-react';
+import { Trash2, Sparkles, Undo, Download, Smile, Image, Pencil, Paintbrush, Droplets } from 'lucide-react';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
 import DrawingGallery, { saveDrawing } from './DrawingGallery';
 import confetti from 'canvas-confetti';
@@ -23,6 +23,14 @@ const STICKERS = ['🐱', '🐶', '🦄', '🌈', '🌟', '🚀', '🍦', '🎨'
 
 const RAINBOW_COLORS = ['#EF5350', '#FFA726', '#FFEE58', '#66BB6A', '#42A5F5', '#AB47BC'];
 
+// Fırça türleri
+const BRUSH_TYPES = [
+  { id: 'pencil', name: 'Kalem', icon: '✏️', opacity: 1, shadow: null },
+  { id: 'pastel', name: 'Pastel Boya', icon: '🖍️', opacity: 0.7, shadow: { blur: 8, color: 'rgba(0,0,0,0.2)', offsetX: 2, offsetY: 2 } },
+  { id: 'crayon', name: 'Kuruboya', icon: '🖊️', opacity: 0.85, shadow: { blur: 2, color: 'rgba(0,0,0,0.1)', offsetX: 1, offsetY: 1 } },
+  { id: 'watercolor', name: 'Sulu Boya', icon: '💧', opacity: 0.4, shadow: { blur: 15, color: 'rgba(0,0,0,0.05)', offsetX: 0, offsetY: 0 } },
+];
+
 const DrawingCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -30,6 +38,7 @@ const DrawingCanvas = () => {
   const [activeColor, setActiveColor] = useState(COLORS[4].value);
   const [isRainbow, setIsRainbow] = useState(false);
   const [brushSize, setBrushSize] = useState(8);
+  const [activeBrush, setActiveBrush] = useState(BRUSH_TYPES[0]);
   const [showStickers, setShowStickers] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -78,11 +87,19 @@ const DrawingCanvas = () => {
   useEffect(() => {
     if (!fabricCanvas) return;
 
+    // Hex rengi rgba'ya çevir (opacity için) - inline for useEffect
+    const toRgba = (hex: string, opacity: number) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    };
+
     if (isRainbow) {
       const handleMouseMove = () => {
         if (fabricCanvas.freeDrawingBrush) {
           rainbowIndexRef.current = (rainbowIndexRef.current + 1) % RAINBOW_COLORS.length;
-          fabricCanvas.freeDrawingBrush.color = RAINBOW_COLORS[rainbowIndexRef.current];
+          fabricCanvas.freeDrawingBrush.color = toRgba(RAINBOW_COLORS[rainbowIndexRef.current], activeBrush.opacity);
         }
       };
 
@@ -92,16 +109,38 @@ const DrawingCanvas = () => {
       };
     } else {
       if (fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush.color = activeColor;
+        fabricCanvas.freeDrawingBrush.color = toRgba(activeColor, activeBrush.opacity);
       }
     }
-  }, [isRainbow, activeColor, fabricCanvas]);
+  }, [isRainbow, activeColor, activeBrush, fabricCanvas]);
 
+  // Fırça boyutu ve türü efektleri
   useEffect(() => {
     if (fabricCanvas?.freeDrawingBrush) {
-      fabricCanvas.freeDrawingBrush.width = brushSize;
+      const brush = fabricCanvas.freeDrawingBrush as PencilBrush;
+      brush.width = activeBrush.id === 'watercolor' ? brushSize * 2 : brushSize;
+
+      // Fırça türüne göre gölge efektleri
+      if (activeBrush.shadow) {
+        brush.shadow = {
+          blur: activeBrush.shadow.blur,
+          color: activeBrush.shadow.color,
+          offsetX: activeBrush.shadow.offsetX,
+          offsetY: activeBrush.shadow.offsetY,
+          affectStroke: true,
+          includeDefaultValues: true,
+          nonScaling: false,
+          id: 0,
+          type: 'shadow',
+          toObject: () => ({}),
+          toSVG: () => '',
+          toString: () => '',
+        } as any;
+      } else {
+        brush.shadow = null as any;
+      }
     }
-  }, [brushSize, fabricCanvas]);
+  }, [brushSize, activeBrush, fabricCanvas]);
 
   const handleClear = useCallback(() => {
     if (!fabricCanvas) return;
@@ -119,6 +158,14 @@ const DrawingCanvas = () => {
     }
   }, [fabricCanvas]);
 
+  // Hex rengi rgba'ya çevir (opacity için)
+  const hexToRgba = (hex: string, opacity: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+
   const handleColorSelect = (color: string) => {
     setActiveColor(color);
     setIsRainbow(false);
@@ -126,7 +173,7 @@ const DrawingCanvas = () => {
     if (fabricCanvas) {
       fabricCanvas.isDrawingMode = true;
       if (fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush.color = color;
+        fabricCanvas.freeDrawingBrush.color = hexToRgba(color, activeBrush.opacity);
       }
     }
   };
@@ -232,6 +279,27 @@ const DrawingCanvas = () => {
           ))}
         </div>
       )}
+
+      {/* Fırça türleri */}
+      <div className="flex flex-wrap justify-center gap-2">
+        {BRUSH_TYPES.map((brush) => (
+          <button
+            key={brush.id}
+            onClick={() => {
+              setActiveBrush(brush);
+              playPopSound();
+              if (fabricCanvas) fabricCanvas.isDrawingMode = true;
+            }}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-sm transition-all ${activeBrush.id === brush.id
+              ? 'bg-primary text-white scale-105 shadow-md'
+              : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+              }`}
+          >
+            <span className="text-lg">{brush.icon}</span>
+            <span className="hidden sm:inline">{brush.name}</span>
+          </button>
+        ))}
+      </div>
 
       {/* Brush size */}
       <div className="flex items-center gap-4">

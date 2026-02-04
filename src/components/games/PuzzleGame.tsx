@@ -92,9 +92,16 @@ const PuzzleGame = () => {
         playPopSound();
     }, []);
 
-    // Parçayı sürüklemeye başla
-    const handleDragStart = (pieceId: number) => {
+    // Parça seçimi (tap-to-select)
+    const handleSelectPiece = (pieceId: number) => {
         if (placedPieces.has(pieceId)) return;
+
+        // Aynı parçaya tekrar tıklarsa seçimi kaldır
+        if (draggedPiece === pieceId) {
+            setDraggedPiece(null);
+            return;
+        }
+
         setDraggedPiece(pieceId);
         playPopSound();
     };
@@ -129,9 +136,9 @@ const PuzzleGame = () => {
         setDraggedPiece(null);
     };
 
-    // Touch olayları için
-    const handleTouchEnd = (e: React.TouchEvent, targetRow: number, targetCol: number) => {
-        e.preventDefault();
+    // Hedef alana tıklama/dokunma
+    const handleTargetTap = (targetRow: number, targetCol: number) => {
+        if (draggedPiece === null) return;
         handleDrop(targetRow, targetCol);
     };
 
@@ -302,8 +309,7 @@ const PuzzleGame = () => {
                                         height: pieceHeight,
                                         border: '1px dashed rgba(0,0,0,0.2)',
                                     }}
-                                    onClick={() => handleDrop(row, col)}
-                                    onTouchEnd={(e) => handleTouchEnd(e, row, col)}
+                                    onClick={() => handleTargetTap(row, col)}
                                 >
                                     {placedPiece && (
                                         <div
@@ -330,7 +336,7 @@ const PuzzleGame = () => {
                 {/* Parça Havuzu */}
                 <div className="flex-1 w-full max-w-sm">
                     <p className="text-sm font-bold text-muted-foreground mb-3 text-center lg:text-left">
-                        📦 Parçalar - Önce bir parçaya, sonra boşluğa tıkla!
+                        📦 Parçalar - Dokun ve seç, sonra yerine dokun!
                     </p>
 
                     <div className="flex flex-wrap gap-3 justify-center lg:justify-start p-4 bg-card rounded-2xl shadow-sm min-h-[150px] md:min-h-[200px]">
@@ -342,18 +348,7 @@ const PuzzleGame = () => {
                                     : 'hover:scale-105 hover:shadow-lg'
                                     }`}
                                 style={getPieceStyle(piece.row, piece.col, false)}
-                                onTouchStart={(e) => {
-                                    e.preventDefault(); // Varsayılan basılı tutma / menü açma davranışını engelle
-                                    handleDragStart(piece.id);
-                                }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (draggedPiece === piece.id) {
-                                        setDraggedPiece(null);
-                                    } else {
-                                        handleDragStart(piece.id);
-                                    }
-                                }}
+                                onClick={() => handleSelectPiece(piece.id)}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             />

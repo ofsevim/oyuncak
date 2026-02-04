@@ -191,14 +191,15 @@ const WhackAMoleGame = () => {
                         </AnimatePresence>
                     </div>
                 ))}
-            </div>
 
-            <button
-                onClick={() => setGamePhase('start')}
-                className="px-6 py-3 bg-muted text-muted-foreground rounded-full font-bold btn-bouncy"
-            >
-                Vazgeç
-            </button>
+                {/* Back button inside game area */}
+                <button
+                    onClick={() => setGamePhase('start')}
+                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full px-4 py-2 bg-white/80 backdrop-blur-sm text-muted-foreground rounded-full font-bold text-sm border border-white/50 shadow-lg hover:scale-105 transition-transform"
+                >
+                    ← Vazgeç
+                </button>
+            </div>
 
             <SuccessPopup
                 isOpen={showSuccess}

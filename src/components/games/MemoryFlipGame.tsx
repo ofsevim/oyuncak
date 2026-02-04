@@ -135,7 +135,7 @@ const MemoryFlipGame = () => {
       <span className="px-4 py-2 bg-primary text-primary-foreground rounded-full font-bold">Hamle: {moves}</span>
 
       <div
-        className="grid gap-2 p-4 bg-muted rounded-3xl"
+        className="grid gap-2 p-4 bg-muted rounded-3xl relative"
         style={{
           gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
           width: '100%',
@@ -152,9 +152,15 @@ const MemoryFlipGame = () => {
             {(card.isFlipped || card.isMatched) && card.emoji}
           </button>
         ))}
-      </div>
 
-      <button onClick={initializeGame} className="px-6 py-3 bg-secondary text-secondary-foreground rounded-full font-bold btn-bouncy">Yeniden Başla</button>
+        {/* Restart button inside game area */}
+        <button
+          onClick={initializeGame}
+          className="absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full px-4 py-2 bg-secondary/90 backdrop-blur-sm text-secondary-foreground rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform"
+        >
+          🔄 Yeniden Başla
+        </button>
+      </div>
       <SuccessPopup isOpen={showSuccess} onClose={() => { setShowSuccess(false); initializeGame(); }} message={`${moves} hamlede tamamladın!`} />
     </motion.div>
   );

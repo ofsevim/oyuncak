@@ -343,8 +343,8 @@ const ColoringBookGame = () => {
                 />
             </div>
 
-            {/* Aksiyon butonları */}
-            <div className="flex gap-3">
+            {/* Aksiyon butonları - Canvas altında */}
+            <div className="flex justify-center gap-3">
                 <button
                     onClick={handleClear}
                     className="flex items-center gap-2 px-5 py-3 bg-muted text-muted-foreground rounded-xl font-bold hover:bg-destructive/10 hover:text-destructive transition-all"

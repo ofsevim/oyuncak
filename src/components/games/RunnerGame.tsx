@@ -9,13 +9,15 @@ interface Obstacle {
     id: number;
     x: number;
     type: 'rock' | 'tree' | 'cactus';
+    isMoving?: boolean;
+    moveDirection?: number;
 }
 
 interface Collectible {
     id: number;
     x: number;
     y: number;
-    type: 'star' | 'coin' | 'heart';
+    type: 'star' | 'coin' | 'heart' | 'magnet';
 }
 
 interface Particle {
@@ -34,15 +36,16 @@ const CHARACTERS = [
 ];
 
 // 2D Karakter Sprite Bileşeni
-const CharacterSprite = ({ character, isJumping, isRunning, isSuper, isInvincible }: {
+const CharacterSprite = ({ character, isJumping, isRunning, isSuper, isInvincible, jumpProgress }: {
     character: typeof CHARACTERS[0];
     isJumping: boolean;
     isRunning: boolean;
     isSuper: boolean;
     isInvincible: boolean;
+    jumpProgress: number; // 0-1 jump progress for spin
 }) => {
     const [legFrame, setLegFrame] = useState(0);
-    
+
     useEffect(() => {
         if (!isRunning || isJumping) return;
         const interval = setInterval(() => {
@@ -56,12 +59,16 @@ const CharacterSprite = ({ character, isJumping, isRunning, isSuper, isInvincibl
             className="relative"
             style={{ width: 48, height: 56 }}
             animate={{
-                filter: isSuper 
+                filter: isSuper
                     ? 'drop-shadow(0 0 12px #ffd700) drop-shadow(0 0 24px #ffa500)'
                     : 'drop-shadow(2px 4px 3px rgba(0,0,0,0.3))',
                 opacity: isInvincible ? [1, 0.4, 1] : 1,
+                rotate: isJumping ? jumpProgress * 360 : 0, // Spin animation
             }}
-            transition={{ opacity: { repeat: isInvincible ? Infinity : 0, duration: 0.15 } }}
+            transition={{
+                opacity: { repeat: isInvincible ? Infinity : 0, duration: 0.15 },
+                rotate: { duration: 0.6, ease: 'easeOut' }
+            }}
         >
             {/* Gövde */}
             <div
@@ -75,7 +82,7 @@ const CharacterSprite = ({ character, isJumping, isRunning, isSuper, isInvincibl
                     boxShadow: `inset -4px -4px 8px rgba(0,0,0,0.2), inset 4px 4px 8px rgba(255,255,255,0.3)`,
                 }}
             />
-            
+
             {/* Kulaklar */}
             {character.id === 'bunny' && (
                 <>
@@ -189,7 +196,7 @@ const CharacterSprite = ({ character, isJumping, isRunning, isSuper, isInvincibl
                     />
                 </>
             )}
-            
+
             {/* Gözler */}
             <div className="absolute flex gap-2" style={{ left: 12, top: 18 }}>
                 <div className="w-3 h-4 bg-white rounded-full relative">
@@ -199,13 +206,13 @@ const CharacterSprite = ({ character, isJumping, isRunning, isSuper, isInvincibl
                     <div className="w-1.5 h-2 bg-gray-800 rounded-full absolute right-0.5 top-1" />
                 </div>
             </div>
-            
+
             {/* Burun */}
             <div
                 className="absolute w-2 h-1.5 bg-gray-800 rounded-full"
                 style={{ left: 22, top: 28 }}
             />
-            
+
             {/* Bacaklar - Koşma animasyonu */}
             <motion.div
                 className="absolute rounded-full"
@@ -216,7 +223,7 @@ const CharacterSprite = ({ character, isJumping, isRunning, isSuper, isInvincibl
                     bottom: -6,
                     background: character.earColor,
                 }}
-                animate={isJumping ? { rotate: -45 } : { 
+                animate={isJumping ? { rotate: -45 } : {
                     rotate: [15, -15, 15, -15][legFrame],
                     y: [0, -2, 0, -2][legFrame]
                 }}
@@ -230,12 +237,12 @@ const CharacterSprite = ({ character, isJumping, isRunning, isSuper, isInvincibl
                     bottom: -6,
                     background: character.earColor,
                 }}
-                animate={isJumping ? { rotate: 45 } : { 
+                animate={isJumping ? { rotate: 45 } : {
                     rotate: [-15, 15, -15, 15][legFrame],
                     y: [-2, 0, -2, 0][legFrame]
                 }}
             />
-            
+
             {/* Süper güç efekti */}
             {isSuper && (
                 <motion.div
@@ -278,7 +285,7 @@ const ObstacleSprite = ({ type, isSuper }: { type: 'rock' | 'tree' | 'cactus'; i
             </div>
         );
     }
-    
+
     if (type === 'cactus') {
         return (
             <div className="relative" style={{ width: 32, height: 48, opacity: isSuper ? 0.5 : 1 }}>
@@ -354,7 +361,7 @@ const ObstacleSprite = ({ type, isSuper }: { type: 'rock' | 'tree' | 'cactus'; i
             </div>
         );
     }
-    
+
     // Ağaç
     return (
         <div className="relative" style={{ width: 36, height: 52, opacity: isSuper ? 0.5 : 1 }}>
@@ -386,13 +393,13 @@ const ObstacleSprite = ({ type, isSuper }: { type: 'rock' | 'tree' | 'cactus'; i
 };
 
 // Toplanabilir Sprite
-const CollectibleSprite = ({ type }: { type: 'star' | 'coin' | 'heart' }) => {
+const CollectibleSprite = ({ type }: { type: 'star' | 'coin' | 'heart' | 'magnet' }) => {
     if (type === 'star') {
         return (
             <motion.div
                 className="relative"
                 style={{ width: 28, height: 28 }}
-                animate={{ 
+                animate={{
                     scale: [1, 1.15, 1],
                     filter: ['drop-shadow(0 0 4px #ffd700)', 'drop-shadow(0 0 12px #ffa500)', 'drop-shadow(0 0 4px #ffd700)']
                 }}
@@ -411,13 +418,13 @@ const CollectibleSprite = ({ type }: { type: 'star' | 'coin' | 'heart' }) => {
             </motion.div>
         );
     }
-    
+
     if (type === 'coin') {
         return (
             <motion.div
                 className="relative"
-                style={{ 
-                    width: 24, 
+                style={{
+                    width: 24,
                     height: 24,
                     background: 'linear-gradient(135deg, #fef08a 0%, #fbbf24 50%, #d97706 100%)',
                     borderRadius: '50%',
@@ -426,7 +433,7 @@ const CollectibleSprite = ({ type }: { type: 'star' | 'coin' | 'heart' }) => {
                 animate={{ rotateY: [0, 180, 360] }}
                 transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
             >
-                <div 
+                <div
                     className="absolute inset-1 rounded-full flex items-center justify-center font-bold text-amber-800 text-xs"
                     style={{ border: '2px solid #d97706' }}
                 >
@@ -435,7 +442,23 @@ const CollectibleSprite = ({ type }: { type: 'star' | 'coin' | 'heart' }) => {
             </motion.div>
         );
     }
-    
+
+    if (type === 'magnet') {
+        return (
+            <motion.div
+                className="relative flex items-center justify-center"
+                style={{ width: 28, height: 28 }}
+                animate={{
+                    scale: [1, 1.1, 1],
+                    filter: ['drop-shadow(0 0 6px #ef4444)', 'drop-shadow(0 0 12px #dc2626)', 'drop-shadow(0 0 6px #ef4444)']
+                }}
+                transition={{ repeat: Infinity, duration: 0.5 }}
+            >
+                <span className="text-2xl">🧲</span>
+            </motion.div>
+        );
+    }
+
     // Heart
     return (
         <motion.div
@@ -477,7 +500,7 @@ const ParticleEffect = ({ particle }: { particle: Particle }) => {
             />
         );
     }
-    
+
     if (particle.type === 'sparkle') {
         return (
             <motion.div
@@ -496,7 +519,7 @@ const ParticleEffect = ({ particle }: { particle: Particle }) => {
             </motion.div>
         );
     }
-    
+
     return (
         <motion.div
             className="absolute rounded-full"
@@ -520,6 +543,8 @@ const RunnerGame = () => {
     const [isJumping, setIsJumping] = useState(false);
     const [isDucking, setIsDucking] = useState(false);
     const [isSuper, setIsSuper] = useState(false);
+    const [hasMagnet, setHasMagnet] = useState(false);
+    const [jumpProgress, setJumpProgress] = useState(0);
     const [obstacles, setObstacles] = useState<Obstacle[]>([]);
     const [collectibles, setCollectibles] = useState<Collectible[]>([]);
     const [particles, setParticles] = useState<Particle[]>([]);
@@ -538,9 +563,11 @@ const RunnerGame = () => {
     const particleIdRef = useRef(0);
     const playerY = useRef(0);
     const superTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const magnetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastObstacleTimeRef = useRef(0);
     const speedRef = useRef(5);
     const dustIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const jumpStartTimeRef = useRef(0);
 
     const addParticle = useCallback((x: number, y: number, type: Particle['type']) => {
         setParticles(prev => [...prev, {
@@ -556,13 +583,28 @@ const RunnerGame = () => {
         if (isJumping || isDucking || gameState !== 'playing') return;
         playPopSound();
         setIsJumping(true);
+        setJumpProgress(0);
+        jumpStartTimeRef.current = Date.now();
         playerY.current = 1;
         addParticle(60, 48, 'dust');
-        setTimeout(() => {
-            setIsJumping(false);
-            playerY.current = 0;
-            addParticle(60, 48, 'dust');
-        }, 400);
+
+        // Animate jump progress for spin
+        const jumpDuration = 600;
+        const animateJump = () => {
+            const elapsed = Date.now() - jumpStartTimeRef.current;
+            const progress = Math.min(elapsed / jumpDuration, 1);
+            setJumpProgress(progress);
+
+            if (progress < 1) {
+                requestAnimationFrame(animateJump);
+            } else {
+                setIsJumping(false);
+                setJumpProgress(0);
+                playerY.current = 0;
+                addParticle(60, 48, 'dust');
+            }
+        };
+        requestAnimationFrame(animateJump);
     }, [isJumping, isDucking, gameState, addParticle]);
 
     const duck = useCallback(() => {
@@ -584,6 +626,8 @@ const RunnerGame = () => {
         setIsJumping(false);
         setIsDucking(false);
         setIsSuper(false);
+        setHasMagnet(false);
+        setJumpProgress(0);
         setLives(3);
         setIsInvincible(false);
         setGroundOffset(0);
@@ -594,6 +638,7 @@ const RunnerGame = () => {
         playErrorSound();
         setGameState('gameover');
         setIsSuper(false);
+        setHasMagnet(false);
         if (score > highScore) {
             setHighScore(score);
             confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -614,13 +659,13 @@ const RunnerGame = () => {
     // Koşarken toz parçacıkları
     useEffect(() => {
         if (gameState !== 'playing') return;
-        
+
         dustIntervalRef.current = setInterval(() => {
             if (!isJumping) {
                 addParticle(50 + Math.random() * 20, 45 + Math.random() * 10, 'dust');
             }
         }, 200);
-        
+
         return () => {
             if (dustIntervalRef.current) clearInterval(dustIntervalRef.current);
         };
@@ -640,36 +685,66 @@ const RunnerGame = () => {
             setGroundOffset(prev => (prev - currentSpeed * 2) % 100);
             setCloudOffset(prev => (prev - currentSpeed * 0.3) % 200);
 
-            // Engel spawn
+            // Engel spawn - bazıları hareketli
             if (now - lastObstacleTimeRef.current > minObstacleGap && Math.random() < 0.03) {
                 const types: ('rock' | 'cactus' | 'tree')[] = ['rock', 'cactus', 'tree'];
+                const isMoving = Math.random() < 0.3; // %30 ihtimalle hareketli engel
                 setObstacles(prev => [...prev, {
                     id: obstacleIdRef.current++,
                     x: 100,
                     type: types[Math.floor(Math.random() * types.length)],
+                    isMoving,
+                    moveDirection: isMoving ? (Math.random() > 0.5 ? 1 : -1) : 0,
                 }]);
                 lastObstacleTimeRef.current = now;
             }
 
-            // Collectible spawn
+            // Collectible spawn - mıknatıs dahil
             if (Math.random() < 0.015) {
-                const types: ('star' | 'coin' | 'heart')[] = ['star', 'coin', 'heart'];
+                const rand = Math.random();
+                let type: 'star' | 'coin' | 'heart' | 'magnet';
+                if (rand < 0.05) {
+                    type = 'magnet'; // %5 ihtimalle mıknatıs
+                } else if (rand < 0.35) {
+                    type = 'star';
+                } else if (rand < 0.75) {
+                    type = 'coin';
+                } else {
+                    type = 'heart';
+                }
                 setCollectibles(prev => [...prev, {
                     id: collectibleIdRef.current++,
                     x: 100,
                     y: Math.random() > 0.5 ? 0 : 1,
-                    type: types[Math.floor(Math.random() * types.length)],
+                    type,
                 }]);
             }
 
-            // Hareket
+            // Hareket - hareketli engeller yukarı aşağı hareket eder
             setObstacles(prev => prev
-                .map(o => ({ ...o, x: o.x - currentSpeed }))
+                .map(o => ({
+                    ...o,
+                    x: o.x - currentSpeed,
+                    // Hareketli engeller için sinüsoidal hareket (görsel efekt)
+                }))
                 .filter(o => o.x > -10)
             );
 
+            // Collectibles hareketi + mıknatıs çekme efekti
             setCollectibles(prev => prev
-                .map(c => ({ ...c, x: c.x - currentSpeed }))
+                .map(c => {
+                    let newX = c.x - currentSpeed;
+
+                    // Mıknatıs aktifse yıldızları çek
+                    if (hasMagnet && c.type === 'star') {
+                        const attractSpeed = 3;
+                        if (c.x > 15) {
+                            newX = c.x - currentSpeed - attractSpeed;
+                        }
+                    }
+
+                    return { ...c, x: newX };
+                })
                 .filter(c => c.x > -10)
             );
 
@@ -677,14 +752,20 @@ const RunnerGame = () => {
             setScore(prev => prev + 1);
             setDistance(prev => prev + currentSpeed);
 
-            // Hız artışı
-            setSpeed(prev => Math.min(prev + 0.0005, 12));
+            // Puana göre kademeli hız artışı
+            setSpeed(prev => {
+                // Her 500 puanda belirgin hız artışı
+                const baseSpeed = 5;
+                const scoreBonus = Math.floor(score / 500) * 0.5;
+                const targetSpeed = Math.min(baseSpeed + scoreBonus + 0.001, 15);
+                return Math.min(prev + 0.001, targetSpeed);
+            });
         }, 50);
 
         return () => {
             if (gameLoopRef.current) clearInterval(gameLoopRef.current);
         };
-    }, [gameState]);
+    }, [gameState, hasMagnet, score]);
 
     // Çarpışma kontrolü
     useEffect(() => {
@@ -731,7 +812,13 @@ const RunnerGame = () => {
                             setLives(l => Math.min(l + 1, 5));
                         }
 
-                        setScore(s => s + (c.type === 'star' ? 100 : c.type === 'coin' ? 25 : 50));
+                        if (c.type === 'magnet') {
+                            setHasMagnet(true);
+                            if (magnetTimeoutRef.current) clearTimeout(magnetTimeoutRef.current);
+                            magnetTimeoutRef.current = setTimeout(() => setHasMagnet(false), 10000);
+                        }
+
+                        setScore(s => s + (c.type === 'star' ? 100 : c.type === 'coin' ? 25 : c.type === 'magnet' ? 50 : 50));
                         continue;
                     }
                 }
@@ -766,7 +853,7 @@ const RunnerGame = () => {
             >
                 {/* Başlık */}
                 <div className="relative">
-                    <motion.h2 
+                    <motion.h2
                         className="text-4xl font-black bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 bg-clip-text text-transparent"
                         animate={{ scale: [1, 1.02, 1] }}
                         transition={{ repeat: Infinity, duration: 2 }}
@@ -779,7 +866,7 @@ const RunnerGame = () => {
                         transition={{ repeat: Infinity, duration: 2 }}
                     />
                 </div>
-                
+
                 <p className="text-muted-foreground font-semibold text-center">
                     Engelleri atla, yıldızları topla!
                 </p>
@@ -797,8 +884,8 @@ const RunnerGame = () => {
                                     : 'hover:scale-105'
                                     }`}
                                 style={{
-                                    background: character.id === char.id 
-                                        ? `linear-gradient(135deg, ${char.color}40, ${char.earColor}40)` 
+                                    background: character.id === char.id
+                                        ? `linear-gradient(135deg, ${char.color}40, ${char.earColor}40)`
                                         : 'var(--muted)',
                                 }}
                                 whileHover={{ y: -4 }}
@@ -810,6 +897,7 @@ const RunnerGame = () => {
                                     isRunning={false}
                                     isSuper={false}
                                     isInvincible={false}
+                                    jumpProgress={0}
                                 />
                                 <p className="text-xs font-bold mt-2 text-center">{char.name}</p>
                             </motion.button>
@@ -862,7 +950,7 @@ const RunnerGame = () => {
                         <motion.div
                             key={i}
                             className="relative"
-                            animate={{ 
+                            animate={{
                                 scale: i < lives ? [1, 1.1, 1] : 0.8,
                                 opacity: i < lives ? 1 : 0.2
                             }}
@@ -874,23 +962,39 @@ const RunnerGame = () => {
                         </motion.div>
                     ))}
                 </div>
-                
+
                 {/* Skor */}
-                <motion.div 
+                <motion.div
                     className="px-4 py-2 bg-gradient-to-r from-primary/20 to-primary/10 backdrop-blur rounded-xl font-black text-primary shadow-lg border border-primary/20"
                     animate={{ scale: score % 100 === 0 && score > 0 ? [1, 1.1, 1] : 1 }}
                 >
                     ⭐ {score}
                 </motion.div>
-                
+
                 {/* Mesafe */}
                 <div className="px-4 py-2 bg-card/90 backdrop-blur rounded-xl font-bold text-muted-foreground shadow-lg border border-border/50">
                     📏 {Math.floor(distance / 10)}m
                 </div>
-                
+
                 {/* Rekor */}
                 <div className="px-3 py-2 bg-amber-500/20 backdrop-blur rounded-xl font-bold text-amber-600 dark:text-amber-400 shadow-lg">
                     🏆 {highScore}
+                </div>
+
+                {/* Mıknatıs Aktif Göstergesi */}
+                {hasMagnet && (
+                    <motion.div
+                        className="px-3 py-2 bg-red-500/30 backdrop-blur rounded-xl font-bold text-red-600 dark:text-red-400 shadow-lg"
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{ repeat: Infinity, duration: 0.5 }}
+                    >
+                        🧲 Aktif!
+                    </motion.div>
+                )}
+
+                {/* Hız Göstergesi */}
+                <div className="px-3 py-2 bg-blue-500/20 backdrop-blur rounded-xl font-bold text-blue-600 dark:text-blue-400 shadow-lg">
+                    🚀 {speed.toFixed(1)}x
                 </div>
             </div>
 
@@ -915,7 +1019,7 @@ const RunnerGame = () => {
                     animate={{ scale: [1, 1.05, 1] }}
                     transition={{ repeat: Infinity, duration: 3 }}
                 />
-                
+
                 {/* Bulutlar - Parallax */}
                 {[0, 80, 160].map((offset, i) => (
                     <motion.div
@@ -933,9 +1037,9 @@ const RunnerGame = () => {
                         </div>
                     </motion.div>
                 ))}
-                
+
                 {/* Uzak dağlar - Parallax */}
-                <div 
+                <div
                     className="absolute bottom-12 left-0 right-0 h-24"
                     style={{ transform: `translateX(${cloudOffset * 0.5}px)` }}
                 >
@@ -950,26 +1054,26 @@ const RunnerGame = () => {
                         />
                     </svg>
                 </div>
-                
+
                 {/* Zemin - Parallax hareket */}
                 <div className="absolute bottom-0 left-0 right-0 h-14">
                     {/* Toprak katmanı */}
-                    <div 
+                    <div
                         className="absolute inset-0 bg-gradient-to-b from-amber-600 to-amber-800"
                     />
-                    
+
                     {/* Çim katmanı */}
-                    <div 
+                    <div
                         className="absolute top-0 left-0 right-0 h-4"
-                        style={{ 
+                        style={{
                             background: 'linear-gradient(180deg, #22c55e 0%, #16a34a 100%)',
                         }}
                     />
-                    
+
                     {/* Çim detayları */}
-                    <div 
+                    <div
                         className="absolute top-0 left-0 h-6 flex"
-                        style={{ 
+                        style={{
                             transform: `translateX(${groundOffset}px)`,
                             width: '200%',
                         }}
@@ -984,22 +1088,22 @@ const RunnerGame = () => {
                                     borderRadius: '0 0 2px 2px',
                                     transformOrigin: 'bottom',
                                 }}
-                                animate={{ 
+                                animate={{
                                     rotate: [0, 5, -5, 0],
                                 }}
-                                transition={{ 
-                                    repeat: Infinity, 
+                                transition={{
+                                    repeat: Infinity,
                                     duration: 0.8 + Math.random() * 0.4,
                                     delay: Math.random() * 0.5,
                                 }}
                             />
                         ))}
                     </div>
-                    
+
                     {/* Toprak detayları */}
-                    <div 
+                    <div
                         className="absolute bottom-1 left-0 h-2 flex gap-8"
-                        style={{ 
+                        style={{
                             transform: `translateX(${groundOffset * 1.5}px)`,
                             width: '200%',
                         }}
@@ -1048,6 +1152,7 @@ const RunnerGame = () => {
                         isRunning={gameState === 'playing'}
                         isSuper={isSuper}
                         isInvincible={isInvincible}
+                        jumpProgress={jumpProgress}
                     />
                 </motion.div>
 
@@ -1080,7 +1185,7 @@ const RunnerGame = () => {
                         <CollectibleSprite type={c.type} />
                     </motion.div>
                 ))}
-                
+
                 {/* Parçacıklar */}
                 <AnimatePresence>
                     {particles.map((p) => (
@@ -1095,7 +1200,7 @@ const RunnerGame = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                     >
-                        <motion.p 
+                        <motion.p
                             className="text-5xl font-black text-white drop-shadow-lg"
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
@@ -1106,7 +1211,7 @@ const RunnerGame = () => {
                         <p className="text-2xl font-bold text-white">Skor: {score}</p>
                         <p className="text-lg text-white/80">Mesafe: {Math.floor(distance / 10)}m</p>
                         {score === highScore && score > 0 && (
-                            <motion.p 
+                            <motion.p
                                 className="text-xl font-bold text-yellow-400"
                                 animate={{ scale: [1, 1.1, 1] }}
                                 transition={{ repeat: Infinity, duration: 0.5 }}
@@ -1114,45 +1219,42 @@ const RunnerGame = () => {
                                 🏆 Yeni Rekor! 🏆
                             </motion.p>
                         )}
+
+                        {/* Game Over butonları - oyun alanı içinde */}
+                        <div className="flex gap-3 mt-4">
+                            <motion.button
+                                onClick={startGame}
+                                className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full font-black text-lg shadow-lg"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                🔄 Tekrar
+                            </motion.button>
+                            <motion.button
+                                onClick={() => setGameState('menu')}
+                                className="px-6 py-3 bg-white/20 text-white rounded-full font-bold backdrop-blur"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                ← Menü
+                            </motion.button>
+                        </div>
                     </motion.div>
                 )}
+
+                {/* Mobil kontroller - Oyun alanı içinde */}
+                {gameState === 'playing' && (
+                    <motion.button
+                        onClick={(e) => { e.stopPropagation(); jump(); }}
+                        className="absolute bottom-3 right-3 z-30 w-16 h-16 bg-white/30 backdrop-blur-sm text-white rounded-full font-black text-2xl shadow-xl flex items-center justify-center border-2 border-white/50"
+                        whileTap={{ scale: 0.85, backgroundColor: 'rgba(255,255,255,0.5)' }}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                    >
+                        ⬆️
+                    </motion.button>
+                )}
             </div>
-
-            {/* Mobil kontroller */}
-            <motion.button
-                onClick={jump}
-                className="px-14 py-5 bg-gradient-to-r from-primary to-primary/80 text-white rounded-full font-black text-2xl shadow-xl relative overflow-hidden"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-            >
-                <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
-                    animate={{ x: [-150, 150] }}
-                    transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
-                />
-                <span className="relative">⬆️ Zıpla!</span>
-            </motion.button>
-
-            {gameState === 'gameover' && (
-                <div className="flex gap-4">
-                    <motion.button
-                        onClick={startGame}
-                        className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full font-black text-xl shadow-lg"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        🔄 Tekrar
-                    </motion.button>
-                    <motion.button
-                        onClick={() => setGameState('menu')}
-                        className="px-8 py-4 bg-muted text-muted-foreground rounded-full font-bold"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        ← Menü
-                    </motion.button>
-                </div>
-            )}
         </motion.div>
     );
 };

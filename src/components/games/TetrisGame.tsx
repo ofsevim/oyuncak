@@ -377,36 +377,35 @@ const TetrisGame = () => {
                 </div>
             </div>
 
-            {/* Kontroller (Mobil için) */}
-            <div className="grid grid-cols-3 gap-2 w-full max-w-[320px]">
-                <div />
-                <button
-                    onClick={rotatePiece}
-                    className="p-5 bg-white rounded-2xl shadow-md active:scale-90 transition-transform flex items-center justify-center text-2xl border-b-4 border-slate-200"
-                >
-                    🔄
-                </button>
-                <div />
-
-                <button
-                    onClick={() => movePiece(-1, 0)}
-                    className="p-5 bg-white rounded-2xl shadow-md active:scale-90 transition-transform flex items-center justify-center text-2xl border-b-4 border-slate-200"
-                >
-                    ⬅️
-                </button>
-                <button
-                    onClick={() => movePiece(0, 1)}
-                    className="p-5 bg-white rounded-2xl shadow-md active:scale-90 transition-transform flex items-center justify-center text-2xl border-b-4 border-slate-200"
-                >
-                    ⬇️
-                </button>
-                <button
-                    onClick={() => movePiece(1, 0)}
-                    className="p-5 bg-white rounded-2xl shadow-md active:scale-90 transition-transform flex items-center justify-center text-2xl border-b-4 border-slate-200"
-                >
-                    ➡️
-                </button>
-            </div>
+            {/* Kontroller - Grid'in altında, ayrı alan */}
+            {gameState === 'playing' && (
+                <div className="grid grid-cols-4 gap-2 w-full max-w-[280px]">
+                    <button
+                        onClick={() => movePiece(-1, 0)}
+                        className="p-4 bg-white rounded-2xl shadow-md active:scale-90 transition-transform flex items-center justify-center text-2xl border-b-4 border-slate-200"
+                    >
+                        ⬅️
+                    </button>
+                    <button
+                        onClick={() => movePiece(0, 1)}
+                        className="p-4 bg-white rounded-2xl shadow-md active:scale-90 transition-transform flex items-center justify-center text-2xl border-b-4 border-slate-200"
+                    >
+                        ⬇️
+                    </button>
+                    <button
+                        onClick={() => movePiece(1, 0)}
+                        className="p-4 bg-white rounded-2xl shadow-md active:scale-90 transition-transform flex items-center justify-center text-2xl border-b-4 border-slate-200"
+                    >
+                        ➡️
+                    </button>
+                    <button
+                        onClick={rotatePiece}
+                        className="p-4 bg-white rounded-2xl shadow-md active:scale-90 transition-transform flex items-center justify-center text-2xl border-b-4 border-slate-200"
+                    >
+                        🔄
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

@@ -246,16 +246,17 @@ const MathGame = () => {
                 {showResult === 'correct' ? '🎉 Doğru!' : `😅 Cevap: ${question.answer}`}
               </motion.p>
             )}
+
+            {/* Back button integrated with game */}
+            <button
+              onClick={() => setGameStarted(false)}
+              className="px-4 py-2 bg-muted/80 backdrop-blur-sm text-muted-foreground rounded-full font-bold text-sm hover:scale-105 transition-transform"
+            >
+              ← Zorluk Değiştir
+            </button>
           </motion.div>
         </AnimatePresence>
       )}
-
-      <button
-        onClick={() => setGameStarted(false)}
-        className="px-6 py-3 bg-muted text-muted-foreground rounded-full font-bold"
-      >
-        ← Zorluk Değiştir
-      </button>
     </motion.div>
   );
 };
