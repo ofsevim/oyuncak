@@ -1,31 +1,104 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr">
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- TODO: Set the document title to the name of your application -->
-  <title>Oyuncak - Eğlenceli Öğrenme Dünyası</title>
-  <meta name="description" content="Çocuklar için en eğlenceli çizim, oyun ve hikaye platformu" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Oyuncak - Oyun Dünyası</title>
+  <meta name="description" content="14+ oyun, serbest çizim ve interaktif hikayeler. Reklamsız, güvenli, hızlı." />
   <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#7dd3fc" />
-  <meta name="author" content="Oyuncak" />
 
-  <!-- Open Graph / Facebook -->
-  <meta property="og:title" content="Oyuncak - Eğlenceli Öğrenme Dünyası" />
-  <meta property="og:description" content="Çocuklar için çizimler, oyunlar ve interaktif hikayeler!" />
+  <!-- PWA & Mobile App Meta -->
+  <meta name="theme-color" content="#0f1219" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Oyuncak" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="msapplication-TileColor" content="#0f1219" />
+  <meta name="msapplication-tap-highlight" content="no" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Oyuncak - Oyun Dünyası" />
+  <meta property="og:description" content="14+ oyun, serbest çizim ve interaktif hikayeler!" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="/favicon.png" />
+  <meta property="og:locale" content="tr_TR" />
 
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@Lovable" />
-  <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Oyuncak - Oyun Dünyası" />
+  <meta name="twitter:description" content="14+ oyun, serbest çizim ve interaktif hikayeler!" />
+  <meta name="twitter:image" content="/favicon.png" />
+
+  <!-- Splash screen color while loading + old device fallbacks -->
+  <style>
+    html, body, #root {
+      margin: 0;
+      padding: 0;
+      background: #0f1219;
+      /* dvh fallback for old browsers */
+      min-height: 100vh;
+      min-height: 100dvh;
+      overscroll-behavior: none;
+      -ms-overflow-style: none;
+    }
+    body {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    /* Loading spinner for slow/old devices */
+    #app-loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f1219;
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #00d4ff;
+    }
+    #app-loader .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(0,212,255,0.2);
+      border-top-color: #00d4ff;
+      border-radius: 50%;
+      -webkit-animation: spin 0.8s linear infinite;
+      animation: spin 0.8s linear infinite;
+    }
+    #app-loader p {
+      margin-top: 16px;
+      font-size: 14px;
+      opacity: 0.7;
+    }
+    @-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); transform: rotate(360deg); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 
 <body>
+  <!-- Loading screen (eski cihazlarda JS yüklenene kadar görünür) -->
+  <div id="app-loader">
+    <div class="spinner"></div>
+    <p>Yükleniyor...</p>
+  </div>
+
   <div id="root"></div>
+
   <script type="module" src="/src/main.tsx"></script>
+
+  <!-- Eski tarayıcılar için uyarı (ES modules desteklemeyenler) -->
+  <noscript>
+    <div style="padding:2rem;text-align:center;color:#fff;background:#0f1219;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+      <h1 style="font-size:1.5rem;margin-bottom:1rem;">🎮 Oyuncak</h1>
+      <p>Bu uygulamayı kullanmak için JavaScript'i etkinleştirmeniz gerekiyor.</p>
+    </div>
+  </noscript>
 </body>
 
 </html>

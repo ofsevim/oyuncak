@@ -5,12 +5,11 @@ import FloatingBubbles from '@/components/ui/FloatingBubbles';
 import Navigation from '@/components/Navigation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Home from '@/components/home/Home';
-import ThemeToggle from '@/components/ThemeToggle';
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 
 type Tab = 'home' | 'draw' | 'games' | 'story';
 
-// Heavy modülleri lazy-load ederek ilk açılışı hızlandır
+// Heavy modülleri lazy-load
 const DrawingCanvas = lazy(() => import('@/components/DrawingCanvas'));
 const GamesMenu = lazy(() => import('@/components/games/GamesMenu'));
 const StoryTime = lazy(() => import('@/components/StoryTime'));
@@ -18,7 +17,6 @@ const StoryTime = lazy(() => import('@/components/StoryTime'));
 const Index = () => {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [, setPreferredGameId] = useLocalStorageState<string | null>("oyuncak.preferredGameId", null);
-
 
   const renderContent = () => {
     switch (activeTab) {
@@ -43,12 +41,11 @@ const Index = () => {
     }
   };
 
-
-
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Grid pattern background */}
+      <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
       <FloatingBubbles />
-      <ThemeToggle />
       <main className="relative z-10">
         <Suspense
           fallback={
@@ -66,4 +63,3 @@ const Index = () => {
 };
 
 export default Index;
-

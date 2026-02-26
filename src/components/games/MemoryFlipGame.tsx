@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
@@ -36,22 +36,12 @@ const MemoryFlipGame = () => {
     clearAllTimeouts();
     const totalCards = gridSize * gridSize;
     const pairCount = Math.floor(totalCards / 2);
-
-    // Emojileri karıştır ve ihtiyacımız olan kadarını al
     const selectedEmojis = shuffleArray(ALL_EMOJIS).slice(0, pairCount);
-
     const gameEmojis = [...selectedEmojis, ...selectedEmojis];
-
-    // Tek sayıda kart varsa (3x3, 5x5), bir adet '⭐' ekle (eşsiz kart)
-    if (totalCards % 2 !== 0) {
-      gameEmojis.push('⭐');
-    }
+    if (totalCards % 2 !== 0) gameEmojis.push('⭐');
 
     const initialCards = shuffleArray(gameEmojis).map((emoji, i) => ({
-      id: i,
-      emoji,
-      isFlipped: false,
-      isMatched: false
+      id: i, emoji, isFlipped: false, isMatched: false
     }));
 
     setCards(initialCards);
@@ -118,50 +108,86 @@ const MemoryFlipGame = () => {
 
   return (
     <motion.div className="flex flex-col items-center gap-6 p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-      <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">🃏 Hafıza Oyunu</h2>
+      <h2 className="text-2xl md:text-3xl font-black text-gradient">🃏 Hafıza Oyunu</h2>
 
-      <div className="flex gap-2 bg-muted p-1 rounded-2xl">
+      {/* Grid size selector */}
+      <div className="flex gap-2 p-1 rounded-xl glass-card border border-white/10">
         {[3, 4, 5].map((size) => (
           <button
             key={size}
             onClick={() => setGridSize(size as GridSize)}
-            className={`px-4 py-2 rounded-xl font-bold transition-all ${gridSize === size ? 'bg-primary text-white shadow-md' : 'hover:bg-card'}`}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+              gridSize === size
+                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+            }`}
           >
             {size}x{size}
           </button>
         ))}
       </div>
 
-      <span className="px-4 py-2 bg-primary text-primary-foreground rounded-full font-bold">Hamle: {moves}</span>
+      {/* Moves counter */}
+      <div className="flex items-center gap-2 px-4 py-2 glass-card border border-primary/20 rounded-xl">
+        <span className="text-primary font-black">⚡</span>
+        <span className="font-bold text-sm">Hamle: <span className="text-primary">{moves}</span></span>
+      </div>
 
+      {/* Game grid */}
       <div
-        className="grid gap-2 p-4 bg-muted rounded-3xl relative"
+        className="grid gap-2 p-4 glass-card neon-border rounded-2xl relative"
         style={{
           gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
           width: '100%',
           maxWidth: gridSize === 5 ? '500px' : gridSize === 4 ? '400px' : '300px'
         }}
       >
-        {cards.map((card) => (
-          <button
-            key={card.id}
-            onClick={() => handleCardClick(card.id)}
-            disabled={card.isMatched || card.isFlipped}
-            className={`aspect-square rounded-xl md:rounded-2xl text-2xl md:text-3xl transition-all flex items-center justify-center ${(card.isFlipped || card.isMatched) ? 'bg-card shadow-playful' : 'bg-primary hover:scale-105'} ${card.isMatched ? 'ring-4 ring-success opacity-80' : ''}`}
-          >
-            {(card.isFlipped || card.isMatched) && card.emoji}
-          </button>
-        ))}
+        {cards.map((card) => {
+          const isRevealed = card.isFlipped || card.isMatched;
+          return (
+            <button
+              key={card.id}
+              onClick={() => handleCardClick(card.id)}
+              disabled={card.isMatched || card.isFlipped}
+              className={`aspect-square rounded-xl text-2xl md:text-3xl transition-all duration-300 flex items-center justify-center relative overflow-hidden ${
+                isRevealed
+                  ? 'glass-card border border-white/10'
+                  : 'bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/20 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 hover:scale-105'
+              } ${card.isMatched ? 'ring-2 ring-green-400/50 shadow-lg shadow-green-400/20' : ''}`}
+            >
+              {isRevealed ? (
+                <motion.span
+                  initial={{ scale: 0, rotateY: 180 }}
+                  animate={{ scale: 1, rotateY: 0 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                >
+                  {card.emoji}
+                </motion.span>
+              ) : (
+                <span className="text-primary/40 text-lg">?</span>
+              )}
+              {/* Neon glow on matched */}
+              {card.isMatched && (
+                <div className="absolute inset-0 bg-green-400/5 rounded-xl" />
+              )}
+            </button>
+          );
+        })}
 
-        {/* Restart button inside game area */}
+        {/* Restart */}
         <button
           onClick={initializeGame}
-          className="absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full px-4 py-2 bg-secondary/90 backdrop-blur-sm text-secondary-foreground rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform"
+          className="absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full px-4 py-2 glass-card border border-primary/20 text-primary rounded-full font-bold text-sm hover:bg-primary/10 transition-colors"
         >
           🔄 Yeniden Başla
         </button>
       </div>
-      <SuccessPopup isOpen={showSuccess} onClose={() => { setShowSuccess(false); initializeGame(); }} message={`${moves} hamlede tamamladın!`} />
+
+      <SuccessPopup
+        isOpen={showSuccess}
+        onClose={() => { setShowSuccess(false); initializeGame(); }}
+        message={`${moves} hamlede tamamladın!`}
+      />
     </motion.div>
   );
 };

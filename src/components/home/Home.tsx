@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BookOpen, Gamepad2, Pencil, Sparkles, ShieldCheck, Zap } from "lucide-react";
+import { BookOpen, Gamepad2, Pencil, Sparkles, Trophy, Zap, ChevronRight, Star } from "lucide-react";
 import { FEATURED } from "@/data/featured";
 
 type Props = {
@@ -10,197 +10,218 @@ type Props = {
 };
 
 /**
- * Ana ekran (WOW landing):
- * - Hızlı CTA'lar
- * - Güven veren kısa bloklar
- * - Çocuk dostu, modern vitrin
+ * Modern gaming landing page
+ * - Koyu tema, neon aksanlar, glassmorphism
+ * - Hero section, stats bar, featured grid
  */
 export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGame }: Props) {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-32 animate-fade-in">
+    <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-32 animate-fade-in">
       {/* Hero */}
       <motion.section
-        className="relative overflow-hidden rounded-[3rem] border-4 border-primary/10 bg-white/50 backdrop-blur-sm shadow-playful"
-        initial={{ opacity: 0, y: 18 }}
+        className="relative overflow-hidden rounded-3xl glass-card neon-border"
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        transition={{ type: "spring", stiffness: 200, damping: 20 }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-secondary/10 to-accent/15" aria-hidden="true" />
-        <div className="relative p-8 md:p-12">
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 grid-pattern opacity-30" aria-hidden="true" />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" aria-hidden="true" />
+
+        <div className="relative p-8 md:p-14">
           <div className="flex flex-col items-center gap-8 text-center">
+            {/* Badge */}
             <motion.div
-              className="relative"
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+              className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary"
             >
-              <div className="grid place-items-center rounded-[2.5rem] bg-white p-5 shadow-bounce border-8 border-white">
-                <img src="/favicon.png" alt="Oyuncak" className="h-24 w-24 md:h-28 md:w-28 rounded-[1.75rem]" />
-              </div>
-              <Sparkles className="absolute -top-4 -right-4 h-12 w-12 text-secondary animate-pulse" aria-hidden="true" />
+              <Zap className="h-3.5 w-3.5" /> Yeni Nesil Oyun Deneyimi
             </motion.div>
 
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-black text-primary">
-                <Zap className="h-4 w-4" /> Yeni nesil çocuk deneyimi
-              </div>
-              <h1 className="text-4xl md:text-6xl font-black tracking-tight text-foreground">
-                “İşte bu ya!” dedirten
-                <span className="text-primary"> oyun</span>, <span className="text-accent">çizim</span> ve{" "}
-                <span className="text-purple-600">hikaye</span> dünyası
-              </h1>
-              <p className="mx-auto max-w-2xl text-lg md:text-2xl font-semibold text-muted-foreground">
-                Reklamsız, çocuk dostu, hızlı. Bir tıkla oyna, çiz, oku.
-              </p>
-            </div>
+            {/* Title */}
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight"
+            >
+              <span className="text-gradient">Oyna</span>,{" "}
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent to-pink-500">Çiz</span> ve{" "}
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-secondary to-purple-400">Keşfet</span>
+            </motion.h1>
 
-            <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mx-auto max-w-xl text-base md:text-lg text-muted-foreground"
+            >
+              12+ oyun, serbest çizim ve interaktif hikayeler. Reklamsız, güvenli, hızlı.
+            </motion.p>
+
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center"
+            >
               <button
                 onClick={onGoGames}
-                className="inline-flex items-center justify-center gap-3 rounded-full bg-secondary px-10 py-5 text-xl font-black text-secondary-foreground shadow-lg btn-bouncy border-b-8 border-yellow-600/20"
+                className="btn-gaming inline-flex items-center justify-center gap-2 px-8 py-4 text-base"
                 aria-label="Oyunlara git"
               >
-                <Gamepad2 className="h-6 w-6" /> Oyunlara Başla
+                <Gamepad2 className="h-5 w-5" /> Oyunlara Başla
+                <ChevronRight className="h-4 w-4" />
               </button>
               <button
                 onClick={onGoDraw}
-                className="inline-flex items-center justify-center gap-3 rounded-full bg-accent px-10 py-5 text-xl font-black text-accent-foreground shadow-lg btn-bouncy border-b-8 border-green-600/20"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-8 py-4 text-base font-bold text-accent transition-all hover:bg-accent/20 hover:border-accent/50"
                 aria-label="Çizime git"
               >
-                <Pencil className="h-6 w-6" /> Çizmeye Başla
+                <Pencil className="h-5 w-5" /> Çizmeye Başla
               </button>
               <button
                 onClick={onGoStories}
-                className="inline-flex items-center justify-center gap-3 rounded-full bg-purple-500 px-10 py-5 text-xl font-black text-white shadow-lg btn-bouncy border-b-8 border-purple-900/20"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-secondary/30 bg-secondary/10 px-8 py-4 text-base font-bold text-secondary transition-all hover:bg-secondary/20 hover:border-secondary/50"
                 aria-label="Hikayelere git"
               >
-                <BookOpen className="h-6 w-6" /> Hikaye Oku
+                <BookOpen className="h-5 w-5" /> Hikaye Oku
               </button>
-            </div>
+            </motion.div>
           </div>
         </div>
       </motion.section>
 
-      {/* Highlights */}
-      <section className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
-        <div className="card-playful p-6 border-4 border-primary/10">
-          <div className="flex items-center gap-3">
-            <div className="grid place-items-center rounded-2xl bg-primary/10 p-3">
-              <ShieldCheck className="h-6 w-6 text-primary" />
+      {/* Stats bar */}
+      <section className="mt-6 grid grid-cols-3 gap-3">
+        {[
+          { icon: Gamepad2, label: "Oyun", value: "12+", color: "text-primary" },
+          { icon: Trophy, label: "Kategori", value: "6", color: "text-secondary" },
+          { icon: Star, label: "Ücretsiz", value: "100%", color: "text-accent" },
+        ].map((stat) => (
+          <div key={stat.label} className="glass-card p-4 flex items-center gap-3">
+            <div className={`${stat.color}`}>
+              <stat.icon className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-black text-foreground">Çocuk dostu</h3>
-          </div>
-          <p className="mt-3 text-sm font-semibold text-muted-foreground">
-            Basit, güvenli ve anlaşılır etkileşimler. Mobil/tablet uyumlu.
-          </p>
-        </div>
-
-        <div className="card-playful p-6 border-4 border-secondary/20">
-          <div className="flex items-center gap-3">
-            <div className="grid place-items-center rounded-2xl bg-secondary/20 p-3">
-              <Zap className="h-6 w-6 text-secondary-foreground" />
+            <div>
+              <p className="text-lg font-black">{stat.value}</p>
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
             </div>
-            <h3 className="text-lg font-black text-foreground">Hızlı açılır</h3>
           </div>
-          <p className="mt-3 text-sm font-semibold text-muted-foreground">
-            Ağır modüller ihtiyaç olunca yüklenir. İlk açılış daha akıcı.
-          </p>
-        </div>
-
-        <div className="card-playful p-6 border-4 border-accent/20">
-          <div className="flex items-center gap-3">
-            <div className="grid place-items-center rounded-2xl bg-accent/15 p-3">
-              <Sparkles className="h-6 w-6 text-accent-foreground" />
-            </div>
-            <h3 className="text-lg font-black text-foreground">Modern tasarım</h3>
-          </div>
-          <p className="mt-3 text-sm font-semibold text-muted-foreground">
-            Mikro animasyonlar, net hiyerarşi ve “wow” hissi veren vitrin.
-          </p>
-        </div>
+        ))}
       </section>
 
-      {/* Social proof-ish */}
-      <section className="mt-8 card-playful p-6 border-4 border-primary/10">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h3 className="text-xl font-black text-foreground">Öne çıkanlar</h3>
-            <p className="text-sm font-semibold text-muted-foreground">
-              “Popüler” demiyoruz; kürate ediyoruz. En keyifli içerikleri burada topladık.
-            </p>
+      {/* Featured section header */}
+      <section className="mt-10">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-1 rounded-full bg-gradient-to-b from-primary to-secondary" />
+            <div>
+              <h2 className="text-xl md:text-2xl font-black">Öne Çıkanlar</h2>
+              <p className="text-xs text-muted-foreground">En keyifli içerikler</p>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <span className="rounded-full bg-white/70 px-4 py-2 text-sm font-black text-foreground shadow-sm">🎈 Refleks</span>
-            <span className="rounded-full bg-white/70 px-4 py-2 text-sm font-black text-foreground shadow-sm">🎨 Yaratıcılık</span>
-            <span className="rounded-full bg-white/70 px-4 py-2 text-sm font-black text-foreground shadow-sm">📚 Okuma</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured grid */}
-      <section className="mt-8">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h3 className="text-2xl font-black text-foreground">Yeni & Önerilen</h3>
-            <p className="text-sm font-semibold text-muted-foreground">
-              Kısa, net, “bir daha oynayayım” dedirten seçimler.
-            </p>
+          <div className="flex gap-2">
+            <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-bold text-primary">🎮 Oyun</span>
+            <span className="rounded-full border border-accent/20 bg-accent/5 px-3 py-1 text-xs font-bold text-accent">🎨 Çizim</span>
+            <span className="rounded-full border border-secondary/20 bg-secondary/5 px-3 py-1 text-xs font-bold text-secondary">📚 Hikaye</span>
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-          {FEATURED.map((item) => (
-            <div
+        {/* Featured grid */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {FEATURED.map((item, i) => (
+            <motion.div
               key={item.id}
-              className="relative overflow-hidden rounded-[2.5rem] border-4 border-primary/10 bg-white/60 backdrop-blur-sm p-6 shadow-playful"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * i }}
+              className="game-card group p-5"
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient}`} aria-hidden="true" />
+              <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-40`} aria-hidden="true" />
               <div className="relative flex flex-col gap-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="grid place-items-center rounded-2xl bg-white/70 p-3 shadow-sm">
-                      <span className="text-4xl" aria-hidden="true">
-                        {item.emoji}
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="text-xl font-extrabold text-foreground">{item.title}</h4>
-                      <p className="text-sm font-semibold text-muted-foreground">{item.subtitle}</p>
-                    </div>
+                <div className="flex items-start gap-4">
+                  <div className="grid place-items-center rounded-xl bg-white/5 p-3 border border-white/5 group-hover:border-primary/20 transition-colors">
+                    <span className="text-3xl" aria-hidden="true">{item.emoji}</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground">{item.subtitle}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   {item.badges.map((b) => (
-                    <span
-                      key={b}
-                      className="rounded-full bg-white/70 px-3 py-1 text-xs font-black text-foreground shadow-sm"
-                    >
+                    <span key={b} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-muted-foreground">
                       {b}
                     </span>
                   ))}
                 </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <button
-                    onClick={() => {
-                      if (item.tab === "games" && item.gameId && onGoFeaturedGame) return onGoFeaturedGame(item.gameId);
-                      if (item.tab === "games") return onGoGames();
-                      if (item.tab === "draw") return onGoDraw();
-                      return onGoStories();
-                    }}
-                    className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 font-black text-white shadow-lg btn-bouncy"
-                    aria-label={`${item.title} aç`}
-                  >
-                    {item.cta}
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    if (item.tab === "games" && item.gameId && onGoFeaturedGame) return onGoFeaturedGame(item.gameId);
+                    if (item.tab === "games") return onGoGames();
+                    if (item.tab === "draw") return onGoDraw();
+                    return onGoStories();
+                  }}
+                  className="inline-flex items-center gap-2 self-start rounded-lg bg-primary/10 border border-primary/20 px-5 py-2.5 text-sm font-bold text-primary transition-all hover:bg-primary/20"
+                  aria-label={`${item.title} aç`}
+                >
+                  {item.cta} <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Quick access */}
+      <section className="mt-10">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="h-8 w-1 rounded-full bg-gradient-to-b from-accent to-primary" />
+          <h2 className="text-xl font-black">Hızlı Erişim</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button onClick={onGoGames} className="game-card group p-5 text-left">
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl bg-primary/10 p-3 border border-primary/20 group-hover:bg-primary/20 transition-colors">
+                <Gamepad2 className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-bold">Tüm Oyunlar</h3>
+                <p className="text-xs text-muted-foreground">12+ eğlenceli oyun</p>
               </div>
             </div>
-          ))}
+          </button>
+          <button onClick={onGoDraw} className="game-card group p-5 text-left">
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl bg-accent/10 p-3 border border-accent/20 group-hover:bg-accent/20 transition-colors">
+                <Pencil className="h-6 w-6 text-accent" />
+              </div>
+              <div>
+                <h3 className="font-bold">Serbest Çizim</h3>
+                <p className="text-xs text-muted-foreground">Hayal gücünü kullan</p>
+              </div>
+            </div>
+          </button>
+          <button onClick={onGoStories} className="game-card group p-5 text-left">
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl bg-secondary/10 p-3 border border-secondary/20 group-hover:bg-secondary/20 transition-colors">
+                <BookOpen className="h-6 w-6 text-secondary" />
+              </div>
+              <div>
+                <h3 className="font-bold">Hikayeler</h3>
+                <p className="text-xs text-muted-foreground">İnteraktif okuma</p>
+              </div>
+            </div>
+          </button>
         </div>
       </section>
     </div>
   );
 }
-
-
