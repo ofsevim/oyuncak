@@ -11,10 +11,6 @@ interface NavigationProps {
   onTabChange: (tab: Tab) => void;
 }
 
-/**
- * Modern gaming bottom navigation
- * - Glassmorphism bar, neon active indicator
- */
 const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   const handleTabChange = (tab: Tab) => {
     playPopSound();
@@ -32,7 +28,13 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
     <nav className="fixed bottom-0 left-0 right-0 z-50 p-3 md:p-4 pb-safe animate-fade-in">
       <div className="max-w-lg mx-auto">
         <motion.div
-          className="glass-card flex justify-around items-center p-1.5 border border-white/10"
+          className="flex justify-around items-center p-1.5 rounded-2xl border border-white/[0.06]"
+          style={{
+            background: 'hsl(var(--background) / 0.7)',
+            backdropFilter: 'blur(24px) saturate(1.5)',
+            WebkitBackdropFilter: 'blur(24px) saturate(1.5)',
+            boxShadow: '0 -4px 30px hsl(var(--background) / 0.5)',
+          }}
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -40,28 +42,33 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-
             return (
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`relative flex flex-col items-center gap-1 py-2 px-4 md:py-2.5 md:px-6 rounded-xl transition-all duration-300 ${
-                  isActive
-                    ? 'bg-primary/15 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+                className={`relative flex flex-col items-center gap-1 py-2.5 px-4 md:py-3 md:px-6 rounded-xl transition-all duration-300 ${
+                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground/80 hover:bg-white/[0.03]'
                 }`}
                 aria-label={tab.label}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <Icon className={`w-5 h-5 md:w-6 md:h-6 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]' : ''}`} />
-                <span className={`text-[10px] md:text-xs font-bold transition-colors ${isActive ? 'text-primary' : ''}`}>
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-bg"
+                    className="absolute inset-0 rounded-xl bg-primary/[0.08] border border-primary/15"
+                    style={{ boxShadow: '0 0 20px hsl(var(--primary) / 0.1)' }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <Icon className={`relative z-10 w-5 h-5 md:w-6 md:h-6 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_10px_hsl(var(--primary)/0.6)]' : ''}`} />
+                <span className={`relative z-10 text-[10px] md:text-xs font-bold ${isActive ? 'text-primary' : ''}`}>
                   {tab.label}
                 </span>
                 {isActive && (
                   <motion.div
-                    layoutId="nav-indicator"
-                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary"
-                    style={{ boxShadow: '0 0 10px hsl(var(--primary) / 0.6)' }}
+                    layoutId="nav-dot"
+                    className="absolute -bottom-0 left-1/2 -translate-x-1/2 w-5 h-[2px] rounded-full bg-primary"
+                    style={{ boxShadow: '0 0 12px hsl(var(--primary) / 0.7)' }}
                   />
                 )}
               </button>
