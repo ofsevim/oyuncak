@@ -9,7 +9,6 @@ import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 
 type Tab = 'home' | 'draw' | 'games' | 'story';
 
-// Heavy modülleri lazy-load
 const DrawingCanvas = lazy(() => import('@/components/DrawingCanvas'));
 const GamesMenu = lazy(() => import('@/components/games/GamesMenu'));
 const StoryTime = lazy(() => import('@/components/StoryTime'));
@@ -43,8 +42,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Grid pattern background */}
-      <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
+      {/* Subtle grid pattern */}
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      {/* Mesh gradient ambient */}
+      <div className="fixed inset-0 mesh-gradient pointer-events-none" />
       <FloatingBubbles />
       <main className="relative z-10">
         <Suspense

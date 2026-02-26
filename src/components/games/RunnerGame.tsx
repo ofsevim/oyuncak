@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { playPopSound, playSuccessSound, playErrorSound } from '@/utils/soundEffects';
+import { playPopSound, playSuccessSound, playErrorSound, playNewRecordSound } from '@/utils/soundEffects';
+import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
 
 interface Obstacle {
@@ -550,9 +551,10 @@ const RunnerGame = () => {
     const [particles, setParticles] = useState<Particle[]>([]);
     const [score, setScore] = useState(0);
     const [distance, setDistance] = useState(0);
-    const [highScore, setHighScore] = useState(0);
+    const [highScore, setHighScore] = useState(() => getHighScore('runner'));
     const [speed, setSpeed] = useState(5);
     const [lives, setLives] = useState(3);
+    const [isNewRecord, setIsNewRecord] = useState(false);
     const [isInvincible, setIsInvincible] = useState(false);
     const [groundOffset, setGroundOffset] = useState(0);
     const [cloudOffset, setCloudOffset] = useState(0);
@@ -630,6 +632,7 @@ const RunnerGame = () => {
         setJumpProgress(0);
         setLives(3);
         setIsInvincible(false);
+        setIsNewRecord(false);
         setGroundOffset(0);
         setCloudOffset(0);
     };
@@ -639,7 +642,13 @@ const RunnerGame = () => {
         setGameState('gameover');
         setIsSuper(false);
         setHasMagnet(false);
-        if (score > highScore) {
+        const isNew = saveHighScoreObj('runner', score);
+        if (isNew) {
+            setIsNewRecord(true);
+            setHighScore(score);
+            playNewRecordSound();
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        } else if (score > highScore) {
             setHighScore(score);
             confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
         }
@@ -1210,7 +1219,7 @@ const RunnerGame = () => {
                         </motion.p>
                         <p className="text-2xl font-bold text-white">Skor: {score}</p>
                         <p className="text-lg text-white/80">Mesafe: {Math.floor(distance / 10)}m</p>
-                        {score === highScore && score > 0 && (
+                        {isNewRecord && (
                             <motion.p
                                 className="text-xl font-bold text-yellow-400"
                                 animate={{ scale: [1, 1.1, 1] }}
