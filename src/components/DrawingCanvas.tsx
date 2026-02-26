@@ -2,21 +2,24 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, PencilBrush, Text as FabricText } from 'fabric';
-import { Trash2, Sparkles, Undo, Download, Smile, Image, Pencil, Paintbrush, Droplets } from 'lucide-react';
+import { Trash2, Sparkles, Undo, Download, Smile, Image } from 'lucide-react';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
 import DrawingGallery, { saveDrawing } from './DrawingGallery';
 import confetti from 'canvas-confetti';
 
 const COLORS = [
-  { name: 'Kırmızı', value: '#EF5350' },
-  { name: 'Turuncu', value: '#FFA726' },
-  { name: 'Sarı', value: '#FFEE58' },
-  { name: 'Yeşil', value: '#66BB6A' },
-  { name: 'Mavi', value: '#42A5F5' },
-  { name: 'Mor', value: '#AB47BC' },
-  { name: 'Pembe', value: '#EC407A' },
-  { name: 'Kahverengi', value: '#8D6E63' },
-  { name: 'Siyah', value: '#424242' },
+  { name: 'Kırmızı', value: '#E53935', light: '#FFCDD2' },
+  { name: 'Turuncu', value: '#FB8C00', light: '#FFE0B2' },
+  { name: 'Sarı', value: '#FDD835', light: '#FFF9C4' },
+  { name: 'Yeşil', value: '#43A047', light: '#C8E6C9' },
+  { name: 'Açık Mavi', value: '#29B6F6', light: '#B3E5FC' },
+  { name: 'Mavi', value: '#1E88E5', light: '#BBDEFB' },
+  { name: 'Mor', value: '#8E24AA', light: '#E1BEE7' },
+  { name: 'Pembe', value: '#D81B60', light: '#F8BBD0' },
+  { name: 'Kahverengi', value: '#6D4C41', light: '#D7CCC8' },
+  { name: 'Gri', value: '#546E7A', light: '#CFD8DC' },
+  { name: 'Siyah', value: '#212121', light: '#9E9E9E' },
+  { name: 'Beyaz', value: '#FAFAFA', light: '#FFFFFF' },
 ];
 
 const STICKERS = ['🐱', '🐶', '🦄', '🌈', '🌟', '🚀', '🍦', '🎨', '🧩', '🐼', '🐯', '🦋'];
@@ -25,10 +28,11 @@ const RAINBOW_COLORS = ['#EF5350', '#FFA726', '#FFEE58', '#66BB6A', '#42A5F5', '
 
 // Fırça türleri
 const BRUSH_TYPES = [
-  { id: 'pencil', name: 'Kalem', icon: '✏️', opacity: 1, shadow: null },
-  { id: 'pastel', name: 'Pastel Boya', icon: '🖍️', opacity: 0.7, shadow: { blur: 8, color: 'rgba(0,0,0,0.2)', offsetX: 2, offsetY: 2 } },
-  { id: 'crayon', name: 'Kuruboya', icon: '🖊️', opacity: 0.85, shadow: { blur: 2, color: 'rgba(0,0,0,0.1)', offsetX: 1, offsetY: 1 } },
-  { id: 'watercolor', name: 'Sulu Boya', icon: '💧', opacity: 0.4, shadow: { blur: 15, color: 'rgba(0,0,0,0.05)', offsetX: 0, offsetY: 0 } },
+  { id: 'pencil', name: 'Kalem', icon: '✏️', opacity: 1, widthMul: 1, shadow: null, desc: 'İnce çizgiler' },
+  { id: 'pastel', name: 'Pastel Boya', icon: '🖍️', opacity: 0.65, widthMul: 2.5, shadow: { blur: 12, color: 'rgba(0,0,0,0.15)', offsetX: 1, offsetY: 2 }, desc: 'Yumuşak dokulu' },
+  { id: 'crayon', name: 'Kuruboya', icon: '🖊️', opacity: 0.85, widthMul: 1.8, shadow: { blur: 3, color: 'rgba(0,0,0,0.12)', offsetX: 1, offsetY: 1 }, desc: 'Kalın ve canlı' },
+  { id: 'watercolor', name: 'Sulu Boya', icon: '💧', opacity: 0.3, widthMul: 3, shadow: { blur: 20, color: 'rgba(0,0,0,0.04)', offsetX: 0, offsetY: 0 }, desc: 'Şeffaf katmanlar' },
+  { id: 'marker', name: 'Keçeli Kalem', icon: '🖌️', opacity: 0.9, widthMul: 2, shadow: { blur: 1, color: 'rgba(0,0,0,0.08)', offsetX: 0, offsetY: 0 }, desc: 'Parlak ve düz' },
 ];
 
 const DrawingCanvas = () => {
@@ -118,7 +122,7 @@ const DrawingCanvas = () => {
   useEffect(() => {
     if (fabricCanvas?.freeDrawingBrush) {
       const brush = fabricCanvas.freeDrawingBrush as PencilBrush;
-      brush.width = activeBrush.id === 'watercolor' ? brushSize * 2 : brushSize;
+      brush.width = brushSize * activeBrush.widthMul;
 
       // Fırça türüne göre gölge efektleri
       if (activeBrush.shadow) {
@@ -235,34 +239,57 @@ const DrawingCanvas = () => {
       </h2>
 
       {/* Color palette */}
-      <div className="flex flex-wrap justify-center gap-2 max-w-full px-2">
-        {COLORS.map((color) => (
-          <button
-            key={color.value}
-            onClick={() => handleColorSelect(color.value)}
-            className={`w-9 h-9 md:w-12 md:h-12 rounded-full border-2 md:border-4 transition-all duration-200 active:scale-75 ${activeColor === color.value && !isRainbow && fabricCanvas?.isDrawingMode
-              ? 'border-foreground scale-110 shadow-md'
-              : 'border-white/50'
+      <div className="flex flex-wrap justify-center gap-1.5 md:gap-2 max-w-full px-2">
+        {COLORS.map((color) => {
+          const isActive = activeColor === color.value && !isRainbow && fabricCanvas?.isDrawingMode;
+          return (
+            <button
+              key={color.value}
+              onClick={() => handleColorSelect(color.value)}
+              className={`relative w-10 h-10 md:w-12 md:h-12 rounded-full transition-all duration-200 active:scale-75 ${
+                isActive ? 'scale-110 ring-2 ring-offset-2 ring-offset-background ring-primary shadow-lg' : 'hover:scale-105'
               }`}
-            style={{ backgroundColor: color.value }}
-            title={color.name}
-          />
-        ))}
+              style={{ backgroundColor: color.value }}
+              title={color.name}
+            >
+              {/* Inner highlight for 3D effect */}
+              <span
+                className="absolute inset-[3px] rounded-full pointer-events-none"
+                style={{
+                  background: `radial-gradient(circle at 35% 30%, ${color.light}88 0%, transparent 60%)`,
+                }}
+              />
+              {/* Border */}
+              <span className={`absolute inset-0 rounded-full pointer-events-none border-2 ${
+                color.value === '#FAFAFA' ? 'border-gray-300' : 'border-white/30'
+              }`} />
+              {isActive && (
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <span className={`text-sm font-black ${color.value === '#FAFAFA' || color.value === '#FDD835' ? 'text-gray-800' : 'text-white'}`} style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>✓</span>
+                </span>
+              )}
+            </button>
+          );
+        })}
         <button
           onClick={toggleRainbow}
-          className={`w-9 h-9 md:w-12 md:h-12 rounded-full rainbow-gradient border-2 md:border-4 flex items-center justify-center transition-all duration-200 active:scale-75 ${isRainbow ? 'border-foreground scale-110 shadow-md' : 'border-white/50'
-            }`}
+          className={`relative w-10 h-10 md:w-12 md:h-12 rounded-full rainbow-gradient flex items-center justify-center transition-all duration-200 active:scale-75 ${
+            isRainbow ? 'scale-110 ring-2 ring-offset-2 ring-offset-background ring-primary shadow-lg' : 'hover:scale-105'
+          }`}
           title="Gökkuşağı"
         >
-          <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-white" />
+          <span className="absolute inset-0 rounded-full border-2 border-white/30 pointer-events-none" />
+          <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-white drop-shadow-md relative z-10" />
         </button>
         <button
           onClick={() => setShowStickers(!showStickers)}
-          className={`w-9 h-9 md:w-12 md:h-12 rounded-full bg-orange-400 border-2 md:border-4 flex items-center justify-center transition-all duration-200 active:scale-75 ${showStickers ? 'border-foreground scale-110 shadow-md' : 'border-white/50'
-            }`}
+          className={`relative w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center transition-all duration-200 active:scale-75 ${
+            showStickers ? 'scale-110 ring-2 ring-offset-2 ring-offset-background ring-primary shadow-lg' : 'hover:scale-105'
+          }`}
           title="Stickerlar"
         >
-          <Smile className="w-4 h-4 md:w-5 md:h-5 text-white" />
+          <span className="absolute inset-0 rounded-full border-2 border-white/30 pointer-events-none" />
+          <Smile className="w-4 h-4 md:w-5 md:h-5 text-white drop-shadow-md relative z-10" />
         </button>
       </div>
 
@@ -282,28 +309,38 @@ const DrawingCanvas = () => {
 
       {/* Fırça türleri */}
       <div className="flex flex-wrap justify-center gap-2">
-        {BRUSH_TYPES.map((brush) => (
-          <button
-            key={brush.id}
-            onClick={() => {
-              setActiveBrush(brush);
-              playPopSound();
-              if (fabricCanvas) fabricCanvas.isDrawingMode = true;
-            }}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-sm transition-all ${activeBrush.id === brush.id
-              ? 'bg-primary text-white scale-105 shadow-md'
-              : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+        {BRUSH_TYPES.map((brush) => {
+          const isActive = activeBrush.id === brush.id;
+          return (
+            <button
+              key={brush.id}
+              onClick={() => {
+                setActiveBrush(brush);
+                playPopSound();
+                if (fabricCanvas) fabricCanvas.isDrawingMode = true;
+              }}
+              className={`group flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-sm transition-all duration-200 ${
+                isActive
+                  ? 'bg-primary text-primary-foreground scale-105 shadow-lg shadow-primary/30 ring-2 ring-primary/50'
+                  : 'glass-card text-muted-foreground hover:text-foreground hover:bg-white/[0.06] hover:scale-[1.02]'
               }`}
-          >
-            <span className="text-lg">{brush.icon}</span>
-            <span className="hidden sm:inline">{brush.name}</span>
-          </button>
-        ))}
+            >
+              <span className="text-xl">{brush.icon}</span>
+              <div className="flex flex-col items-start">
+                <span className="leading-tight">{brush.name}</span>
+                <span className={`text-[10px] font-medium leading-tight ${isActive ? 'text-primary-foreground/70' : 'text-muted-foreground/50'}`}>{brush.desc}</span>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Brush size */}
-      <div className="flex items-center gap-4">
-        <span className="text-sm font-bold text-muted-foreground">Fırça:</span>
+      <div className="flex items-center gap-3 glass-card px-4 py-2.5 rounded-2xl border border-white/10">
+        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Fırça</span>
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-primary/60" />
+        </div>
         <input
           type="range"
           min="2"
@@ -313,11 +350,14 @@ const DrawingCanvas = () => {
             setBrushSize(Number(e.target.value));
             if (fabricCanvas) fabricCanvas.isDrawingMode = true;
           }}
-          className="w-32 accent-primary"
+          className="w-28 md:w-36 accent-primary"
         />
+        <div className="flex items-center gap-1">
+          <div className="w-4 h-4 rounded-full bg-primary/60" />
+        </div>
         <div
-          className="rounded-full bg-foreground"
-          style={{ width: brushSize, height: brushSize }}
+          className="rounded-full border border-white/20 shadow-inner"
+          style={{ width: Math.max(brushSize, 6), height: Math.max(brushSize, 6), backgroundColor: isRainbow ? '#42A5F5' : activeColor }}
         />
       </div>
 

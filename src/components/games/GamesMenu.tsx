@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Search, Brain, Hash, Palette, Wind, Piano, BookA, Puzzle, Calculator, Gamepad2, Rat, Shapes, ArrowLeft, Flame, Star, Zap } from 'lucide-react';
+import { Search, Brain, Hash, Palette, Wind, Piano, Puzzle, Calculator, Gamepad2, Rat, Shapes, ArrowLeft, Flame, Star, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import OddOneOutGame from './OddOneOutGame';
 import MemoryFlipGame from './MemoryFlipGame';
@@ -11,14 +11,13 @@ import ColoringBookGame from './ColoringBookGame';
 import BalloonPopGame from './BalloonPopGame';
 import PuzzleGame from './PuzzleGame';
 import PianoGame from './PianoGame';
-import AlphabetGame from './AlphabetGame';
 import MathGame from './MathGame';
 import RunnerGame from './RunnerGame';
 import TetrisGame from './TetrisGame';
 import SnakeGame from './SnakeGame';
 import Game2048 from './Game2048';
 
-type GameType = 'menu' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'puzzle' | 'piano' | 'alphabet' | 'math' | 'runner' | 'tetris' | 'snake' | '2048';
+type GameType = 'menu' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'puzzle' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048';
 type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
 
 interface GameDef {
@@ -43,7 +42,6 @@ const games: GameDef[] = [
   { id: 'coloring', title: 'Boyama Kitabı', emoji: '🎨', icon: Palette, gradient: 'from-pink-500 to-rose-600', description: 'Resimleri dilediğince boya!', category: ['creative'] },
   { id: 'piano', title: 'Piyano', emoji: '🎹', icon: Piano, gradient: 'from-indigo-500 to-violet-600', description: 'Melodiler çal, müzik yap!', category: ['creative'] },
   { id: 'counting', title: 'Sayma Oyunu', emoji: '🔢', icon: Hash, gradient: 'from-purple-500 to-fuchsia-600', description: 'Nesneleri say, rakamı bul!', category: ['learn'] },
-  { id: 'alphabet', title: 'Harf Öğren', emoji: '🔤', icon: BookA, gradient: 'from-rose-500 to-red-600', description: 'A-B-C harflerini öğren!', category: ['learn'] },
   { id: 'math', title: 'Matematik', emoji: '➕', icon: Calculator, gradient: 'from-sky-500 to-blue-600', description: 'Toplama ve çıkarma işlemleri!', category: ['learn'] },
   { id: 'snake', title: 'Yılan Oyunu', emoji: '🐍', icon: Zap, gradient: 'from-lime-500 to-green-600', description: 'Yemleri ye, büyü, duvarlara çarpma!', category: ['action'], badge: 'Klasik' },
   { id: '2048', title: '2048', emoji: '🔢', icon: Brain, gradient: 'from-amber-500 to-orange-600', description: "Kaydır, birleştir, 2048'e ulaş!", category: ['brain'], badge: 'Popüler' },
@@ -100,7 +98,6 @@ const GamesMenu = () => {
       case 'balloons': return <BalloonPopGame />;
       case 'puzzle': return <PuzzleGame />;
       case 'piano': return <PianoGame />;
-      case 'alphabet': return <AlphabetGame />;
       case 'math': return <MathGame />;
       case 'runner': return <RunnerGame />;
       case 'tetris': return <TetrisGame />;

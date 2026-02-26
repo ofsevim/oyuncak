@@ -189,14 +189,14 @@ const MemoryFlipGame = () => {
       </div>
 
       {/* Game grid */}
-      <div className="relative">
-        <div className="grid gap-1.5 md:gap-2 p-3 md:p-4 glass-card neon-border rounded-2xl"
-          style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, width: '100%', maxWidth: gridSize === 6 ? '420px' : gridSize === 5 ? '380px' : gridSize === 4 ? '320px' : '240px' }}>
+      <div className="relative w-full flex flex-col items-center">
+        <div className="grid gap-2 md:gap-3 p-3 md:p-5 glass-card neon-border rounded-2xl w-full"
+          style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, maxWidth: gridSize === 6 ? '560px' : gridSize === 5 ? '500px' : gridSize === 4 ? '440px' : '360px' }}>
           {cards.map((card) => {
             const isRevealed = card.isFlipped || card.isMatched;
             return (
               <button key={card.id} onClick={() => handleCardClick(card.id)} disabled={card.isMatched || card.isFlipped}
-                className={`aspect-square rounded-xl text-xl md:text-2xl transition-all duration-300 flex items-center justify-center relative overflow-hidden touch-manipulation ${
+                className={`aspect-square rounded-xl text-2xl sm:text-3xl md:text-4xl transition-all duration-300 flex items-center justify-center relative overflow-hidden touch-manipulation ${
                   isRevealed ? 'glass-card border border-white/10' : 'bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/20 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:scale-95'
                 } ${card.isMatched ? 'ring-2 ring-green-400/50 shadow-lg shadow-green-400/20' : ''}`}
                 style={{ minWidth: 0, touchAction: 'manipulation' }}>
@@ -205,7 +205,7 @@ const MemoryFlipGame = () => {
                     {card.emoji}
                   </motion.span>
                 ) : (
-                  <span className="text-primary/30 text-base">?</span>
+                  <span className="text-primary/30 text-lg md:text-xl">?</span>
                 )}
                 {card.isMatched && <div className="absolute inset-0 bg-green-400/5 rounded-xl" />}
               </button>

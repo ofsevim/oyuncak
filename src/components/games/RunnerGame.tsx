@@ -1202,55 +1202,6 @@ const RunnerGame = () => {
                     ))}
                 </AnimatePresence>
 
-                {/* Game Over overlay */}
-                {gameState === 'gameover' && (
-                    <motion.div
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-40"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                    >
-                        <motion.p
-                            className="text-5xl font-black text-white drop-shadow-lg"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', damping: 10 }}
-                        >
-                            Game Over!
-                        </motion.p>
-                        <p className="text-2xl font-bold text-white">Skor: {score}</p>
-                        <p className="text-lg text-white/80">Mesafe: {Math.floor(distance / 10)}m</p>
-                        {isNewRecord && (
-                            <motion.p
-                                className="text-xl font-bold text-yellow-400"
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ repeat: Infinity, duration: 0.5 }}
-                            >
-                                🏆 Yeni Rekor! 🏆
-                            </motion.p>
-                        )}
-
-                        {/* Game Over butonları - oyun alanı içinde */}
-                        <div className="flex gap-3 mt-4">
-                            <motion.button
-                                onClick={startGame}
-                                className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full font-black text-lg shadow-lg"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                🔄 Tekrar
-                            </motion.button>
-                            <motion.button
-                                onClick={() => setGameState('menu')}
-                                className="px-6 py-3 bg-white/20 text-white rounded-full font-bold backdrop-blur"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                ← Menü
-                            </motion.button>
-                        </div>
-                    </motion.div>
-                )}
-
                 {/* Mobil kontroller - Oyun alanı içinde */}
                 {gameState === 'playing' && (
                     <motion.button
@@ -1264,6 +1215,69 @@ const RunnerGame = () => {
                     </motion.button>
                 )}
             </div>
+
+            {/* Game Over - oyun alanı dışında, tam genişlik */}
+            <AnimatePresence>
+                {gameState === 'gameover' && (
+                    <motion.div
+                        className="w-full max-w-2xl flex flex-col items-center gap-4 py-8 px-6 glass-card neon-border rounded-3xl text-center"
+                        initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 30, scale: 0.9 }}
+                        transition={{ type: 'spring', damping: 20 }}
+                    >
+                        <motion.p
+                            className="text-4xl md:text-5xl font-black text-gradient"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', damping: 10, delay: 0.1 }}
+                        >
+                            Game Over!
+                        </motion.p>
+                        <div className="flex flex-wrap justify-center gap-4">
+                            <div className="glass-card px-5 py-3 rounded-xl border border-primary/20">
+                                <p className="text-xs text-muted-foreground font-bold">Skor</p>
+                                <p className="text-2xl font-black text-primary">⭐ {score}</p>
+                            </div>
+                            <div className="glass-card px-5 py-3 rounded-xl border border-white/10">
+                                <p className="text-xs text-muted-foreground font-bold">Mesafe</p>
+                                <p className="text-2xl font-black text-foreground">📏 {Math.floor(distance / 10)}m</p>
+                            </div>
+                            <div className="glass-card px-5 py-3 rounded-xl border border-amber-500/20">
+                                <p className="text-xs text-muted-foreground font-bold">Rekor</p>
+                                <p className="text-2xl font-black text-amber-400">🏆 {highScore}</p>
+                            </div>
+                        </div>
+                        {isNewRecord && (
+                            <motion.p
+                                className="text-xl font-black text-yellow-400"
+                                animate={{ scale: [1, 1.1, 1] }}
+                                transition={{ repeat: Infinity, duration: 0.5 }}
+                            >
+                                🏆 Yeni Rekor! 🏆
+                            </motion.p>
+                        )}
+                        <div className="flex gap-3 mt-2">
+                            <motion.button
+                                onClick={startGame}
+                                className="btn-gaming px-8 py-3 text-lg"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                🔄 Tekrar
+                            </motion.button>
+                            <motion.button
+                                onClick={() => setGameState('menu')}
+                                className="px-8 py-3 glass-card text-foreground rounded-xl font-bold hover:bg-white/[0.06] transition-all"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                ← Menü
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };

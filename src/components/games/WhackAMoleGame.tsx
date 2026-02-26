@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
-import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
-import { getNextRandomIndex, getNextRandom } from '@/utils/shuffle';
+import { playPopSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
+import { getNextRandomIndex } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
@@ -15,10 +15,10 @@ const DIFFS: Record<Difficulty, { label: string; time: number; holes: number; co
 };
 
 const MOLE_TYPES = [
-  { emoji: '👾', points: 1, name: 'Alien', color: 'from-purple-500/30 to-cyan-500/30' },
-  { emoji: '🤖', points: 2, name: 'Robot', color: 'from-blue-500/30 to-green-500/30' },
-  { emoji: '👹', points: 5, name: 'Boss', color: 'from-red-500/30 to-orange-500/30' },
-  { emoji: '💀', points: -3, name: 'Tuzak', color: 'from-gray-500/30 to-gray-700/30' },
+  { emoji: '🐹', points: 1, name: 'Hamster', color: 'from-amber-500/30 to-orange-500/30' },
+  { emoji: '🐰', points: 2, name: 'Tavşan', color: 'from-pink-500/30 to-rose-500/30' },
+  { emoji: '🦊', points: 5, name: 'Tilki', color: 'from-orange-500/30 to-red-500/30' },
+  { emoji: '🦨', points: -3, name: 'Kokarca', color: 'from-gray-500/30 to-gray-700/30' },
 ];
 
 const WhackAMoleGame = () => {
@@ -50,10 +50,10 @@ const WhackAMoleGame = () => {
     // Boss daha nadir, tuzak %15
     const rand = Math.random();
     let type: typeof MOLE_TYPES[0];
-    if (rand < 0.15) type = MOLE_TYPES[3]; // tuzak
-    else if (rand < 0.25) type = MOLE_TYPES[2]; // boss
-    else if (rand < 0.5) type = MOLE_TYPES[1]; // robot
-    else type = MOLE_TYPES[0]; // alien
+    if (rand < 0.15) type = MOLE_TYPES[3]; // kokarca
+    else if (rand < 0.25) type = MOLE_TYPES[2]; // tilki
+    else if (rand < 0.5) type = MOLE_TYPES[1]; // tavşan
+    else type = MOLE_TYPES[0]; // hamster
 
     setActiveHoles(prev => { const m = new Map(prev); m.set(hole, type); return m; });
     const duration = Math.max(500, 1400 - (score * 20));
@@ -139,8 +139,8 @@ const WhackAMoleGame = () => {
   if (gamePhase === 'start') {
     return (
       <motion.div className="flex flex-col items-center gap-6 p-6 text-center pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="relative"><span className="text-7xl block animate-bounce">👾</span></div>
-        <h2 className="text-3xl md:text-4xl font-black text-gradient">Alien Avı!</h2>
+        <div className="relative"><span className="text-7xl block animate-bounce">🐹</span></div>
+        <h2 className="text-3xl md:text-4xl font-black text-gradient">Köstebek Yakala!</h2>
         {highScore > 0 && <div className="glass-card px-4 py-2 neon-border"><span className="font-black text-primary">🏆 Rekor: {highScore}</span></div>}
         <div className="flex flex-col gap-2 w-full max-w-xs">
           <p className="text-sm font-bold text-muted-foreground">Zorluk Seç:</p>
