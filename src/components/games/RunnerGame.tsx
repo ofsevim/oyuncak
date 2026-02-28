@@ -2,1284 +2,836 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { playPopSound, playSuccessSound, playErrorSound, playNewRecordSound } from '@/utils/soundEffects';
+import { playPopSound, playSuccessSound, playErrorSound, playNewRecordSound, playComboSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
 
+/* ─── Types ─── */
 interface Obstacle {
-    id: number;
-    x: number;
-    type: 'rock' | 'tree' | 'cactus';
-    isMoving?: boolean;
-    moveDirection?: number;
+  id: number; x: number; w: number; h: number;
+  type: 'rock' | 'cactus' | 'bird' | 'double';
+  lane: 'ground' | 'air';
 }
-
 interface Collectible {
-    id: number;
-    x: number;
-    y: number;
-    type: 'star' | 'coin' | 'heart' | 'magnet';
+  id: number; x: number; y: number;
+  type: 'coin' | 'star' | 'heart' | 'magnet' | 'shield' | 'x2';
 }
-
 interface Particle {
-    id: number;
-    x: number;
-    y: number;
-    type: 'dust' | 'sparkle' | 'impact';
-    life: number;
+  id: number; x: number; y: number; vx: number; vy: number;
+  life: number; maxLife: number; color: string; size: number;
 }
+interface FloatingText {
+  id: number; x: number; y: number; text: string; color: string;
+}
+type GamePhase = 'menu' | 'playing' | 'gameover';
+type Difficulty = 'easy' | 'normal' | 'hard';
+
+/* ─── Constants ─── */
+const CANVAS_W = 800;
+const CANVAS_H = 320;
+const GROUND_Y = 240;
+const GRAVITY = 0.65;
+const JUMP_FORCE = -13;
+const DOUBLE_JUMP_FORCE = -11;
+const MAX_LIVES = 5;
 
 const CHARACTERS = [
-    { id: 'bunny', name: 'Tavşan', color: '#f8b4d9', earColor: '#f472b6' },
-    { id: 'fox', name: 'Tilki', color: '#fb923c', earColor: '#ea580c' },
-    { id: 'cat', name: 'Kedi', color: '#a78bfa', earColor: '#7c3aed' },
-    { id: 'dog', name: 'Köpek', color: '#fbbf24', earColor: '#d97706' },
+  { id: 'bunny', name: 'Tavşan', emoji: '🐰', color: '#f8b4d9', accent: '#f472b6' },
+  { id: 'fox', name: 'Tilki', emoji: '🦊', color: '#fb923c', accent: '#ea580c' },
+  { id: 'cat', name: 'Kedi', emoji: '🐱', color: '#a78bfa', accent: '#7c3aed' },
+  { id: 'panda', name: 'Panda', emoji: '🐼', color: '#e2e8f0', accent: '#475569' },
 ];
 
-// 2D Karakter Sprite Bileşeni
-const CharacterSprite = ({ character, isJumping, isRunning, isSuper, isInvincible, jumpProgress }: {
-    character: typeof CHARACTERS[0];
-    isJumping: boolean;
-    isRunning: boolean;
-    isSuper: boolean;
-    isInvincible: boolean;
-    jumpProgress: number; // 0-1 jump progress for spin
-}) => {
-    const [legFrame, setLegFrame] = useState(0);
-
-    useEffect(() => {
-        if (!isRunning || isJumping) return;
-        const interval = setInterval(() => {
-            setLegFrame(f => (f + 1) % 4);
-        }, 100);
-        return () => clearInterval(interval);
-    }, [isRunning, isJumping]);
-
-    return (
-        <motion.div
-            className="relative"
-            style={{ width: 48, height: 56 }}
-            animate={{
-                filter: isSuper
-                    ? 'drop-shadow(0 0 12px #ffd700) drop-shadow(0 0 24px #ffa500)'
-                    : 'drop-shadow(2px 4px 3px rgba(0,0,0,0.3))',
-                opacity: isInvincible ? [1, 0.4, 1] : 1,
-                rotate: isJumping ? jumpProgress * 360 : 0, // Spin animation
-            }}
-            transition={{
-                opacity: { repeat: isInvincible ? Infinity : 0, duration: 0.15 },
-                rotate: { duration: 0.6, ease: 'easeOut' }
-            }}
-        >
-            {/* Gövde */}
-            <div
-                className="absolute rounded-full"
-                style={{
-                    width: 36,
-                    height: 40,
-                    left: 6,
-                    top: 8,
-                    background: `linear-gradient(135deg, ${character.color} 0%, ${character.earColor} 100%)`,
-                    boxShadow: `inset -4px -4px 8px rgba(0,0,0,0.2), inset 4px 4px 8px rgba(255,255,255,0.3)`,
-                }}
-            />
-
-            {/* Kulaklar */}
-            {character.id === 'bunny' && (
-                <>
-                    <div
-                        className="absolute rounded-full"
-                        style={{
-                            width: 10,
-                            height: 24,
-                            left: 10,
-                            top: -10,
-                            background: `linear-gradient(180deg, ${character.color} 0%, ${character.earColor} 100%)`,
-                            transform: 'rotate(-15deg)',
-                        }}
-                    />
-                    <div
-                        className="absolute rounded-full"
-                        style={{
-                            width: 10,
-                            height: 24,
-                            right: 10,
-                            top: -10,
-                            background: `linear-gradient(180deg, ${character.color} 0%, ${character.earColor} 100%)`,
-                            transform: 'rotate(15deg)',
-                        }}
-                    />
-                </>
-            )}
-            {character.id === 'fox' && (
-                <>
-                    <div
-                        className="absolute"
-                        style={{
-                            width: 0,
-                            height: 0,
-                            left: 6,
-                            top: 0,
-                            borderLeft: '8px solid transparent',
-                            borderRight: '8px solid transparent',
-                            borderBottom: `16px solid ${character.earColor}`,
-                            transform: 'rotate(-10deg)',
-                        }}
-                    />
-                    <div
-                        className="absolute"
-                        style={{
-                            width: 0,
-                            height: 0,
-                            right: 6,
-                            top: 0,
-                            borderLeft: '8px solid transparent',
-                            borderRight: '8px solid transparent',
-                            borderBottom: `16px solid ${character.earColor}`,
-                            transform: 'rotate(10deg)',
-                        }}
-                    />
-                </>
-            )}
-            {character.id === 'cat' && (
-                <>
-                    <div
-                        className="absolute"
-                        style={{
-                            width: 0,
-                            height: 0,
-                            left: 8,
-                            top: 2,
-                            borderLeft: '6px solid transparent',
-                            borderRight: '6px solid transparent',
-                            borderBottom: `12px solid ${character.earColor}`,
-                            transform: 'rotate(-20deg)',
-                        }}
-                    />
-                    <div
-                        className="absolute"
-                        style={{
-                            width: 0,
-                            height: 0,
-                            right: 8,
-                            top: 2,
-                            borderLeft: '6px solid transparent',
-                            borderRight: '6px solid transparent',
-                            borderBottom: `12px solid ${character.earColor}`,
-                            transform: 'rotate(20deg)',
-                        }}
-                    />
-                </>
-            )}
-            {character.id === 'dog' && (
-                <>
-                    <div
-                        className="absolute rounded-b-full"
-                        style={{
-                            width: 14,
-                            height: 16,
-                            left: 2,
-                            top: 6,
-                            background: character.earColor,
-                            transform: 'rotate(-30deg)',
-                        }}
-                    />
-                    <div
-                        className="absolute rounded-b-full"
-                        style={{
-                            width: 14,
-                            height: 16,
-                            right: 2,
-                            top: 6,
-                            background: character.earColor,
-                            transform: 'rotate(30deg)',
-                        }}
-                    />
-                </>
-            )}
-
-            {/* Gözler */}
-            <div className="absolute flex gap-2" style={{ left: 12, top: 18 }}>
-                <div className="w-3 h-4 bg-white rounded-full relative">
-                    <div className="w-1.5 h-2 bg-gray-800 rounded-full absolute right-0.5 top-1" />
-                </div>
-                <div className="w-3 h-4 bg-white rounded-full relative">
-                    <div className="w-1.5 h-2 bg-gray-800 rounded-full absolute right-0.5 top-1" />
-                </div>
-            </div>
-
-            {/* Burun */}
-            <div
-                className="absolute w-2 h-1.5 bg-gray-800 rounded-full"
-                style={{ left: 22, top: 28 }}
-            />
-
-            {/* Bacaklar - Koşma animasyonu */}
-            <motion.div
-                className="absolute rounded-full"
-                style={{
-                    width: 8,
-                    height: 14,
-                    left: 12,
-                    bottom: -6,
-                    background: character.earColor,
-                }}
-                animate={isJumping ? { rotate: -45 } : {
-                    rotate: [15, -15, 15, -15][legFrame],
-                    y: [0, -2, 0, -2][legFrame]
-                }}
-            />
-            <motion.div
-                className="absolute rounded-full"
-                style={{
-                    width: 8,
-                    height: 14,
-                    right: 12,
-                    bottom: -6,
-                    background: character.earColor,
-                }}
-                animate={isJumping ? { rotate: 45 } : {
-                    rotate: [-15, 15, -15, 15][legFrame],
-                    y: [-2, 0, -2, 0][legFrame]
-                }}
-            />
-
-            {/* Süper güç efekti */}
-            {isSuper && (
-                <motion.div
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                        background: 'radial-gradient(circle, rgba(255,215,0,0.4) 0%, transparent 70%)',
-                    }}
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
-                    transition={{ repeat: Infinity, duration: 0.5 }}
-                />
-            )}
-        </motion.div>
-    );
+const DIFF_CONFIG: Record<Difficulty, { label: string; speedMul: number; spawnRate: number }> = {
+  easy:   { label: '🌟 Kolay',  speedMul: 0.7, spawnRate: 0.018 },
+  normal: { label: '⭐ Normal', speedMul: 1.0, spawnRate: 0.028 },
+  hard:   { label: '🔥 Zor',    speedMul: 1.3, spawnRate: 0.04 },
 };
 
-// 2D Engel Bileşenleri
-const ObstacleSprite = ({ type, isSuper }: { type: 'rock' | 'tree' | 'cactus'; isSuper: boolean }) => {
-    if (type === 'rock') {
-        return (
-            <div className="relative" style={{ width: 40, height: 32, opacity: isSuper ? 0.5 : 1 }}>
-                <div
-                    className="absolute bottom-0 rounded-t-xl"
-                    style={{
-                        width: 40,
-                        height: 28,
-                        background: 'linear-gradient(135deg, #9ca3af 0%, #6b7280 50%, #4b5563 100%)',
-                        boxShadow: 'inset -4px -4px 8px rgba(0,0,0,0.3), inset 4px 4px 8px rgba(255,255,255,0.2), 4px 4px 8px rgba(0,0,0,0.3)',
-                    }}
-                />
-                <div
-                    className="absolute rounded-full"
-                    style={{
-                        width: 12,
-                        height: 10,
-                        left: 4,
-                        top: 8,
-                        background: 'linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%)',
-                    }}
-                />
-            </div>
-        );
-    }
-
-    if (type === 'cactus') {
-        return (
-            <div className="relative" style={{ width: 32, height: 48, opacity: isSuper ? 0.5 : 1 }}>
-                {/* Ana gövde */}
-                <div
-                    className="absolute bottom-0 rounded-t-lg"
-                    style={{
-                        width: 14,
-                        height: 44,
-                        left: 9,
-                        background: 'linear-gradient(90deg, #15803d 0%, #22c55e 50%, #15803d 100%)',
-                        boxShadow: '3px 3px 6px rgba(0,0,0,0.3)',
-                    }}
-                />
-                {/* Sol kol */}
-                <div
-                    className="absolute rounded-t-lg"
-                    style={{
-                        width: 10,
-                        height: 20,
-                        left: 0,
-                        top: 12,
-                        background: 'linear-gradient(90deg, #15803d 0%, #22c55e 100%)',
-                        borderRadius: '8px 8px 0 8px',
-                    }}
-                />
-                <div
-                    className="absolute rounded-lg"
-                    style={{
-                        width: 10,
-                        height: 10,
-                        left: 0,
-                        top: 4,
-                        background: 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)',
-                    }}
-                />
-                {/* Sağ kol */}
-                <div
-                    className="absolute rounded-t-lg"
-                    style={{
-                        width: 10,
-                        height: 16,
-                        right: 0,
-                        top: 18,
-                        background: 'linear-gradient(90deg, #22c55e 0%, #15803d 100%)',
-                        borderRadius: '8px 8px 8px 0',
-                    }}
-                />
-                <div
-                    className="absolute rounded-lg"
-                    style={{
-                        width: 10,
-                        height: 10,
-                        right: 0,
-                        top: 10,
-                        background: 'linear-gradient(90deg, #16a34a 0%, #22c55e 100%)',
-                    }}
-                />
-                {/* Dikenler */}
-                {[8, 20, 32].map((y, i) => (
-                    <div
-                        key={i}
-                        className="absolute"
-                        style={{
-                            width: 4,
-                            height: 1,
-                            left: 5,
-                            top: y,
-                            background: '#14532d',
-                        }}
-                    />
-                ))}
-            </div>
-        );
-    }
-
-    // Ağaç
-    return (
-        <div className="relative" style={{ width: 36, height: 52, opacity: isSuper ? 0.5 : 1 }}>
-            {/* Gövde */}
-            <div
-                className="absolute bottom-0"
-                style={{
-                    width: 10,
-                    height: 20,
-                    left: 13,
-                    background: 'linear-gradient(90deg, #78350f 0%, #a16207 50%, #78350f 100%)',
-                    boxShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-                }}
-            />
-            {/* Yapraklar */}
-            <div
-                className="absolute rounded-full"
-                style={{
-                    width: 36,
-                    height: 36,
-                    left: 0,
-                    top: 0,
-                    background: 'radial-gradient(circle at 30% 30%, #4ade80 0%, #22c55e 40%, #15803d 100%)',
-                    boxShadow: 'inset -4px -4px 8px rgba(0,0,0,0.2), 3px 3px 6px rgba(0,0,0,0.3)',
-                }}
-            />
-        </div>
-    );
+const OBSTACLE_DEFS = {
+  rock:   { w: 40, h: 36, lane: 'ground' as const, emoji: '🪨' },
+  cactus: { w: 30, h: 52, lane: 'ground' as const, emoji: '🌵' },
+  bird:   { w: 36, h: 28, lane: 'air' as const, emoji: '🦅' },
+  double: { w: 50, h: 60, lane: 'ground' as const, emoji: '🪨🌵' },
 };
 
-// Toplanabilir Sprite
-const CollectibleSprite = ({ type }: { type: 'star' | 'coin' | 'heart' | 'magnet' }) => {
-    if (type === 'star') {
-        return (
-            <motion.div
-                className="relative"
-                style={{ width: 28, height: 28 }}
-                animate={{
-                    scale: [1, 1.15, 1],
-                    filter: ['drop-shadow(0 0 4px #ffd700)', 'drop-shadow(0 0 12px #ffa500)', 'drop-shadow(0 0 4px #ffd700)']
-                }}
-                transition={{ repeat: Infinity, duration: 0.8 }}
-            >
-                <svg viewBox="0 0 24 24" fill="url(#starGrad)" className="w-full h-full">
-                    <defs>
-                        <linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#fef08a" />
-                            <stop offset="50%" stopColor="#fbbf24" />
-                            <stop offset="100%" stopColor="#f59e0b" />
-                        </linearGradient>
-                    </defs>
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-            </motion.div>
-        );
-    }
-
-    if (type === 'coin') {
-        return (
-            <motion.div
-                className="relative"
-                style={{
-                    width: 24,
-                    height: 24,
-                    background: 'linear-gradient(135deg, #fef08a 0%, #fbbf24 50%, #d97706 100%)',
-                    borderRadius: '50%',
-                    boxShadow: 'inset -2px -2px 4px rgba(0,0,0,0.3), inset 2px 2px 4px rgba(255,255,255,0.5), 2px 2px 4px rgba(0,0,0,0.3)',
-                }}
-                animate={{ rotateY: [0, 180, 360] }}
-                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-            >
-                <div
-                    className="absolute inset-1 rounded-full flex items-center justify-center font-bold text-amber-800 text-xs"
-                    style={{ border: '2px solid #d97706' }}
-                >
-                    ₺
-                </div>
-            </motion.div>
-        );
-    }
-
-    if (type === 'magnet') {
-        return (
-            <motion.div
-                className="relative flex items-center justify-center"
-                style={{ width: 28, height: 28 }}
-                animate={{
-                    scale: [1, 1.1, 1],
-                    filter: ['drop-shadow(0 0 6px #ef4444)', 'drop-shadow(0 0 12px #dc2626)', 'drop-shadow(0 0 6px #ef4444)']
-                }}
-                transition={{ repeat: Infinity, duration: 0.5 }}
-            >
-                <span className="text-2xl">🧲</span>
-            </motion.div>
-        );
-    }
-
-    // Heart
-    return (
-        <motion.div
-            className="relative"
-            style={{ width: 26, height: 24 }}
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ repeat: Infinity, duration: 0.6 }}
-        >
-            <svg viewBox="0 0 24 24" fill="url(#heartGrad)" className="w-full h-full drop-shadow-lg">
-                <defs>
-                    <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#fca5a5" />
-                        <stop offset="50%" stopColor="#ef4444" />
-                        <stop offset="100%" stopColor="#b91c1c" />
-                    </linearGradient>
-                </defs>
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
-        </motion.div>
-    );
+const COLLECTIBLE_DEFS = {
+  coin:   { emoji: '🪙', points: 10, weight: 40 },
+  star:   { emoji: '⭐', points: 50, weight: 20 },
+  heart:  { emoji: '❤️', points: 0,  weight: 8 },
+  magnet: { emoji: '🧲', points: 0,  weight: 5 },
+  shield: { emoji: '🛡️', points: 0,  weight: 5 },
+  x2:     { emoji: '✖️2', points: 0,  weight: 4 },
 };
 
-// Parçacık Bileşeni
-const ParticleEffect = ({ particle }: { particle: Particle }) => {
-    if (particle.type === 'dust') {
-        return (
-            <motion.div
-                className="absolute rounded-full"
-                style={{
-                    width: 8,
-                    height: 8,
-                    left: particle.x,
-                    bottom: particle.y,
-                    background: 'rgba(139, 119, 101, 0.6)',
-                }}
-                initial={{ scale: 0.5, opacity: 1 }}
-                animate={{ scale: 1.5, opacity: 0, y: -10 }}
-                transition={{ duration: 0.4 }}
-            />
-        );
-    }
 
-    if (particle.type === 'sparkle') {
-        return (
-            <motion.div
-                className="absolute"
-                style={{
-                    width: 10,
-                    height: 10,
-                    left: particle.x,
-                    bottom: particle.y,
-                }}
-                initial={{ scale: 0, opacity: 1, rotate: 0 }}
-                animate={{ scale: [0, 1.5, 0], opacity: [1, 1, 0], rotate: 180 }}
-                transition={{ duration: 0.5 }}
-            >
-                ✨
-            </motion.div>
-        );
-    }
+/* ─── Helpers ─── */
+function weightedRandom<T extends string>(defs: Record<T, { weight: number }>): T {
+  const entries = Object.entries(defs) as [T, { weight: number }][];
+  const total = entries.reduce((s, [, v]) => s + v.weight, 0);
+  let r = Math.random() * total;
+  for (const [key, val] of entries) { r -= val.weight; if (r <= 0) return key; }
+  return entries[0][0];
+}
 
-    return (
-        <motion.div
-            className="absolute rounded-full"
-            style={{
-                width: 12,
-                height: 12,
-                left: particle.x,
-                bottom: particle.y,
-                background: 'radial-gradient(circle, #ef4444 0%, transparent 70%)',
-            }}
-            initial={{ scale: 0 }}
-            animate={{ scale: [0, 2, 0], opacity: [1, 0.5, 0] }}
-            transition={{ duration: 0.3 }}
-        />
-    );
-};
+function rectsOverlap(
+  ax: number, ay: number, aw: number, ah: number,
+  bx: number, by: number, bw: number, bh: number,
+  shrink = 6
+): boolean {
+  return (
+    ax + shrink < bx + bw - shrink &&
+    ax + aw - shrink > bx + shrink &&
+    ay + shrink < by + bh - shrink &&
+    ay + ah - shrink > by + shrink
+  );
+}
 
+/* ─── Main Component ─── */
 const RunnerGame = () => {
-    const [gameState, setGameState] = useState<'menu' | 'playing' | 'gameover'>('menu');
-    const [character, setCharacter] = useState(CHARACTERS[0]);
-    const [isJumping, setIsJumping] = useState(false);
-    const [isDucking, setIsDucking] = useState(false);
-    const [isSuper, setIsSuper] = useState(false);
-    const [hasMagnet, setHasMagnet] = useState(false);
-    const [jumpProgress, setJumpProgress] = useState(0);
-    const [obstacles, setObstacles] = useState<Obstacle[]>([]);
-    const [collectibles, setCollectibles] = useState<Collectible[]>([]);
-    const [particles, setParticles] = useState<Particle[]>([]);
-    const [score, setScore] = useState(0);
-    const [distance, setDistance] = useState(0);
-    const [highScore, setHighScore] = useState(() => getHighScore('runner'));
-    const [speed, setSpeed] = useState(5);
-    const [lives, setLives] = useState(3);
-    const [isNewRecord, setIsNewRecord] = useState(false);
-    const [isInvincible, setIsInvincible] = useState(false);
-    const [groundOffset, setGroundOffset] = useState(0);
-    const [cloudOffset, setCloudOffset] = useState(0);
+  /* State */
+  const [phase, setPhase] = useState<GamePhase>('menu');
+  const [character, setCharacter] = useState(CHARACTERS[0]);
+  const [difficulty, setDifficulty] = useState<Difficulty>('normal');
+  const [score, setScore] = useState(0);
+  const [distance, setDistance] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [combo, setCombo] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
+  const [highScore, setHighScore] = useState(() => getHighScore('runner'));
+  const [isNewRecord, setIsNewRecord] = useState(false);
+  const [showShield, setShowShield] = useState(false);
+  const [showMagnet, setShowMagnet] = useState(false);
+  const [showX2, setShowX2] = useState(false);
+  const [canDoubleJump, setCanDoubleJump] = useState(true);
+  const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
 
-    const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const obstacleIdRef = useRef(0);
-    const collectibleIdRef = useRef(0);
-    const particleIdRef = useRef(0);
-    const playerY = useRef(0);
-    const superTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const magnetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const lastObstacleTimeRef = useRef(0);
-    const speedRef = useRef(5);
-    const dustIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const jumpStartTimeRef = useRef(0);
+  /* Refs for game loop */
+  const rafRef = useRef<number>(0);
+  const playerRef = useRef({ x: 80, y: GROUND_Y, vy: 0, w: 44, h: 52, grounded: true, jumps: 0 });
+  const obstaclesRef = useRef<Obstacle[]>([]);
+  const collectiblesRef = useRef<Collectible[]>([]);
+  const particlesRef = useRef<Particle[]>([]);
+  const speedRef = useRef(5);
+  const frameRef = useRef(0);
+  const lastObstacleXRef = useRef(CANVAS_W + 200);
+  const scoreRef = useRef(0);
+  const comboRef = useRef(0);
+  const livesRef = useRef(3);
+  const shieldRef = useRef(false);
+  const magnetRef = useRef(false);
+  const x2Ref = useRef(false);
+  const invincibleRef = useRef(false);
+  const groundOffsetRef = useRef(0);
+  const idCounterRef = useRef(0);
+  const phaseRef = useRef<GamePhase>('menu');
+  const diffRef = useRef(DIFF_CONFIG['normal']);
+  const floatIdRef = useRef(0);
 
-    const addParticle = useCallback((x: number, y: number, type: Particle['type']) => {
-        setParticles(prev => [...prev, {
-            id: particleIdRef.current++,
-            x, y, type, life: 100
-        }]);
-        setTimeout(() => {
-            setParticles(prev => prev.filter(p => p.id !== particleIdRef.current - 1));
-        }, 500);
-    }, []);
+  /* Canvas ref */
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef(1);
 
-    const jump = useCallback(() => {
-        if (isJumping || isDucking || gameState !== 'playing') return;
-        playPopSound();
-        setIsJumping(true);
-        setJumpProgress(0);
-        jumpStartTimeRef.current = Date.now();
-        playerY.current = 1;
-        addParticle(60, 48, 'dust');
+  /* Sync refs */
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => { diffRef.current = DIFF_CONFIG[difficulty]; }, [difficulty]);
+  useEffect(() => { shieldRef.current = showShield; }, [showShield]);
+  useEffect(() => { magnetRef.current = showMagnet; }, [showMagnet]);
+  useEffect(() => { x2Ref.current = showX2; }, [showX2]);
 
-        // Animate jump progress for spin
-        const jumpDuration = 600;
-        const animateJump = () => {
-            const elapsed = Date.now() - jumpStartTimeRef.current;
-            const progress = Math.min(elapsed / jumpDuration, 1);
-            setJumpProgress(progress);
+  /* Floating text helper */
+  const addFloat = useCallback((x: number, y: number, text: string, color: string) => {
+    const id = floatIdRef.current++;
+    setFloatingTexts(prev => [...prev, { id, x, y, text, color }]);
+    setTimeout(() => setFloatingTexts(prev => prev.filter(f => f.id !== id)), 900);
+  }, []);
 
-            if (progress < 1) {
-                requestAnimationFrame(animateJump);
-            } else {
-                setIsJumping(false);
-                setJumpProgress(0);
-                playerY.current = 0;
-                addParticle(60, 48, 'dust');
-            }
-        };
-        requestAnimationFrame(animateJump);
-    }, [isJumping, isDucking, gameState, addParticle]);
+  /* Particle helper */
+  const spawnParticles = useCallback((x: number, y: number, count: number, color: string) => {
+    for (let i = 0; i < count; i++) {
+      particlesRef.current.push({
+        id: idCounterRef.current++,
+        x, y,
+        vx: (Math.random() - 0.5) * 6,
+        vy: -Math.random() * 4 - 1,
+        life: 30 + Math.random() * 20,
+        maxLife: 50,
+        color,
+        size: 2 + Math.random() * 3,
+      });
+    }
+  }, []);
 
-    const duck = useCallback(() => {
-        if (isJumping || isDucking || gameState !== 'playing') return;
-        setIsDucking(true);
-        setTimeout(() => setIsDucking(false), 400);
-    }, [isJumping, isDucking, gameState]);
 
-    const startGame = () => {
-        setGameState('playing');
-        setScore(0);
-        setDistance(0);
-        setSpeed(5);
-        speedRef.current = 5;
-        lastObstacleTimeRef.current = 0;
-        setObstacles([]);
-        setCollectibles([]);
-        setParticles([]);
-        setIsJumping(false);
-        setIsDucking(false);
-        setIsSuper(false);
-        setHasMagnet(false);
-        setJumpProgress(0);
-        setLives(3);
-        setIsInvincible(false);
-        setIsNewRecord(false);
-        setGroundOffset(0);
-        setCloudOffset(0);
-    };
+  /* ─── Canvas Rendering ─── */
+  const drawFrame = useCallback((ctx: CanvasRenderingContext2D) => {
+    const W = CANVAS_W, H = CANVAS_H;
+    ctx.clearRect(0, 0, W, H);
 
-    const endGame = useCallback(() => {
-        playErrorSound();
-        setGameState('gameover');
-        setIsSuper(false);
-        setHasMagnet(false);
-        const isNew = saveHighScoreObj('runner', score);
-        if (isNew) {
-            setIsNewRecord(true);
-            setHighScore(score);
-            playNewRecordSound();
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        } else if (score > highScore) {
-            setHighScore(score);
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        }
-        if (gameLoopRef.current) {
-            clearInterval(gameLoopRef.current);
-        }
-        if (dustIntervalRef.current) {
-            clearInterval(dustIntervalRef.current);
-        }
-    }, [score, highScore]);
+    /* Sky gradient */
+    const sky = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+    sky.addColorStop(0, '#7dd3fc');
+    sky.addColorStop(0.6, '#38bdf8');
+    sky.addColorStop(1, '#0ea5e9');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, GROUND_Y + 4);
 
-    // Speed ref'i güncelle
-    useEffect(() => {
-        speedRef.current = speed;
-    }, [speed]);
+    /* Sun */
+    const sunGrad = ctx.createRadialGradient(680, 50, 5, 680, 50, 40);
+    sunGrad.addColorStop(0, '#fef08a');
+    sunGrad.addColorStop(0.5, '#fbbf24');
+    sunGrad.addColorStop(1, 'rgba(251,191,36,0)');
+    ctx.fillStyle = sunGrad;
+    ctx.beginPath(); ctx.arc(680, 50, 40, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath(); ctx.arc(680, 50, 22, 0, Math.PI * 2); ctx.fill();
 
-    // Koşarken toz parçacıkları
-    useEffect(() => {
-        if (gameState !== 'playing') return;
+    /* Clouds - parallax */
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    const co = groundOffsetRef.current;
+    [[100, 35, 0.15], [320, 55, 0.1], [560, 25, 0.12], [750, 60, 0.08]].forEach(([bx, by, sp]) => {
+      const cx = ((bx as number) - co * (sp as number)) % (W + 100);
+      const px = cx < -60 ? cx + W + 100 : cx;
+      ctx.beginPath();
+      ctx.ellipse(px, by as number, 40, 14, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(px - 20, (by as number) + 4, 25, 10, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(px + 22, (by as number) + 2, 28, 11, 0, 0, Math.PI * 2); ctx.fill();
+    });
 
-        dustIntervalRef.current = setInterval(() => {
-            if (!isJumping) {
-                addParticle(50 + Math.random() * 20, 45 + Math.random() * 10, 'dust');
-            }
-        }, 200);
+    /* Far mountains - parallax */
+    ctx.fillStyle = 'rgba(148,163,184,0.35)';
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y);
+    for (let x = 0; x <= W; x += 60) {
+      const mx = (x - co * 0.05) % W;
+      ctx.lineTo(x, GROUND_Y - 30 - Math.sin(mx * 0.02) * 25 - Math.cos(mx * 0.035) * 15);
+    }
+    ctx.lineTo(W, GROUND_Y); ctx.closePath(); ctx.fill();
 
-        return () => {
-            if (dustIntervalRef.current) clearInterval(dustIntervalRef.current);
-        };
-    }, [gameState, isJumping, addParticle]);
+    ctx.fillStyle = 'rgba(100,116,139,0.3)';
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y);
+    for (let x = 0; x <= W; x += 40) {
+      const mx = (x - co * 0.08) % W;
+      ctx.lineTo(x, GROUND_Y - 15 - Math.sin(mx * 0.03) * 18 - Math.cos(mx * 0.05) * 10);
+    }
+    ctx.lineTo(W, GROUND_Y); ctx.closePath(); ctx.fill();
 
-    // Game loop
-    useEffect(() => {
-        if (gameState !== 'playing') return;
+    /* Ground */
+    const groundGrad = ctx.createLinearGradient(0, GROUND_Y, 0, H);
+    groundGrad.addColorStop(0, '#22c55e');
+    groundGrad.addColorStop(0.15, '#16a34a');
+    groundGrad.addColorStop(0.3, '#a16207');
+    groundGrad.addColorStop(1, '#78350f');
+    ctx.fillStyle = groundGrad;
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
 
-        const minObstacleGap = 1500;
-
-        gameLoopRef.current = setInterval(() => {
-            const now = Date.now();
-            const currentSpeed = speedRef.current;
-
-            // Parallax zemin hareketi
-            setGroundOffset(prev => (prev - currentSpeed * 2) % 100);
-            setCloudOffset(prev => (prev - currentSpeed * 0.3) % 200);
-
-            // Engel spawn - bazıları hareketli
-            if (now - lastObstacleTimeRef.current > minObstacleGap && Math.random() < 0.03) {
-                const types: ('rock' | 'cactus' | 'tree')[] = ['rock', 'cactus', 'tree'];
-                const isMoving = Math.random() < 0.3; // %30 ihtimalle hareketli engel
-                setObstacles(prev => [...prev, {
-                    id: obstacleIdRef.current++,
-                    x: 100,
-                    type: types[Math.floor(Math.random() * types.length)],
-                    isMoving,
-                    moveDirection: isMoving ? (Math.random() > 0.5 ? 1 : -1) : 0,
-                }]);
-                lastObstacleTimeRef.current = now;
-            }
-
-            // Collectible spawn - mıknatıs dahil
-            if (Math.random() < 0.015) {
-                const rand = Math.random();
-                let type: 'star' | 'coin' | 'heart' | 'magnet';
-                if (rand < 0.05) {
-                    type = 'magnet'; // %5 ihtimalle mıknatıs
-                } else if (rand < 0.35) {
-                    type = 'star';
-                } else if (rand < 0.75) {
-                    type = 'coin';
-                } else {
-                    type = 'heart';
-                }
-                setCollectibles(prev => [...prev, {
-                    id: collectibleIdRef.current++,
-                    x: 100,
-                    y: Math.random() > 0.5 ? 0 : 1,
-                    type,
-                }]);
-            }
-
-            // Hareket - hareketli engeller yukarı aşağı hareket eder
-            setObstacles(prev => prev
-                .map(o => ({
-                    ...o,
-                    x: o.x - currentSpeed,
-                    // Hareketli engeller için sinüsoidal hareket (görsel efekt)
-                }))
-                .filter(o => o.x > -10)
-            );
-
-            // Collectibles hareketi + mıknatıs çekme efekti
-            setCollectibles(prev => prev
-                .map(c => {
-                    let newX = c.x - currentSpeed;
-
-                    // Mıknatıs aktifse yıldızları çek
-                    if (hasMagnet && c.type === 'star') {
-                        const attractSpeed = 3;
-                        if (c.x > 15) {
-                            newX = c.x - currentSpeed - attractSpeed;
-                        }
-                    }
-
-                    return { ...c, x: newX };
-                })
-                .filter(c => c.x > -10)
-            );
-
-            // Skor ve mesafe
-            setScore(prev => prev + 1);
-            setDistance(prev => prev + currentSpeed);
-
-            // Puana göre kademeli hız artışı
-            setSpeed(prev => {
-                // Her 500 puanda belirgin hız artışı
-                const baseSpeed = 5;
-                const scoreBonus = Math.floor(score / 500) * 0.5;
-                const targetSpeed = Math.min(baseSpeed + scoreBonus + 0.001, 15);
-                return Math.min(prev + 0.001, targetSpeed);
-            });
-        }, 50);
-
-        return () => {
-            if (gameLoopRef.current) clearInterval(gameLoopRef.current);
-        };
-    }, [gameState, hasMagnet, score]);
-
-    // Çarpışma kontrolü
-    useEffect(() => {
-        if (gameState !== 'playing') return;
-
-        // Engel çarpışması
-        for (const obstacle of obstacles) {
-            if (obstacle.x > 5 && obstacle.x < 22) {
-                if (!isJumping && !isSuper && !isInvincible) {
-                    if (lives <= 1) {
-                        setLives(0);
-                        addParticle(60, 60, 'impact');
-                        endGame();
-                    } else {
-                        playErrorSound();
-                        setLives(prev => prev - 1);
-                        setIsInvincible(true);
-                        addParticle(60, 60, 'impact');
-                        setObstacles(prev => prev.filter(o => o.id !== obstacle.id));
-                        setTimeout(() => setIsInvincible(false), 1500);
-                    }
-                    return;
-                }
-            }
-        }
-
-        // Collectible toplama
-        setCollectibles(prev => {
-            const remaining: Collectible[] = [];
-            for (const c of prev) {
-                if (c.x > 5 && c.x < 20) {
-                    const canCollect = c.y === 1 ? isJumping : !isJumping;
-                    if (canCollect) {
-                        playSuccessSound();
-                        addParticle(c.x * 5, c.y === 1 ? 100 : 60, 'sparkle');
-
-                        if (c.type === 'star') {
-                            setIsSuper(true);
-                            if (superTimeoutRef.current) clearTimeout(superTimeoutRef.current);
-                            superTimeoutRef.current = setTimeout(() => setIsSuper(false), 5000);
-                        }
-
-                        if (c.type === 'heart') {
-                            setLives(l => Math.min(l + 1, 5));
-                        }
-
-                        if (c.type === 'magnet') {
-                            setHasMagnet(true);
-                            if (magnetTimeoutRef.current) clearTimeout(magnetTimeoutRef.current);
-                            magnetTimeoutRef.current = setTimeout(() => setHasMagnet(false), 10000);
-                        }
-
-                        setScore(s => s + (c.type === 'star' ? 100 : c.type === 'coin' ? 25 : c.type === 'magnet' ? 50 : 50));
-                        continue;
-                    }
-                }
-                remaining.push(c);
-            }
-            return remaining;
-        });
-    }, [obstacles, collectibles, isJumping, isSuper, isInvincible, lives, gameState, endGame, addParticle]);
-
-    // Klavye kontrolü
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.code === 'Space' || e.code === 'ArrowUp') {
-                e.preventDefault();
-                jump();
-            } else if (e.code === 'ArrowDown') {
-                e.preventDefault();
-                duck();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [jump, duck]);
-
-    if (gameState === 'menu') {
-        return (
-            <motion.div
-                className="flex flex-col items-center gap-6 p-4 pb-32"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                {/* Başlık */}
-                <div className="relative">
-                    <motion.h2
-                        className="text-4xl font-black bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 bg-clip-text text-transparent"
-                        animate={{ scale: [1, 1.02, 1] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                    >
-                        🏃 Koşucu
-                    </motion.h2>
-                    <motion.div
-                        className="absolute -inset-4 bg-gradient-to-r from-orange-500/20 via-pink-500/20 to-purple-500/20 rounded-xl blur-xl -z-10"
-                        animate={{ opacity: [0.5, 0.8, 0.5] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                    />
-                </div>
-
-                <p className="text-muted-foreground font-semibold text-center">
-                    Engelleri atla, yıldızları topla!
-                </p>
-
-                {/* Karakter seçimi */}
-                <div className="space-y-3">
-                    <p className="font-bold text-center text-foreground">Karakter Seç:</p>
-                    <div className="flex gap-4">
-                        {CHARACTERS.map((char) => (
-                            <motion.button
-                                key={char.id}
-                                onClick={() => { playPopSound(); setCharacter(char); }}
-                                className={`p-4 rounded-2xl transition-all relative ${character.id === char.id
-                                    ? 'scale-110 ring-4 ring-primary/50'
-                                    : 'hover:scale-105'
-                                    }`}
-                                style={{
-                                    background: character.id === char.id
-                                        ? `linear-gradient(135deg, ${char.color}40, ${char.earColor}40)`
-                                        : 'var(--muted)',
-                                }}
-                                whileHover={{ y: -4 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                <CharacterSprite
-                                    character={char}
-                                    isJumping={false}
-                                    isRunning={false}
-                                    isSuper={false}
-                                    isInvincible={false}
-                                    jumpProgress={0}
-                                />
-                                <p className="text-xs font-bold mt-2 text-center">{char.name}</p>
-                            </motion.button>
-                        ))}
-                    </div>
-                </div>
-
-                {highScore > 0 && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 rounded-full">
-                        <span className="text-2xl">🏆</span>
-                        <span className="font-black text-amber-600 dark:text-amber-400">
-                            En Yüksek: {highScore}
-                        </span>
-                    </div>
-                )}
-
-                <motion.button
-                    onClick={startGame}
-                    className="px-12 py-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-2xl font-black rounded-full shadow-lg relative overflow-hidden"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                >
-                    <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0"
-                        animate={{ x: [-200, 200] }}
-                        transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
-                    />
-                    <span className="relative">Başla! 🚀</span>
-                </motion.button>
-
-                <div className="text-center text-sm text-muted-foreground space-y-1">
-                    <p>⬆️ veya SPACE: Zıpla</p>
-                    <p>📱 Mobil: Ekrana dokun = Zıpla</p>
-                </div>
-            </motion.div>
-        );
+    /* Grass blades */
+    ctx.strokeStyle = '#4ade80';
+    ctx.lineWidth = 1.5;
+    const gOff = groundOffsetRef.current % 12;
+    for (let x = -gOff; x < W; x += 12) {
+      const h = 6 + Math.sin(x * 0.3 + frameRef.current * 0.05) * 3;
+      ctx.beginPath(); ctx.moveTo(x, GROUND_Y); ctx.lineTo(x + 2, GROUND_Y - h); ctx.stroke();
     }
 
+    /* Ground texture dots */
+    ctx.fillStyle = 'rgba(120,53,15,0.25)';
+    const dOff = groundOffsetRef.current % 30;
+    for (let x = -dOff; x < W; x += 30) {
+      ctx.beginPath(); ctx.arc(x, GROUND_Y + 30 + Math.sin(x) * 8, 2, 0, Math.PI * 2); ctx.fill();
+    }
+
+    /* Obstacles */
+    for (const obs of obstaclesRef.current) {
+      const def = OBSTACLE_DEFS[obs.type];
+      const oy = obs.lane === 'air' ? GROUND_Y - 90 : GROUND_Y - obs.h;
+      ctx.font = obs.type === 'double' ? '24px serif' : '32px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      if (obs.type === 'bird') {
+        /* Animated bird wings */
+        const wingPhase = Math.sin(frameRef.current * 0.15 + obs.id) > 0;
+        ctx.font = '30px serif';
+        ctx.fillText(wingPhase ? '🦅' : '🦆', obs.x + obs.w / 2, oy + obs.h);
+      } else if (obs.type === 'double') {
+        ctx.font = '28px serif';
+        ctx.fillText('🪨', obs.x + 12, oy + obs.h);
+        ctx.fillText('🌵', obs.x + obs.w - 8, oy + obs.h - 8);
+      } else {
+        ctx.fillText(def.emoji, obs.x + obs.w / 2, oy + obs.h);
+      }
+      /* Shadow */
+      if (obs.lane === 'air') {
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        ctx.beginPath(); ctx.ellipse(obs.x + obs.w / 2, GROUND_Y + 2, 16, 4, 0, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    /* Collectibles */
+    for (const c of collectiblesRef.current) {
+      const def = COLLECTIBLE_DEFS[c.type];
+      ctx.font = '22px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      /* Bobbing animation */
+      const bob = Math.sin(frameRef.current * 0.08 + c.id * 2) * 4;
+      ctx.fillText(def.emoji, c.x + 12, c.y + bob);
+      /* Glow */
+      if (c.type === 'star' || c.type === 'x2') {
+        ctx.fillStyle = `rgba(251,191,36,${0.15 + Math.sin(frameRef.current * 0.1) * 0.1})`;
+        ctx.beginPath(); ctx.arc(c.x + 12, c.y + bob, 16, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    /* Player */
+    const p = playerRef.current;
+    const py = p.y - p.h;
+    /* Shadow on ground */
+    const shadowScale = Math.max(0.3, 1 - (GROUND_Y - p.y) / 150);
+    ctx.fillStyle = `rgba(0,0,0,${0.15 * shadowScale})`;
+    ctx.beginPath(); ctx.ellipse(p.x + p.w / 2, GROUND_Y + 2, 18 * shadowScale, 5 * shadowScale, 0, 0, Math.PI * 2); ctx.fill();
+
+    /* Shield effect */
+    if (shieldRef.current) {
+      ctx.strokeStyle = 'rgba(59,130,246,0.5)';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(p.x + p.w / 2, py + p.h / 2, 32, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(59,130,246,0.08)';
+      ctx.beginPath(); ctx.arc(p.x + p.w / 2, py + p.h / 2, 32, 0, Math.PI * 2); ctx.fill();
+    }
+
+    /* Magnet effect */
+    if (magnetRef.current) {
+      ctx.strokeStyle = 'rgba(239,68,68,0.3)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.arc(p.x + p.w / 2, py + p.h / 2, 80, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    /* Character body */
+    const bodyGrad = ctx.createLinearGradient(p.x, py, p.x + p.w, py + p.h);
+    bodyGrad.addColorStop(0, character.color);
+    bodyGrad.addColorStop(1, character.accent);
+    ctx.fillStyle = bodyGrad;
+
+    /* Squash & stretch */
+    const squash = p.grounded ? 1 : (p.vy < 0 ? 0.85 : 1.15);
+    const stretch = p.grounded ? 1 : (p.vy < 0 ? 1.15 : 0.85);
+    ctx.save();
+    ctx.translate(p.x + p.w / 2, py + p.h);
+    ctx.scale(squash, stretch);
+
+    /* Body */
+    const bw = p.w * 0.8, bh = p.h * 0.7;
+    ctx.beginPath();
+    ctx.roundRect(-bw / 2, -p.h, bw, bh, 12);
+    ctx.fill();
+
+    /* Eyes */
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.ellipse(-6, -p.h + 18, 5, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(6, -p.h + 18, 5, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath(); ctx.ellipse(-4, -p.h + 19, 2.5, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(8, -p.h + 19, 2.5, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+    /* Mouth */
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(1, -p.h + 28, 4, 0, Math.PI); ctx.stroke();
+
+    /* Legs - running animation */
+    ctx.fillStyle = character.accent;
+    if (p.grounded) {
+      const legAnim = Math.sin(frameRef.current * 0.3) * 12;
+      ctx.save(); ctx.translate(-8, -8); ctx.rotate((legAnim * Math.PI) / 180);
+      ctx.fillRect(-3, 0, 6, 14); ctx.restore();
+      ctx.save(); ctx.translate(8, -8); ctx.rotate((-legAnim * Math.PI) / 180);
+      ctx.fillRect(-3, 0, 6, 14); ctx.restore();
+    } else {
+      /* Tucked legs in air */
+      ctx.fillRect(-10, -12, 6, 10);
+      ctx.fillRect(4, -12, 6, 10);
+    }
+
+    /* Invincible flash */
+    if (invincibleRef.current && frameRef.current % 6 < 3) {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.beginPath(); ctx.roundRect(-bw / 2, -p.h, bw, bh, 12); ctx.fill();
+    }
+
+    ctx.restore();
+
+    /* Character emoji on top */
+    ctx.font = '20px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(character.emoji, p.x + p.w / 2, py - 4);
+
+    /* Particles */
+    for (const pt of particlesRef.current) {
+      const alpha = pt.life / pt.maxLife;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = pt.color;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size * alpha, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    /* Speed lines when fast */
+    if (speedRef.current > 8) {
+      ctx.strokeStyle = `rgba(255,255,255,${(speedRef.current - 8) * 0.04})`;
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        const ly = 60 + i * 40 + Math.sin(frameRef.current * 0.1 + i) * 20;
+        const lx = (frameRef.current * 3 + i * 150) % (W + 100) - 50;
+        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - 30 - speedRef.current * 2, ly); ctx.stroke();
+      }
+    }
+
+    /* Invincible overlay */
+    if (invincibleRef.current) {
+      ctx.fillStyle = 'rgba(251,191,36,0.03)';
+      ctx.fillRect(0, 0, W, H);
+    }
+  }, [character, spawnParticles]);
+
+
+  /* ─── Game Loop ─── */
+  const gameLoop = useCallback(() => {
+    if (phaseRef.current !== 'playing') return;
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+
+    frameRef.current++;
+    const spd = speedRef.current * diffRef.current.speedMul;
+    groundOffsetRef.current += spd;
+
+    /* Player physics */
+    const p = playerRef.current;
+    if (!p.grounded) {
+      p.vy += GRAVITY;
+      p.y += p.vy;
+      if (p.y >= GROUND_Y) {
+        p.y = GROUND_Y; p.vy = 0; p.grounded = true; p.jumps = 0;
+        spawnParticles(p.x + p.w / 2, GROUND_Y, 4, '#a3a3a3');
+      }
+    }
+
+    /* Speed ramp */
+    speedRef.current = Math.min(5 + scoreRef.current * 0.003, 14);
+
+    /* Spawn obstacles */
+    const minGap = Math.max(180, 320 - speedRef.current * 12);
+    if (frameRef.current > 60 && Math.random() < diffRef.current.spawnRate) {
+      const lastX = obstaclesRef.current.length > 0
+        ? Math.max(...obstaclesRef.current.map(o => o.x))
+        : 0;
+      if (lastX < CANVAS_W - minGap) {
+        const types: Obstacle['type'][] = ['rock', 'cactus', 'bird'];
+        if (speedRef.current > 8) types.push('double');
+        const type = types[Math.floor(Math.random() * types.length)];
+        const def = OBSTACLE_DEFS[type];
+        obstaclesRef.current.push({
+          id: idCounterRef.current++,
+          x: CANVAS_W + 20,
+          w: def.w, h: def.h,
+          type, lane: def.lane,
+        });
+      }
+    }
+
+    /* Spawn collectibles */
+    if (Math.random() < 0.02) {
+      const type = weightedRandom(COLLECTIBLE_DEFS);
+      const yBase = Math.random() > 0.4 ? GROUND_Y - 30 : GROUND_Y - 80;
+      collectiblesRef.current.push({
+        id: idCounterRef.current++,
+        x: CANVAS_W + 20,
+        y: yBase,
+        type,
+      });
+    }
+
+    /* Move obstacles */
+    obstaclesRef.current = obstaclesRef.current
+      .map(o => ({ ...o, x: o.x - spd }))
+      .filter(o => o.x > -60);
+
+    /* Move collectibles + magnet pull */
+    collectiblesRef.current = collectiblesRef.current
+      .map(c => {
+        let nx = c.x - spd;
+        let ny = c.y;
+        if (magnetRef.current) {
+          const dx = p.x - c.x, dy = (p.y - p.h / 2) - c.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120 && dist > 5) {
+            nx += (dx / dist) * 4;
+            ny += (dy / dist) * 4;
+          }
+        }
+        return { ...c, x: nx, y: ny };
+      })
+      .filter(c => c.x > -30);
+
+    /* Update particles */
+    particlesRef.current = particlesRef.current
+      .map(pt => ({ ...pt, x: pt.x + pt.vx, y: pt.y + pt.vy, vy: pt.vy + 0.15, life: pt.life - 1 }))
+      .filter(pt => pt.life > 0);
+
+    /* Collision: obstacles */
+    const px = p.x, py = p.y - p.h, pw = p.w, ph = p.h;
+    for (let i = obstaclesRef.current.length - 1; i >= 0; i--) {
+      const o = obstaclesRef.current[i];
+      const oy = o.lane === 'air' ? GROUND_Y - 90 : GROUND_Y - o.h;
+      if (rectsOverlap(px, py, pw, ph, o.x, oy, o.w, o.h)) {
+        if (shieldRef.current) {
+          setShowShield(false); shieldRef.current = false;
+          spawnParticles(o.x + o.w / 2, oy + o.h / 2, 8, '#3b82f6');
+          obstaclesRef.current.splice(i, 1);
+          addFloat(o.x, oy, '🛡️ Blok!', '#3b82f6');
+          playPopSound();
+        } else if (!invincibleRef.current) {
+          livesRef.current--;
+          setLives(livesRef.current);
+          comboRef.current = 0; setCombo(0);
+          spawnParticles(p.x + p.w / 2, py + ph / 2, 12, '#ef4444');
+          playErrorSound();
+          obstaclesRef.current.splice(i, 1);
+          if (livesRef.current <= 0) {
+            setPhase('gameover');
+            return;
+          }
+          invincibleRef.current = true;
+          setTimeout(() => { invincibleRef.current = false; }, 1500);
+        }
+        break;
+      }
+    }
+
+    /* Collision: collectibles */
+    for (let i = collectiblesRef.current.length - 1; i >= 0; i--) {
+      const c = collectiblesRef.current[i];
+      if (rectsOverlap(px, py, pw, ph, c.x - 4, c.y - 12, 28, 28, 0)) {
+        const def = COLLECTIBLE_DEFS[c.type];
+        collectiblesRef.current.splice(i, 1);
+
+        if (def.points > 0) {
+          const mul = x2Ref.current ? 2 : 1;
+          const pts = def.points * mul;
+          comboRef.current++;
+          setCombo(comboRef.current);
+          if (comboRef.current > maxCombo) setMaxCombo(comboRef.current);
+          const comboBonus = comboRef.current >= 5 ? Math.min(comboRef.current, 10) * 5 : 0;
+          const total = pts + comboBonus;
+          scoreRef.current += total;
+          setScore(scoreRef.current);
+          addFloat(c.x, c.y - 10, `+${total}`, c.type === 'star' ? '#fbbf24' : '#22c55e');
+          spawnParticles(c.x + 12, c.y, 6, c.type === 'star' ? '#fbbf24' : '#22c55e');
+          if (comboRef.current >= 5) playComboSound(comboRef.current); else playPopSound();
+        } else {
+          switch (c.type) {
+            case 'heart':
+              if (livesRef.current < MAX_LIVES) {
+                livesRef.current++; setLives(livesRef.current);
+                addFloat(c.x, c.y - 10, '❤️ +1', '#ef4444');
+              }
+              playSuccessSound(); break;
+            case 'magnet':
+              setShowMagnet(true); magnetRef.current = true;
+              addFloat(c.x, c.y - 10, '🧲 Mıknatıs!', '#ef4444');
+              setTimeout(() => { setShowMagnet(false); magnetRef.current = false; }, 8000);
+              playSuccessSound(); break;
+            case 'shield':
+              setShowShield(true); shieldRef.current = true;
+              addFloat(c.x, c.y - 10, '🛡️ Kalkan!', '#3b82f6');
+              playSuccessSound(); break;
+            case 'x2':
+              setShowX2(true); x2Ref.current = true;
+              addFloat(c.x, c.y - 10, '✖️2 Çarpan!', '#a855f7');
+              setTimeout(() => { setShowX2(false); x2Ref.current = false; }, 10000);
+              playSuccessSound(); break;
+          }
+          spawnParticles(c.x + 12, c.y, 8, '#fbbf24');
+        }
+      }
+    }
+
+    /* Distance */
+    setDistance(Math.floor(groundOffsetRef.current / 10));
+
+    /* Draw */
+    drawFrame(ctx);
+    rafRef.current = requestAnimationFrame(gameLoop);
+  }, [drawFrame, spawnParticles, addFloat, maxCombo]);
+
+
+  /* ─── Controls ─── */
+  const jump = useCallback(() => {
+    if (phaseRef.current !== 'playing') return;
+    const p = playerRef.current;
+    if (p.grounded) {
+      p.vy = JUMP_FORCE; p.grounded = false; p.jumps = 1;
+      spawnParticles(p.x + p.w / 2, GROUND_Y, 5, '#a3a3a3');
+      playPopSound();
+    } else if (p.jumps < 2 && canDoubleJump) {
+      p.vy = DOUBLE_JUMP_FORCE; p.jumps = 2;
+      spawnParticles(p.x + p.w / 2, p.y, 4, '#60a5fa');
+      playPopSound();
+    }
+  }, [canDoubleJump, spawnParticles]);
+
+  const startGame = useCallback(() => {
+    playerRef.current = { x: 80, y: GROUND_Y, vy: 0, w: 44, h: 52, grounded: true, jumps: 0 };
+    obstaclesRef.current = [];
+    collectiblesRef.current = [];
+    particlesRef.current = [];
+    speedRef.current = 5;
+    frameRef.current = 0;
+    groundOffsetRef.current = 0;
+    scoreRef.current = 0;
+    comboRef.current = 0;
+    livesRef.current = 3;
+    invincibleRef.current = false;
+    shieldRef.current = false;
+    magnetRef.current = false;
+    x2Ref.current = false;
+    setScore(0); setDistance(0); setLives(3); setCombo(0); setMaxCombo(0);
+    setShowShield(false); setShowMagnet(false); setShowX2(false);
+    setIsNewRecord(false); setFloatingTexts([]);
+    setPhase('playing');
+  }, []);
+
+  /* Start/stop game loop */
+  useEffect(() => {
+    if (phase === 'playing') {
+      rafRef.current = requestAnimationFrame(gameLoop);
+    }
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [phase, gameLoop]);
+
+  /* Game over handling */
+  useEffect(() => {
+    if (phase !== 'gameover') return;
+    const isNew = saveHighScoreObj('runner', scoreRef.current);
+    if (isNew) {
+      setIsNewRecord(true); setHighScore(scoreRef.current);
+      playNewRecordSound();
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+    }
+  }, [phase]);
+
+  /* Keyboard */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
+      if (phase === 'gameover' && e.code === 'Enter') startGame();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [jump, phase, startGame]);
+
+  /* Canvas resize */
+  useEffect(() => {
+    const resize = () => {
+      if (!containerRef.current || !canvasRef.current) return;
+      const maxW = containerRef.current.clientWidth - 16;
+      const s = Math.min(maxW / CANVAS_W, 1);
+      scaleRef.current = s;
+      canvasRef.current.style.width = `${CANVAS_W * s}px`;
+      canvasRef.current.style.height = `${CANVAS_H * s}px`;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
+
+
+  /* ─── Menu Screen ─── */
+  if (phase === 'menu') {
     return (
-        <motion.div
-            className="flex flex-col items-center gap-4 p-4 pb-32"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-        >
-            {/* UI Bar */}
-            <div className="flex gap-3 items-center">
-                {/* Can göstergesi */}
-                <div className="flex gap-0.5 items-center bg-card/90 backdrop-blur px-3 py-2 rounded-xl shadow-lg border border-border/50">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                        <motion.div
-                            key={i}
-                            className="relative"
-                            animate={{
-                                scale: i < lives ? [1, 1.1, 1] : 0.8,
-                                opacity: i < lives ? 1 : 0.2
-                            }}
-                            transition={{ delay: i * 0.1 }}
-                        >
-                            <svg viewBox="0 0 24 24" className="w-5 h-5" fill={i < lives ? '#ef4444' : '#9ca3af'}>
-                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                            </svg>
-                        </motion.div>
-                    ))}
-                </div>
+      <motion.div className="flex flex-col items-center gap-5 p-4 pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="relative">
+          <motion.span className="text-6xl block" animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
+            🏃
+          </motion.span>
+        </div>
+        <h2 className="text-3xl md:text-4xl font-black text-gradient">Koşucu</h2>
+        <p className="text-muted-foreground font-medium text-center text-sm">Engelleri atla, güçleri topla, rekoru kır!</p>
 
-                {/* Skor */}
-                <motion.div
-                    className="px-4 py-2 bg-gradient-to-r from-primary/20 to-primary/10 backdrop-blur rounded-xl font-black text-primary shadow-lg border border-primary/20"
-                    animate={{ scale: score % 100 === 0 && score > 0 ? [1, 1.1, 1] : 1 }}
-                >
-                    ⭐ {score}
-                </motion.div>
+        {highScore > 0 && (
+          <div className="glass-card px-4 py-2 neon-border">
+            <span className="font-black text-primary">🏆 Rekor: {highScore}</span>
+          </div>
+        )}
 
-                {/* Mesafe */}
-                <div className="px-4 py-2 bg-card/90 backdrop-blur rounded-xl font-bold text-muted-foreground shadow-lg border border-border/50">
-                    📏 {Math.floor(distance / 10)}m
-                </div>
+        {/* Character select */}
+        <div className="space-y-2">
+          <p className="text-sm font-bold text-center text-muted-foreground">Karakter Seç:</p>
+          <div className="flex gap-3">
+            {CHARACTERS.map((c) => (
+              <button key={c.id} onClick={() => { setCharacter(c); playPopSound(); }}
+                className={`p-3 rounded-2xl transition-all flex flex-col items-center gap-1 ${
+                  character.id === c.id ? 'ring-2 ring-primary scale-110 glass-card neon-border' : 'glass-card hover:scale-105'
+                }`}>
+                <span className="text-3xl">{c.emoji}</span>
+                <span className="text-xs font-bold">{c.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-                {/* Rekor */}
-                <div className="px-3 py-2 bg-amber-500/20 backdrop-blur rounded-xl font-bold text-amber-600 dark:text-amber-400 shadow-lg">
-                    🏆 {highScore}
-                </div>
+        {/* Difficulty */}
+        <div className="flex flex-col gap-2 w-full max-w-xs">
+          <p className="text-sm font-bold text-center text-muted-foreground">Zorluk:</p>
+          {(Object.entries(DIFF_CONFIG) as [Difficulty, typeof DIFF_CONFIG['normal']][]).map(([key, val]) => (
+            <button key={key} onClick={() => setDifficulty(key)}
+              className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${
+                difficulty === key ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/5'
+              }`}>
+              {val.label}
+            </button>
+          ))}
+        </div>
 
-                {/* Mıknatıs Aktif Göstergesi */}
-                {hasMagnet && (
-                    <motion.div
-                        className="px-3 py-2 bg-red-500/30 backdrop-blur rounded-xl font-bold text-red-600 dark:text-red-400 shadow-lg"
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ repeat: Infinity, duration: 0.5 }}
-                    >
-                        🧲 Aktif!
-                    </motion.div>
-                )}
-
-                {/* Hız Göstergesi */}
-                <div className="px-3 py-2 bg-blue-500/20 backdrop-blur rounded-xl font-bold text-blue-600 dark:text-blue-400 shadow-lg">
-                    🚀 {speed.toFixed(1)}x
-                </div>
+        {/* Power-up legend */}
+        <div className="flex flex-wrap gap-2 justify-center">
+          {[
+            { e: '🪙', l: '+10' }, { e: '⭐', l: '+50' }, { e: '❤️', l: 'Can' },
+            { e: '🧲', l: 'Çek' }, { e: '🛡️', l: 'Kalkan' }, { e: '✖️2', l: 'Çarpan' },
+          ].map((p) => (
+            <div key={p.e} className="glass-card border border-white/10 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
+              <span className="text-lg">{p.e}</span>
+              <span className="text-xs font-bold text-muted-foreground">{p.l}</span>
             </div>
+          ))}
+        </div>
 
-            {/* Oyun alanı */}
-            <div
-                className="relative w-full max-w-2xl h-56 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20"
-                onClick={jump}
-                onContextMenu={(e) => { e.preventDefault(); duck(); }}
-                style={{
-                    background: 'linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0ea5e9 100%)',
-                }}
-            >
-                {/* Güneş */}
-                <motion.div
-                    className="absolute w-16 h-16 rounded-full"
-                    style={{
-                        top: 16,
-                        right: 24,
-                        background: 'radial-gradient(circle, #fef08a 0%, #fbbf24 50%, #f59e0b 100%)',
-                        boxShadow: '0 0 40px 10px rgba(251, 191, 36, 0.4)',
-                    }}
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ repeat: Infinity, duration: 3 }}
-                />
+        <button onClick={startGame} className="btn-gaming px-10 py-4 text-lg">🚀 BAŞLA!</button>
 
-                {/* Bulutlar - Parallax */}
-                {[0, 80, 160].map((offset, i) => (
-                    <motion.div
-                        key={i}
-                        className="absolute"
-                        style={{
-                            top: 20 + i * 15,
-                            left: `${((cloudOffset + offset) % 150) - 20}%`,
-                        }}
-                    >
-                        <div className="flex">
-                            <div className="w-12 h-6 bg-white/90 rounded-full" />
-                            <div className="w-8 h-5 bg-white/90 rounded-full -ml-4 mt-1" />
-                            <div className="w-10 h-6 bg-white/90 rounded-full -ml-3" />
-                        </div>
-                    </motion.div>
-                ))}
-
-                {/* Uzak dağlar - Parallax */}
-                <div
-                    className="absolute bottom-12 left-0 right-0 h-24"
-                    style={{ transform: `translateX(${cloudOffset * 0.5}px)` }}
-                >
-                    <svg viewBox="0 0 400 60" className="w-full h-full" preserveAspectRatio="none">
-                        <path
-                            d="M0,60 L0,40 L30,25 L60,35 L90,20 L120,30 L150,15 L180,28 L210,22 L240,32 L270,18 L300,25 L330,30 L360,22 L400,35 L400,60 Z"
-                            fill="rgba(148, 163, 184, 0.5)"
-                        />
-                        <path
-                            d="M0,60 L0,45 L40,30 L80,38 L120,28 L160,35 L200,25 L240,32 L280,28 L320,35 L360,30 L400,40 L400,60 Z"
-                            fill="rgba(100, 116, 139, 0.5)"
-                        />
-                    </svg>
-                </div>
-
-                {/* Zemin - Parallax hareket */}
-                <div className="absolute bottom-0 left-0 right-0 h-14">
-                    {/* Toprak katmanı */}
-                    <div
-                        className="absolute inset-0 bg-gradient-to-b from-amber-600 to-amber-800"
-                    />
-
-                    {/* Çim katmanı */}
-                    <div
-                        className="absolute top-0 left-0 right-0 h-4"
-                        style={{
-                            background: 'linear-gradient(180deg, #22c55e 0%, #16a34a 100%)',
-                        }}
-                    />
-
-                    {/* Çim detayları */}
-                    <div
-                        className="absolute top-0 left-0 h-6 flex"
-                        style={{
-                            transform: `translateX(${groundOffset}px)`,
-                            width: '200%',
-                        }}
-                    >
-                        {Array.from({ length: 60 }).map((_, i) => (
-                            <motion.div
-                                key={i}
-                                className="w-1 bg-green-400"
-                                style={{
-                                    height: 8 + Math.random() * 8,
-                                    marginLeft: 6 + Math.random() * 4,
-                                    borderRadius: '0 0 2px 2px',
-                                    transformOrigin: 'bottom',
-                                }}
-                                animate={{
-                                    rotate: [0, 5, -5, 0],
-                                }}
-                                transition={{
-                                    repeat: Infinity,
-                                    duration: 0.8 + Math.random() * 0.4,
-                                    delay: Math.random() * 0.5,
-                                }}
-                            />
-                        ))}
-                    </div>
-
-                    {/* Toprak detayları */}
-                    <div
-                        className="absolute bottom-1 left-0 h-2 flex gap-8"
-                        style={{
-                            transform: `translateX(${groundOffset * 1.5}px)`,
-                            width: '200%',
-                        }}
-                    >
-                        {Array.from({ length: 20 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="w-3 h-2 rounded-full bg-amber-900/30"
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                {/* Süper Güç Yazısı */}
-                <AnimatePresence>
-                    {isSuper && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -20, scale: 0.5 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.5 }}
-                            className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-gradient-to-r from-yellow-400 to-orange-400 text-yellow-900 px-6 py-2 rounded-full font-black text-sm shadow-lg border-2 border-white"
-                        >
-                            <motion.span
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ repeat: Infinity, duration: 0.3 }}
-                            >
-                                🌟 SÜPER GÜÇ! 🌟
-                            </motion.span>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Karakter */}
-                <motion.div
-                    className="absolute left-8 z-20"
-                    animate={{
-                        bottom: isJumping ? 110 : 52,
-                    }}
-                    transition={{
-                        bottom: { type: 'spring', stiffness: 400, damping: 25 },
-                    }}
-                >
-                    <CharacterSprite
-                        character={character}
-                        isJumping={isJumping}
-                        isRunning={gameState === 'playing'}
-                        isSuper={isSuper}
-                        isInvincible={isInvincible}
-                        jumpProgress={jumpProgress}
-                    />
-                </motion.div>
-
-                {/* Engeller */}
-                {obstacles.map((obstacle) => (
-                    <motion.div
-                        key={obstacle.id}
-                        className="absolute z-10"
-                        style={{
-                            left: `${obstacle.x}%`,
-                            bottom: 52,
-                        }}
-                        initial={{ x: 20 }}
-                        animate={{ x: 0 }}
-                    >
-                        <ObstacleSprite type={obstacle.type} isSuper={isSuper} />
-                    </motion.div>
-                ))}
-
-                {/* Toplanabilirler */}
-                {collectibles.map((c) => (
-                    <motion.div
-                        key={c.id}
-                        className="absolute z-10"
-                        style={{
-                            left: `${c.x}%`,
-                            bottom: c.y === 1 ? 110 : 56,
-                        }}
-                    >
-                        <CollectibleSprite type={c.type} />
-                    </motion.div>
-                ))}
-
-                {/* Parçacıklar */}
-                <AnimatePresence>
-                    {particles.map((p) => (
-                        <ParticleEffect key={p.id} particle={p} />
-                    ))}
-                </AnimatePresence>
-
-                {/* Mobil kontroller - Oyun alanı içinde */}
-                {gameState === 'playing' && (
-                    <motion.button
-                        onClick={(e) => { e.stopPropagation(); jump(); }}
-                        className="absolute bottom-3 right-3 z-30 w-16 h-16 bg-white/30 backdrop-blur-sm text-white rounded-full font-black text-2xl shadow-xl flex items-center justify-center border-2 border-white/50"
-                        whileTap={{ scale: 0.85, backgroundColor: 'rgba(255,255,255,0.5)' }}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                    >
-                        ⬆️
-                    </motion.button>
-                )}
-            </div>
-
-            {/* Game Over - oyun alanı dışında, tam genişlik */}
-            <AnimatePresence>
-                {gameState === 'gameover' && (
-                    <motion.div
-                        className="w-full max-w-2xl flex flex-col items-center gap-4 py-8 px-6 glass-card neon-border rounded-3xl text-center"
-                        initial={{ opacity: 0, y: 30, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 30, scale: 0.9 }}
-                        transition={{ type: 'spring', damping: 20 }}
-                    >
-                        <motion.p
-                            className="text-4xl md:text-5xl font-black text-gradient"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', damping: 10, delay: 0.1 }}
-                        >
-                            Game Over!
-                        </motion.p>
-                        <div className="flex flex-wrap justify-center gap-4">
-                            <div className="glass-card px-5 py-3 rounded-xl border border-primary/20">
-                                <p className="text-xs text-muted-foreground font-bold">Skor</p>
-                                <p className="text-2xl font-black text-primary">⭐ {score}</p>
-                            </div>
-                            <div className="glass-card px-5 py-3 rounded-xl border border-white/10">
-                                <p className="text-xs text-muted-foreground font-bold">Mesafe</p>
-                                <p className="text-2xl font-black text-foreground">📏 {Math.floor(distance / 10)}m</p>
-                            </div>
-                            <div className="glass-card px-5 py-3 rounded-xl border border-amber-500/20">
-                                <p className="text-xs text-muted-foreground font-bold">Rekor</p>
-                                <p className="text-2xl font-black text-amber-400">🏆 {highScore}</p>
-                            </div>
-                        </div>
-                        {isNewRecord && (
-                            <motion.p
-                                className="text-xl font-black text-yellow-400"
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ repeat: Infinity, duration: 0.5 }}
-                            >
-                                🏆 Yeni Rekor! 🏆
-                            </motion.p>
-                        )}
-                        <div className="flex gap-3 mt-2">
-                            <motion.button
-                                onClick={startGame}
-                                className="btn-gaming px-8 py-3 text-lg"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                🔄 Tekrar
-                            </motion.button>
-                            <motion.button
-                                onClick={() => setGameState('menu')}
-                                className="px-8 py-3 glass-card text-foreground rounded-xl font-bold hover:bg-white/[0.06] transition-all"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                ← Menü
-                            </motion.button>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </motion.div>
+        <div className="text-center text-xs text-muted-foreground space-y-0.5">
+          <p>⬆️ / SPACE = Zıpla (2x çift zıplama)</p>
+          <p>📱 Ekrana dokun = Zıpla</p>
+        </div>
+      </motion.div>
     );
+  }
+
+  /* ─── Playing + Game Over ─── */
+  return (
+    <motion.div className="flex flex-col items-center gap-3 p-4 pb-32" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      {/* HUD */}
+      <div className="flex gap-2 items-center flex-wrap justify-center">
+        {/* Lives */}
+        <div className="glass-card border border-red-500/20 px-3 py-1.5 rounded-xl flex items-center gap-0.5">
+          {Array.from({ length: MAX_LIVES }).map((_, i) => (
+            <span key={i} className={`text-sm ${i < lives ? '' : 'opacity-20'}`}>❤️</span>
+          ))}
+        </div>
+        {/* Score */}
+        <div className="glass-card border border-primary/20 px-4 py-1.5 rounded-xl">
+          <span className="text-sm font-black text-primary">⭐ {score}</span>
+        </div>
+        {/* Distance */}
+        <div className="glass-card border border-white/10 px-3 py-1.5 rounded-xl">
+          <span className="text-sm font-bold text-muted-foreground">📏 {distance}m</span>
+        </div>
+        {/* Combo */}
+        {combo >= 3 && (
+          <motion.div key={combo} initial={{ scale: 0.5 }} animate={{ scale: 1 }}
+            className="glass-card border border-yellow-500/20 px-3 py-1.5 rounded-xl">
+            <span className="text-sm font-black text-yellow-400">🔥 x{combo}</span>
+          </motion.div>
+        )}
+        {/* Active power-ups */}
+        {showShield && <div className="glass-card border border-blue-500/20 px-2 py-1.5 rounded-xl"><span className="text-sm">🛡️</span></div>}
+        {showMagnet && <div className="glass-card border border-red-500/20 px-2 py-1.5 rounded-xl"><span className="text-sm">🧲</span></div>}
+        {showX2 && <div className="glass-card border border-purple-500/20 px-2 py-1.5 rounded-xl"><span className="text-sm">✖️2</span></div>}
+      </div>
+
+      {/* Canvas */}
+      <div ref={containerRef} className="w-full max-w-3xl relative" onClick={jump} style={{ touchAction: 'manipulation' }}>
+        <canvas
+          ref={canvasRef}
+          width={CANVAS_W}
+          height={CANVAS_H}
+          className="rounded-2xl shadow-2xl border-2 border-white/10 cursor-pointer"
+          style={{ display: 'block', margin: '0 auto' }}
+        />
+
+        {/* Floating texts */}
+        <AnimatePresence>
+          {floatingTexts.map((ft) => (
+            <motion.div key={ft.id}
+              className="absolute pointer-events-none font-black text-sm drop-shadow-lg"
+              style={{ left: ft.x * scaleRef.current, top: ft.y * scaleRef.current, color: ft.color }}
+              initial={{ opacity: 1, y: 0, scale: 0.5 }}
+              animate={{ opacity: 0, y: -40, scale: 1.2 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              {ft.text}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* Game Over panel */}
+      <AnimatePresence>
+        {phase === 'gameover' && (
+          <motion.div
+            className="w-full max-w-2xl flex flex-col items-center gap-4 py-8 px-6 glass-card neon-border rounded-3xl text-center"
+            initial={{ opacity: 0, y: 30, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.9 }}
+            transition={{ type: 'spring', damping: 20 }}
+          >
+            <motion.p className="text-4xl md:text-5xl font-black text-gradient"
+              initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 10, delay: 0.1 }}>
+              Game Over!
+            </motion.p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <div className="glass-card px-5 py-3 rounded-xl border border-primary/20">
+                <p className="text-xs text-muted-foreground font-bold">Skor</p>
+                <p className="text-2xl font-black text-primary">⭐ {score}</p>
+              </div>
+              <div className="glass-card px-5 py-3 rounded-xl border border-white/10">
+                <p className="text-xs text-muted-foreground font-bold">Mesafe</p>
+                <p className="text-2xl font-black text-foreground">📏 {distance}m</p>
+              </div>
+              <div className="glass-card px-5 py-3 rounded-xl border border-yellow-500/20">
+                <p className="text-xs text-muted-foreground font-bold">Maks Kombo</p>
+                <p className="text-2xl font-black text-yellow-400">🔥 x{maxCombo}</p>
+              </div>
+              <div className="glass-card px-5 py-3 rounded-xl border border-amber-500/20">
+                <p className="text-xs text-muted-foreground font-bold">Rekor</p>
+                <p className="text-2xl font-black text-amber-400">🏆 {highScore}</p>
+              </div>
+            </div>
+            {isNewRecord && (
+              <motion.p className="text-xl font-black text-yellow-400"
+                animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 0.5 }}>
+                🏆 Yeni Rekor! 🏆
+              </motion.p>
+            )}
+            <div className="flex gap-3 mt-2">
+              <motion.button onClick={startGame} className="btn-gaming px-8 py-3 text-lg"
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                🔄 Tekrar
+              </motion.button>
+              <motion.button onClick={() => setPhase('menu')}
+                className="px-8 py-3 glass-card text-foreground rounded-xl font-bold hover:bg-white/[0.06] transition-all"
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                ← Menü
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 };
 
 export default RunnerGame;
