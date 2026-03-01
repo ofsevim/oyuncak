@@ -8,15 +8,25 @@ import { shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 
 const ALL_EMOJIS = [
-  '🐶','🐱','🐰','🦊','🐻','🐼','🐨','🦁','🐯','🐮',
-  '🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆','🦅','🦉',
-  '🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞'
+  '🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐮',
+  '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉',
+  '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞'
 ];
 
 type GridSize = 3 | 4 | 5 | 6;
 
-const MemoryFlipGame = () => {
+interface MemoryFlipGameProps {
+  onActiveGameChange?: (active: boolean) => void;
+}
+
+const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
+  useEffect(() => {
+    onActiveGameChange?.(true);
+    return () => onActiveGameChange?.(false);
+  }, [onActiveGameChange]);
+
   const [gridSize, setGridSize] = useState<GridSize>(4);
+
   const [cards, setCards] = useState<{ id: number; emoji: string; isFlipped: boolean; isMatched: boolean }[]>([]);
   const [flippedCards, setFlippedCards] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
@@ -190,30 +200,35 @@ const MemoryFlipGame = () => {
 
       {/* Game grid */}
       <div className="relative w-full flex flex-col items-center">
-        <div className="grid gap-2 md:gap-3 p-3 md:p-5 glass-card neon-border rounded-2xl w-full"
-          style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, maxWidth: gridSize === 6 ? '560px' : gridSize === 5 ? '500px' : gridSize === 4 ? '440px' : '360px' }}>
+        <div className="grid gap-1.5 sm:gap-2 md:gap-3 p-2 sm:p-3 md:p-4 glass-card neon-border rounded-[32px] w-full"
+          style={{
+            gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
+            maxWidth: gridSize === 6 ? '650px' : gridSize === 5 ? '550px' : gridSize === 4 ? '480px' : '400px',
+            width: '98%'
+          }}>
           {cards.map((card) => {
             const isRevealed = card.isFlipped || card.isMatched;
+            const cardSize = gridSize === 3 ? 'w-16 h-16 sm:w-22 sm:h-22' : gridSize === 4 ? 'w-14 h-14 sm:w-20 sm:h-20' : gridSize === 5 ? 'w-12 h-12 sm:w-16 sm:h-16' : 'w-10 h-10 sm:w-14 sm:h-14';
+            const emojiSize = gridSize === 3 ? 'text-3xl sm:text-4xl' : gridSize === 4 ? 'text-2xl sm:text-3xl' : gridSize === 5 ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl';
             return (
               <button key={card.id} onClick={() => handleCardClick(card.id)} disabled={card.isMatched || card.isFlipped}
-                className={`aspect-square rounded-xl text-2xl sm:text-3xl md:text-4xl transition-all duration-300 flex items-center justify-center relative overflow-hidden touch-manipulation ${
-                  isRevealed ? 'glass-card border border-white/10' : 'bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/20 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:scale-95'
-                } ${card.isMatched ? 'ring-2 ring-green-400/50 shadow-lg shadow-green-400/20' : ''}`}
-                style={{ minWidth: 0, touchAction: 'manipulation' }}>
+                className={`${cardSize} rounded-xl transition-all duration-300 flex items-center justify-center relative overflow-hidden touch-manipulation ${isRevealed ? 'glass-card border border-white/10' : 'bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/20 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:scale-95'
+                  } ${card.isMatched ? 'ring-2 ring-green-400/50 shadow-lg shadow-green-400/20' : ''}`}
+                style={{ touchAction: 'manipulation' }}>
                 {isRevealed ? (
-                  <motion.span initial={{ scale: 0, rotateY: 180 }} animate={{ scale: 1, rotateY: 0 }} transition={{ type: 'spring', stiffness: 300 }}>
+                  <motion.span className={emojiSize} initial={{ scale: 0, rotateY: 180 }} animate={{ scale: 1, rotateY: 0 }} transition={{ type: 'spring', stiffness: 300 }}>
                     {card.emoji}
                   </motion.span>
                 ) : (
-                  <span className="text-primary/30 text-lg md:text-xl">?</span>
+                  <span className="text-primary/30 text-lg md:text-xl font-bold">?</span>
                 )}
                 {card.isMatched && <div className="absolute inset-0 bg-green-400/5 rounded-xl" />}
               </button>
             );
           })}
         </div>
-        <div className="flex justify-center mt-4">
-          <button onClick={() => initializeGame()} className="px-4 py-2 glass-card border border-primary/20 text-primary rounded-full font-bold text-sm hover:bg-primary/10 transition-colors">
+        <div className="flex justify-center mt-6">
+          <button onClick={() => initializeGame()} className="px-6 py-2.5 glass-card border border-primary/20 text-primary rounded-full font-bold text-base hover:bg-primary/10 transition-colors">
             🔄 Yeniden Başla
           </button>
         </div>

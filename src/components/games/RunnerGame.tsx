@@ -6,7 +6,9 @@ import { playPopSound, playSuccessSound, playErrorSound, playNewRecordSound, pla
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
 
-/* ─── Types ─── */
+/* ═══════════════════════════════════════════
+   TYPES
+   ═══════════════════════════════════════════ */
 interface Obstacle {
   id: number; x: number; w: number; h: number;
   type: 'rock' | 'cactus' | 'bird' | 'double';
@@ -15,10 +17,12 @@ interface Obstacle {
 interface Collectible {
   id: number; x: number; y: number;
   type: 'coin' | 'star' | 'heart' | 'magnet' | 'shield' | 'x2';
+  collected?: boolean; collectAnim?: number;
 }
 interface Particle {
   id: number; x: number; y: number; vx: number; vy: number;
   life: number; maxLife: number; color: string; size: number;
+  type?: 'dust' | 'sparkle' | 'collect' | 'impact';
 }
 interface FloatingText {
   id: number; x: number; y: number; text: string; color: string;
@@ -26,46 +30,49 @@ interface FloatingText {
 type GamePhase = 'menu' | 'playing' | 'gameover';
 type Difficulty = 'easy' | 'normal' | 'hard';
 
-/* ─── Constants ─── */
-const CANVAS_W = 800;
-const CANVAS_H = 320;
-const GROUND_Y = 240;
-const GRAVITY = 0.65;
-const JUMP_FORCE = -13;
+/* ═══════════════════════════════════════════
+   CONSTANTS
+   ═══════════════════════════════════════════ */
+const CW = 900;
+const CH = 380;
+const GROUND_Y = 290;
+const GRAVITY = 0.62;
+const JUMP_FORCE = -13.5;
 const DOUBLE_JUMP_FORCE = -11;
 const MAX_LIVES = 5;
 
 const CHARACTERS = [
-  { id: 'bunny', name: 'Tavşan', emoji: '🐰', color: '#f8b4d9', accent: '#f472b6' },
-  { id: 'fox', name: 'Tilki', emoji: '🦊', color: '#fb923c', accent: '#ea580c' },
-  { id: 'cat', name: 'Kedi', emoji: '🐱', color: '#a78bfa', accent: '#7c3aed' },
-  { id: 'panda', name: 'Panda', emoji: '🐼', color: '#e2e8f0', accent: '#475569' },
+  { id: 'bunny', name: 'Tavşan', emoji: '🐰', color: '#f9a8d4', accent: '#ec4899', bodyH: '#fce7f3' },
+  { id: 'fox', name: 'Tilki', emoji: '🦊', color: '#fdba74', accent: '#ea580c', bodyH: '#fff7ed' },
+  { id: 'cat', name: 'Kedi', emoji: '🐱', color: '#c4b5fd', accent: '#7c3aed', bodyH: '#ede9fe' },
+  { id: 'panda', name: 'Panda', emoji: '🐼', color: '#e2e8f0', accent: '#475569', bodyH: '#f8fafc' },
 ];
 
 const DIFF_CONFIG: Record<Difficulty, { label: string; speedMul: number; spawnRate: number }> = {
-  easy:   { label: '🌟 Kolay',  speedMul: 0.7, spawnRate: 0.018 },
+  easy: { label: '🌟 Kolay', speedMul: 0.7, spawnRate: 0.018 },
   normal: { label: '⭐ Normal', speedMul: 1.0, spawnRate: 0.028 },
-  hard:   { label: '🔥 Zor',    speedMul: 1.3, spawnRate: 0.04 },
+  hard: { label: '🔥 Zor', speedMul: 1.3, spawnRate: 0.04 },
 };
 
-const OBSTACLE_DEFS = {
-  rock:   { w: 40, h: 36, lane: 'ground' as const, emoji: '🪨' },
-  cactus: { w: 30, h: 52, lane: 'ground' as const, emoji: '🌵' },
-  bird:   { w: 36, h: 28, lane: 'air' as const, emoji: '🦅' },
-  double: { w: 50, h: 60, lane: 'ground' as const, emoji: '🪨🌵' },
+const OBS_DEFS = {
+  rock: { w: 44, h: 38, lane: 'ground' as const },
+  cactus: { w: 32, h: 56, lane: 'ground' as const },
+  bird: { w: 38, h: 30, lane: 'air' as const },
+  double: { w: 56, h: 62, lane: 'ground' as const },
 };
 
-const COLLECTIBLE_DEFS = {
-  coin:   { emoji: '🪙', points: 10, weight: 40 },
-  star:   { emoji: '⭐', points: 50, weight: 20 },
-  heart:  { emoji: '❤️', points: 0,  weight: 8 },
-  magnet: { emoji: '🧲', points: 0,  weight: 5 },
-  shield: { emoji: '🛡️', points: 0,  weight: 5 },
-  x2:     { emoji: '✖️2', points: 0,  weight: 4 },
+const COLLECT_DEFS = {
+  coin: { points: 10, weight: 40 },
+  star: { points: 50, weight: 18 },
+  heart: { points: 0, weight: 8 },
+  magnet: { points: 0, weight: 5 },
+  shield: { points: 0, weight: 5 },
+  x2: { points: 0, weight: 4 },
 };
 
-
-/* ─── Helpers ─── */
+/* ═══════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════ */
 function weightedRandom<T extends string>(defs: Record<T, { weight: number }>): T {
   const entries = Object.entries(defs) as [T, { weight: number }][];
   const total = entries.reduce((s, [, v]) => s + v.weight, 0);
@@ -74,22 +81,38 @@ function weightedRandom<T extends string>(defs: Record<T, { weight: number }>): 
   return entries[0][0];
 }
 
-function rectsOverlap(
+function boxHit(
   ax: number, ay: number, aw: number, ah: number,
-  bx: number, by: number, bw: number, bh: number,
-  shrink = 6
-): boolean {
-  return (
-    ax + shrink < bx + bw - shrink &&
-    ax + aw - shrink > bx + shrink &&
-    ay + shrink < by + bh - shrink &&
-    ay + ah - shrink > by + shrink
-  );
+  bx: number, by: number, bw: number, bh: number, s = 8
+) {
+  return ax + s < bx + bw - s && ax + aw - s > bx + s && ay + s < by + bh - s && ay + ah - s > by + s;
 }
 
-/* ─── Main Component ─── */
+/* ═══════════════════════════════════════════
+   MOUNTAIN LAYER GENERATOR (3 layers)
+   ═══════════════════════════════════════════ */
+function generateMountainLayer(seed: number, peaks: number, minH: number, maxH: number, segments: number): number[] {
+  const pts: number[] = [];
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    let h = 0;
+    for (let p = 1; p <= peaks; p++) {
+      h += Math.sin(t * Math.PI * p * 2 + seed * p) * ((maxH - minH) / peaks);
+    }
+    pts.push(minH + (maxH - minH) * 0.5 + h);
+  }
+  return pts;
+}
+
+const MTN_FAR = generateMountainLayer(1.2, 3, 20, 65, 40);
+const MTN_MID = generateMountainLayer(2.7, 4, 15, 55, 50);
+const MTN_NEAR = generateMountainLayer(4.1, 5, 10, 45, 60);
+
+/* ═══════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════ */
 const RunnerGame = () => {
-  /* State */
+  /* ── State ── */
   const [phase, setPhase] = useState<GamePhase>('menu');
   const [character, setCharacter] = useState(CHARACTERS[0]);
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
@@ -103,18 +126,20 @@ const RunnerGame = () => {
   const [showShield, setShowShield] = useState(false);
   const [showMagnet, setShowMagnet] = useState(false);
   const [showX2, setShowX2] = useState(false);
-  const [canDoubleJump, setCanDoubleJump] = useState(true);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
 
-  /* Refs for game loop */
-  const rafRef = useRef<number>(0);
-  const playerRef = useRef({ x: 80, y: GROUND_Y, vy: 0, w: 44, h: 52, grounded: true, jumps: 0 });
+  /* ── Refs ── */
+  const rafRef = useRef(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef(1);
+
+  const playerRef = useRef({ x: 90, y: GROUND_Y, vy: 0, w: 46, h: 54, grounded: true, jumps: 0, squash: 1, stretch: 1, landTimer: 0 });
   const obstaclesRef = useRef<Obstacle[]>([]);
   const collectiblesRef = useRef<Collectible[]>([]);
   const particlesRef = useRef<Particle[]>([]);
   const speedRef = useRef(5);
   const frameRef = useRef(0);
-  const lastObstacleXRef = useRef(CANVAS_W + 200);
   const scoreRef = useRef(0);
   const comboRef = useRef(0);
   const livesRef = useRef(3);
@@ -122,16 +147,12 @@ const RunnerGame = () => {
   const magnetRef = useRef(false);
   const x2Ref = useRef(false);
   const invincibleRef = useRef(false);
-  const groundOffsetRef = useRef(0);
-  const idCounterRef = useRef(0);
+  const groundOffRef = useRef(0);
+  const idRef = useRef(0);
   const phaseRef = useRef<GamePhase>('menu');
   const diffRef = useRef(DIFF_CONFIG['normal']);
   const floatIdRef = useRef(0);
-
-  /* Canvas ref */
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const scaleRef = useRef(1);
+  const charRef = useRef(CHARACTERS[0]);
 
   /* Sync refs */
   useEffect(() => { phaseRef.current = phase; }, [phase]);
@@ -139,274 +160,634 @@ const RunnerGame = () => {
   useEffect(() => { shieldRef.current = showShield; }, [showShield]);
   useEffect(() => { magnetRef.current = showMagnet; }, [showMagnet]);
   useEffect(() => { x2Ref.current = showX2; }, [showX2]);
+  useEffect(() => { charRef.current = character; }, [character]);
 
-  /* Floating text helper */
+  /* Helpers */
   const addFloat = useCallback((x: number, y: number, text: string, color: string) => {
     const id = floatIdRef.current++;
     setFloatingTexts(prev => [...prev, { id, x, y, text, color }]);
     setTimeout(() => setFloatingTexts(prev => prev.filter(f => f.id !== id)), 900);
   }, []);
 
-  /* Particle helper */
-  const spawnParticles = useCallback((x: number, y: number, count: number, color: string) => {
-    for (let i = 0; i < count; i++) {
+  const spawnP = useCallback((x: number, y: number, n: number, color: string, type: Particle['type'] = 'sparkle') => {
+    for (let i = 0; i < n; i++) {
       particlesRef.current.push({
-        id: idCounterRef.current++,
-        x, y,
-        vx: (Math.random() - 0.5) * 6,
-        vy: -Math.random() * 4 - 1,
-        life: 30 + Math.random() * 20,
-        maxLife: 50,
-        color,
-        size: 2 + Math.random() * 3,
+        id: idRef.current++, x, y,
+        vx: (Math.random() - 0.5) * (type === 'collect' ? 8 : 5),
+        vy: -Math.random() * (type === 'collect' ? 6 : 4) - 1,
+        life: type === 'collect' ? 40 : 25 + Math.random() * 15,
+        maxLife: type === 'collect' ? 40 : 40,
+        color, size: type === 'collect' ? 3 + Math.random() * 3 : 2 + Math.random() * 2.5,
+        type,
       });
     }
   }, []);
 
-
-  /* ─── Canvas Rendering ─── */
-  const drawFrame = useCallback((ctx: CanvasRenderingContext2D) => {
-    const W = CANVAS_W, H = CANVAS_H;
+  /* ═══════════════════════════════════════════
+     CANVAS DRAW — Toca Boca / Unity WebGL quality
+     ═══════════════════════════════════════════ */
+  const draw = useCallback((ctx: CanvasRenderingContext2D) => {
+    const W = CW, H = CH;
+    const f = frameRef.current;
+    const gOff = groundOffRef.current;
     ctx.clearRect(0, 0, W, H);
 
-    /* Sky gradient */
-    const sky = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
-    sky.addColorStop(0, '#7dd3fc');
-    sky.addColorStop(0.6, '#38bdf8');
-    sky.addColorStop(1, '#0ea5e9');
+    /* ── 1. SUNBURN GRADIENT SKY ── */
+    const sky = ctx.createLinearGradient(0, 0, 0, GROUND_Y + 10);
+    sky.addColorStop(0, '#1e1b4b');       // deep indigo top
+    sky.addColorStop(0.15, '#4338ca');     // indigo
+    sky.addColorStop(0.35, '#7c3aed');     // violet
+    sky.addColorStop(0.55, '#e879f9');     // fuchsia
+    sky.addColorStop(0.72, '#fb923c');     // orange
+    sky.addColorStop(0.88, '#fde68a');     // amber glow
+    sky.addColorStop(1, '#fef3c7');        // warm cream at horizon
     ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, GROUND_Y + 4);
+    ctx.fillRect(0, 0, W, GROUND_Y + 10);
 
-    /* Sun */
-    const sunGrad = ctx.createRadialGradient(680, 50, 5, 680, 50, 40);
-    sunGrad.addColorStop(0, '#fef08a');
-    sunGrad.addColorStop(0.5, '#fbbf24');
-    sunGrad.addColorStop(1, 'rgba(251,191,36,0)');
-    ctx.fillStyle = sunGrad;
-    ctx.beginPath(); ctx.arc(680, 50, 40, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#fef08a';
-    ctx.beginPath(); ctx.arc(680, 50, 22, 0, Math.PI * 2); ctx.fill();
+    /* ── 2. SUN with LENS FLARE ── */
+    const sunX = W * 0.78, sunY = GROUND_Y * 0.32;
+    // Outer glow layers
+    for (let i = 3; i >= 0; i--) {
+      const r = 28 + i * 22;
+      const g = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, r);
+      g.addColorStop(0, `rgba(255,251,235,${0.4 - i * 0.08})`);
+      g.addColorStop(0.5, `rgba(251,191,36,${0.2 - i * 0.04})`);
+      g.addColorStop(1, 'rgba(251,191,36,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(sunX, sunY, r, 0, Math.PI * 2); ctx.fill();
+    }
+    // Sun core
+    const sunCore = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 20);
+    sunCore.addColorStop(0, '#fffbeb');
+    sunCore.addColorStop(0.6, '#fde68a');
+    sunCore.addColorStop(1, '#f59e0b');
+    ctx.fillStyle = sunCore;
+    ctx.beginPath(); ctx.arc(sunX, sunY, 20, 0, Math.PI * 2); ctx.fill();
 
-    /* Clouds - parallax */
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    const co = groundOffsetRef.current;
-    [[100, 35, 0.15], [320, 55, 0.1], [560, 25, 0.12], [750, 60, 0.08]].forEach(([bx, by, sp]) => {
-      const cx = ((bx as number) - co * (sp as number)) % (W + 100);
-      const px = cx < -60 ? cx + W + 100 : cx;
+    // Lens flare streaks
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    const flareAngle = f * 0.003;
+    for (let i = 0; i < 6; i++) {
+      const a = flareAngle + (i * Math.PI) / 3;
+      const len = 40 + Math.sin(f * 0.02 + i) * 15;
+      const fg = ctx.createLinearGradient(
+        sunX + Math.cos(a) * 5, sunY + Math.sin(a) * 5,
+        sunX + Math.cos(a) * len, sunY + Math.sin(a) * len
+      );
+      fg.addColorStop(0, 'rgba(255,251,235,0.6)');
+      fg.addColorStop(1, 'rgba(255,251,235,0)');
+      ctx.strokeStyle = fg;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.ellipse(px, by as number, 40, 14, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(px - 20, (by as number) + 4, 25, 10, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(px + 22, (by as number) + 2, 28, 11, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.moveTo(sunX + Math.cos(a) * 22, sunY + Math.sin(a) * 22);
+      ctx.lineTo(sunX + Math.cos(a) * len, sunY + Math.sin(a) * len);
+      ctx.stroke();
+    }
+    // Lens flare circles (secondary reflections)
+    const flareDist = 120 + Math.sin(f * 0.01) * 20;
+    const flDir = Math.atan2(H / 2 - sunY, W / 2 - sunX);
+    for (let i = 1; i <= 3; i++) {
+      const fx = sunX + Math.cos(flDir) * flareDist * i * 0.4;
+      const fy = sunY + Math.sin(flDir) * flareDist * i * 0.4;
+      const fr = 8 - i * 2;
+      ctx.fillStyle = `rgba(255,251,235,${0.12 - i * 0.03})`;
+      ctx.beginPath(); ctx.arc(fx, fy, fr, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+
+    /* ── 3. CLOUDS ── */
+    const drawCloud = (bx: number, by: number, sc: number, alpha: number) => {
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.beginPath(); ctx.ellipse(bx, by, 44 * sc, 14 * sc, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(bx - 24 * sc, by + 4 * sc, 28 * sc, 10 * sc, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(bx + 26 * sc, by + 2 * sc, 32 * sc, 12 * sc, 0, 0, Math.PI * 2); ctx.fill();
+    };
+    [[120, 40, 0.8, 0.04, 0.5], [380, 65, 0.6, 0.025, 0.35], [600, 30, 0.9, 0.035, 0.45], [820, 55, 0.7, 0.02, 0.3]].forEach(([bx, by, sc, sp, al]) => {
+      const cx = (((bx as number) - gOff * (sp as number)) % (W + 160));
+      const px = cx < -80 ? cx + W + 160 : cx;
+      drawCloud(px, by as number, sc as number, al as number);
     });
 
-    /* Far mountains - parallax */
-    ctx.fillStyle = 'rgba(148,163,184,0.35)';
-    ctx.beginPath(); ctx.moveTo(0, GROUND_Y);
-    for (let x = 0; x <= W; x += 60) {
-      const mx = (x - co * 0.05) % W;
-      ctx.lineTo(x, GROUND_Y - 30 - Math.sin(mx * 0.02) * 25 - Math.cos(mx * 0.035) * 15);
-    }
-    ctx.lineTo(W, GROUND_Y); ctx.closePath(); ctx.fill();
+    /* ── 4. THREE-LAYER PARALLAX MOUNTAINS ── */
+    const drawMountainLayer = (pts: number[], baseY: number, speed: number, fillTop: string, fillBot: string, alpha: number) => {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      const off = (gOff * speed) % W;
+      const grad = ctx.createLinearGradient(0, baseY - 60, 0, baseY);
+      grad.addColorStop(0, fillTop);
+      grad.addColorStop(1, fillBot);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(0, baseY);
+      for (let i = 0; i < pts.length; i++) {
+        const x = (i / (pts.length - 1)) * (W + 200) - (off % (W + 200));
+        const xw = x < -100 ? x + W + 200 : x;
+        ctx.lineTo(xw, baseY - pts[i]);
+      }
+      ctx.lineTo(W, baseY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    };
+    // Far layer — slowest, most transparent, tallest
+    drawMountainLayer(MTN_FAR, GROUND_Y + 5, 0.02, '#6366f1', '#818cf8', 0.25);
+    // Mid layer
+    drawMountainLayer(MTN_MID, GROUND_Y + 3, 0.05, '#7c3aed', '#a78bfa', 0.3);
+    // Near layer — fastest, most opaque
+    drawMountainLayer(MTN_NEAR, GROUND_Y + 1, 0.1, '#6d28d9', '#8b5cf6', 0.35);
 
-    ctx.fillStyle = 'rgba(100,116,139,0.3)';
-    ctx.beginPath(); ctx.moveTo(0, GROUND_Y);
-    for (let x = 0; x <= W; x += 40) {
-      const mx = (x - co * 0.08) % W;
-      ctx.lineTo(x, GROUND_Y - 15 - Math.sin(mx * 0.03) * 18 - Math.cos(mx * 0.05) * 10);
-    }
-    ctx.lineTo(W, GROUND_Y); ctx.closePath(); ctx.fill();
-
-    /* Ground */
-    const groundGrad = ctx.createLinearGradient(0, GROUND_Y, 0, H);
-    groundGrad.addColorStop(0, '#22c55e');
-    groundGrad.addColorStop(0.15, '#16a34a');
-    groundGrad.addColorStop(0.3, '#a16207');
-    groundGrad.addColorStop(1, '#78350f');
-    ctx.fillStyle = groundGrad;
+    /* ── 5. TEXTURED GROUND ── */
+    // Main ground gradient — pastel earthy
+    const gGrad = ctx.createLinearGradient(0, GROUND_Y, 0, H);
+    gGrad.addColorStop(0, '#86efac');   // pastel green
+    gGrad.addColorStop(0.08, '#4ade80');
+    gGrad.addColorStop(0.18, '#a3e635'); // lime transition
+    gGrad.addColorStop(0.3, '#d4a574');  // sandy
+    gGrad.addColorStop(0.6, '#c2956b');
+    gGrad.addColorStop(1, '#a67c52');
+    ctx.fillStyle = gGrad;
     ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
 
-    /* Grass blades */
-    ctx.strokeStyle = '#4ade80';
-    ctx.lineWidth = 1.5;
-    const gOff = groundOffsetRef.current % 12;
-    for (let x = -gOff; x < W; x += 12) {
-      const h = 6 + Math.sin(x * 0.3 + frameRef.current * 0.05) * 3;
-      ctx.beginPath(); ctx.moveTo(x, GROUND_Y); ctx.lineTo(x + 2, GROUND_Y - h); ctx.stroke();
+    // Ground texture — small dots and pebbles
+    const dOff = gOff % 20;
+    ctx.fillStyle = 'rgba(120,80,40,0.08)';
+    for (let x = -dOff; x < W; x += 20) {
+      for (let y = GROUND_Y + 22; y < H; y += 18) {
+        const jx = x + Math.sin(y * 0.5 + x * 0.3) * 4;
+        const sz = 1.5 + Math.sin(x * 0.7 + y * 0.4) * 0.8;
+        ctx.beginPath(); ctx.arc(jx, y, sz, 0, Math.PI * 2); ctx.fill();
+      }
     }
 
-    /* Ground texture dots */
-    ctx.fillStyle = 'rgba(120,53,15,0.25)';
-    const dOff = groundOffsetRef.current % 30;
-    for (let x = -dOff; x < W; x += 30) {
-      ctx.beginPath(); ctx.arc(x, GROUND_Y + 30 + Math.sin(x) * 8, 2, 0, Math.PI * 2); ctx.fill();
+    // Grass blades — varied heights, gentle sway
+    const grassOff = gOff % 10;
+    for (let x = -grassOff; x < W; x += 7) {
+      const sway = Math.sin(f * 0.04 + x * 0.15) * 3;
+      const h = 7 + Math.sin(x * 0.4) * 4 + Math.cos(x * 0.7) * 2;
+      const hue = 120 + Math.sin(x * 0.2) * 15;
+      ctx.strokeStyle = `hsla(${hue}, 70%, 55%, 0.7)`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x, GROUND_Y);
+      ctx.quadraticCurveTo(x + sway * 0.5, GROUND_Y - h * 0.6, x + sway, GROUND_Y - h);
+      ctx.stroke();
     }
 
-    /* Obstacles */
+    // Ground line highlight
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y + 1); ctx.lineTo(W, GROUND_Y + 1); ctx.stroke();
+
+
+    /* ── 6. OBSTACLES with dynamic shadows ── */
     for (const obs of obstaclesRef.current) {
-      const def = OBSTACLE_DEFS[obs.type];
-      const oy = obs.lane === 'air' ? GROUND_Y - 90 : GROUND_Y - obs.h;
-      ctx.font = obs.type === 'double' ? '24px serif' : '32px serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      if (obs.type === 'bird') {
-        /* Animated bird wings */
-        const wingPhase = Math.sin(frameRef.current * 0.15 + obs.id) > 0;
-        ctx.font = '30px serif';
-        ctx.fillText(wingPhase ? '🦅' : '🦆', obs.x + obs.w / 2, oy + obs.h);
-      } else if (obs.type === 'double') {
-        ctx.font = '28px serif';
-        ctx.fillText('🪨', obs.x + 12, oy + obs.h);
-        ctx.fillText('🌵', obs.x + obs.w - 8, oy + obs.h - 8);
+      const oy = obs.lane === 'air' ? GROUND_Y - 100 : GROUND_Y - obs.h;
+
+      // Dynamic ground shadow
+      const shadowDist = obs.lane === 'air' ? 60 : 4;
+      const shadowAlpha = obs.lane === 'air' ? 0.12 : 0.18;
+      const shadowW = obs.w * (obs.lane === 'air' ? 0.7 : 0.9);
+      ctx.fillStyle = `rgba(0,0,0,${shadowAlpha})`;
+      ctx.beginPath();
+      ctx.ellipse(obs.x + obs.w / 2, GROUND_Y + 3, shadowW / 2, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw obstacle
+      ctx.save();
+      ctx.translate(obs.x + obs.w / 2, oy + obs.h / 2);
+
+      if (obs.type === 'rock') {
+        // Stylized rock with gradient
+        const rg = ctx.createRadialGradient(-4, -4, 2, 0, 0, obs.w * 0.5);
+        rg.addColorStop(0, '#d1d5db');
+        rg.addColorStop(0.5, '#9ca3af');
+        rg.addColorStop(1, '#6b7280');
+        ctx.fillStyle = rg;
+        ctx.beginPath();
+        ctx.ellipse(0, 4, obs.w * 0.48, obs.h * 0.42, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.beginPath();
+        ctx.ellipse(-6, -4, 8, 5, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obs.type === 'cactus') {
+        // Stylized cactus
+        const cg = ctx.createLinearGradient(-8, -obs.h / 2, 8, obs.h / 2);
+        cg.addColorStop(0, '#4ade80');
+        cg.addColorStop(0.5, '#22c55e');
+        cg.addColorStop(1, '#15803d');
+        ctx.fillStyle = cg;
+        // Main body
+        ctx.beginPath(); ctx.roundRect(-7, -obs.h * 0.45, 14, obs.h * 0.9, 6); ctx.fill();
+        // Left arm
+        ctx.beginPath(); ctx.roundRect(-18, -obs.h * 0.2, 12, 8, 4); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(-18, -obs.h * 0.35, 8, 18, 4); ctx.fill();
+        // Right arm
+        ctx.beginPath(); ctx.roundRect(6, -obs.h * 0.1, 12, 8, 4); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(12, -obs.h * 0.28, 8, 20, 4); ctx.fill();
+        // Highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.beginPath(); ctx.roundRect(-4, -obs.h * 0.4, 5, obs.h * 0.7, 3); ctx.fill();
+      } else if (obs.type === 'bird') {
+        // Animated bird
+        const wingUp = Math.sin(f * 0.2 + obs.id) > 0;
+        ctx.fillStyle = '#78350f';
+        // Body
+        ctx.beginPath(); ctx.ellipse(0, 0, 14, 8, 0, 0, Math.PI * 2); ctx.fill();
+        // Wings
+        ctx.fillStyle = '#92400e';
+        if (wingUp) {
+          ctx.beginPath(); ctx.ellipse(-4, -10, 12, 5, -0.2, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(4, -8, 10, 4, 0.2, 0, Math.PI * 2); ctx.fill();
+        } else {
+          ctx.beginPath(); ctx.ellipse(-4, 6, 12, 4, 0.2, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(4, 5, 10, 3, -0.2, 0, Math.PI * 2); ctx.fill();
+        }
+        // Eye
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(8, -2, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath(); ctx.arc(9, -2, 1.5, 0, Math.PI * 2); ctx.fill();
+        // Beak
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath(); ctx.moveTo(14, -1); ctx.lineTo(20, 1); ctx.lineTo(14, 3); ctx.closePath(); ctx.fill();
       } else {
-        ctx.fillText(def.emoji, obs.x + obs.w / 2, oy + obs.h);
+        // Double obstacle
+        ctx.fillStyle = '#9ca3af';
+        ctx.beginPath(); ctx.ellipse(-10, 10, 18, 14, 0, 0, Math.PI * 2); ctx.fill();
+        const cg2 = ctx.createLinearGradient(8, -obs.h / 2, 16, obs.h / 2);
+        cg2.addColorStop(0, '#4ade80'); cg2.addColorStop(1, '#15803d');
+        ctx.fillStyle = cg2;
+        ctx.beginPath(); ctx.roundRect(6, -obs.h * 0.4, 12, obs.h * 0.8, 5); ctx.fill();
       }
-      /* Shadow */
-      if (obs.lane === 'air') {
-        ctx.fillStyle = 'rgba(0,0,0,0.1)';
-        ctx.beginPath(); ctx.ellipse(obs.x + obs.w / 2, GROUND_Y + 2, 16, 4, 0, 0, Math.PI * 2); ctx.fill();
-      }
+      ctx.restore();
     }
 
-    /* Collectibles */
+    /* ── 7. COLLECTIBLES — 3D spinning coins, glowing stars ── */
     for (const c of collectiblesRef.current) {
-      const def = COLLECTIBLE_DEFS[c.type];
-      ctx.font = '22px serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      /* Bobbing animation */
-      const bob = Math.sin(frameRef.current * 0.08 + c.id * 2) * 4;
-      ctx.fillText(def.emoji, c.x + 12, c.y + bob);
-      /* Glow */
-      if (c.type === 'star' || c.type === 'x2') {
-        ctx.fillStyle = `rgba(251,191,36,${0.15 + Math.sin(frameRef.current * 0.1) * 0.1})`;
-        ctx.beginPath(); ctx.arc(c.x + 12, c.y + bob, 16, 0, Math.PI * 2); ctx.fill();
+      if (c.collected) continue;
+      const bob = Math.sin(f * 0.06 + c.id * 2) * 5;
+      const cx = c.x + 12, cy = c.y + bob;
+
+      // Shadow on ground
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      ctx.beginPath(); ctx.ellipse(cx, GROUND_Y + 3, 8, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      if (c.type === 'coin') {
+        // 3D spinning coin
+        const spin = f * 0.08 + c.id;
+        const scaleX = Math.cos(spin); // -1 to 1 for 3D rotation
+        ctx.scale(Math.abs(scaleX) * 0.8 + 0.2, 1);
+        // Coin body
+        const coinG = ctx.createRadialGradient(-2, -2, 1, 0, 0, 12);
+        coinG.addColorStop(0, '#fef08a');
+        coinG.addColorStop(0.4, '#fbbf24');
+        coinG.addColorStop(0.8, '#d97706');
+        coinG.addColorStop(1, '#92400e');
+        ctx.fillStyle = coinG;
+        ctx.beginPath(); ctx.arc(0, 0, 11, 0, Math.PI * 2); ctx.fill();
+        // Inner ring
+        ctx.strokeStyle = '#b45309';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.stroke();
+        // $ symbol
+        if (Math.abs(scaleX) > 0.3) {
+          ctx.fillStyle = '#92400e';
+          ctx.font = 'bold 10px sans-serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('$', 0, 1);
+        }
+        // Shine
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.beginPath(); ctx.ellipse(-3, -4, 4, 2.5, -0.5, 0, Math.PI * 2); ctx.fill();
+      } else if (c.type === 'star') {
+        // Glowing star
+        const pulse = 1 + Math.sin(f * 0.1 + c.id) * 0.15;
+        ctx.scale(pulse, pulse);
+        // Outer glow
+        const sg = ctx.createRadialGradient(0, 0, 4, 0, 0, 20);
+        sg.addColorStop(0, 'rgba(251,191,36,0.4)');
+        sg.addColorStop(1, 'rgba(251,191,36,0)');
+        ctx.fillStyle = sg;
+        ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.fill();
+        // Star shape
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+          const a = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+          const r = i === 0 ? 12 : 12;
+          ctx[i === 0 ? 'moveTo' : 'lineTo'](Math.cos(a) * r, Math.sin(a) * r);
+          const a2 = a + (2 * Math.PI) / 10;
+          ctx.lineTo(Math.cos(a2) * 5, Math.sin(a2) * 5);
+        }
+        ctx.closePath(); ctx.fill();
+        // Highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.beginPath(); ctx.arc(-2, -3, 3, 0, Math.PI * 2); ctx.fill();
+      } else {
+        // Other collectibles — enhanced visibility
+        const emojis: Record<string, string> = { heart: '❤️', magnet: '🧲', shield: '🛡️', x2: '×2' };
+
+        if (c.type === 'x2') {
+          // x2 multiplier - bright background circle + bold text
+          ctx.fillStyle = 'rgba(168,85,247,0.95)';
+          ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
+          // White border
+          ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          // Outer glow
+          ctx.shadowColor = '#a855f7';
+          ctx.shadowBlur = 20;
+          ctx.fillStyle = 'rgba(168,85,247,0.4)';
+          ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
+          // Bold white text
+          ctx.font = 'bold 22px sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('×2', 0, 0);
+        } else if (c.type === 'magnet') {
+          // Magnet - bright background + larger emoji
+          ctx.fillStyle = 'rgba(239,68,68,0.9)';
+          ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
+          // White border
+          ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+          // Outer glow
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 18;
+          ctx.fillStyle = 'rgba(239,68,68,0.35)';
+          ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
+          // Larger emoji
+          ctx.font = '28px serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('🧲', 0, 0);
+        } else if (c.type === 'shield') {
+          // Shield - bright blue background
+          ctx.fillStyle = 'rgba(59,130,246,0.9)';
+          ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+          ctx.shadowColor = '#3b82f6';
+          ctx.shadowBlur = 18;
+          ctx.fillStyle = 'rgba(59,130,246,0.35)';
+          ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.font = '28px serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('🛡️', 0, 0);
+        } else {
+          // Heart - bright red background
+          ctx.fillStyle = 'rgba(239,68,68,0.9)';
+          ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 18;
+          ctx.fillStyle = 'rgba(239,68,68,0.35)';
+          ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.font = '28px serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(emojis[c.type] || '?', 0, 0);
+        }
       }
+      ctx.restore();
     }
 
-    /* Player */
+
+    /* ── 8. PLAYER — Squash & Stretch, dynamic shadow ── */
     const p = playerRef.current;
     const py = p.y - p.h;
-    /* Shadow on ground */
-    const shadowScale = Math.max(0.3, 1 - (GROUND_Y - p.y) / 150);
-    ctx.fillStyle = `rgba(0,0,0,${0.15 * shadowScale})`;
-    ctx.beginPath(); ctx.ellipse(p.x + p.w / 2, GROUND_Y + 2, 18 * shadowScale, 5 * shadowScale, 0, 0, Math.PI * 2); ctx.fill();
+    const ch = charRef.current;
 
-    /* Shield effect */
-    if (shieldRef.current) {
-      ctx.strokeStyle = 'rgba(59,130,246,0.5)';
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(p.x + p.w / 2, py + p.h / 2, 32, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = 'rgba(59,130,246,0.08)';
-      ctx.beginPath(); ctx.arc(p.x + p.w / 2, py + p.h / 2, 32, 0, Math.PI * 2); ctx.fill();
-    }
-
-    /* Magnet effect */
-    if (magnetRef.current) {
-      ctx.strokeStyle = 'rgba(239,68,68,0.3)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath(); ctx.arc(p.x + p.w / 2, py + p.h / 2, 80, 0, Math.PI * 2); ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    /* Character body */
-    const bodyGrad = ctx.createLinearGradient(p.x, py, p.x + p.w, py + p.h);
-    bodyGrad.addColorStop(0, character.color);
-    bodyGrad.addColorStop(1, character.accent);
-    ctx.fillStyle = bodyGrad;
-
-    /* Squash & stretch */
-    const squash = p.grounded ? 1 : (p.vy < 0 ? 0.85 : 1.15);
-    const stretch = p.grounded ? 1 : (p.vy < 0 ? 1.15 : 0.85);
-    ctx.save();
-    ctx.translate(p.x + p.w / 2, py + p.h);
-    ctx.scale(squash, stretch);
-
-    /* Body */
-    const bw = p.w * 0.8, bh = p.h * 0.7;
+    // Dynamic ground shadow — scales with height
+    const heightAboveGround = GROUND_Y - p.y;
+    const shadowScale = Math.max(0.3, 1 - Math.abs(heightAboveGround) / 120);
+    ctx.fillStyle = `rgba(0,0,0,${0.2 * shadowScale})`;
     ctx.beginPath();
-    ctx.roundRect(-bw / 2, -p.h, bw, bh, 12);
+    ctx.ellipse(p.x + p.w / 2, GROUND_Y + 3, 20 * shadowScale, 5 * shadowScale, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    /* Eyes */
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.ellipse(-6, -p.h + 18, 5, 6, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(6, -p.h + 18, 5, 6, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath(); ctx.ellipse(-4, -p.h + 19, 2.5, 3, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(8, -p.h + 19, 2.5, 3, 0, 0, Math.PI * 2); ctx.fill();
-
-    /* Mouth */
-    ctx.strokeStyle = '#1e293b';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(1, -p.h + 28, 4, 0, Math.PI); ctx.stroke();
-
-    /* Legs - running animation */
-    ctx.fillStyle = character.accent;
-    if (p.grounded) {
-      const legAnim = Math.sin(frameRef.current * 0.3) * 12;
-      ctx.save(); ctx.translate(-8, -8); ctx.rotate((legAnim * Math.PI) / 180);
-      ctx.fillRect(-3, 0, 6, 14); ctx.restore();
-      ctx.save(); ctx.translate(8, -8); ctx.rotate((-legAnim * Math.PI) / 180);
-      ctx.fillRect(-3, 0, 6, 14); ctx.restore();
-    } else {
-      /* Tucked legs in air */
-      ctx.fillRect(-10, -12, 6, 10);
-      ctx.fillRect(4, -12, 6, 10);
+    // Shield visual
+    if (shieldRef.current) {
+      const shieldPulse = 1 + Math.sin(f * 0.08) * 0.05;
+      ctx.save();
+      ctx.translate(p.x + p.w / 2, py + p.h / 2);
+      ctx.scale(shieldPulse, shieldPulse);
+      ctx.strokeStyle = 'rgba(59,130,246,0.5)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(0, 0, 34, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(59,130,246,0.06)';
+      ctx.beginPath(); ctx.arc(0, 0, 34, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
     }
 
-    /* Invincible flash */
-    if (invincibleRef.current && frameRef.current % 6 < 3) {
-      ctx.fillStyle = 'rgba(255,255,255,0.4)';
-      ctx.beginPath(); ctx.roundRect(-bw / 2, -p.h, bw, bh, 12); ctx.fill();
+    // Magnet range indicator
+    if (magnetRef.current) {
+      ctx.save();
+      ctx.strokeStyle = `rgba(239,68,68,${0.15 + Math.sin(f * 0.05) * 0.08})`;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath(); ctx.arc(p.x + p.w / 2, py + p.h / 2, 90, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    // Character body with squash & stretch
+    ctx.save();
+    ctx.translate(p.x + p.w / 2, p.y);
+
+    // Squash & stretch calculation
+    let sq = 1, st = 1;
+    if (!p.grounded) {
+      if (p.vy < -2) { sq = 0.82; st = 1.18; }       // stretching up
+      else if (p.vy > 2) { sq = 1.15; st = 0.88; }    // squashing down
+    }
+    if (p.landTimer > 0) {
+      const lt = p.landTimer / 8;
+      sq = 1 + lt * 0.3;
+      st = 1 - lt * 0.2;
+    }
+    ctx.scale(sq, st);
+
+    const bw = p.w * 0.78, bh = p.h * 0.68;
+
+    // Ears / Features based on character
+    ctx.fillStyle = character.color;
+    if (character.id === 'bunny') {
+      // Long bunny ears
+      ctx.save();
+      ctx.translate(0, -p.h);
+      ctx.rotate(Math.sin(f * 0.1) * 0.05); // subtle ear wiggle
+      ctx.beginPath(); ctx.roundRect(-bw / 2 + 2, -18, 9, 22, 5); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(bw / 2 - 11, -18, 9, 22, 5); ctx.fill();
+      // Inner ears
+      ctx.fillStyle = character.bodyH;
+      ctx.beginPath(); ctx.roundRect(-bw / 2 + 4.5, -15, 4, 16, 2); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(bw / 2 - 8.5, -15, 4, 16, 2); ctx.fill();
+      ctx.restore();
+    } else if (character.id === 'fox') {
+      // Sharp fox ears
+      ctx.beginPath();
+      ctx.moveTo(-bw / 2, -p.h + 8);
+      ctx.lineTo(-bw / 2 - 5, -p.h - 10);
+      ctx.lineTo(-bw / 2 + 12, -p.h);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(bw / 2, -p.h + 8);
+      ctx.lineTo(bw / 2 + 5, -p.h - 10);
+      ctx.lineTo(bw / 2 - 12, -p.h);
+      ctx.closePath(); ctx.fill();
+      // Inner ear
+      ctx.fillStyle = character.accent;
+      ctx.beginPath();
+      ctx.moveTo(-bw / 2 + 2, -p.h + 4); ctx.lineTo(-bw / 2 - 1, -p.h - 3); ctx.lineTo(-bw / 2 + 8, -p.h);
+      ctx.closePath(); ctx.fill();
+    } else if (character.id === 'cat') {
+      // Cat ears
+      ctx.beginPath();
+      ctx.moveTo(-bw / 2 + 2, -p.h + 4);
+      ctx.lineTo(-bw / 2 - 2, -p.h - 6);
+      ctx.lineTo(-bw / 2 + 14, -p.h);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(bw / 2 - 2, -p.h + 4);
+      ctx.lineTo(bw / 2 + 2, -p.h - 6);
+      ctx.lineTo(bw / 2 - 14, -p.h);
+      ctx.closePath(); ctx.fill();
+    } else if (character.id === 'panda') {
+      // Round black ears
+      ctx.fillStyle = character.accent;
+      ctx.beginPath(); ctx.arc(-bw / 2 + 6, -p.h + 4, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(bw / 2 - 6, -p.h + 4, 8, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Body
+    const bodyG = ctx.createLinearGradient(-bw / 2, -p.h, bw / 2, -p.h + bh);
+    bodyG.addColorStop(0, character.bodyH);
+    bodyG.addColorStop(0.3, character.color);
+    bodyG.addColorStop(1, character.accent);
+    ctx.fillStyle = bodyG;
+    ctx.beginPath(); ctx.roundRect(-bw / 2, -p.h, bw, bh, 14); ctx.fill();
+
+    // Body highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.beginPath(); ctx.ellipse(-4, -p.h + 12, 8, 12, -0.2, 0, Math.PI * 2); ctx.fill();
+
+    // Eyes
+    const blinkPhase = f % 180 < 5;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.ellipse(-7, -p.h + 20, 5.5, blinkPhase ? 1 : 6.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(7, -p.h + 20, 5.5, blinkPhase ? 1 : 6.5, 0, 0, Math.PI * 2); ctx.fill();
+    if (!blinkPhase) {
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath(); ctx.ellipse(-5, -p.h + 21, 2.8, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(9, -p.h + 21, 2.8, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+      // Eye shine
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(-4, -p.h + 19, 1.2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(10, -p.h + 19, 1.2, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Nose
+    ctx.fillStyle = character.accent;
+    ctx.beginPath(); ctx.ellipse(1, -p.h + 30, 3, 2.2, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Mouth
+    ctx.strokeStyle = character.accent;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(1, -p.h + 33, 3.5, 0.1, Math.PI - 0.1); ctx.stroke();
+
+
+    // Legs — running animation
+    ctx.fillStyle = character.accent;
+    if (p.grounded) {
+      const legA = Math.sin(f * 0.28) * 18;
+      // Left leg
+      ctx.save(); ctx.translate(-9, -10); ctx.rotate((legA * Math.PI) / 180);
+      ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 16, 3); ctx.fill(); ctx.restore();
+      // Right leg
+      ctx.save(); ctx.translate(9, -10); ctx.rotate((-legA * Math.PI) / 180);
+      ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 16, 3); ctx.fill(); ctx.restore();
+    } else {
+      // Tucked in air
+      ctx.beginPath(); ctx.roundRect(-12, -14, 7, 12, 3); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(5, -14, 7, 12, 3); ctx.fill();
+    }
+
+    // Invincible flash
+    if (invincibleRef.current && f % 6 < 3) {
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath(); ctx.roundRect(-bw / 2, -p.h, bw, bh, 14); ctx.fill();
     }
 
     ctx.restore();
 
-    /* Character emoji on top */
-    ctx.font = '20px serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(character.emoji, p.x + p.w / 2, py - 4);
-
-    /* Particles */
+    /* ── 9. PARTICLES ── */
     for (const pt of particlesRef.current) {
       const alpha = pt.life / pt.maxLife;
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = pt.color;
-      ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size * alpha, 0, Math.PI * 2); ctx.fill();
+      if (pt.type === 'collect') {
+        // Sparkle particles for collection
+        ctx.fillStyle = pt.color;
+        const sparkSize = pt.size * alpha;
+        ctx.save();
+        ctx.translate(pt.x, pt.y);
+        ctx.rotate(pt.life * 0.2);
+        ctx.fillRect(-sparkSize / 2, -sparkSize / 2, sparkSize, sparkSize);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = pt.color;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size * alpha, 0, Math.PI * 2); ctx.fill();
+      }
     }
     ctx.globalAlpha = 1;
 
-    /* Speed lines when fast */
+    /* ── 10. SPEED LINES at high speed ── */
     if (speedRef.current > 8) {
-      ctx.strokeStyle = `rgba(255,255,255,${(speedRef.current - 8) * 0.04})`;
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 5; i++) {
-        const ly = 60 + i * 40 + Math.sin(frameRef.current * 0.1 + i) * 20;
-        const lx = (frameRef.current * 3 + i * 150) % (W + 100) - 50;
-        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - 30 - speedRef.current * 2, ly); ctx.stroke();
+      const intensity = (speedRef.current - 8) * 0.05;
+      ctx.strokeStyle = `rgba(255,255,255,${intensity})`;
+      ctx.lineWidth = 0.8;
+      for (let i = 0; i < 6; i++) {
+        const ly = 50 + i * 38 + Math.sin(f * 0.08 + i * 1.5) * 25;
+        const lx = (f * 4 + i * 140) % (W + 80) - 40;
+        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - 25 - speedRef.current * 2.5, ly); ctx.stroke();
       }
     }
 
-    /* Invincible overlay */
-    if (invincibleRef.current) {
-      ctx.fillStyle = 'rgba(251,191,36,0.03)';
-      ctx.fillRect(0, 0, W, H);
-    }
-  }, [character, spawnParticles]);
+    /* ── 11. VIGNETTE overlay ── */
+    const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, W * 0.7);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(0,0,0,0.15)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, W, H);
+
+  }, []);
 
 
-  /* ─── Game Loop ─── */
+  /* ═══════════════════════════════════════════
+     GAME LOOP
+     ═══════════════════════════════════════════ */
   const gameLoop = useCallback(() => {
     if (phaseRef.current !== 'playing') return;
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
 
     frameRef.current++;
+    const f = frameRef.current;
     const spd = speedRef.current * diffRef.current.speedMul;
-    groundOffsetRef.current += spd;
+    groundOffRef.current += spd;
 
     /* Player physics */
     const p = playerRef.current;
@@ -415,81 +796,84 @@ const RunnerGame = () => {
       p.y += p.vy;
       if (p.y >= GROUND_Y) {
         p.y = GROUND_Y; p.vy = 0; p.grounded = true; p.jumps = 0;
-        spawnParticles(p.x + p.w / 2, GROUND_Y, 4, '#a3a3a3');
+        p.landTimer = 8; // squash on land
+        spawnP(p.x + p.w / 2, GROUND_Y, 5, '#a3a3a3', 'dust');
       }
     }
+    // Land timer decay
+    if (p.landTimer > 0) p.landTimer -= 1;
 
     /* Speed ramp */
     speedRef.current = Math.min(5 + scoreRef.current * 0.003, 14);
 
     /* Spawn obstacles */
-    const minGap = Math.max(180, 320 - speedRef.current * 12);
-    if (frameRef.current > 60 && Math.random() < diffRef.current.spawnRate) {
+    const minGap = Math.max(160, 300 - speedRef.current * 10);
+    if (f > 60 && Math.random() < diffRef.current.spawnRate) {
       const lastX = obstaclesRef.current.length > 0
-        ? Math.max(...obstaclesRef.current.map(o => o.x))
-        : 0;
-      if (lastX < CANVAS_W - minGap) {
+        ? Math.max(...obstaclesRef.current.map(o => o.x)) : 0;
+      if (lastX < CW - minGap) {
         const types: Obstacle['type'][] = ['rock', 'cactus', 'bird'];
         if (speedRef.current > 8) types.push('double');
         const type = types[Math.floor(Math.random() * types.length)];
-        const def = OBSTACLE_DEFS[type];
+        const def = OBS_DEFS[type];
         obstaclesRef.current.push({
-          id: idCounterRef.current++,
-          x: CANVAS_W + 20,
-          w: def.w, h: def.h,
-          type, lane: def.lane,
+          id: idRef.current++, x: CW + 20,
+          w: def.w, h: def.h, type, lane: def.lane,
         });
       }
     }
 
     /* Spawn collectibles */
     if (Math.random() < 0.02) {
-      const type = weightedRandom(COLLECTIBLE_DEFS);
-      const yBase = Math.random() > 0.4 ? GROUND_Y - 30 : GROUND_Y - 80;
+      const type = weightedRandom(COLLECT_DEFS);
+      const yBase = Math.random() > 0.4 ? GROUND_Y - 30 : GROUND_Y - 85;
       collectiblesRef.current.push({
-        id: idCounterRef.current++,
-        x: CANVAS_W + 20,
-        y: yBase,
-        type,
+        id: idRef.current++, x: CW + 20, y: yBase, type,
       });
     }
 
     /* Move obstacles */
     obstaclesRef.current = obstaclesRef.current
       .map(o => ({ ...o, x: o.x - spd }))
-      .filter(o => o.x > -60);
+      .filter(o => o.x > -70);
 
     /* Move collectibles + magnet pull */
     collectiblesRef.current = collectiblesRef.current
       .map(c => {
+        if (c.collected) return c;
         let nx = c.x - spd;
         let ny = c.y;
         if (magnetRef.current) {
           const dx = p.x - c.x, dy = (p.y - p.h / 2) - c.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120 && dist > 5) {
-            nx += (dx / dist) * 4;
-            ny += (dy / dist) * 4;
+          if (dist < 130 && dist > 5) {
+            nx += (dx / dist) * 5;
+            ny += (dy / dist) * 5;
           }
         }
         return { ...c, x: nx, y: ny };
       })
-      .filter(c => c.x > -30);
+      .filter(c => c.x > -40);
 
     /* Update particles */
     particlesRef.current = particlesRef.current
-      .map(pt => ({ ...pt, x: pt.x + pt.vx, y: pt.y + pt.vy, vy: pt.vy + 0.15, life: pt.life - 1 }))
+      .map(pt => ({ ...pt, x: pt.x + pt.vx, y: pt.y + pt.vy, vy: pt.vy + 0.12, life: pt.life - 1 }))
       .filter(pt => pt.life > 0);
 
+    /* Running dust particles */
+    if (p.grounded && f % 4 === 0) {
+      spawnP(p.x + p.w / 2 - 5 + Math.random() * 10, GROUND_Y - 2, 1, 'rgba(180,160,140,0.6)', 'dust');
+    }
+
     /* Collision: obstacles */
-    const px = p.x, py = p.y - p.h, pw = p.w, ph = p.h;
+    const px = p.x, py2 = p.y - p.h, pw = p.w, ph = p.h;
     for (let i = obstaclesRef.current.length - 1; i >= 0; i--) {
       const o = obstaclesRef.current[i];
-      const oy = o.lane === 'air' ? GROUND_Y - 90 : GROUND_Y - o.h;
-      if (rectsOverlap(px, py, pw, ph, o.x, oy, o.w, o.h)) {
+      const oy = o.lane === 'air' ? GROUND_Y - 100 : GROUND_Y - o.h;
+      if (boxHit(px, py2, pw, ph, o.x, oy, o.w, o.h)) {
         if (shieldRef.current) {
           setShowShield(false); shieldRef.current = false;
-          spawnParticles(o.x + o.w / 2, oy + o.h / 2, 8, '#3b82f6');
+          spawnP(o.x + o.w / 2, oy + o.h / 2, 10, '#3b82f6', 'collect');
           obstaclesRef.current.splice(i, 1);
           addFloat(o.x, oy, '🛡️ Blok!', '#3b82f6');
           playPopSound();
@@ -497,7 +881,7 @@ const RunnerGame = () => {
           livesRef.current--;
           setLives(livesRef.current);
           comboRef.current = 0; setCombo(0);
-          spawnParticles(p.x + p.w / 2, py + ph / 2, 12, '#ef4444');
+          spawnP(p.x + p.w / 2, py2 + ph / 2, 15, '#ef4444', 'impact');
           playErrorSound();
           obstaclesRef.current.splice(i, 1);
           if (livesRef.current <= 0) {
@@ -514,8 +898,11 @@ const RunnerGame = () => {
     /* Collision: collectibles */
     for (let i = collectiblesRef.current.length - 1; i >= 0; i--) {
       const c = collectiblesRef.current[i];
-      if (rectsOverlap(px, py, pw, ph, c.x - 4, c.y - 12, 28, 28, 0)) {
-        const def = COLLECTIBLE_DEFS[c.type];
+      if (c.collected) continue;
+      if (boxHit(px, py2, pw, ph, c.x - 4, c.y - 14, 30, 30, 0)) {
+        const def = COLLECT_DEFS[c.type];
+        // Mark collected — spawn collect particles
+        spawnP(c.x + 12, c.y, 10, c.type === 'coin' ? '#fbbf24' : c.type === 'star' ? '#fde68a' : '#60a5fa', 'collect');
         collectiblesRef.current.splice(i, 1);
 
         if (def.points > 0) {
@@ -528,83 +915,76 @@ const RunnerGame = () => {
           const total = pts + comboBonus;
           scoreRef.current += total;
           setScore(scoreRef.current);
-          addFloat(c.x, c.y - 10, `+${total}`, c.type === 'star' ? '#fbbf24' : '#22c55e');
-          spawnParticles(c.x + 12, c.y, 6, c.type === 'star' ? '#fbbf24' : '#22c55e');
+          addFloat(c.x, c.y - 15, `+${total}`, c.type === 'star' ? '#fbbf24' : '#22c55e');
           if (comboRef.current >= 5) playComboSound(comboRef.current); else playPopSound();
         } else {
           switch (c.type) {
             case 'heart':
-              if (livesRef.current < MAX_LIVES) {
-                livesRef.current++; setLives(livesRef.current);
-                addFloat(c.x, c.y - 10, '❤️ +1', '#ef4444');
-              }
+              if (livesRef.current < MAX_LIVES) { livesRef.current++; setLives(livesRef.current); }
+              addFloat(c.x, c.y - 15, '❤️ +1', '#ef4444');
               playSuccessSound(); break;
             case 'magnet':
               setShowMagnet(true); magnetRef.current = true;
-              addFloat(c.x, c.y - 10, '🧲 Mıknatıs!', '#ef4444');
+              addFloat(c.x, c.y - 15, '🧲 Mıknatıs!', '#ef4444');
               setTimeout(() => { setShowMagnet(false); magnetRef.current = false; }, 8000);
               playSuccessSound(); break;
             case 'shield':
               setShowShield(true); shieldRef.current = true;
-              addFloat(c.x, c.y - 10, '🛡️ Kalkan!', '#3b82f6');
+              addFloat(c.x, c.y - 15, '🛡️ Kalkan!', '#3b82f6');
               playSuccessSound(); break;
             case 'x2':
               setShowX2(true); x2Ref.current = true;
-              addFloat(c.x, c.y - 10, '✖️2 Çarpan!', '#a855f7');
+              addFloat(c.x, c.y - 15, '×2 Çarpan!', '#a855f7');
               setTimeout(() => { setShowX2(false); x2Ref.current = false; }, 10000);
               playSuccessSound(); break;
           }
-          spawnParticles(c.x + 12, c.y, 8, '#fbbf24');
         }
       }
     }
 
     /* Distance */
-    setDistance(Math.floor(groundOffsetRef.current / 10));
+    setDistance(Math.floor(groundOffRef.current / 10));
 
-    /* Draw */
-    drawFrame(ctx);
+    /* Draw everything */
+    draw(ctx);
     rafRef.current = requestAnimationFrame(gameLoop);
-  }, [drawFrame, spawnParticles, addFloat, maxCombo]);
+  }, [draw, spawnP, addFloat, maxCombo]);
 
 
-  /* ─── Controls ─── */
+  /* ═══════════════════════════════════════════
+     CONTROLS
+     ═══════════════════════════════════════════ */
   const jump = useCallback(() => {
     if (phaseRef.current !== 'playing') return;
     const p = playerRef.current;
     if (p.grounded) {
       p.vy = JUMP_FORCE; p.grounded = false; p.jumps = 1;
-      spawnParticles(p.x + p.w / 2, GROUND_Y, 5, '#a3a3a3');
+      spawnP(p.x + p.w / 2, GROUND_Y, 6, '#a3a3a3', 'dust');
       playPopSound();
-    } else if (p.jumps < 2 && canDoubleJump) {
+    } else if (p.jumps < 2) {
       p.vy = DOUBLE_JUMP_FORCE; p.jumps = 2;
-      spawnParticles(p.x + p.w / 2, p.y, 4, '#60a5fa');
+      spawnP(p.x + p.w / 2, p.y, 5, '#93c5fd', 'sparkle');
       playPopSound();
     }
-  }, [canDoubleJump, spawnParticles]);
+  }, [spawnP]);
 
   const startGame = useCallback(() => {
-    playerRef.current = { x: 80, y: GROUND_Y, vy: 0, w: 44, h: 52, grounded: true, jumps: 0 };
-    obstaclesRef.current = [];
-    collectiblesRef.current = [];
-    particlesRef.current = [];
-    speedRef.current = 5;
-    frameRef.current = 0;
-    groundOffsetRef.current = 0;
-    scoreRef.current = 0;
-    comboRef.current = 0;
-    livesRef.current = 3;
-    invincibleRef.current = false;
-    shieldRef.current = false;
-    magnetRef.current = false;
-    x2Ref.current = false;
+    // Sync character and difficulty refs immediately
+    charRef.current = character;
+    diffRef.current = DIFF_CONFIG[difficulty];
+
+    playerRef.current = { x: 90, y: GROUND_Y, vy: 0, w: 46, h: 54, grounded: true, jumps: 0, squash: 1, stretch: 1, landTimer: 0 };
+    obstaclesRef.current = []; collectiblesRef.current = []; particlesRef.current = [];
+    speedRef.current = 5; frameRef.current = 0; groundOffRef.current = 0;
+    scoreRef.current = 0; comboRef.current = 0; livesRef.current = 3;
+    invincibleRef.current = false; shieldRef.current = false; magnetRef.current = false; x2Ref.current = false;
     setScore(0); setDistance(0); setLives(3); setCombo(0); setMaxCombo(0);
     setShowShield(false); setShowMagnet(false); setShowX2(false);
     setIsNewRecord(false); setFloatingTexts([]);
     setPhase('playing');
-  }, []);
+  }, [character, difficulty]);
 
-  /* Start/stop game loop */
+  /* Start/stop loop */
   useEffect(() => {
     if (phase === 'playing') {
       rafRef.current = requestAnimationFrame(gameLoop);
@@ -612,7 +992,7 @@ const RunnerGame = () => {
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [phase, gameLoop]);
 
-  /* Game over handling */
+  /* Game over */
   useEffect(() => {
     if (phase !== 'gameover') return;
     const isNew = saveHighScoreObj('runner', scoreRef.current);
@@ -637,11 +1017,11 @@ const RunnerGame = () => {
   useEffect(() => {
     const resize = () => {
       if (!containerRef.current || !canvasRef.current) return;
-      const maxW = containerRef.current.clientWidth - 16;
-      const s = Math.min(maxW / CANVAS_W, 1);
+      const maxW = containerRef.current.clientWidth - 8;
+      const s = Math.min(maxW / CW, 1);
       scaleRef.current = s;
-      canvasRef.current.style.width = `${CANVAS_W * s}px`;
-      canvasRef.current.style.height = `${CANVAS_H * s}px`;
+      canvasRef.current.style.width = `${CW * s}px`;
+      canvasRef.current.style.height = `${CH * s}px`;
     };
     resize();
     window.addEventListener('resize', resize);
@@ -649,15 +1029,13 @@ const RunnerGame = () => {
   }, []);
 
 
-  /* ─── Menu Screen ─── */
+  /* ═══════════════════════════════════════════
+     MENU SCREEN
+     ═══════════════════════════════════════════ */
   if (phase === 'menu') {
     return (
       <motion.div className="flex flex-col items-center gap-5 p-4 pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="relative">
-          <motion.span className="text-6xl block" animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>
-            🏃
-          </motion.span>
-        </div>
+        <motion.span className="text-6xl block" animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>🏃</motion.span>
         <h2 className="text-3xl md:text-4xl font-black text-gradient">Koşucu</h2>
         <p className="text-muted-foreground font-medium text-center text-sm">Engelleri atla, güçleri topla, rekoru kır!</p>
 
@@ -672,10 +1050,13 @@ const RunnerGame = () => {
           <p className="text-sm font-bold text-center text-muted-foreground">Karakter Seç:</p>
           <div className="flex gap-3">
             {CHARACTERS.map((c) => (
-              <button key={c.id} onClick={() => { setCharacter(c); playPopSound(); }}
-                className={`p-3 rounded-2xl transition-all flex flex-col items-center gap-1 ${
-                  character.id === c.id ? 'ring-2 ring-primary scale-110 glass-card neon-border' : 'glass-card hover:scale-105'
-                }`}>
+              <button key={c.id} onClick={() => {
+                setCharacter(c);
+                charRef.current = c; // Immediately update ref
+                playPopSound();
+              }}
+                className={`p-3 rounded-2xl transition-all flex flex-col items-center gap-1 ${character.id === c.id ? 'ring-2 ring-primary scale-110 glass-card neon-border' : 'glass-card hover:scale-105'
+                  }`}>
                 <span className="text-3xl">{c.emoji}</span>
                 <span className="text-xs font-bold">{c.name}</span>
               </button>
@@ -687,10 +1068,12 @@ const RunnerGame = () => {
         <div className="flex flex-col gap-2 w-full max-w-xs">
           <p className="text-sm font-bold text-center text-muted-foreground">Zorluk:</p>
           {(Object.entries(DIFF_CONFIG) as [Difficulty, typeof DIFF_CONFIG['normal']][]).map(([key, val]) => (
-            <button key={key} onClick={() => setDifficulty(key)}
-              className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${
-                difficulty === key ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/5'
-              }`}>
+            <button key={key} onClick={() => {
+              setDifficulty(key);
+              diffRef.current = DIFF_CONFIG[key]; // Immediately update ref
+            }}
+              className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${difficulty === key ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/5'
+                }`}>
               {val.label}
             </button>
           ))}
@@ -700,11 +1083,11 @@ const RunnerGame = () => {
         <div className="flex flex-wrap gap-2 justify-center">
           {[
             { e: '🪙', l: '+10' }, { e: '⭐', l: '+50' }, { e: '❤️', l: 'Can' },
-            { e: '🧲', l: 'Çek' }, { e: '🛡️', l: 'Kalkan' }, { e: '✖️2', l: 'Çarpan' },
-          ].map((p) => (
-            <div key={p.e} className="glass-card border border-white/10 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
-              <span className="text-lg">{p.e}</span>
-              <span className="text-xs font-bold text-muted-foreground">{p.l}</span>
+            { e: '🧲', l: 'Çek' }, { e: '🛡️', l: 'Kalkan' }, { e: '×2', l: 'Çarpan' },
+          ].map((pw, i) => (
+            <div key={i} className="glass-card border border-white/10 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
+              <span className="text-lg">{pw.e}</span>
+              <span className="text-xs font-bold text-muted-foreground">{pw.l}</span>
             </div>
           ))}
         </div>
@@ -719,66 +1102,116 @@ const RunnerGame = () => {
     );
   }
 
-  /* ─── Playing + Game Over ─── */
+
+  /* ═══════════════════════════════════════════
+     PLAYING + GAME OVER — Glassmorphism UI
+     ═══════════════════════════════════════════ */
   return (
     <motion.div className="flex flex-col items-center gap-3 p-4 pb-32" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      {/* HUD */}
-      <div className="flex gap-2 items-center flex-wrap justify-center">
-        {/* Lives */}
-        <div className="glass-card border border-red-500/20 px-3 py-1.5 rounded-xl flex items-center gap-0.5">
-          {Array.from({ length: MAX_LIVES }).map((_, i) => (
-            <span key={i} className={`text-sm ${i < lives ? '' : 'opacity-20'}`}>❤️</span>
-          ))}
-        </div>
-        {/* Score */}
-        <div className="glass-card border border-primary/20 px-4 py-1.5 rounded-xl">
-          <span className="text-sm font-black text-primary">⭐ {score}</span>
-        </div>
-        {/* Distance */}
-        <div className="glass-card border border-white/10 px-3 py-1.5 rounded-xl">
-          <span className="text-sm font-bold text-muted-foreground">📏 {distance}m</span>
-        </div>
-        {/* Combo */}
-        {combo >= 3 && (
-          <motion.div key={combo} initial={{ scale: 0.5 }} animate={{ scale: 1 }}
-            className="glass-card border border-yellow-500/20 px-3 py-1.5 rounded-xl">
-            <span className="text-sm font-black text-yellow-400">🔥 x{combo}</span>
-          </motion.div>
-        )}
-        {/* Active power-ups */}
-        {showShield && <div className="glass-card border border-blue-500/20 px-2 py-1.5 rounded-xl"><span className="text-sm">🛡️</span></div>}
-        {showMagnet && <div className="glass-card border border-red-500/20 px-2 py-1.5 rounded-xl"><span className="text-sm">🧲</span></div>}
-        {showX2 && <div className="glass-card border border-purple-500/20 px-2 py-1.5 rounded-xl"><span className="text-sm">✖️2</span></div>}
-      </div>
 
-      {/* Canvas */}
-      <div ref={containerRef} className="w-full max-w-3xl relative" onClick={jump} style={{ touchAction: 'manipulation' }}>
+      {/* Canvas area */}
+      <div ref={containerRef} className="w-full max-w-4xl relative" onClick={jump} style={{ touchAction: 'manipulation' }}>
         <canvas
           ref={canvasRef}
-          width={CANVAS_W}
-          height={CANVAS_H}
-          className="rounded-2xl shadow-2xl border-2 border-white/10 cursor-pointer"
-          style={{ display: 'block', margin: '0 auto' }}
+          width={CW}
+          height={CH}
+          className="rounded-3xl shadow-2xl cursor-pointer block mx-auto"
+          style={{ border: '2px solid rgba(255,255,255,0.08)' }}
         />
+
+        {/* ── Glassmorphism HUD overlay — inside canvas area ── */}
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none" style={{ zIndex: 10 }}>
+          {/* Lives — glassmorphism */}
+          <div className="flex items-center gap-1 px-3 py-2 rounded-2xl"
+            style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            {Array.from({ length: MAX_LIVES }).map((_, i) => (
+              <motion.span key={i} className={`text-sm ${i < lives ? '' : 'opacity-20'}`}
+                animate={i === lives - 1 && lives <= 2 ? { scale: [1, 1.3, 1] } : {}}
+                transition={{ repeat: Infinity, duration: 0.5 }}>
+                ❤️
+              </motion.span>
+            ))}
+          </div>
+
+          {/* Score — glassmorphism */}
+          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl"
+            style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <span className="text-sm font-black text-amber-300" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>⭐ {score}</span>
+          </div>
+
+          {/* Distance — glassmorphism */}
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl"
+            style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <span className="text-sm font-bold text-white/80" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>📏 {distance}m</span>
+          </div>
+        </div>
+
+        {/* Active power-ups — bottom left glassmorphism */}
+        {(showShield || showMagnet || showX2 || combo >= 3) && (
+          <div className="absolute bottom-3 left-3 flex gap-2 pointer-events-none" style={{ zIndex: 10 }}>
+            {combo >= 3 && (
+              <motion.div key={combo} initial={{ scale: 0.5 }} animate={{ scale: 1 }}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-black text-yellow-300"
+                style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                🔥 x{combo}
+              </motion.div>
+            )}
+            {showShield && (
+              <div className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-blue-300"
+                style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                🛡️
+              </div>
+            )}
+            {showMagnet && (
+              <div className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-red-300"
+                style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                🧲
+              </div>
+            )}
+            {showX2 && (
+              <div className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-purple-300"
+                style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(168,85,247,0.2)' }}>
+                ×2
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Floating texts */}
         <AnimatePresence>
           {floatingTexts.map((ft) => (
             <motion.div key={ft.id}
-              className="absolute pointer-events-none font-black text-sm drop-shadow-lg"
-              style={{ left: ft.x * scaleRef.current, top: ft.y * scaleRef.current, color: ft.color }}
+              className="absolute pointer-events-none font-black text-sm"
+              style={{ left: ft.x * scaleRef.current, top: ft.y * scaleRef.current, color: ft.color, textShadow: '0 2px 6px rgba(0,0,0,0.4)' }}
               initial={{ opacity: 1, y: 0, scale: 0.5 }}
-              animate={{ opacity: 0, y: -40, scale: 1.2 }}
+              animate={{ opacity: 0, y: -45, scale: 1.3 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.8 }}
-            >
+              transition={{ duration: 0.85 }}>
               {ft.text}
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
 
-      {/* Game Over panel */}
+      {/* Mobile Jump Button */}
+      {phase === 'playing' && (
+        <motion.button
+          onClick={jump}
+          onTouchStart={(e) => { e.preventDefault(); jump(); }}
+          className="md:hidden fixed bottom-24 right-6 w-20 h-20 rounded-full flex items-center justify-center text-3xl font-black shadow-2xl z-50 touch-manipulation"
+          style={{
+            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+            boxShadow: '0 8px 32px rgba(59,130,246,0.4)',
+          }}
+          whileTap={{ scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0 }}>
+          ⬆️
+        </motion.button>
+      )}
+
+      {/* Game Over panel — outside canvas */}
       <AnimatePresence>
         {phase === 'gameover' && (
           <motion.div
@@ -786,8 +1219,7 @@ const RunnerGame = () => {
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.9 }}
-            transition={{ type: 'spring', damping: 20 }}
-          >
+            transition={{ type: 'spring', damping: 20 }}>
             <motion.p className="text-4xl md:text-5xl font-black text-gradient"
               initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 10, delay: 0.1 }}>
               Game Over!

@@ -14,15 +14,21 @@ const GamesMenu = lazy(() => import('@/components/games/GamesMenu'));
 const StoryTime = lazy(() => import('@/components/StoryTime'));
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [activeTab, setActiveTabRaw] = useState<Tab>('home');
+  const [isGameActive, setIsGameActive] = useState(false);
   const [, setPreferredGameId] = useLocalStorageState<string | null>("oyuncak.preferredGameId", null);
+
+  const setActiveTab = (tab: Tab) => {
+    setActiveTabRaw(tab);
+    setIsGameActive(false); // Reset when tab changes
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'draw':
         return <DrawingCanvas />;
       case 'games':
-        return <GamesMenu />;
+        return <GamesMenu onActiveGameChange={setIsGameActive} />;
       case 'story':
         return <StoryTime />;
       default:
@@ -58,9 +64,10 @@ const Index = () => {
           {renderContent()}
         </Suspense>
       </main>
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+      {!isGameActive && <Navigation activeTab={activeTab} onTabChange={setActiveTab} />}
     </div>
   );
 };
+
 
 export default Index;

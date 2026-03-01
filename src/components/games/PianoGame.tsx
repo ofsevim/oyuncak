@@ -200,26 +200,31 @@ const PianoGame = () => {
       )}
 
       {/* Piano */}
-      <div className="w-full max-w-xl px-2">
+      <div className="w-full px-2" style={{ maxWidth: '1536px' }}>
         <div className="glass-card p-2 md:p-4 rounded-2xl neon-border">
-          <div className="relative" style={{ height: 'clamp(140px, 25vw, 200px)' }}>
+          <div className="relative" style={{ height: 'clamp(220px, 35vw, 280px)' }}>
             {/* White keys */}
-            <div className="flex gap-[2px] h-full">
+            <div className="flex gap-1 h-full">
               {WHITE_NOTES.map(note => (
                 <motion.button key={note.note}
                   onClick={() => handleKeyClick(note.note)}
                   onTouchStart={(e) => { e.preventDefault(); handleKeyClick(note.note); }}
-                  className={`relative flex-1 rounded-b-xl transition-all touch-manipulation ${activeNotes.has(note.note) ? 'brightness-110' : ''}`}
+                  className={`relative rounded-b-xl transition-all touch-manipulation ${activeNotes.has(note.note) ? 'brightness-110 scale-[0.98]' : ''}`}
                   style={{
+                    minWidth: '80px',
+                    flex: '1 1 0',
                     background: activeNotes.has(note.note)
-                      ? `linear-gradient(180deg, ${COLORS[note.note]}40 0%, ${COLORS[note.note]} 100%)`
-                      : `linear-gradient(180deg, #f8f8f8 0%, #e0e0e0 100%)`,
-                    boxShadow: activeNotes.has(note.note) ? `0 0 20px ${COLORS[note.note]}60` : '0 4px 8px rgba(0,0,0,0.2)',
+                      ? `linear-gradient(180deg, ${COLORS[note.note]} 0%, ${COLORS[note.note]}dd 100%)`
+                      : `linear-gradient(180deg, ${COLORS[note.note]}50 0%, ${COLORS[note.note]}80 50%, ${COLORS[note.note]}cc 100%)`,
+                    boxShadow: activeNotes.has(note.note) 
+                      ? `0 0 30px ${COLORS[note.note]}, inset 0 -4px 12px ${COLORS[note.note]}60` 
+                      : `0 4px 8px rgba(0,0,0,0.3), inset 0 -3px 10px ${COLORS[note.note]}50`,
+                    border: `3px solid ${COLORS[note.note]}`,
                   }}
                   whileTap={{ scale: 0.97 }}>
                   <div className="absolute bottom-3 left-0 right-0 flex flex-col items-center">
-                    <span className={`font-black text-xs md:text-sm ${activeNotes.has(note.note) ? 'text-white' : 'text-gray-600'}`}>{note.label}</span>
-                    <span className="text-[8px] text-gray-400 hidden md:block">{note.key.toUpperCase()}</span>
+                    <span className={`font-black text-sm md:text-base drop-shadow-lg ${activeNotes.has(note.note) ? 'text-white' : 'text-white'}`}>{note.label}</span>
+                    <span className={`text-[9px] hidden md:block ${activeNotes.has(note.note) ? 'text-white/90' : 'text-white/70'}`}>{note.key.toUpperCase()}</span>
                   </div>
                 </motion.button>
               ))}
@@ -238,11 +243,14 @@ const PianoGame = () => {
                       left: `${leftPos}%`, width: `${whiteKeyWidth * 0.6}%`, height: '100%',
                       background: activeNotes.has(note.note)
                         ? `linear-gradient(180deg, ${COLORS[note.note]} 0%, ${COLORS[note.note]}cc 100%)`
-                        : 'linear-gradient(180deg, #333 0%, #111 100%)',
-                      boxShadow: activeNotes.has(note.note) ? `0 0 16px ${COLORS[note.note]}80` : '0 4px 6px rgba(0,0,0,0.4)',
+                        : `linear-gradient(180deg, ${COLORS[note.note]}aa 0%, ${COLORS[note.note]}dd 50%, ${COLORS[note.note]} 100%)`,
+                      boxShadow: activeNotes.has(note.note) 
+                        ? `0 0 25px ${COLORS[note.note]}, inset 0 -3px 10px ${COLORS[note.note]}80` 
+                        : `0 4px 8px rgba(0,0,0,0.5), inset 0 -2px 8px ${COLORS[note.note]}60`,
+                      border: `3px solid ${COLORS[note.note]}`,
                     }}
                     whileTap={{ scale: 0.95 }}>
-                    <span className="absolute bottom-1 left-0 right-0 text-center text-[8px] font-bold text-gray-400">{note.label}</span>
+                    <span className="absolute bottom-1 left-0 right-0 text-center text-[8px] font-bold text-white drop-shadow-lg">{note.label}</span>
                   </motion.button>
                 );
               })}

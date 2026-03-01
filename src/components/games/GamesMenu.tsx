@@ -1,15 +1,17 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Search, Brain, Hash, Palette, Wind, Piano, Puzzle, Calculator, Gamepad2, Rat, Shapes, ArrowLeft, Flame, Star, Zap } from 'lucide-react';
+import { Search, Brain, Hash, Palette, Wind, Piano, Calculator, Gamepad2, Rat, Shapes, ArrowLeft, Flame, Star, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import OddOneOutGame from './OddOneOutGame';
 import MemoryFlipGame from './MemoryFlipGame';
 import WhackAMoleGame from './WhackAMoleGame';
+import MarioGame from './MarioGame';
+import BattleCityGame from './BattleCityGame';
+
 import CountingGame from './CountingGame';
 import ColoringBookGame from './ColoringBookGame';
 import BalloonPopGame from './BalloonPopGame';
-import PuzzleGame from './PuzzleGame';
 import PianoGame from './PianoGame';
 import MathGame from './MathGame';
 import RunnerGame from './RunnerGame';
@@ -17,7 +19,8 @@ import TetrisGame from './TetrisGame';
 import SnakeGame from './SnakeGame';
 import Game2048 from './Game2048';
 
-type GameType = 'menu' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'puzzle' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048';
+type GameType = 'menu' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'mario' | 'battlecity';
+
 type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
 
 interface GameDef {
@@ -33,12 +36,15 @@ interface GameDef {
 
 const games: GameDef[] = [
   { id: 'balloons', title: 'Balon Patlat', emoji: '🎈', icon: Wind, gradient: 'from-cyan-500 to-blue-600', description: 'Doğru renkli balonları yakala!', category: ['action'], badge: 'Popüler' },
+  { id: 'mario', title: 'Süper Mario', emoji: '🍄', icon: Gamepad2, gradient: 'from-red-500 to-rose-600', description: 'Klasik efsane macera!', category: ['action'], badge: 'Efsane' },
+  { id: 'battlecity', title: 'Tank 1990', emoji: '🚜', icon: Gamepad2, gradient: 'from-slate-500 to-zinc-600', description: 'Atari salonlarının efsanesi!', category: ['action'], badge: 'Retro' },
   { id: 'whack', title: 'Köstebek Yakala', emoji: '🐹', icon: Rat, gradient: 'from-orange-500 to-amber-600', description: 'Hızlı ol, köstebekleri yakala!', category: ['action'], badge: 'Eğlenceli' },
+
   { id: 'runner', title: 'Koşucu', emoji: '🏃', icon: Gamepad2, gradient: 'from-emerald-500 to-green-600', description: 'Engelleri atla, yıldız topla!', category: ['action'] },
   { id: 'tetris', title: 'Tetris', emoji: '🧱', icon: Shapes, gradient: 'from-blue-500 to-indigo-600', description: 'Blokları yerleştir, puanları yakala!', category: ['action', 'brain'], badge: 'Klasik' },
   { id: 'oddone', title: 'Farklı Olanı Bul', emoji: '🔍', icon: Search, gradient: 'from-rose-500 to-pink-600', description: 'Gruba uymayan resmi bul!', category: ['brain'] },
   { id: 'memory', title: 'Hafıza Oyunu', emoji: '🃏', icon: Brain, gradient: 'from-violet-500 to-purple-600', description: 'Kartları çevir, eşleri bul!', category: ['brain'], badge: 'Beyin' },
-  { id: 'puzzle', title: 'Puzzle', emoji: '🧩', icon: Puzzle, gradient: 'from-teal-500 to-cyan-600', description: 'Resim parçalarını birleştir!', category: ['brain'] },
+
   { id: 'coloring', title: 'Boyama Kitabı', emoji: '🎨', icon: Palette, gradient: 'from-pink-500 to-rose-600', description: 'Resimleri dilediğince boya!', category: ['creative'] },
   { id: 'piano', title: 'Piyano', emoji: '🎹', icon: Piano, gradient: 'from-indigo-500 to-violet-600', description: 'Melodiler çal, müzik yap!', category: ['creative'] },
   { id: 'counting', title: 'Sayma Oyunu', emoji: '🔢', icon: Hash, gradient: 'from-purple-500 to-fuchsia-600', description: 'Nesneleri say, rakamı bul!', category: ['learn'] },
@@ -55,8 +61,17 @@ const categories = [
   { id: 'learn' as GameCategory, label: 'Öğren', icon: Zap },
 ];
 
-const GamesMenu = () => {
+interface GamesMenuProps {
+  onActiveGameChange?: (active: boolean) => void;
+}
+
+const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
+
+  useEffect(() => {
+    onActiveGameChange?.(activeGame !== 'menu');
+  }, [activeGame, onActiveGameChange]);
+
   const [activeCategory, setActiveCategory] = useState<GameCategory>('all');
   const [preferredGameId, setPreferredGameId] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -91,12 +106,14 @@ const GamesMenu = () => {
   const renderActiveGame = () => {
     switch (activeGame) {
       case 'oddone': return <OddOneOutGame />;
-      case 'memory': return <MemoryFlipGame />;
+      case 'memory': return <MemoryFlipGame onActiveGameChange={onActiveGameChange} />;
       case 'whack': return <WhackAMoleGame />;
+      case 'mario': return <MarioGame onActiveGameChange={onActiveGameChange} />;
+      case 'battlecity': return <BattleCityGame onActiveGameChange={onActiveGameChange} />;
+
       case 'counting': return <CountingGame />;
       case 'coloring': return <ColoringBookGame />;
       case 'balloons': return <BalloonPopGame />;
-      case 'puzzle': return <PuzzleGame />;
       case 'piano': return <PianoGame />;
       case 'math': return <MathGame />;
       case 'runner': return <RunnerGame />;
@@ -109,10 +126,10 @@ const GamesMenu = () => {
 
   if (activeGame !== 'menu') {
     return (
-      <div className="pb-32">
+      <div className="pb-32 w-full flex flex-col items-center">
         <motion.button
           onClick={() => setActiveGame('menu')}
-          className="mb-4 ml-4 mt-2 px-5 py-2.5 glass-card text-foreground rounded-xl font-semibold flex items-center gap-2 hover:bg-primary/[0.08] hover:border-primary/20 transition-all"
+          className="mb-4 ml-4 mt-2 px-5 py-2.5 glass-card text-foreground rounded-xl font-semibold flex items-center gap-2 hover:bg-primary/[0.08] hover:border-primary/20 transition-all self-start"
           whileHover={{ x: -4 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -157,11 +174,10 @@ const GamesMenu = () => {
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                isActive
-                  ? 'text-primary-foreground'
-                  : 'glass-card text-muted-foreground hover:text-foreground hover:bg-white/[0.04]'
-              }`}
+              className={`relative flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${isActive
+                ? 'text-primary-foreground'
+                : 'glass-card text-muted-foreground hover:text-foreground hover:bg-white/[0.04]'
+                }`}
             >
               {isActive && (
                 <motion.div

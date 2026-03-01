@@ -239,7 +239,7 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { emoji: "⚡", title: "Aksiyon", desc: "Balon, Koşucu, Köstebek", color: "from-orange-500/20 to-red-500/10", border: "hover:border-orange-400/30" },
-            { emoji: "🧠", title: "Zeka", desc: "Hafıza, Puzzle, 2048", color: "from-violet-500/20 to-purple-500/10", border: "hover:border-violet-400/30" },
+            { emoji: "🧠", title: "Zeka", desc: "Hafıza, 2048, Tetris", color: "from-violet-500/20 to-purple-500/10", border: "hover:border-violet-400/30" },
             { emoji: "🎨", title: "Yaratıcı", desc: "Boyama, Piyano, Çizim", color: "from-pink-500/20 to-rose-500/10", border: "hover:border-pink-400/30" },
             { emoji: "📖", title: "Öğren", desc: "Harf, Sayma, Matematik", color: "from-emerald-500/20 to-teal-500/10", border: "hover:border-emerald-400/30" },
           ].map((cat) => (
