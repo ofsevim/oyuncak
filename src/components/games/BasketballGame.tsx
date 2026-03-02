@@ -15,8 +15,19 @@ const BALLS_PER_ROUND = 5;
 const HOOP_X = 155;
 const HOOP_Y = 180;
 const RIM_W = 36;          // half-width of actual rim opening
-const BALL_START_X = 590;
-const BALL_START_Y = 355;
+
+/* Perspektif-farkında zemin Y: sol (hoop) = CH*0.62, sağ (oyuncu) = CH*0.985 */
+const perspFloorY = (bx: number) => CH * 0.62 + (bx / CW) * CH * 0.365;
+
+interface ShotPos { x: number; y: number; label: string; pts: number; stars: number }
+const SHOT_POSITIONS: ShotPos[] = [
+    { x: 560, y: 374, label: 'Yakın', pts: 2, stars: 1 },
+    { x: 640, y: 390, label: 'Orta', pts: 2, stars: 2 },
+    { x: 720, y: 407, label: '3 Sayılık', pts: 3, stars: 3 },
+    { x: 480, y: 358, label: 'Serbest Atış', pts: 1, stars: 1 },
+    { x: 600, y: 380, label: 'Uzun Atış', pts: 2, stars: 2 },
+];
+
 const MAX_DRAG = 150;      // pixels of drag = full power
 const MAX_SPEED = 22;      // max launch speed
 
@@ -198,8 +209,8 @@ const BasketballGame = () => {
     const scaleRef = useRef(1);
 
     const phaseRef = useRef<Phase>('aim');
-    const ballX = useRef(BALL_START_X);
-    const ballY = useRef(BALL_START_Y);
+    const ballX = useRef(SHOT_POSITIONS[0].x);
+    const ballY = useRef(SHOT_POSITIONS[0].y);
     const ballVX = useRef(0);
     const ballVY = useRef(0);
     const spinRef = useRef(0);
@@ -217,7 +228,8 @@ const BasketballGame = () => {
     const netStretchRef = useRef(0);
     const flashRef = useRef(0);
     const scoredFramesRef = useRef(0);
-    const prevBallY = useRef(BALL_START_Y);
+    const prevBallY = useRef(SHOT_POSITIONS[0].y);
+    const currentPosRef = useRef<ShotPos>(SHOT_POSITIONS[0]);
 
     const [phase, setPhase] = useState<Phase>('aim');
     const [score, setScore] = useState(0);
@@ -234,8 +246,11 @@ const BasketballGame = () => {
     }, []);
 
     const resetBall = useCallback(() => {
-        ballX.current = BALL_START_X;
-        ballY.current = BALL_START_Y;
+        const pos = SHOT_POSITIONS[Math.floor(Math.random() * SHOT_POSITIONS.length)];
+        currentPosRef.current = pos;
+        ballX.current = pos.x;
+        ballY.current = pos.y;
+        prevBallY.current = pos.y;
         ballVX.current = 0; ballVY.current = 0;
         spinRef.current = 0; trailRef.current = [];
         dragging.current = false;
@@ -257,7 +272,8 @@ const BasketballGame = () => {
             if (dx < RIM_W - BALL_R * 0.5) {
                 const nc = comboRef.current + 1;
                 comboRef.current = nc;
-                const pts = 2 + (nc > 2 ? nc - 2 : 0);
+                const basePts = currentPosRef.current.pts;
+                const pts = basePts + (nc > 2 ? nc - 2 : 0);
                 scoreRef.current += pts;
                 setScore(scoreRef.current);
                 setCombo(nc);
@@ -306,6 +322,19 @@ const BasketballGame = () => {
             ballY.current += ballVY.current;
             spinRef.current += ballVX.current * 0.045;
 
+            // ── Perspektif-farkında zemin sekme fiziği ──
+            if (ph === 'fly') {
+                const FLOOR_Y = perspFloorY(ballX.current);
+                if (ballY.current + BALL_R >= FLOOR_Y && ballVY.current > 0) {
+                    ballY.current = FLOOR_Y - BALL_R;
+                    ballVY.current = -ballVY.current * 0.58;  // güçlü sıçrama
+                    ballVX.current *= 0.78;                    // zemin sürtünmesi
+                    spinRef.current *= 0.65;
+                    if (Math.abs(ballVY.current) < 2.0) ballVY.current = 0; // minik sıçramaları durdur
+                    playPopSound();
+                }
+            }
+
             // Backboard collision
             const hitBoardX = HOOP_X - 50;
             const boardTop = HOOP_Y - 110;
@@ -316,7 +345,7 @@ const BasketballGame = () => {
                     if (ballVX.current < 0) {
                         ballX.current = hitBoardX + BALL_R;
                         ballVX.current = -ballVX.current * 0.55;
-                        playPopSound(); // Thud sound
+                        playPopSound();
                     }
                 }
             }
@@ -342,7 +371,14 @@ const BasketballGame = () => {
                 bounceRim(HOOP_X + RIM_W, HOOP_Y);
 
                 const hit = checkHoop();
-                if (!hit && (ballY.current > CH + 40 || ballX.current < -40 || ballX.current > CW + 40)) {
+                // Miss: ekran dışı VEYA zeminde durdu (artık sekmiyor)
+                const stoppedOnFloor = ballVY.current === 0 && Math.abs(ballVX.current) < 0.5;
+                if (!hit && (
+                    ballX.current < -BALL_R * 2 ||
+                    ballX.current > CW + BALL_R * 2 ||
+                    ballY.current > CH + 40 ||
+                    stoppedOnFloor
+                )) {
                     comboRef.current = 0; setCombo(0);
                     playErrorSound();
                     phaseRef.current = 'missed'; setPhase('missed');
@@ -363,7 +399,7 @@ const BasketballGame = () => {
                 ballVY.current *= 0.82;
             }
         } else if (ph === 'aim') {
-            ballY.current = BALL_START_Y + Math.sin(tick * 0.05) * 2.5;
+            ballY.current = currentPosRef.current.y + Math.sin(tick * 0.05) * 2.5;
             prevBallY.current = ballY.current;
         }
 
@@ -402,13 +438,20 @@ const BasketballGame = () => {
                 const ndx = rdx / dist, ndy = rdy / dist;
                 const spd = power * MAX_SPEED;
 
-                // ── Trajectory dots (individual circles, not a single path) ──
-                let px = BALL_START_X, py = BALL_START_Y;
+                // ── Trajectory dots (perspektif zemin bounce simulasyonu ile) ──
+                let px = currentPosRef.current.x, py = currentPosRef.current.y;
                 let pvx = ndx * spd, pvy = ndy * spd;
-                for (let i = 1; i <= 50; i++) {
+                for (let i = 1; i <= 60; i++) {
                     pvy += GRAVITY;
                     px += pvx; py += pvy;
-                    if (px < 0 || py > CH + 20 || px > CW) break;
+                    // Zemin bounce (preview'da da görünsün)
+                    const FLOOR = perspFloorY(px);
+                    if (py + BALL_R >= FLOOR && pvy > 0) {
+                        py = FLOOR - BALL_R;
+                        pvy = -pvy * 0.58;
+                        pvx *= 0.78;
+                    }
+                    if (px < 0 || py > CH + 40 || px > CW) break;
 
                     // Draw every 3rd step for dotted effect
                     if (i % 3 !== 0) continue;
@@ -440,15 +483,24 @@ const BasketballGame = () => {
                 ctx.lineTo(ds.x + ndx * 30 * power, ds.y + ndy * 30 * power);
                 ctx.stroke();
 
-                ctx.restore();
-
-                // Power bar
-                const bW = 56, bX = BALL_START_X - bW / 2, bY = BALL_START_Y + 34;
+                // Power bar (konumu currentPos'tan al)
+                const cpx = currentPosRef.current.x, cpy = currentPosRef.current.y;
+                const bW = 56, bX = cpx - bW / 2, bY = cpy + 34;
                 ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.roundRect(bX, bY, bW, 7, 3); ctx.fill();
                 const col = power < 0.5 ? '#4CD964' : power < 0.8 ? '#FFE234' : '#FF5F6D';
                 ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(bX, bY, bW * power, 7, 3); ctx.fill();
                 ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1;
                 ctx.beginPath(); ctx.roundRect(bX, bY, bW, 7, 3); ctx.stroke();
+
+                // Pozisyon etiketi + yıldız zorluk
+                const pos = currentPosRef.current;
+                const stars = '⭐'.repeat(pos.stars);
+                ctx.font = 'bold 13px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = 'rgba(0,0,0,0.55)';
+                ctx.fillText(`${pos.label} ${stars} +${pos.pts}`, cpx, cpy - 32);
+                ctx.fillStyle = '#FFE234';
+                ctx.fillText(`${pos.label} ${stars} +${pos.pts}`, cpx, cpy - 33);
             }
         }
 
@@ -502,16 +554,16 @@ const BasketballGame = () => {
     }, []);
 
     /* ── Pointer helpers ── */
-    const toCanvas = (e: React.MouseEvent | React.TouchEvent) => {
+    const toCanvas = (e: React.PointerEvent) => {
         const canvas = canvasRef.current; if (!canvas) return { x: 0, y: 0 };
         const rect = canvas.getBoundingClientRect();
         const s = scaleRef.current;
-        const cx = 'touches' in e ? e.touches[0]?.clientX ?? 0 : e.clientX;
-        const cy = 'touches' in e ? e.touches[0]?.clientY ?? 0 : e.clientY;
+        const cx = e.clientX;
+        const cy = e.clientY;
         return { x: (cx - rect.left) / s, y: (cy - rect.top) / s };
     };
 
-    const onDown = (e: React.MouseEvent | React.TouchEvent) => {
+    const onDown = (e: React.PointerEvent) => {
         if (phaseRef.current !== 'aim') return;
         e.preventDefault();
         const pos = toCanvas(e);
@@ -520,13 +572,13 @@ const BasketballGame = () => {
         playPopSound();
     };
 
-    const onMove = (e: React.MouseEvent | React.TouchEvent) => {
+    const onMove = (e: React.PointerEvent) => {
         if (!dragging.current) return;
         e.preventDefault();
         dragCur.current = toCanvas(e);
     };
 
-    const onUp = (e: React.MouseEvent | React.TouchEvent) => {
+    const onUp = (e: React.PointerEvent) => {
         if (!dragging.current || phaseRef.current !== 'aim') return;
         e.preventDefault();
         const ds = dragStart.current, dc = dragCur.current;
@@ -571,8 +623,7 @@ const BasketballGame = () => {
 
             {/* Canvas */}
             <div ref={containerRef} className="relative w-full select-none" style={{ touchAction: 'none' }}
-                onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
-                onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}>
+                onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}>
                 <canvas ref={canvasRef} width={CW} height={CH}
                     className="block rounded-2xl"
                     style={{ cursor: phase === 'aim' ? 'crosshair' : 'default', boxShadow: '0 8px 32px hsl(224 28% 3% / 0.5)' }} />

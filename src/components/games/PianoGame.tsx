@@ -371,19 +371,19 @@ const PianoGame = () => {
       )}
 
       {/* Piano */}
-      <div className="w-full px-2" style={{ maxWidth: '1536px' }}>
+      <div className="w-full px-2">
         <div className="glass-card p-2 md:p-4 rounded-2xl neon-border">
-          <div className="relative" style={{ height: 'clamp(220px, 35vw, 280px)' }}>
+          <div className="relative" style={{ height: 'clamp(180px, 25vw, 240px)', touchAction: 'none' }}>
             {/* White keys */}
-            <div className="flex gap-1 h-full">
+            <div className="flex gap-0.5 md:gap-1 h-full">
               {WHITE_NOTES.map(note => (
                 <motion.button key={note.note}
                   onClick={() => handleKeyClick(note.note)}
-                  onTouchStart={(e) => { e.preventDefault(); handleKeyClick(note.note); }}
-                  className={`relative rounded-b-xl transition-all touch-manipulation ${activeNotes.has(note.note) ? 'brightness-110 scale-[0.98]' : ''}`}
+                  onPointerDown={(e) => { e.preventDefault(); handleKeyClick(note.note); }}
+                  className={`relative rounded-b-xl transition-all touch-manipulation select-none flex-1 ${activeNotes.has(note.note) ? 'brightness-110 scale-[0.98]' : ''}`}
                   style={{
-                    minWidth: '80px',
-                    flex: '1 1 0',
+                    minWidth: '0',
+                    touchAction: 'none',
                     background: activeNotes.has(note.note)
                       ? `linear-gradient(180deg, ${COLORS[note.note]} 0%, ${COLORS[note.note]}dd 100%)`
                       : `linear-gradient(180deg, ${COLORS[note.note]}50 0%, ${COLORS[note.note]}80 50%, ${COLORS[note.note]}cc 100%)`,
@@ -393,35 +393,39 @@ const PianoGame = () => {
                     border: `3px solid ${COLORS[note.note]}`,
                   }}
                   whileTap={{ scale: 0.97 }}>
-                  <div className="absolute bottom-3 left-0 right-0 flex flex-col items-center">
-                    <span className={`font-black text-sm md:text-base drop-shadow-lg ${activeNotes.has(note.note) ? 'text-white' : 'text-white'}`}>{note.label}</span>
-                    <span className={`text-[9px] hidden md:block ${activeNotes.has(note.note) ? 'text-white/90' : 'text-white/70'}`}>{note.key.toUpperCase()}</span>
+                  <div className="absolute bottom-2 md:bottom-3 left-0 right-0 flex flex-col items-center pointer-events-none">
+                    <span className={`font-black text-xs md:text-sm drop-shadow-lg text-white`}>{note.label}</span>
+                    <span className={`text-[7px] hidden sm:block text-white/70`}>{note.key.toUpperCase()}</span>
                   </div>
                 </motion.button>
               ))}
             </div>
             {/* Black keys */}
-            <div className="absolute top-0 left-0 right-0 h-[60%] pointer-events-none">
+            <div className="absolute top-0 left-0 right-0 h-[58%] pointer-events-none">
               {BLACK_NOTES.map(note => {
-                const whiteKeyWidth = 100 / WHITE_NOTES.length;
-                const leftPos = (note.position + 1) * whiteKeyWidth - whiteKeyWidth * 0.3;
+                const whiteKeyCount = WHITE_NOTES.length;
+                const whiteKeyWidthPercent = 100 / whiteKeyCount;
+                const leftPos = (note.position + 1) * whiteKeyWidthPercent - whiteKeyWidthPercent * 0.32;
                 return (
                   <motion.button key={note.note}
                     onClick={() => handleKeyClick(note.note)}
-                    onTouchStart={(e) => { e.preventDefault(); handleKeyClick(note.note); }}
-                    className="absolute pointer-events-auto rounded-b-lg touch-manipulation z-10"
+                    onPointerDown={(e) => { e.preventDefault(); handleKeyClick(note.note); }}
+                    className="absolute pointer-events-auto rounded-b-lg touch-manipulation select-none z-10"
                     style={{
-                      left: `${leftPos}%`, width: `${whiteKeyWidth * 0.6}%`, height: '100%',
+                      left: `${leftPos}%`,
+                      width: `${whiteKeyWidthPercent * 0.64}%`,
+                      height: '100%',
+                      touchAction: 'none',
                       background: activeNotes.has(note.note)
                         ? `linear-gradient(180deg, ${COLORS[note.note]} 0%, ${COLORS[note.note]}cc 100%)`
                         : `linear-gradient(180deg, ${COLORS[note.note]}aa 0%, ${COLORS[note.note]}dd 50%, ${COLORS[note.note]} 100%)`,
                       boxShadow: activeNotes.has(note.note)
                         ? `0 0 25px ${COLORS[note.note]}, inset 0 -3px 10px ${COLORS[note.note]}80`
                         : `0 4px 8px rgba(0,0,0,0.5), inset 0 -2px 8px ${COLORS[note.note]}60`,
-                      border: `3px solid ${COLORS[note.note]}`,
+                      border: `2px md:border-3 solid ${COLORS[note.note]}`,
                     }}
                     whileTap={{ scale: 0.95 }}>
-                    <span className="absolute bottom-1 left-0 right-0 text-center text-[8px] font-bold text-white drop-shadow-lg">{note.label}</span>
+                    <span className="absolute bottom-1 md:bottom-2 left-0 right-0 text-center text-[8px] md:text-[9px] font-bold text-white drop-shadow-lg pointer-events-none">{note.label}</span>
                   </motion.button>
                 );
               })}

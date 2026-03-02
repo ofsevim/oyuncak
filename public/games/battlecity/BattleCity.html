@@ -131,6 +131,16 @@
         var canvas = document.getElementById(CANVAS_ID);
         return canvas.getContext('2d');
       };
+
+      /* ── postMessage bridge: React mobil kontrollerinden gelen tuş olayları ── */
+      window.addEventListener('message', function(e) {
+        var data = e.data;
+        if (!data || (data.type !== 'keydown' && data.type !== 'keyup')) return;
+        var ev = $.Event(data.type);
+        ev.which = data.keyCode;
+        ev.keyCode = data.keyCode;
+        $(document).trigger(ev);
+      });
     });
   </script>
 

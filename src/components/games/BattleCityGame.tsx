@@ -1,30 +1,45 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
 
 interface BattleCityGameProps {
     onActiveGameChange?: (active: boolean) => void;
 }
 
+/* Oyunun native canvas boyutu: UNIT_SIZE(32) × 16 = 512w, × 14 = 448h */
+const NATIVE_W = 512;
+const NATIVE_H = 448;
+
 const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
 
     useEffect(() => {
         onActiveGameChange?.(true);
         return () => onActiveGameChange?.(false);
     }, [onActiveGameChange]);
 
-    /* ── Focus iframe so keyboard works on desktop ── */
+    /* Responsive scale: container genişliğine göre oyunu ölçekle */
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(([entry]) => {
+            const w = entry.contentRect.width;
+            setScale(Math.min(1, w / NATIVE_W));
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+
+    /* Focus iframe */
     const focusIframe = useCallback(() => {
         iframeRef.current?.focus();
     }, []);
 
-    /* ── Send key event into iframe (works when same-origin allowed) ── */
+    /* postMessage → BattleCity.html'deki bridge listener'a ilet */
     const sendKey = useCallback((key: string, type: 'keydown' | 'keyup') => {
-        const cw = iframeRef.current?.contentWindow;
-        if (!cw) return;
         const keyCode =
             key === ' ' ? 32 :
                 key === 'Enter' ? 13 :
@@ -32,88 +47,69 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                         key === 'ArrowDown' ? 40 :
                             key === 'ArrowLeft' ? 37 :
                                 key === 'ArrowRight' ? 39 : 0;
+        if (!keyCode) return;
 
-        try {
-            const ev = new KeyboardEvent(type, {
-                key,
-                code: key === ' ' ? 'Space' : key,
-                keyCode,
-                which: keyCode,
-                bubbles: true,
-                cancelable: true,
-            });
-            /* Try dispatching to both document and body of iframe */
-            cw.document?.dispatchEvent(ev);
-            cw.document?.body?.dispatchEvent(ev);
-        } catch (_) {
-            /* Cross-origin blocked — fallback: focus iframe & let native key pass */
-            iframeRef.current?.focus();
-        }
+        const cw = iframeRef.current?.contentWindow;
+        if (!cw) return;
+
+        /* postMessage: same-origin olduğu için targetOrigin '*' yeterli */
+        cw.postMessage({ type, keyCode }, '*');
     }, []);
 
-    /* Single press (for Enter / start) */
     const pressKey = useCallback((key: string) => {
         sendKey(key, 'keydown');
-        setTimeout(() => sendKey(key, 'keyup'), 80);
+        setTimeout(() => sendKey(key, 'keyup'), 100);
     }, [sendKey]);
 
-    /* Touch handlers: send repeated keydown while finger is held */
     const holdTimers = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
-    const onTouchStart = useCallback((key: string) => {
+    const startHold = useCallback((key: string) => {
         sendKey(key, 'keydown');
         holdTimers.current[key] = setInterval(() => sendKey(key, 'keydown'), 80);
     }, [sendKey]);
 
-    const onTouchEnd = useCallback((key: string) => {
+    const stopHold = useCallback((key: string) => {
         clearInterval(holdTimers.current[key]);
         delete holdTimers.current[key];
         sendKey(key, 'keyup');
     }, [sendKey]);
 
-    /* Cleanup on unmount */
     useEffect(() => {
-        return () => {
-            Object.values(holdTimers.current).forEach(clearInterval);
-        };
+        return () => { Object.values(holdTimers.current).forEach(clearInterval); };
     }, []);
 
-    const DpadBtn = ({
-        arrow, label, keyName,
-        style,
-    }: {
-        arrow: string;
-        label: string;
-        keyName: string;
-        style?: React.CSSProperties;
-    }) => (
+    /* D-pad button */
+    const DpadBtn = ({ arrow, label, keyName }: { arrow: string; label: string; keyName: string }) => (
         <motion.button
             aria-label={label}
-            onTouchStart={(e) => { e.preventDefault(); onTouchStart(keyName); }}
-            onTouchEnd={(e) => { e.preventDefault(); onTouchEnd(keyName); }}
-            onMouseDown={() => onTouchStart(keyName)}
-            onMouseUp={() => onTouchEnd(keyName)}
-            onMouseLeave={() => onTouchEnd(keyName)}
-            whileTap={{ scale: 0.88 }}
-            className="flex items-center justify-center select-none touch-manipulation active:opacity-70 transition-opacity"
+            onTouchStart={() => startHold(keyName)}
+            onTouchEnd={() => stopHold(keyName)}
+            onMouseDown={() => startHold(keyName)}
+            onMouseUp={() => stopHold(keyName)}
+            onMouseLeave={() => stopHold(keyName)}
+            whileTap={{ scale: 0.85 }}
+            className="flex items-center justify-center select-none active:opacity-70 transition-opacity"
             style={{
-                width: 52,
-                height: 52,
+                width: 'clamp(48px, 13vw, 64px)',
+                height: 'clamp(48px, 13vw, 64px)',
                 borderRadius: 14,
                 background: 'hsl(224 28% 14%)',
-                border: '1px solid hsl(220 20% 100% / 0.12)',
+                border: '1px solid hsl(220 20% 100% / 0.14)',
                 boxShadow: '0 4px 12px hsl(224 28% 3% / 0.5), inset 0 1px 0 hsl(220 20% 100% / 0.06)',
-                fontSize: 22,
+                fontSize: 'clamp(18px, 5vw, 26px)',
                 WebkitTapHighlightColor: 'transparent',
-                ...style,
+                touchAction: 'none',
             }}
         >
             {arrow}
         </motion.button>
     );
 
+    const btnSize = 'clamp(48px, 13vw, 64px)';
+    const gap = 'clamp(4px, 1.5vw, 8px)';
+
     return (
-        <div ref={containerRef} className="flex flex-col items-center w-full max-w-lg mx-auto px-3 pb-36">
+        <div className="flex flex-col items-center w-full max-w-xl mx-auto px-3 pb-6">
             {/* Title */}
             <motion.div
                 className="text-center mb-3 pt-2"
@@ -124,77 +120,92 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 <p className="text-xs text-muted-foreground mt-0.5">Klasik atari oyunu</p>
             </motion.div>
 
-            {/* Game canvas — click to focus */}
+            {/* Game canvas wrapper — ölçek için referans container */}
             <motion.div
-                className="w-full relative overflow-hidden"
+                ref={containerRef}
+                className="w-full"
                 style={{
                     borderRadius: 16,
                     background: '#000',
                     border: '1px solid hsl(220 20% 100% / 0.08)',
                     boxShadow: '0 8px 32px hsl(224 28% 3% / 0.5)',
-                    aspectRatio: '1 / 1',
-                    maxWidth: '100%',
+                    /* Scaled height: native oranını koru */
+                    height: Math.round(NATIVE_H * scale),
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                 }}
                 initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
                 onClick={focusIframe}
             >
+                {/* iframe native boyutta açılıp scale ile küçültülüyor */}
                 <iframe
                     ref={iframeRef}
-                    src="https://newagebegins.github.io/BattleCity/BattleCity.html"
-                    className="absolute inset-0 w-full h-full border-none outline-none"
-                    title="Battle City HTML5"
+                    src="/games/battlecity/BattleCity.html"
+                    title="Battle City"
                     sandbox="allow-scripts allow-same-origin"
                     scrolling="no"
                     tabIndex={0}
                     onLoad={focusIframe}
+                    style={{
+                        width: NATIVE_W,
+                        height: NATIVE_H,
+                        border: 'none',
+                        outline: 'none',
+                        display: 'block',
+                        transformOrigin: 'top left',
+                        transform: `scale(${scale})`,
+                        flexShrink: 0,
+                    }}
                 />
             </motion.div>
 
-            {/* ── Controls — mobile only ── */}
+            {/* ── Mobile controls (md+'da gizli) ── */}
             <motion.div
-                className="w-full mt-3 flex flex-col items-center gap-2 md:hidden"
+                className="w-full mt-4 flex flex-col items-center gap-3 md:hidden"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
             >
-                {/* START / PAUSE row */}
-                <div className="flex gap-2 w-full">
-                    <motion.button
-                        onTouchStart={(e) => { e.preventDefault(); pressKey('Enter'); }}
-                        onClick={() => pressKey('Enter')}
-                        whileTap={{ scale: 0.95 }}
-                        className="flex-1 py-2.5 rounded-xl font-bold text-sm select-none touch-manipulation"
+                {/* BAŞLAT / PAUSE */}
+                <motion.button
+                    onTouchStart={() => pressKey('Enter')}
+                    onClick={() => pressKey('Enter')}
+                    whileTap={{ scale: 0.95 }}
+                    className="w-full py-3 rounded-2xl font-bold text-sm select-none touch-manipulation"
+                    style={{
+                        background: 'hsl(158 65% 48% / 0.15)',
+                        border: '1px solid hsl(158 65% 48% / 0.35)',
+                        color: 'hsl(158 65% 55%)',
+                        letterSpacing: '0.04em',
+                        WebkitTapHighlightColor: 'transparent',
+                    }}
+                >
+                    ▶ BAŞLAT / PAUSE
+                </motion.button>
+
+                {/* D-pad + Fire */}
+                <div className="flex items-center justify-center gap-8 w-full">
+                    <div
+                        className="grid"
                         style={{
-                            background: 'hsl(158 65% 48% / 0.15)',
-                            border: '1px solid hsl(158 65% 48% / 0.35)',
-                            color: 'hsl(158 65% 55%)',
-                            WebkitTapHighlightColor: 'transparent',
+                            gridTemplateColumns: `repeat(3, ${btnSize})`,
+                            gridTemplateRows: `repeat(3, ${btnSize})`,
+                            gap,
                         }}
                     >
-                        ▶ BAŞLAT / PAUSE
-                    </motion.button>
-                </div>
-
-                {/* D-pad + fire — always visible (not md:hidden) */}
-                <div className="flex items-center gap-6 mt-1">
-                    {/* D-pad cross */}
-                    <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(3, 52px)', gridTemplateRows: 'repeat(3, 52px)' }}>
-                        {/* row 1 */}
                         <div />
                         <DpadBtn arrow="▲" label="Yukarı" keyName="ArrowUp" />
                         <div />
-                        {/* row 2 */}
                         <DpadBtn arrow="◀" label="Sol" keyName="ArrowLeft" />
-                        <div
-                            style={{
-                                borderRadius: 10,
-                                background: 'hsl(224 28% 12%)',
-                                border: '1px solid hsl(220 20% 100% / 0.06)',
-                            }}
-                        />
+                        <div style={{
+                            borderRadius: 10,
+                            background: 'hsl(224 28% 12%)',
+                            border: '1px solid hsl(220 20% 100% / 0.06)',
+                        }} />
                         <DpadBtn arrow="▶" label="Sağ" keyName="ArrowRight" />
-                        {/* row 3 */}
                         <div />
                         <DpadBtn arrow="▼" label="Aşağı" keyName="ArrowDown" />
                         <div />
@@ -202,32 +213,62 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
 
                     {/* Fire button */}
                     <motion.button
-                        onTouchStart={(e) => { e.preventDefault(); onTouchStart(' '); }}
-                        onTouchEnd={(e) => { e.preventDefault(); onTouchEnd(' '); }}
-                        onMouseDown={() => onTouchStart(' ')}
-                        onMouseUp={() => onTouchEnd(' ')}
-                        onMouseLeave={() => onTouchEnd(' ')}
+                        onTouchStart={() => startHold(' ')}
+                        onTouchEnd={() => stopHold(' ')}
+                        onMouseDown={() => startHold(' ')}
+                        onMouseUp={() => stopHold(' ')}
+                        onMouseLeave={() => stopHold(' ')}
                         whileTap={{ scale: 0.88 }}
-                        className="flex items-center justify-center select-none touch-manipulation"
+                        className="flex items-center justify-center select-none flex-shrink-0"
                         style={{
-                            width: 72,
-                            height: 72,
+                            width: 'clamp(68px, 18vw, 88px)',
+                            height: 'clamp(68px, 18vw, 88px)',
                             borderRadius: '50%',
                             background: 'hsl(4 82% 58% / 0.15)',
                             border: '2px solid hsl(4 82% 58% / 0.5)',
-                            boxShadow: '0 0 20px hsl(4 82% 58% / 0.25)',
-                            fontSize: 28,
+                            boxShadow: '0 0 24px hsl(4 82% 58% / 0.3)',
+                            fontSize: 'clamp(24px, 7vw, 36px)',
                             WebkitTapHighlightColor: 'transparent',
+                            touchAction: 'none',
                         }}
                     >
                         💥
                     </motion.button>
                 </div>
+            </motion.div>
 
-                {/* Desktop hint */}
-                <p className="text-[11px] text-muted-foreground/50 mt-1 hidden md:block">
-                    ⌨️ Yön tuşları + Space ile de oynayabilirsiniz
-                </p>
+            {/* ── Klavye kısayolları — sadece desktop ── */}
+            <motion.div
+                className="w-full mt-3 hidden md:flex flex-wrap justify-center gap-x-5 gap-y-1.5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.25 }}
+            >
+                {[
+                    { key: '↑ ↓ ← →', desc: 'Hareket' },
+                    { key: 'Space', desc: 'Ateş Et' },
+                    { key: 'Enter', desc: 'Başlat / Pause' },
+                ].map(({ key, desc }) => (
+                    <div key={key} className="flex items-center gap-1.5">
+                        <kbd style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            background: 'hsl(224 28% 14%)',
+                            border: '1px solid hsl(220 20% 100% / 0.15)',
+                            boxShadow: '0 2px 0 hsl(224 28% 5%)',
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                            color: 'hsl(220 20% 80%)',
+                            letterSpacing: '0.02em',
+                            whiteSpace: 'nowrap',
+                        }}>
+                            {key}
+                        </kbd>
+                        <span style={{ fontSize: 11, color: 'hsl(220 15% 50%)' }}>{desc}</span>
+                    </div>
+                ))}
             </motion.div>
         </div>
     );

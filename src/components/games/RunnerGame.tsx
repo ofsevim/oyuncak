@@ -1017,11 +1017,21 @@ const RunnerGame = () => {
   useEffect(() => {
     const resize = () => {
       if (!containerRef.current || !canvasRef.current) return;
-      const maxW = containerRef.current.clientWidth - 8;
-      const s = Math.min(maxW / CW, 1);
+      const container = containerRef.current;
+      const canvas = canvasRef.current;
+      
+      // Get available width (with padding)
+      const availableWidth = container.clientWidth;
+      const availableHeight = window.innerHeight * 0.5; // Max 50% of viewport height
+      
+      // Calculate scale to fit both width and height
+      const scaleW = availableWidth / CW;
+      const scaleH = availableHeight / CH;
+      const s = Math.min(scaleW, scaleH, 1.2); // Allow slight upscaling on mobile
+      
       scaleRef.current = s;
-      canvasRef.current.style.width = `${CW * s}px`;
-      canvasRef.current.style.height = `${CH * s}px`;
+      canvas.style.width = `${CW * s}px`;
+      canvas.style.height = `${CH * s}px`;
     };
     resize();
     window.addEventListener('resize', resize);
@@ -1107,25 +1117,25 @@ const RunnerGame = () => {
      PLAYING + GAME OVER — Glassmorphism UI
      ═══════════════════════════════════════════ */
   return (
-    <motion.div className="flex flex-col items-center gap-3 p-4 pb-32" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.div className="flex flex-col items-center gap-3 p-2 md:p-4 pb-32" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
       {/* Canvas area */}
-      <div ref={containerRef} className="w-full max-w-4xl relative" onClick={jump} style={{ touchAction: 'manipulation' }}>
+      <div ref={containerRef} className="w-full max-w-4xl relative touch-none" onClick={jump}>
         <canvas
           ref={canvasRef}
           width={CW}
           height={CH}
-          className="rounded-3xl shadow-2xl cursor-pointer block mx-auto"
-          style={{ border: '2px solid rgba(255,255,255,0.08)' }}
+          className="rounded-2xl md:rounded-3xl shadow-2xl cursor-pointer block mx-auto"
+          style={{ border: '2px solid rgba(255,255,255,0.08)', maxWidth: '100%', height: 'auto' }}
         />
 
         {/* ── Glassmorphism HUD overlay — inside canvas area ── */}
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none" style={{ zIndex: 10 }}>
+        <div className="absolute top-2 md:top-3 left-2 md:left-3 right-2 md:right-3 flex items-center justify-between pointer-events-none" style={{ zIndex: 10 }}>
           {/* Lives — glassmorphism */}
-          <div className="flex items-center gap-1 px-3 py-2 rounded-2xl"
+          <div className="flex items-center gap-0.5 md:gap-1 px-2 md:px-3 py-1 md:py-2 rounded-xl md:rounded-2xl"
             style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}>
             {Array.from({ length: MAX_LIVES }).map((_, i) => (
-              <motion.span key={i} className={`text-sm ${i < lives ? '' : 'opacity-20'}`}
+              <motion.span key={i} className={`text-xs md:text-sm ${i < lives ? '' : 'opacity-20'}`}
                 animate={i === lives - 1 && lives <= 2 ? { scale: [1, 1.3, 1] } : {}}
                 transition={{ repeat: Infinity, duration: 0.5 }}>
                 ❤️
@@ -1134,42 +1144,42 @@ const RunnerGame = () => {
           </div>
 
           {/* Score — glassmorphism */}
-          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl"
+          <div className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-2 rounded-xl md:rounded-2xl"
             style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <span className="text-sm font-black text-amber-300" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>⭐ {score}</span>
+            <span className="text-xs md:text-sm font-black text-amber-300" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>⭐ {score}</span>
           </div>
 
           {/* Distance — glassmorphism */}
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl"
+          <div className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-2 rounded-xl md:rounded-2xl"
             style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <span className="text-sm font-bold text-white/80" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>📏 {distance}m</span>
+            <span className="text-xs md:text-sm font-bold text-white/80" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>📏 {distance}m</span>
           </div>
         </div>
 
         {/* Active power-ups — bottom left glassmorphism */}
         {(showShield || showMagnet || showX2 || combo >= 3) && (
-          <div className="absolute bottom-3 left-3 flex gap-2 pointer-events-none" style={{ zIndex: 10 }}>
+          <div className="absolute bottom-2 md:bottom-3 left-2 md:left-3 flex gap-1.5 md:gap-2 pointer-events-none" style={{ zIndex: 10 }}>
             {combo >= 3 && (
               <motion.div key={combo} initial={{ scale: 0.5 }} animate={{ scale: 1 }}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-black text-yellow-300"
+                className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black text-yellow-300"
                 style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
                 🔥 x{combo}
               </motion.div>
             )}
             {showShield && (
-              <div className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-blue-300"
+              <div className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-blue-300"
                 style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(59,130,246,0.2)' }}>
                 🛡️
               </div>
             )}
             {showMagnet && (
-              <div className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-red-300"
+              <div className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-red-300"
                 style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(239,68,68,0.2)' }}>
                 🧲
               </div>
             )}
             {showX2 && (
-              <div className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-purple-300"
+              <div className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-purple-300"
                 style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(168,85,247,0.2)' }}>
                 ×2
               </div>
@@ -1193,23 +1203,34 @@ const RunnerGame = () => {
         </AnimatePresence>
       </div>
 
-      {/* Mobile Jump Button */}
-      {phase === 'playing' && (
-        <motion.button
-          onClick={jump}
-          onTouchStart={(e) => { e.preventDefault(); jump(); }}
-          className="md:hidden fixed bottom-24 right-6 w-20 h-20 rounded-full flex items-center justify-center text-3xl font-black shadow-2xl z-50 touch-manipulation"
-          style={{
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            boxShadow: '0 8px 32px rgba(59,130,246,0.4)',
-          }}
-          whileTap={{ scale: 0.9 }}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0 }}>
-          ⬆️
-        </motion.button>
-      )}
+      {/* Mobile Jump Button - Always visible on mobile */}
+      <AnimatePresence>
+        {phase === 'playing' && (
+          <motion.button
+            onClick={jump}
+            onPointerDown={(e) => { e.preventDefault(); jump(); }}
+            className="md:hidden fixed bottom-24 right-4 w-20 h-20 rounded-full flex items-center justify-center text-3xl font-black shadow-2xl z-50 touch-manipulation select-none"
+            style={{
+              touchAction: 'none',
+              background: 'linear-gradient(135deg, #ef4444, #f97316)',
+              boxShadow: '0 8px 32px rgba(239,68,68,0.6), 0 0 0 4px rgba(255,255,255,0.2)',
+            }}
+            whileTap={{ scale: 0.85 }}
+            animate={{ 
+              scale: [1, 1.1, 1],
+              boxShadow: [
+                '0 8px 32px rgba(239,68,68,0.6), 0 0 0 4px rgba(255,255,255,0.2)',
+                '0 8px 40px rgba(239,68,68,0.8), 0 0 0 6px rgba(255,255,255,0.3)',
+                '0 8px 32px rgba(239,68,68,0.6), 0 0 0 4px rgba(255,255,255,0.2)',
+              ]
+            }}
+            transition={{ repeat: Infinity, duration: 1.2 }}
+            initial={{ opacity: 0, scale: 0 }}
+            exit={{ opacity: 0, scale: 0 }}>
+            <span className="drop-shadow-lg">⬆️</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Game Over panel — outside canvas */}
       <AnimatePresence>
