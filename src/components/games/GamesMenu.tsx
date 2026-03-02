@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import OddOneOutGame from './OddOneOutGame';
 import MemoryFlipGame from './MemoryFlipGame';
 import WhackAMoleGame from './WhackAMoleGame';
-import MarioGame from './MarioGame';
 import BattleCityGame from './BattleCityGame';
 
 import CountingGame from './CountingGame';
@@ -19,7 +18,7 @@ import TetrisGame from './TetrisGame';
 import SnakeGame from './SnakeGame';
 import Game2048 from './Game2048';
 
-type GameType = 'menu' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'mario' | 'battlecity';
+type GameType = 'menu' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battlecity';
 
 type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
 
@@ -36,7 +35,6 @@ interface GameDef {
 
 const games: GameDef[] = [
   { id: 'balloons', title: 'Balon Patlat', emoji: '🎈', icon: Wind, gradient: 'from-cyan-500 to-blue-600', description: 'Doğru renkli balonları yakala!', category: ['action'], badge: 'Popüler' },
-  { id: 'mario', title: 'Süper Mario', emoji: '🍄', icon: Gamepad2, gradient: 'from-red-500 to-rose-600', description: 'Klasik efsane macera!', category: ['action'], badge: 'Efsane' },
   { id: 'battlecity', title: 'Tank 1990', emoji: '🚜', icon: Gamepad2, gradient: 'from-slate-500 to-zinc-600', description: 'Atari salonlarının efsanesi!', category: ['action'], badge: 'Retro' },
   { id: 'whack', title: 'Köstebek Yakala', emoji: '🐹', icon: Rat, gradient: 'from-orange-500 to-amber-600', description: 'Hızlı ol, köstebekleri yakala!', category: ['action'], badge: 'Eğlenceli' },
 
@@ -108,7 +106,6 @@ const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
       case 'oddone': return <OddOneOutGame />;
       case 'memory': return <MemoryFlipGame onActiveGameChange={onActiveGameChange} />;
       case 'whack': return <WhackAMoleGame />;
-      case 'mario': return <MarioGame onActiveGameChange={onActiveGameChange} />;
       case 'battlecity': return <BattleCityGame onActiveGameChange={onActiveGameChange} />;
 
       case 'counting': return <CountingGame />;
