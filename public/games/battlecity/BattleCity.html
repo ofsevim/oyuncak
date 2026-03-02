@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <title>Battle City</title>
+  
+  <link rel="stylesheet" type="text/css" href="css/BattleCity.css" />
+  
+  <script type="text/javascript" src="lib/jquery-1.7.2.js"></script>
+
+  <script type="text/javascript" src="src/Utils.js"></script>
+  <script type="text/javascript" src="src/Point.js"></script>
+  <script type="text/javascript" src="src/Rect.js"></script>
+  <script type="text/javascript" src="src/Sprite.js"></script>
+  <script type="text/javascript" src="src/Tank.js"></script>
+  <script type="text/javascript" src="src/Wall.js"></script>
+  <script type="text/javascript" src="src/SpriteContainer.js"></script>
+  <script type="text/javascript" src="src/CollisionDetector.js"></script>
+  <script type="text/javascript" src="src/EventManager.js"></script>
+  <script type="text/javascript" src="src/SpriteController.js"></script>
+  <script type="text/javascript" src="src/TankController.js"></script>
+  <script type="text/javascript" src="src/Keyboard.js"></script>
+  <script type="text/javascript" src="src/BulletFactory.js"></script>
+  <script type="text/javascript" src="src/Bullet.js"></script>
+  <script type="text/javascript" src="src/Painter.js"></script>
+  <script type="text/javascript" src="src/Updater.js"></script>
+  <script type="text/javascript" src="src/BulletExplosionFactory.js"></script>
+  <script type="text/javascript" src="src/Explosion.js"></script>
+  <script type="text/javascript" src="src/BulletExplosion.js"></script>
+  <script type="text/javascript" src="src/BrickWall.js"></script>
+  <script type="text/javascript" src="src/SteelWall.js"></script>
+  <script type="text/javascript" src="src/Cursor.js"></script>
+  <script type="text/javascript" src="src/BlinkTimer.js"></script>
+  <script type="text/javascript" src="src/CursorController.js"></script>
+  <script type="text/javascript" src="src/Builder.js"></script>
+  <script type="text/javascript" src="src/StructureManager.js"></script>
+  <script type="text/javascript" src="src/BrickWallFactory.js"></script>
+  <script type="text/javascript" src="src/SteelWallFactory.js"></script>
+  <script type="text/javascript" src="src/Globals.js"></script>
+  <script type="text/javascript" src="src/SpriteSerializer.js"></script>
+  <script type="text/javascript" src="src/Base.js"></script>
+  <script type="text/javascript" src="src/TankStateAppearing.js"></script>
+  <script type="text/javascript" src="src/TankStateNormal.js"></script>
+  <script type="text/javascript" src="src/TankStateInvincible.js"></script>
+  <script type="text/javascript" src="src/AITankController.js"></script>
+  <script type="text/javascript" src="src/Random.js"></script>
+  <script type="text/javascript" src="src/AITankControllerFactory.js"></script>
+  <script type="text/javascript" src="src/AITankControllerContainer.js"></script>
+  <script type="text/javascript" src="src/EnemyFactory.js"></script>
+  <script type="text/javascript" src="src/Animation.js"></script>
+  <script type="text/javascript" src="src/TankExplosionFactory.js"></script>
+  <script type="text/javascript" src="src/TankExplosion.js"></script>
+  <script type="text/javascript" src="src/PointsFactory.js"></script>
+  <script type="text/javascript" src="src/Points.js"></script>
+  <script type="text/javascript" src="src/PlayerTankFactory.js"></script>
+  <script type="text/javascript" src="src/PlayerTankControllerFactory.js"></script>
+  <script type="text/javascript" src="src/PowerUpFactory.js"></script>
+  <script type="text/javascript" src="src/PowerUp.js"></script>
+  <script type="text/javascript" src="src/PowerUpHandler.js"></script>
+  <script type="text/javascript" src="src/FreezeTimer.js"></script>
+  <script type="text/javascript" src="src/BaseWallBuilder.js"></script>
+  <script type="text/javascript" src="src/ShovelHandler.js"></script>
+  <script type="text/javascript" src="src/Pause.js"></script>
+  <script type="text/javascript" src="src/PauseListener.js"></script>
+  <script type="text/javascript" src="src/BaseExplosionFactory.js"></script>
+  <script type="text/javascript" src="src/BaseExplosion.js"></script>
+  <script type="text/javascript" src="src/TankColor.js"></script>
+  <script type="text/javascript" src="src/SceneManager.js"></script>
+  <script type="text/javascript" src="src/MainMenuScene.js"></script>
+  <script type="text/javascript" src="src/MainMenuItem.js"></script>
+  <script type="text/javascript" src="src/OnePlayerMenuItem.js"></script>
+  <script type="text/javascript" src="src/ConstructionMenuItem.js"></script>
+  <script type="text/javascript" src="src/MainMenu.js"></script>
+  <script type="text/javascript" src="src/MainMenuController.js"></script>
+  <script type="text/javascript" src="src/MainMenuView.js"></script>
+  <script type="text/javascript" src="src/MainMenuCursor.js"></script>
+  <script type="text/javascript" src="src/MainMenuCursorView.js"></script>
+  <script type="text/javascript" src="src/Gamefield.js"></script>
+  <script type="text/javascript" src="src/Level.js"></script>
+  <script type="text/javascript" src="src/EnemyFactoryView.js"></script>
+  <script type="text/javascript" src="src/LivesView.js"></script>
+  <script type="text/javascript" src="src/MainMenuView.js"></script>
+  <script type="text/javascript" src="src/Curtain.js"></script>
+  <script type="text/javascript" src="src/Script.js"></script>
+  <script type="text/javascript" src="src/Delay.js"></script>
+  <script type="text/javascript" src="src/GameScene.js"></script>
+  <script type="text/javascript" src="src/StageMessage.js"></script>
+  <script type="text/javascript" src="src/Stages.js"></script>
+  <script type="text/javascript" src="src/MoveFn.js"></script>
+  <script type="text/javascript" src="src/GameOverMessage.js"></script>
+  <script type="text/javascript" src="src/StageStatisticsScene.js"></script>
+  <script type="text/javascript" src="src/GameOverScene.js"></script>
+  <script type="text/javascript" src="src/Player.js"></script>
+  <script type="text/javascript" src="src/StageStatisticsPoints.js"></script>
+  <script type="text/javascript" src="src/Trees.js"></script>
+  <script type="text/javascript" src="src/Water.js"></script>
+  <script type="text/javascript" src="src/LoadingScene.js"></script>
+  
+  <script type="text/javascript" src="lib/Stats.js"></script>
+  <script type="text/javascript" src="src/FPSCounter.js"></script>
+  
+  <script type="text/javascript" src="src/ImageManager.js"></script>
+  <script type="text/javascript" src="src/Construction.js"></script>
+  <script type="text/javascript" src="src/SpriteSerializerController.js"></script>
+  <script type="text/javascript" src="src/SpriteSerializer.js"></script>
+  <script type="text/javascript" src="src/SoundManager.js"></script>
+
+  <script type="text/javascript">
+    $(function () {
+      var FPS = 50;
+      
+      var CANVAS_ID = 'canvas';
+      var ctx = createCanvasContext();
+      ctx.font = "16px prstart"
+      
+      var eventManager = new EventManager();
+      var keyboard = new Keyboard(eventManager);
+      var sceneManager = new SceneManager(eventManager);
+      sceneManager.toLoadingScene();
+      
+      setInterval(gameLoop, 1000 / FPS);
+      
+      function gameLoop() {
+        keyboard.fireEvents();
+        sceneManager.update();
+        sceneManager.draw(ctx);
+      }
+      
+      function createCanvasContext() {
+        $('<canvas id="' + CANVAS_ID + '" width="' + Globals.CANVAS_WIDTH + '" height="' + Globals.CANVAS_HEIGHT + '"></canvas>').prependTo('#main');
+        var canvas = document.getElementById(CANVAS_ID);
+        return canvas.getContext('2d');
+      };
+    });
+  </script>
+
+</head>
+
+<body>
+  <div id="main">
+    <div id="help">
+      <p>CONTROLS:</p>
+      <table>
+        <tr>
+          <td><img src="images/Nintendo-Dpad-Neutral.png" alt="" /></td>
+          <td>ARROWS</td>
+        </tr>
+        <tr>
+          <td><img src="images/Nintendo-Button-A.png" alt="" />,<img src="images/Nintendo-Button-B.png" alt="" /></td>
+          <td>SPACE</td>
+        </tr>
+        <tr>
+          <td><img src="images/Nintendo-Button-Start.png" alt="" /></td>
+          <td>ENTER</td>
+        </tr>
+        <tr>
+          <td><img src="images/Nintendo-Button-Select.png" alt="" /></td>
+          <td>CTRL</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

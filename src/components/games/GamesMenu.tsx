@@ -66,7 +66,6 @@ interface GamesMenuProps {
 const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
   const [activeCategory, setActiveCategory] = useState<GameCategory>('all');
-  const [preferredGameId, setPreferredGameId] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,10 +80,6 @@ const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
       card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
     });
   }, []);
-
-  // NOTE: preferredGameId logic removed — it was auto-navigating to the last
-  // played game when the Games tab was opened, causing unexpected navigation.
-
 
   const filteredGames = activeCategory === 'all' ? games : games.filter(g => g.category.includes(activeCategory));
 

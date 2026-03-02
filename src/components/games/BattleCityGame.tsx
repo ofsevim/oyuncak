@@ -53,10 +53,8 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
 
     /* Single press (for Enter / start) */
     const pressKey = useCallback((key: string) => {
-        // Focus the iframe first so native key events also reach it
-        iframeRef.current?.focus();
         sendKey(key, 'keydown');
-        setTimeout(() => sendKey(key, 'keyup'), 120);
+        setTimeout(() => sendKey(key, 'keyup'), 80);
     }, [sendKey]);
 
     /* Touch handlers: send repeated keydown while finger is held */
@@ -135,7 +133,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                     border: '1px solid hsl(220 20% 100% / 0.08)',
                     boxShadow: '0 8px 32px hsl(224 28% 3% / 0.5)',
                     aspectRatio: '1 / 1',
-                    maxHeight: '45vh',
+                    maxWidth: '100%',
                 }}
                 initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -153,9 +151,9 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 />
             </motion.div>
 
-            {/* ── Controls — tight to canvas ── */}
+            {/* ── Controls — mobile only ── */}
             <motion.div
-                className="w-full mt-3 flex flex-col items-center gap-2"
+                className="w-full mt-3 flex flex-col items-center gap-2 md:hidden"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
@@ -163,7 +161,8 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 {/* START / PAUSE row */}
                 <div className="flex gap-2 w-full">
                     <motion.button
-                        onPointerDown={(e) => { e.preventDefault(); pressKey('Enter'); }}
+                        onTouchStart={(e) => { e.preventDefault(); pressKey('Enter'); }}
+                        onClick={() => pressKey('Enter')}
                         whileTap={{ scale: 0.95 }}
                         className="flex-1 py-2.5 rounded-xl font-bold text-sm select-none touch-manipulation"
                         style={{
