@@ -24,9 +24,9 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
             const event = new KeyboardEvent(type, {
                 key: key,
                 code: key === ' ' ? 'Space' : key === 'Enter' ? 'Enter' : `Arrow${key}`,
-                keyCode: key === ' ' ? 32 : key === 'Enter' ? 13 : 
-                         key === 'Up' ? 38 : key === 'Down' ? 40 : 
-                         key === 'Left' ? 37 : key === 'Right' ? 39 : 0,
+                keyCode: key === ' ' ? 32 : key === 'Enter' ? 13 :
+                    key === 'Up' ? 38 : key === 'Down' ? 40 :
+                        key === 'Left' ? 37 : key === 'Right' ? 39 : 0,
                 bubbles: true,
                 cancelable: true
             });
@@ -60,10 +60,10 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
 
                 <iframe
                     ref={iframeRef}
-                    src="/games/battlecity/BattleCity.html"
+                    src="https://newagebegins.github.io/BattleCity/BattleCity.html"
                     className="w-full h-full border-none outline-none transform scale-95 origin-center"
                     title="Battle City HTML5"
-                    sandbox="allow-scripts allow-same-origin"
+                    sandbox="allow-scripts"
                     scrolling="no"
                 />
             </div>
