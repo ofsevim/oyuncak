@@ -53,8 +53,10 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
 
     /* Single press (for Enter / start) */
     const pressKey = useCallback((key: string) => {
+        // Focus the iframe first so native key events also reach it
+        iframeRef.current?.focus();
         sendKey(key, 'keydown');
-        setTimeout(() => sendKey(key, 'keyup'), 80);
+        setTimeout(() => sendKey(key, 'keyup'), 120);
     }, [sendKey]);
 
     /* Touch handlers: send repeated keydown while finger is held */
@@ -161,8 +163,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 {/* START / PAUSE row */}
                 <div className="flex gap-2 w-full">
                     <motion.button
-                        onTouchStart={(e) => { e.preventDefault(); pressKey('Enter'); }}
-                        onClick={() => pressKey('Enter')}
+                        onPointerDown={(e) => { e.preventDefault(); pressKey('Enter'); }}
                         whileTap={{ scale: 0.95 }}
                         className="flex-1 py-2.5 rounded-xl font-bold text-sm select-none touch-manipulation"
                         style={{
