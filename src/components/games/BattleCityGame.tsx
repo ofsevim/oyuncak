@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 interface BattleCityGameProps {
@@ -9,137 +9,227 @@ interface BattleCityGameProps {
 
 const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         onActiveGameChange?.(true);
-        if (iframeRef.current) {
-            iframeRef.current.focus();
-        }
         return () => onActiveGameChange?.(false);
     }, [onActiveGameChange]);
 
-    // Send keyboard events to iframe
-    const sendKey = (key: string, type: 'keydown' | 'keyup') => {
-        if (iframeRef.current?.contentWindow) {
-            const event = new KeyboardEvent(type, {
-                key: key,
-                code: key === ' ' ? 'Space' : key === 'Enter' ? 'Enter' : `Arrow${key}`,
-                keyCode: key === ' ' ? 32 : key === 'Enter' ? 13 :
-                    key === 'Up' ? 38 : key === 'Down' ? 40 :
-                        key === 'Left' ? 37 : key === 'Right' ? 39 : 0,
-                bubbles: true,
-                cancelable: true
-            });
-            iframeRef.current.contentWindow.document.dispatchEvent(event);
-        }
-    };
+    /* ── Focus iframe so keyboard works on desktop ── */
+    const focusIframe = useCallback(() => {
+        iframeRef.current?.focus();
+    }, []);
 
-    const handleButtonPress = (key: string) => {
+    /* ── Send key event into iframe (works when same-origin allowed) ── */
+    const sendKey = useCallback((key: string, type: 'keydown' | 'keyup') => {
+        const cw = iframeRef.current?.contentWindow;
+        if (!cw) return;
+        const keyCode =
+            key === ' ' ? 32 :
+                key === 'Enter' ? 13 :
+                    key === 'ArrowUp' ? 38 :
+                        key === 'ArrowDown' ? 40 :
+                            key === 'ArrowLeft' ? 37 :
+                                key === 'ArrowRight' ? 39 : 0;
+
+        try {
+            const ev = new KeyboardEvent(type, {
+                key,
+                code: key === ' ' ? 'Space' : key,
+                keyCode,
+                which: keyCode,
+                bubbles: true,
+                cancelable: true,
+            });
+            /* Try dispatching to both document and body of iframe */
+            cw.document?.dispatchEvent(ev);
+            cw.document?.body?.dispatchEvent(ev);
+        } catch (_) {
+            /* Cross-origin blocked — fallback: focus iframe & let native key pass */
+            iframeRef.current?.focus();
+        }
+    }, []);
+
+    /* Single press (for Enter / start) */
+    const pressKey = useCallback((key: string) => {
         sendKey(key, 'keydown');
-        setTimeout(() => sendKey(key, 'keyup'), 100);
-    };
+        setTimeout(() => sendKey(key, 'keyup'), 80);
+    }, [sendKey]);
+
+    /* Touch handlers: send repeated keydown while finger is held */
+    const holdTimers = useRef<Record<string, ReturnType<typeof setInterval>>>({});
+
+    const onTouchStart = useCallback((key: string) => {
+        sendKey(key, 'keydown');
+        holdTimers.current[key] = setInterval(() => sendKey(key, 'keydown'), 80);
+    }, [sendKey]);
+
+    const onTouchEnd = useCallback((key: string) => {
+        clearInterval(holdTimers.current[key]);
+        delete holdTimers.current[key];
+        sendKey(key, 'keyup');
+    }, [sendKey]);
+
+    /* Cleanup on unmount */
+    useEffect(() => {
+        return () => {
+            Object.values(holdTimers.current).forEach(clearInterval);
+        };
+    }, []);
+
+    const DpadBtn = ({
+        arrow, label, keyName,
+        style,
+    }: {
+        arrow: string;
+        label: string;
+        keyName: string;
+        style?: React.CSSProperties;
+    }) => (
+        <motion.button
+            aria-label={label}
+            onTouchStart={(e) => { e.preventDefault(); onTouchStart(keyName); }}
+            onTouchEnd={(e) => { e.preventDefault(); onTouchEnd(keyName); }}
+            onMouseDown={() => onTouchStart(keyName)}
+            onMouseUp={() => onTouchEnd(keyName)}
+            onMouseLeave={() => onTouchEnd(keyName)}
+            whileTap={{ scale: 0.88 }}
+            className="flex items-center justify-center select-none touch-manipulation active:opacity-70 transition-opacity"
+            style={{
+                width: 52,
+                height: 52,
+                borderRadius: 14,
+                background: 'hsl(224 28% 14%)',
+                border: '1px solid hsl(220 20% 100% / 0.12)',
+                boxShadow: '0 4px 12px hsl(224 28% 3% / 0.5), inset 0 1px 0 hsl(220 20% 100% / 0.06)',
+                fontSize: 22,
+                WebkitTapHighlightColor: 'transparent',
+                ...style,
+            }}
+        >
+            {arrow}
+        </motion.button>
+    );
 
     return (
-        <motion.div className="flex flex-col items-center gap-4 p-4 pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h2 className="text-3xl md:text-4xl font-black text-gradient">🚜 Tank 1990</h2>
-            <p className="text-muted-foreground font-medium text-center text-sm">Klasik atari oyunu (Battle City)</p>
+        <div ref={containerRef} className="flex flex-col items-center w-full max-w-lg mx-auto px-3 pb-36">
+            {/* Title */}
+            <motion.div
+                className="text-center mb-3 pt-2"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+            >
+                <h2 className="text-2xl font-black text-foreground">🕹️ Tank 1990</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Klasik atari oyunu</p>
+            </motion.div>
 
-            <div className="w-full max-w-2xl glass-card neon-border rounded-[32px] overflow-hidden aspect-square flex items-center justify-center bg-black shadow-2xl relative" style={{ minHeight: '520px' }}>
-                {/* Overlay to catch clicks and focus the iframe */}
-                <div
-                    className="absolute inset-0 z-10 cursor-pointer"
-                    onClick={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        iframeRef.current?.focus();
-                    }}
-                >
-                    <div className="w-full h-full flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                        <span className="px-6 py-3 glass-card text-white font-bold rounded-xl animate-pulse">Oyuna Başlamak İçin Tıkla</span>
-                    </div>
-                </div>
-
+            {/* Game canvas — click to focus */}
+            <motion.div
+                className="w-full relative overflow-hidden"
+                style={{
+                    borderRadius: 16,
+                    background: '#000',
+                    border: '1px solid hsl(220 20% 100% / 0.08)',
+                    boxShadow: '0 8px 32px hsl(224 28% 3% / 0.5)',
+                    aspectRatio: '1 / 1',
+                    maxHeight: '45vh',
+                }}
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                onClick={focusIframe}
+            >
                 <iframe
                     ref={iframeRef}
                     src="https://newagebegins.github.io/BattleCity/BattleCity.html"
-                    className="w-full h-full border-none outline-none transform scale-95 origin-center"
+                    className="absolute inset-0 w-full h-full border-none outline-none"
                     title="Battle City HTML5"
-                    sandbox="allow-scripts"
+                    sandbox="allow-scripts allow-same-origin"
                     scrolling="no"
+                    tabIndex={0}
+                    onLoad={focusIframe}
                 />
-            </div>
+            </motion.div>
 
-            <div className="glass-card px-6 py-4 rounded-2xl flex flex-col items-center gap-2 mt-2 border border-white/10">
-                <p className="font-bold text-foreground">🎮 Kontroller</p>
-                <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
-                    <span><kbd className="px-2 py-1 bg-white/10 rounded font-mono font-bold">Yön Tuşları</kbd> Hareket</span>
-                    <span><kbd className="px-2 py-1 bg-white/10 rounded font-mono font-bold">Space</kbd> Ateş Et</span>
-                    <span><kbd className="px-2 py-1 bg-white/10 rounded font-mono font-bold">Enter</kbd> Oyuna Başla</span>
-                </div>
-            </div>
-
-            {/* Mobile Controls */}
-            <div className="md:hidden w-full max-w-sm space-y-3">
-                {/* Start Button */}
-                <motion.button
-                    onClick={() => handleButtonPress('Enter')}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-full py-3 glass-card border border-green-500/30 rounded-xl font-bold text-green-400 touch-manipulation">
-                    ▶️ BAŞLA / PAUSE
-                </motion.button>
-
-                {/* D-Pad and Fire */}
-                <div className="flex gap-3 items-center justify-center">
-                    {/* D-Pad */}
-                    <div className="grid grid-cols-3 gap-1.5 w-36">
-                        <div />
-                        <motion.button
-                            onTouchStart={() => sendKey('Up', 'keydown')}
-                            onTouchEnd={() => sendKey('Up', 'keyup')}
-                            onClick={() => handleButtonPress('Up')}
-                            whileTap={{ scale: 0.9 }}
-                            className="p-3 glass-card border border-white/20 rounded-lg text-xl touch-manipulation">
-                            ⬆️
-                        </motion.button>
-                        <div />
-                        <motion.button
-                            onTouchStart={() => sendKey('Left', 'keydown')}
-                            onTouchEnd={() => sendKey('Left', 'keyup')}
-                            onClick={() => handleButtonPress('Left')}
-                            whileTap={{ scale: 0.9 }}
-                            className="p-3 glass-card border border-white/20 rounded-lg text-xl touch-manipulation">
-                            ⬅️
-                        </motion.button>
-                        <motion.button
-                            onTouchStart={() => sendKey('Down', 'keydown')}
-                            onTouchEnd={() => sendKey('Down', 'keyup')}
-                            onClick={() => handleButtonPress('Down')}
-                            whileTap={{ scale: 0.9 }}
-                            className="p-3 glass-card border border-white/20 rounded-lg text-xl touch-manipulation">
-                            ⬇️
-                        </motion.button>
-                        <motion.button
-                            onTouchStart={() => sendKey('Right', 'keydown')}
-                            onTouchEnd={() => sendKey('Right', 'keyup')}
-                            onClick={() => handleButtonPress('Right')}
-                            whileTap={{ scale: 0.9 }}
-                            className="p-3 glass-card border border-white/20 rounded-lg text-xl touch-manipulation">
-                            ➡️
-                        </motion.button>
-                    </div>
-
-                    {/* Fire Button */}
+            {/* ── Controls — tight to canvas ── */}
+            <motion.div
+                className="w-full mt-3 flex flex-col items-center gap-2"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+            >
+                {/* START / PAUSE row */}
+                <div className="flex gap-2 w-full">
                     <motion.button
-                        onTouchStart={() => sendKey(' ', 'keydown')}
-                        onTouchEnd={() => sendKey(' ', 'keyup')}
-                        onClick={() => handleButtonPress(' ')}
-                        whileTap={{ scale: 0.9 }}
-                        className="w-20 h-20 glass-card border-2 border-red-500/50 rounded-full text-2xl font-black text-red-400 touch-manipulation flex items-center justify-center"
-                        style={{ boxShadow: '0 0 20px rgba(239,68,68,0.3)' }}>
-                        🔥
+                        onTouchStart={(e) => { e.preventDefault(); pressKey('Enter'); }}
+                        onClick={() => pressKey('Enter')}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex-1 py-2.5 rounded-xl font-bold text-sm select-none touch-manipulation"
+                        style={{
+                            background: 'hsl(158 65% 48% / 0.15)',
+                            border: '1px solid hsl(158 65% 48% / 0.35)',
+                            color: 'hsl(158 65% 55%)',
+                            WebkitTapHighlightColor: 'transparent',
+                        }}
+                    >
+                        ▶ BAŞLAT / PAUSE
                     </motion.button>
                 </div>
-            </div>
-        </motion.div>
+
+                {/* D-pad + fire — always visible (not md:hidden) */}
+                <div className="flex items-center gap-6 mt-1">
+                    {/* D-pad cross */}
+                    <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(3, 52px)', gridTemplateRows: 'repeat(3, 52px)' }}>
+                        {/* row 1 */}
+                        <div />
+                        <DpadBtn arrow="▲" label="Yukarı" keyName="ArrowUp" />
+                        <div />
+                        {/* row 2 */}
+                        <DpadBtn arrow="◀" label="Sol" keyName="ArrowLeft" />
+                        <div
+                            style={{
+                                borderRadius: 10,
+                                background: 'hsl(224 28% 12%)',
+                                border: '1px solid hsl(220 20% 100% / 0.06)',
+                            }}
+                        />
+                        <DpadBtn arrow="▶" label="Sağ" keyName="ArrowRight" />
+                        {/* row 3 */}
+                        <div />
+                        <DpadBtn arrow="▼" label="Aşağı" keyName="ArrowDown" />
+                        <div />
+                    </div>
+
+                    {/* Fire button */}
+                    <motion.button
+                        onTouchStart={(e) => { e.preventDefault(); onTouchStart(' '); }}
+                        onTouchEnd={(e) => { e.preventDefault(); onTouchEnd(' '); }}
+                        onMouseDown={() => onTouchStart(' ')}
+                        onMouseUp={() => onTouchEnd(' ')}
+                        onMouseLeave={() => onTouchEnd(' ')}
+                        whileTap={{ scale: 0.88 }}
+                        className="flex items-center justify-center select-none touch-manipulation"
+                        style={{
+                            width: 72,
+                            height: 72,
+                            borderRadius: '50%',
+                            background: 'hsl(4 82% 58% / 0.15)',
+                            border: '2px solid hsl(4 82% 58% / 0.5)',
+                            boxShadow: '0 0 20px hsl(4 82% 58% / 0.25)',
+                            fontSize: 28,
+                            WebkitTapHighlightColor: 'transparent',
+                        }}
+                    >
+                        💥
+                    </motion.button>
+                </div>
+
+                {/* Desktop hint */}
+                <p className="text-[11px] text-muted-foreground/50 mt-1 hidden md:block">
+                    ⌨️ Yön tuşları + Space ile de oynayabilirsiniz
+                </p>
+            </motion.div>
+        </div>
     );
 };
 

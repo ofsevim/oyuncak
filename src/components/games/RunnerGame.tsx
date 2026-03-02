@@ -624,8 +624,8 @@ const RunnerGame = () => {
     const bw = p.w * 0.78, bh = p.h * 0.68;
 
     // Ears / Features based on character
-    ctx.fillStyle = character.color;
-    if (character.id === 'bunny') {
+    ctx.fillStyle = charRef.current.color;
+    if (charRef.current.id === 'bunny') {
       // Long bunny ears
       ctx.save();
       ctx.translate(0, -p.h);
@@ -633,11 +633,11 @@ const RunnerGame = () => {
       ctx.beginPath(); ctx.roundRect(-bw / 2 + 2, -18, 9, 22, 5); ctx.fill();
       ctx.beginPath(); ctx.roundRect(bw / 2 - 11, -18, 9, 22, 5); ctx.fill();
       // Inner ears
-      ctx.fillStyle = character.bodyH;
+      ctx.fillStyle = charRef.current.bodyH;
       ctx.beginPath(); ctx.roundRect(-bw / 2 + 4.5, -15, 4, 16, 2); ctx.fill();
       ctx.beginPath(); ctx.roundRect(bw / 2 - 8.5, -15, 4, 16, 2); ctx.fill();
       ctx.restore();
-    } else if (character.id === 'fox') {
+    } else if (charRef.current.id === 'fox') {
       // Sharp fox ears
       ctx.beginPath();
       ctx.moveTo(-bw / 2, -p.h + 8);
@@ -650,11 +650,11 @@ const RunnerGame = () => {
       ctx.lineTo(bw / 2 - 12, -p.h);
       ctx.closePath(); ctx.fill();
       // Inner ear
-      ctx.fillStyle = character.accent;
+      ctx.fillStyle = charRef.current.accent;
       ctx.beginPath();
       ctx.moveTo(-bw / 2 + 2, -p.h + 4); ctx.lineTo(-bw / 2 - 1, -p.h - 3); ctx.lineTo(-bw / 2 + 8, -p.h);
       ctx.closePath(); ctx.fill();
-    } else if (character.id === 'cat') {
+    } else if (charRef.current.id === 'cat') {
       // Cat ears
       ctx.beginPath();
       ctx.moveTo(-bw / 2 + 2, -p.h + 4);
@@ -666,18 +666,18 @@ const RunnerGame = () => {
       ctx.lineTo(bw / 2 + 2, -p.h - 6);
       ctx.lineTo(bw / 2 - 14, -p.h);
       ctx.closePath(); ctx.fill();
-    } else if (character.id === 'panda') {
+    } else if (charRef.current.id === 'panda') {
       // Round black ears
-      ctx.fillStyle = character.accent;
+      ctx.fillStyle = charRef.current.accent;
       ctx.beginPath(); ctx.arc(-bw / 2 + 6, -p.h + 4, 8, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.arc(bw / 2 - 6, -p.h + 4, 8, 0, Math.PI * 2); ctx.fill();
     }
 
     // Body
     const bodyG = ctx.createLinearGradient(-bw / 2, -p.h, bw / 2, -p.h + bh);
-    bodyG.addColorStop(0, character.bodyH);
-    bodyG.addColorStop(0.3, character.color);
-    bodyG.addColorStop(1, character.accent);
+    bodyG.addColorStop(0, charRef.current.bodyH);
+    bodyG.addColorStop(0.3, charRef.current.color);
+    bodyG.addColorStop(1, charRef.current.accent);
     ctx.fillStyle = bodyG;
     ctx.beginPath(); ctx.roundRect(-bw / 2, -p.h, bw, bh, 14); ctx.fill();
 
@@ -701,17 +701,17 @@ const RunnerGame = () => {
     }
 
     // Nose
-    ctx.fillStyle = character.accent;
+    ctx.fillStyle = charRef.current.accent;
     ctx.beginPath(); ctx.ellipse(1, -p.h + 30, 3, 2.2, 0, 0, Math.PI * 2); ctx.fill();
 
     // Mouth
-    ctx.strokeStyle = character.accent;
+    ctx.strokeStyle = charRef.current.accent;
     ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.arc(1, -p.h + 33, 3.5, 0.1, Math.PI - 0.1); ctx.stroke();
 
 
     // Legs — running animation
-    ctx.fillStyle = character.accent;
+    ctx.fillStyle = charRef.current.accent;
     if (p.grounded) {
       const legA = Math.sin(f * 0.28) * 18;
       // Left leg

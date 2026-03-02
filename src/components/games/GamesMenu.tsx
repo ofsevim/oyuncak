@@ -35,7 +35,7 @@ interface GameDef {
 
 const games: GameDef[] = [
   { id: 'balloons', title: 'Balon Patlat', emoji: '🎈', icon: Wind, color: 'hsl(198 85% 50%)', colorSoft: 'hsl(198 85% 50% / 0.1)', description: 'Doğru renkli balonları yakala!', category: ['action'], badge: 'Popüler', badgeColor: 'hsl(198 85% 50%)' },
-  { id: 'battlecity', title: 'Tank 1990', emoji: '🚜', icon: Gamepad2, color: 'hsl(220 18% 45%)', colorSoft: 'hsl(220 18% 45% / 0.1)', description: 'Atari salonlarının efsanesi!', category: ['action'], badge: 'Retro', badgeColor: 'hsl(220 18% 55%)' },
+  { id: 'battlecity', title: 'Tank 1990', emoji: '🕹️', icon: Gamepad2, color: 'hsl(220 18% 45%)', colorSoft: 'hsl(220 18% 45% / 0.1)', description: 'Atari salonlarının efsanesi!', category: ['action'], badge: 'Retro', badgeColor: 'hsl(220 18% 55%)' },
   { id: 'whack', title: 'Köstebek Yakala', emoji: '🐹', icon: Rat, color: 'hsl(28 90% 55%)', colorSoft: 'hsl(28 90% 55% / 0.1)', description: 'Hızlı ol, köstebekleri yakala!', category: ['action'], badge: 'Eğlenceli', badgeColor: 'hsl(28 90% 55%)' },
   { id: 'runner', title: 'Koşucu', emoji: '🏃', icon: Gamepad2, color: 'hsl(152 65% 45%)', colorSoft: 'hsl(152 65% 45% / 0.1)', description: 'Engelleri atla, yıldız topla!', category: ['action'] },
   { id: 'tetris', title: 'Tetris', emoji: '🧱', icon: Zap, color: 'hsl(220 85% 58%)', colorSoft: 'hsl(220 85% 58% / 0.1)', description: 'Blokları yerleştir, puanları yakala!', category: ['action', 'brain'], badge: 'Klasik', badgeColor: 'hsl(220 85% 58%)' },

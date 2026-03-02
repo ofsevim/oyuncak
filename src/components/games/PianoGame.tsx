@@ -27,18 +27,189 @@ const BLACK_NOTES = [
 const ALL_NOTES = [...WHITE_NOTES, ...BLACK_NOTES];
 
 const MELODIES = [
-  { name: '🎵 Do Re Mi', notes: ['C','D','E','F','G','-','G','-','G','F','E','D','C'], difficulty: 'Çok Kolay' },
-  { name: '🐸 Küçük Kurbağa', notes: ['C','D','E','C','-','C','D','E','C','-','E','F','G','-','E','F','G','-','G','A','G','F','E','C','-','C','G','C'], difficulty: 'Kolay' },
-  { name: '⭐ Twinkle Twinkle', notes: ['C','C','G','G','A','A','G','-','F','F','E','E','D','D','C','-','G','G','F','F','E','E','D'], difficulty: 'Orta' },
-  { name: '🎶 Mary Had a Lamb', notes: ['E','D','C','D','E','E','E','-','D','D','D','-','E','G','G','-','E','D','C','D','E','E','E','-','E','D','D','E','D','C'], difficulty: 'Kolay' },
-  { name: '🎂 Happy Birthday', notes: ['C','C','D','C','-','F','E','-','C','C','D','C','-','G','F','-','C','C','C2','A','-','F','E','D','-','B','B','A','F','-','G','F'], difficulty: 'Orta' },
-  { name: '🎄 Jingle Bells', notes: ['E','E','E','-','E','E','E','-','E','G','C','D','E','-','F','F','F','F','F','E','E','E','D','D','E','D','-','G'], difficulty: 'Orta' },
-  { name: '💃 Can Can', notes: ['C','D','E','F','G','-','G','-','A','G','F','E','D','C','-','C','D','E','F','G','-','A','B','C2','-','G','E','C'], difficulty: 'Zor' },
+  /*
+   * Notalar doğrudan C4 oktavına göre yazılmıştır.
+   * '-' = bekleme (nota yokken boşluk)
+   * C2 = üst Do (C5 = 523 Hz)
+   */
+
+  // ── ÇOK KOLAY ──────────────────────────────────────────────
+  {
+    name: '🎵 Do Re Mi',
+    difficulty: 'Çok Kolay',
+    notes: ['C', 'D', 'E', 'C', '-', 'C', 'D', 'E', 'C', '-', 'E', 'F', 'G', '-', 'E', 'F', 'G'],
+  },
+  {
+    name: '🐥 Baby Shark',
+    difficulty: 'Çok Kolay',
+    // D D D D D E  D D D D D E  D D D D D E D
+    notes: ['D', 'D', 'D', 'D', 'D', 'E', '-', 'D', 'D', 'D', 'D', 'D', 'E', '-', 'D', 'D', 'D', 'D', 'D', 'E', 'D'],
+  },
+  {
+    name: '🌙 Ay Işığı',
+    difficulty: 'Çok Kolay',
+    // E E E - C E - G (Beethoven Ay Işığı Sonat - basit versiyon)
+    notes: ['E', 'E', 'E', '-', 'C', 'E', '-', 'G', '-', '-', 'G'],
+  },
+
+  // ── KOLAY ──────────────────────────────────────────────────
+  {
+    name: '⭐ Twinkle Twinkle',
+    difficulty: 'Kolay',
+    // C C G G A A G — F F E E D D C — G G F F E E D — G G F F E E D — C C G G A A G — F F E E D D C
+    notes: [
+      'C', 'C', 'G', 'G', 'A', 'A', 'G', '-',
+      'F', 'F', 'E', 'E', 'D', 'D', 'C', '-',
+      'G', 'G', 'F', 'F', 'E', 'E', 'D', '-',
+      'G', 'G', 'F', 'F', 'E', 'E', 'D', '-',
+      'C', 'C', 'G', 'G', 'A', 'A', 'G', '-',
+      'F', 'F', 'E', 'E', 'D', 'D', 'C',
+    ],
+  },
+  {
+    name: '🎶 Mary Had a Lamb',
+    difficulty: 'Kolay',
+    // E D C D  E E E  D D D  E G G  E D C D  E E E  E D D E D C
+    notes: [
+      'E', 'D', 'C', 'D', 'E', 'E', 'E', '-',
+      'D', 'D', 'D', '-',
+      'E', 'G', 'G', '-',
+      'E', 'D', 'C', 'D', 'E', 'E', 'E', '-',
+      'E', 'D', 'D', 'E', 'D', 'C',
+    ],
+  },
+  {
+    name: '🐸 Küçük Kurbağa',
+    difficulty: 'Kolay',
+    // C D E C  C D E C  E F G  E F G  G A G F E C  C G C
+    notes: [
+      'C', 'D', 'E', 'C', '-',
+      'C', 'D', 'E', 'C', '-',
+      'E', 'F', 'G', '-',
+      'E', 'F', 'G', '-',
+      'G', 'A', 'G', 'F', 'E', 'C', '-',
+      'C', 'G', 'C',
+    ],
+  },
+  {
+    name: '🌉 London Bridge',
+    difficulty: 'Kolay',
+    // G A G F E F G  D E F  E F G  G A G F E F G D G E C
+    notes: [
+      'G', 'A', 'G', 'F', 'E', 'F', 'G', '-',
+      'D', 'E', 'F', '-',
+      'E', 'F', 'G', '-',
+      'G', 'A', 'G', 'F', 'E', 'F', 'G', '-',
+      'D', 'G', 'E', 'C',
+    ],
+  },
+
+  // ── ORTA ───────────────────────────────────────────────────
+  {
+    name: '🎂 Happy Birthday',
+    difficulty: 'Orta',
+    // C C D C F E  C C D C G F  C C C2 A F E D  B B A F G F
+    notes: [
+      'C', 'C', 'D', 'C', 'F', 'E', '-',
+      'C', 'C', 'D', 'C', 'G', 'F', '-',
+      'C', 'C', 'C2', 'A', 'F', 'E', 'D', '-',
+      'B', 'B', 'A', 'F', 'G', 'F',
+    ],
+  },
+  {
+    name: '🎄 Jingle Bells',
+    difficulty: 'Orta',
+    // E E E  E E E  E G C D E  F F F F F E E  E D D E D G
+    notes: [
+      'E', 'E', 'E', '-',
+      'E', 'E', 'E', '-',
+      'E', 'G', 'C', 'D', 'E', '-',
+      'F', 'F', 'F', 'F', 'F', 'E', 'E', '-',
+      'E', 'D', 'D', 'E', 'D', '-',
+      'G', '-',
+      'E', 'E', 'E', '-',
+      'E', 'E', 'E', '-',
+      'E', 'G', 'C', 'D', 'E', '-',
+      'F', 'F', 'F', 'F', 'E', 'D', 'C',
+    ],
+  },
+  {
+    name: '🎻 Neşeye Övgü',
+    difficulty: 'Orta',
+    // Beethoven - Ode to Joy (9. Senfoni, 4. Bölüm)
+    // E E F G  G F E D  C C D E  E D D
+    // E E F G  G F E D  C C D E  D C C
+    notes: [
+      'E', 'E', 'F', 'G', 'G', 'F', 'E', 'D', 'C', 'C', 'D', 'E', 'E', 'D', 'D', '-',
+      'E', 'E', 'F', 'G', 'G', 'F', 'E', 'D', 'C', 'C', 'D', 'E', 'D', 'C', 'C',
+    ],
+  },
+  {
+    name: '🎺 Ölümsüz Oyun',
+    difficulty: 'Orta',
+    // Tetris Theme (Korobeiniki) — A versiyon
+    // E B C D  C B A A  C E A B  A G G B  C D E C  B A A C  E D C B  A A
+    notes: [
+      'E', 'B', 'C', 'D', 'C', 'B', 'A', '-',
+      'A', 'C', 'E', 'A', '-',
+      'B', '-', 'C', 'D', '-',
+      'E', 'C', '-', 'B', '-',
+      'A', '-', 'A', 'C', 'E', '-',
+      'D', 'C', 'B', '-', 'C', '-',
+      'D', '-', 'E', '-', 'C', '-',
+      'A', '-', 'A',
+    ],
+  },
+
+  // ── ZOR ─────────────────────────────────────────────────────
+  {
+    name: '💃 Can Can',
+    difficulty: 'Zor',
+    // Offenbach - Can Can (Galop İnfernal)
+    // C D E F G G  A G F E D C  E F G A B C2  G E C
+    notes: [
+      'C', 'D', 'E', 'F', 'G', '-', 'G', '-',
+      'A', 'G', 'F', 'E', 'D', 'C', '-',
+      'E', 'F', 'G', 'A', 'B', 'C2', '-',
+      'G', 'E', 'C', '-',
+      'C', 'D', 'E', 'F', 'G', '-', 'G', '-',
+      'A', 'G', 'F', 'E', 'D', 'C', '-',
+      'E', 'D', 'C',
+    ],
+  },
+  {
+    name: '🦋 Für Elise',
+    difficulty: 'Zor',
+    // Beethoven - Für Elise (açılış teması)
+    // E D# E D# E B D C A
+    notes: [
+      'E', 'D#', 'E', 'D#', 'E', 'B', 'D', 'C', 'A', '-',
+      'C', 'E', 'A', 'B', '-',
+      'E', 'G#', 'B', 'C', '-',
+      'E', 'D#', 'E', 'D#', 'E', 'B', 'D', 'C', 'A', '-',
+      'C', 'E', 'A', 'B', '-',
+      'E', 'C', 'B', 'A',
+    ],
+  },
 ];
 
 const COLORS: Record<string, string> = {
-  C: '#ef4444', D: '#f97316', E: '#eab308', F: '#22c55e', G: '#3b82f6', A: '#8b5cf6', B: '#ec4899', C2: '#ef4444',
-  'C#': '#dc2626', 'D#': '#ea580c', 'F#': '#16a34a', 'G#': '#2563eb', 'A#': '#7c3aed',
+  // ── Beyaz tuşlar: Gökkuşağı — parlak & çocuk dostu ──
+  C: '#FF5F6D',   // Mercan Kırmızı
+  D: '#FF9A3C',   // Turuncu
+  E: '#FFE234',   // Parlak Sarı
+  F: '#4CD964',   // Çim Yeşili
+  G: '#2BBCF5',   // Gökyüzü Mavisi
+  A: '#B066FF',   // Lavanta Moru
+  B: '#FF66C4',   // Pembe Şeker
+  C2: '#FF5F6D',   // Mercan Kırmızı (üst oktav)
+
+  // ── Siyah tuşlar: biraz daha koyu ama hâlâ canlı ──
+  'C#': '#E0384A', // Koyu Mercan
+  'D#': '#E07820', // Koyu Turuncu
+  'F#': '#29A84A', // Koyu Yeşil
+  'G#': '#1A96D4', // Koyu Mavi
+  'A#': '#8A40E0', // Koyu Mor
 };
 
 const PianoGame = () => {
@@ -216,8 +387,8 @@ const PianoGame = () => {
                     background: activeNotes.has(note.note)
                       ? `linear-gradient(180deg, ${COLORS[note.note]} 0%, ${COLORS[note.note]}dd 100%)`
                       : `linear-gradient(180deg, ${COLORS[note.note]}50 0%, ${COLORS[note.note]}80 50%, ${COLORS[note.note]}cc 100%)`,
-                    boxShadow: activeNotes.has(note.note) 
-                      ? `0 0 30px ${COLORS[note.note]}, inset 0 -4px 12px ${COLORS[note.note]}60` 
+                    boxShadow: activeNotes.has(note.note)
+                      ? `0 0 30px ${COLORS[note.note]}, inset 0 -4px 12px ${COLORS[note.note]}60`
                       : `0 4px 8px rgba(0,0,0,0.3), inset 0 -3px 10px ${COLORS[note.note]}50`,
                     border: `3px solid ${COLORS[note.note]}`,
                   }}
@@ -244,8 +415,8 @@ const PianoGame = () => {
                       background: activeNotes.has(note.note)
                         ? `linear-gradient(180deg, ${COLORS[note.note]} 0%, ${COLORS[note.note]}cc 100%)`
                         : `linear-gradient(180deg, ${COLORS[note.note]}aa 0%, ${COLORS[note.note]}dd 50%, ${COLORS[note.note]} 100%)`,
-                      boxShadow: activeNotes.has(note.note) 
-                        ? `0 0 25px ${COLORS[note.note]}, inset 0 -3px 10px ${COLORS[note.note]}80` 
+                      boxShadow: activeNotes.has(note.note)
+                        ? `0 0 25px ${COLORS[note.note]}, inset 0 -3px 10px ${COLORS[note.note]}80`
                         : `0 4px 8px rgba(0,0,0,0.5), inset 0 -2px 8px ${COLORS[note.note]}60`,
                       border: `3px solid ${COLORS[note.note]}`,
                     }}
