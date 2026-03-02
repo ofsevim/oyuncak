@@ -208,7 +208,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
           }}>
           {cards.map((card) => {
             const isRevealed = card.isFlipped || card.isMatched;
-            const cardSize = gridSize === 3 ? 'w-16 h-16 sm:w-22 sm:h-22' : gridSize === 4 ? 'w-14 h-14 sm:w-20 sm:h-20' : gridSize === 5 ? 'w-12 h-12 sm:w-16 sm:h-16' : 'w-10 h-10 sm:w-14 sm:h-14';
+            const cardSize = gridSize === 3 ? 'w-16 h-16 sm:w-24 sm:h-24' : gridSize === 4 ? 'w-14 h-14 sm:w-20 sm:h-20' : gridSize === 5 ? 'w-12 h-12 sm:w-16 sm:h-16' : 'w-10 h-10 sm:w-14 sm:h-14';
             const emojiSize = gridSize === 3 ? 'text-3xl sm:text-4xl' : gridSize === 4 ? 'text-2xl sm:text-3xl' : gridSize === 5 ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl';
             return (
               <button key={card.id} onClick={() => handleCardClick(card.id)} disabled={card.isMatched || card.isFlipped}

@@ -166,10 +166,10 @@ const BalloonPopGame = () => {
     return () => clearInterval(id);
   }, [gamePhase, config.maxBalloons]);
 
-  const handlePop = (balloon: Balloon, e: React.MouseEvent | React.TouchEvent) => {
+  const handlePop = (balloon: Balloon, e: React.PointerEvent) => {
     if (gamePhase !== 'playing') return;
-    const clientX = 'touches' in e ? e.touches[0]?.clientX ?? 0 : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0]?.clientY ?? 0 : e.clientY;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
 
     // Special balloons
     if (balloon.special === 'freeze') {
@@ -319,7 +319,7 @@ const BalloonPopGame = () => {
             onAnimationComplete={() => setBalloons(prev => prev.filter(b => b.id !== balloon.id))}>
             <motion.div animate={{ x: [-balloon.swayAmount, balloon.swayAmount, -balloon.swayAmount], rotate: [-3, 3, -3] }}
               transition={{ duration: balloon.swayDuration, repeat: Infinity, ease: "easeInOut" }}>
-              <button onClick={(e) => handlePop(balloon, e)} onTouchStart={(e) => { e.preventDefault(); handlePop(balloon, e); }}
+              <button onPointerDown={(e) => { e.preventDefault(); handlePop(balloon, e); }}
                 className="relative group active:scale-90 transition-transform cursor-pointer" style={{ transform: `scale(${balloon.size})`, touchAction: 'none' }}>
                 <svg width="48" height="64" viewBox="0 0 48 64" className="drop-shadow-lg">
                   <defs>

@@ -21,16 +21,16 @@ type Diff = 'easy' | 'medium' | 'hard';
 interface Particle { id: number; x: number; y: number; vx: number; vy: number; color: string; life: number; }
 
 const DIFFS: Record<Diff, { label: string; emoji: string; speed: number; wrap: boolean; obstacles: boolean; desc: string }> = {
-  easy:   { label: 'Kolay',    emoji: '🌟', speed: 160, wrap: true,  obstacles: false, desc: 'Yavaş hız, engelsiz' },
-  medium: { label: 'Orta',     emoji: '⭐', speed: 130, wrap: true, obstacles: false, desc: 'Orta hız, engelsiz' },
-  hard:   { label: 'Zor',      emoji: '🔥', speed: 100, wrap: true, obstacles: true,  desc: 'Hızlı + engeller' },
+  easy: { label: 'Kolay', emoji: '🌟', speed: 160, wrap: true, obstacles: false, desc: 'Yavaş hız, engelsiz' },
+  medium: { label: 'Orta', emoji: '⭐', speed: 130, wrap: true, obstacles: false, desc: 'Orta hız, engelsiz' },
+  hard: { label: 'Zor', emoji: '🔥', speed: 100, wrap: true, obstacles: true, desc: 'Hızlı + engeller' },
 };
 
 const FOOD_STYLES: Record<FoodKind, { colors: string[]; glow: string; emoji: string; points: number }> = {
-  normal:  { colors: ['#f87171', '#ef4444', '#dc2626'], glow: 'rgba(239,68,68,0.5)',   emoji: '🍎', points: 10 },
-  golden:  { colors: ['#fde68a', '#fbbf24', '#f59e0b'], glow: 'rgba(251,191,36,0.6)',  emoji: '⭐', points: 50 },
-  speed:   { colors: ['#67e8f9', '#22d3ee', '#06b6d4'], glow: 'rgba(6,182,212,0.5)',   emoji: '⚡', points: 20 },
-  shrink:  { colors: ['#d8b4fe', '#c084fc', '#a855f7'], glow: 'rgba(168,85,247,0.5)',  emoji: '✂️', points: 15 },
+  normal: { colors: ['#f87171', '#ef4444', '#dc2626'], glow: 'rgba(239,68,68,0.5)', emoji: '🍎', points: 10 },
+  golden: { colors: ['#fde68a', '#fbbf24', '#f59e0b'], glow: 'rgba(251,191,36,0.6)', emoji: '⭐', points: 50 },
+  speed: { colors: ['#67e8f9', '#22d3ee', '#06b6d4'], glow: 'rgba(6,182,212,0.5)', emoji: '⚡', points: 20 },
+  shrink: { colors: ['#d8b4fe', '#c084fc', '#a855f7'], glow: 'rgba(168,85,247,0.5)', emoji: '✂️', points: 15 },
 };
 
 /* Glassmorphism pill style */
@@ -67,8 +67,20 @@ const SnakeGame = () => {
   const snakeRef = useRef(snake);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const particleId = useRef(0);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const animRef = useRef<number>(0);
+  const [boardScale, setBoardScale] = useState(1);
+
+  /* Viewport'a göre oyun alanını oluştur */
+  useEffect(() => {
+    const updateScale = () => {
+      const maxW = window.innerWidth - 32; // 16px soldan + 16px sağdan
+      setBoardScale(Math.min(1, maxW / (FIELD + 8)));
+    };
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
 
   useEffect(() => { snakeRef.current = snake; }, [snake]);
   useEffect(() => { dirRef.current = dir; }, [dir]);
@@ -249,9 +261,9 @@ const SnakeGame = () => {
   /* ── Eye direction offsets ── */
   const eyeOffset = (d: Dir): { lx: number; ly: number; rx: number; ry: number } => {
     switch (d) {
-      case 'UP':    return { lx: -3, ly: -2, rx: 3, ry: -2 };
-      case 'DOWN':  return { lx: -3, ly: 2, rx: 3, ry: 2 };
-      case 'LEFT':  return { lx: -2, ly: -3, rx: -2, ry: 3 };
+      case 'UP': return { lx: -3, ly: -2, rx: 3, ry: -2 };
+      case 'DOWN': return { lx: -3, ly: 2, rx: 3, ry: 2 };
+      case 'LEFT': return { lx: -2, ly: -3, rx: -2, ry: 3 };
       case 'RIGHT': return { lx: 2, ly: -3, rx: 2, ry: 3 };
     }
   };
@@ -330,143 +342,155 @@ const SnakeGame = () => {
       </motion.div>
 
       {/* ── Game Field ── */}
-      <div className="relative overflow-hidden"
-        style={{
-          width: FIELD + 8, height: FIELD + 8, padding: 4,
-          borderRadius: 20,
-          boxShadow: '0 8px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.06)',
-        }}
-        onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      {/* Outer wrapper: scale sonrası gerçek görünen boyutu yansıtır */}
+      <div style={{
+        width: (FIELD + 8) * boardScale,
+        height: (FIELD + 8) * boardScale,
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'flex-start',
+      }}>
+        <div className="relative overflow-hidden"
+          style={{
+            width: FIELD + 8, height: FIELD + 8, padding: 4,
+            borderRadius: 20,
+            boxShadow: '0 8px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            transform: `scale(${boardScale})`,
+            transformOrigin: 'top left',
+          }}
+          onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
 
-        {/* Grass texture background */}
-        <div className="absolute inset-0" style={{
-          borderRadius: 20,
-          background: `
+          {/* Grass texture background */}
+          <div className="absolute inset-0" style={{
+            borderRadius: 20,
+            background: `
             radial-gradient(ellipse at 30% 20%, rgba(52,211,153,0.08) 0%, transparent 50%),
             radial-gradient(ellipse at 70% 80%, rgba(34,197,94,0.06) 0%, transparent 50%),
             linear-gradient(180deg, hsl(150 20% 10%) 0%, hsl(155 25% 8%) 100%)
           `,
-        }} />
-        {/* Grid lines */}
-        <div className="absolute inset-0 opacity-[0.06]" style={{
-          borderRadius: 20,
-          backgroundImage: `
+          }} />
+          {/* Grid lines */}
+          <div className="absolute inset-0 opacity-[0.06]" style={{
+            borderRadius: 20,
+            backgroundImage: `
             linear-gradient(rgba(52,211,153,0.4) 1px, transparent 1px),
             linear-gradient(90deg, rgba(52,211,153,0.4) 1px, transparent 1px)
           `,
-          backgroundSize: `${CELL}px ${CELL}px`,
-        }} />
-        {/* Grass texture dots */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'radial-gradient(circle, rgba(52,211,153,0.8) 0.5px, transparent 0.5px)',
-          backgroundSize: '8px 8px',
-        }} />
-
-        {/* Obstacles */}
-        {obstacles.map((o, i) => (
-          <div key={`obs-${i}`} className="absolute" style={{
-            width: CELL - 2, height: CELL - 2,
-            left: o.x * CELL + 5, top: o.y * CELL + 5,
-            borderRadius: 6,
-            background: 'linear-gradient(135deg, rgba(100,116,139,0.8), rgba(71,85,105,0.9))',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+            backgroundSize: `${CELL}px ${CELL}px`,
           }} />
-        ))}
+          {/* Grass texture dots */}
+          <div className="absolute inset-0 opacity-[0.03]" style={{
+            backgroundImage: 'radial-gradient(circle, rgba(52,211,153,0.8) 0.5px, transparent 0.5px)',
+            backgroundSize: '8px 8px',
+          }} />
 
-        {/* Food — pulsing glow + wobble */}
-        <motion.div className="absolute z-10 flex items-center justify-center"
-          style={{
-            width: CELL + 4, height: CELL + 4,
-            left: food.x * CELL + 2, top: food.y * CELL + 2,
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${foodStyle.colors[0]}, ${foodStyle.colors[2]})`,
-            boxShadow: `0 0 16px ${foodStyle.glow}, 0 0 32px ${foodStyle.glow}`,
-          }}
-          animate={{ scale: [1, 1.18, 1], rotate: [0, 8, -8, 0] }}
-          transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}>
-          <span className="text-sm select-none" style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.3))' }}>{foodStyle.emoji}</span>
-        </motion.div>
-
-        {/* Snake — fluid rounded segments */}
-        {snake.map((seg, i) => {
-          const isHead = i === 0;
-          const isTail = i === snake.length - 1;
-          const color = segColor(i, snake.length);
-          const radius = getSegmentRadius(i, snake.length);
-          const size = isHead ? CELL + 2 : isTail ? CELL - 4 : CELL - 1;
-          const offset = isHead ? -1 : isTail ? 2 : 0.5;
-
-          return (
-            <div key={`s-${i}`} className="absolute z-20"
-              style={{
-                width: size, height: size,
-                left: seg.x * CELL + 4 + offset, top: seg.y * CELL + 4 + offset,
-                borderRadius: radius,
-                background: isHead
-                  ? `radial-gradient(circle at 35% 35%, ${color}, hsl(145, 80%, 35%))`
-                  : `radial-gradient(circle at 40% 40%, ${color}, ${segColor(i + 1, snake.length)})`,
-                boxShadow: isHead
-                  ? `0 0 12px ${color}80, 0 2px 8px rgba(0,0,0,0.3)`
-                  : `0 1px 4px rgba(0,0,0,0.2)`,
-              }}>
-              {/* Eyes on head */}
-              {isHead && (
-                <>
-                  <div className="absolute bg-white rounded-full" style={{ width: 5, height: 6, left: `calc(50% + ${eyes.lx}px)`, top: `calc(50% + ${eyes.ly}px)`, transform: 'translate(-50%,-50%)', boxShadow: '0 0 3px rgba(255,255,255,0.5)' }}>
-                    <div className="absolute bg-gray-900 rounded-full" style={{ width: 2.5, height: 3, left: '50%', top: '55%', transform: 'translate(-50%,-50%)' }} />
-                  </div>
-                  <div className="absolute bg-white rounded-full" style={{ width: 5, height: 6, left: `calc(50% + ${eyes.rx}px)`, top: `calc(50% + ${eyes.ry}px)`, transform: 'translate(-50%,-50%)', boxShadow: '0 0 3px rgba(255,255,255,0.5)' }}>
-                    <div className="absolute bg-gray-900 rounded-full" style={{ width: 2.5, height: 3, left: '50%', top: '55%', transform: 'translate(-50%,-50%)' }} />
-                  </div>
-                </>
-              )}
-            </div>
-          );
-        })}
-
-        {/* Particles */}
-        {particles.map(p => (
-          <div key={p.id} className="absolute z-30 rounded-full pointer-events-none"
-            style={{
-              width: 5, height: 5,
-              left: p.x + 4, top: p.y + 4,
-              background: p.color,
-              opacity: p.life,
-              boxShadow: `0 0 6px ${p.color}`,
-              transition: 'opacity 0.05s',
+          {/* Obstacles */}
+          {obstacles.map((o, i) => (
+            <div key={`obs-${i}`} className="absolute" style={{
+              width: CELL - 2, height: CELL - 2,
+              left: o.x * CELL + 5, top: o.y * CELL + 5,
+              borderRadius: 6,
+              background: 'linear-gradient(135deg, rgba(100,116,139,0.8), rgba(71,85,105,0.9))',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
             }} />
-        ))}
+          ))}
 
-        {/* ── GAME OVER OVERLAY ── */}
-        <AnimatePresence>
-          {gameState === 'gameover' && (
-            <motion.div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3"
-              style={{ borderRadius: 20, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)' }}
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-              <motion.p className="text-3xl font-black text-gradient"
-                initial={{ scale: 0, y: 30 }} animate={{ scale: [0, 1.3, 1], y: 0 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 12 }}>
-                Game Over!
-              </motion.p>
-              {isNewRecord && (
-                <motion.p initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}
-                  className="font-black text-sm" style={{ color: '#fbbf24' }}>🏆 YENİ REKOR!</motion.p>
-              )}
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                className="text-center space-y-1">
-                <p className="text-xl font-bold text-white">{score} Puan</p>
-                <p className="text-xs text-white/60">📏 {snake.length} uzunluk · 🍎 {eaten} yenen</p>
+          {/* Food — pulsing glow + wobble */}
+          <motion.div className="absolute z-10 flex items-center justify-center"
+            style={{
+              width: CELL + 4, height: CELL + 4,
+              left: food.x * CELL + 2, top: food.y * CELL + 2,
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${foodStyle.colors[0]}, ${foodStyle.colors[2]})`,
+              boxShadow: `0 0 16px ${foodStyle.glow}, 0 0 32px ${foodStyle.glow}`,
+            }}
+            animate={{ scale: [1, 1.18, 1], rotate: [0, 8, -8, 0] }}
+            transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}>
+            <span className="text-sm select-none" style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.3))' }}>{foodStyle.emoji}</span>
+          </motion.div>
+
+          {/* Snake — fluid rounded segments */}
+          {snake.map((seg, i) => {
+            const isHead = i === 0;
+            const isTail = i === snake.length - 1;
+            const color = segColor(i, snake.length);
+            const radius = getSegmentRadius(i, snake.length);
+            const size = isHead ? CELL + 2 : isTail ? CELL - 4 : CELL - 1;
+            const offset = isHead ? -1 : isTail ? 2 : 0.5;
+
+            return (
+              <div key={`s-${i}`} className="absolute z-20"
+                style={{
+                  width: size, height: size,
+                  left: seg.x * CELL + 4 + offset, top: seg.y * CELL + 4 + offset,
+                  borderRadius: radius,
+                  background: isHead
+                    ? `radial-gradient(circle at 35% 35%, ${color}, hsl(145, 80%, 35%))`
+                    : `radial-gradient(circle at 40% 40%, ${color}, ${segColor(i + 1, snake.length)})`,
+                  boxShadow: isHead
+                    ? `0 0 12px ${color}80, 0 2px 8px rgba(0,0,0,0.3)`
+                    : `0 1px 4px rgba(0,0,0,0.2)`,
+                }}>
+                {/* Eyes on head */}
+                {isHead && (
+                  <>
+                    <div className="absolute bg-white rounded-full" style={{ width: 5, height: 6, left: `calc(50% + ${eyes.lx}px)`, top: `calc(50% + ${eyes.ly}px)`, transform: 'translate(-50%,-50%)', boxShadow: '0 0 3px rgba(255,255,255,0.5)' }}>
+                      <div className="absolute bg-gray-900 rounded-full" style={{ width: 2.5, height: 3, left: '50%', top: '55%', transform: 'translate(-50%,-50%)' }} />
+                    </div>
+                    <div className="absolute bg-white rounded-full" style={{ width: 5, height: 6, left: `calc(50% + ${eyes.rx}px)`, top: `calc(50% + ${eyes.ry}px)`, transform: 'translate(-50%,-50%)', boxShadow: '0 0 3px rgba(255,255,255,0.5)' }}>
+                      <div className="absolute bg-gray-900 rounded-full" style={{ width: 2.5, height: 3, left: '50%', top: '55%', transform: 'translate(-50%,-50%)' }} />
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Particles */}
+          {particles.map(p => (
+            <div key={p.id} className="absolute z-30 rounded-full pointer-events-none"
+              style={{
+                width: 5, height: 5,
+                left: p.x + 4, top: p.y + 4,
+                background: p.color,
+                opacity: p.life,
+                boxShadow: `0 0 6px ${p.color}`,
+                transition: 'opacity 0.05s',
+              }} />
+          ))}
+
+          {/* ── GAME OVER OVERLAY ── */}
+          <AnimatePresence>
+            {gameState === 'gameover' && (
+              <motion.div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3"
+                style={{ borderRadius: 20, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)' }}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+                <motion.p className="text-3xl font-black text-gradient"
+                  initial={{ scale: 0, y: 30 }} animate={{ scale: [0, 1.3, 1], y: 0 }}
+                  transition={{ type: 'spring', stiffness: 200, damping: 12 }}>
+                  Game Over!
+                </motion.p>
+                {isNewRecord && (
+                  <motion.p initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}
+                    className="font-black text-sm" style={{ color: '#fbbf24' }}>🏆 YENİ REKOR!</motion.p>
+                )}
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                  className="text-center space-y-1">
+                  <p className="text-xl font-bold text-white">{score} Puan</p>
+                  <p className="text-xs text-white/60">📏 {snake.length} uzunluk · 🍎 {eaten} yenen</p>
+                </motion.div>
+                <motion.div className="flex gap-2 mt-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+                  <motion.button whileTap={{ scale: 0.92 }} onClick={startGame}
+                    className="btn-gaming px-5 py-2 text-sm">🔄 Tekrar</motion.button>
+                  <motion.button whileTap={{ scale: 0.92 }} onClick={() => setGameState('menu')}
+                    className="px-5 py-2 font-bold text-xs text-white/60 touch-manipulation" style={pill}>← Menü</motion.button>
+                </motion.div>
               </motion.div>
-              <motion.div className="flex gap-2 mt-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
-                <motion.button whileTap={{ scale: 0.92 }} onClick={startGame}
-                  className="btn-gaming px-5 py-2 text-sm">🔄 Tekrar</motion.button>
-                <motion.button whileTap={{ scale: 0.92 }} onClick={() => setGameState('menu')}
-                  className="px-5 py-2 font-bold text-xs text-white/60 touch-manipulation" style={pill}>← Menü</motion.button>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* ── Mobile D-pad ── */}
