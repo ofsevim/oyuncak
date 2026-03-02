@@ -31,12 +31,14 @@ const BRUSH_SIZES = [
 
 
 /* Brush texture modes */
-type BrushTexture = 'normal' | 'glitter' | 'watercolor' | 'pattern';
+type BrushTexture = 'pencil' | 'pastel' | 'crayon' | 'watercolor' | 'marker' | 'glitter';
 const BRUSH_TEXTURES: { id: BrushTexture; label: string; emoji: string; desc: string }[] = [
-  { id: 'normal', label: 'Normal', emoji: '🖌️', desc: 'Düz renk' },
+  { id: 'pencil', label: 'Kalem', emoji: '✏️', desc: 'Çizgili, grenli' },
+  { id: 'pastel', label: 'Pastel', emoji: '🎨', desc: 'Yumuşak, pudralı' },
+  { id: 'crayon', label: 'Kuruboya', emoji: '🖍️', desc: 'Balmumu dokusu' },
+  { id: 'watercolor', label: 'Sulu Boya', emoji: '💧', desc: 'Saydam, akan' },
+  { id: 'marker', label: 'Keçeli', emoji: '🖊️', desc: 'Bold, canlı' },
   { id: 'glitter', label: 'Simli', emoji: '✨', desc: 'Parıltılı' },
-  { id: 'watercolor', label: 'Sulu Boya', emoji: '💧', desc: 'Şeffaf katman' },
-  { id: 'pattern', label: 'Desenli', emoji: '🔵', desc: 'Nokta desen' },
 ];
 
 const PAGES = [
@@ -89,7 +91,7 @@ const ColoringBookGame = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [toolMode, setToolMode] = useState<ToolMode>('fill');
   const [brushSize, setBrushSize] = useState(8);
-  const [brushTexture, setBrushTexture] = useState<BrushTexture>('normal');
+  const [brushTexture, setBrushTexture] = useState<BrushTexture>('pencil');
   const [zoom, setZoom] = useState(1);
   const [undoStack, setUndoStack] = useState<ImageData[]>([]);
   const [colorUsage, setColorUsage] = useState<Set<string>>(new Set());
@@ -261,27 +263,45 @@ const ColoringBookGame = () => {
       if (!colorsMatch(r, g, b, startR, startG, startB, 32)) continue;
       visited.add(idx);
 
-      // Apply texture
+      // Apply texture per-pixel during flood fill
       if (brushTexture === 'glitter') {
-        const sparkle = Math.random() > 0.85 ? 40 : 0;
-        data[pixelIdx] = Math.min(255, fillR + sparkle);
-        data[pixelIdx + 1] = Math.min(255, fillG + sparkle);
-        data[pixelIdx + 2] = Math.min(255, fillB + sparkle);
+        // Her ~8.pikzelde bir parlak nokta
+        const spark = Math.random() > 0.88;
+        if (spark) {
+          const h = Math.floor(Math.random() * 360);
+          // HSL → rough RGB for sparkle tint
+          data[pixelIdx] = Math.min(255, fillR + 80);
+          data[pixelIdx + 1] = Math.min(255, fillG + 80);
+          data[pixelIdx + 2] = Math.min(255, fillB + 80);
+        } else {
+          data[pixelIdx] = fillR; data[pixelIdx + 1] = fillG; data[pixelIdx + 2] = fillB;
+        }
       } else if (brushTexture === 'watercolor') {
-        const blend = 0.6 + Math.random() * 0.3;
+        // Hafif saydam dolgu: arka planla blend
+        const blend = 0.55 + Math.random() * 0.25;
         data[pixelIdx] = Math.floor(r * (1 - blend) + fillR * blend);
         data[pixelIdx + 1] = Math.floor(g * (1 - blend) + fillG * blend);
         data[pixelIdx + 2] = Math.floor(b * (1 - blend) + fillB * blend);
-      } else if (brushTexture === 'pattern') {
-        const patternOn = ((x + y) % 6 < 3);
-        if (patternOn) {
-          data[pixelIdx] = fillR; data[pixelIdx + 1] = fillG; data[pixelIdx + 2] = fillB;
-        } else {
-          data[pixelIdx] = Math.min(255, fillR + 40);
-          data[pixelIdx + 1] = Math.min(255, fillG + 40);
-          data[pixelIdx + 2] = Math.min(255, fillB + 40);
-        }
+      } else if (brushTexture === 'pastel') {
+        // Pudralı: hafif beyaz nokta katkısı
+        const grain = Math.random() > 0.7 ? 20 : 0;
+        data[pixelIdx] = Math.min(255, fillR + grain);
+        data[pixelIdx + 1] = Math.min(255, fillG + grain);
+        data[pixelIdx + 2] = Math.min(255, fillB + grain);
+      } else if (brushTexture === 'crayon') {
+        // Balmumu: düzensiz opaklık simülasyonu
+        const noise = Math.floor((Math.random() - 0.5) * 30);
+        data[pixelIdx] = Math.min(255, Math.max(0, fillR + noise));
+        data[pixelIdx + 1] = Math.min(255, Math.max(0, fillG + noise));
+        data[pixelIdx + 2] = Math.min(255, Math.max(0, fillB + noise));
+      } else if (brushTexture === 'pencil') {
+        // Kalem: soluk, hafif grenli
+        const fade = Math.random() > 0.85 ? 0.6 : 0.85;
+        data[pixelIdx] = Math.floor(r * (1 - fade) + fillR * fade);
+        data[pixelIdx + 1] = Math.floor(g * (1 - fade) + fillG * fade);
+        data[pixelIdx + 2] = Math.floor(b * (1 - fade) + fillB * fade);
       } else {
+        // marker / normal: tam dolu
         data[pixelIdx] = fillR; data[pixelIdx + 1] = fillG; data[pixelIdx + 2] = fillB;
       }
       data[pixelIdx + 3] = 255;
@@ -290,60 +310,127 @@ const ColoringBookGame = () => {
     ctx.putImageData(imageData, 0, 0);
   }, [brushTexture]);
 
-  /* Textured brush draw */
+  /* ─── Gerçekçi Fırça Çizimi ─── */
   const drawBrush = useCallback((x: number, y: number, color: string, size: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    ctx.save();
 
-    if (brushTexture === 'watercolor') {
-      ctx.globalAlpha = 0.15;
+    if (brushTexture === 'pencil') {
+      /* ✏️ KALEM — grenli, hafif saydam kenarlar */
+      ctx.globalAlpha = 0.75;
       ctx.fillStyle = color;
-      for (let i = 0; i < 3; i++) {
-        const ox = (Math.random() - 0.5) * size * 0.5;
-        const oy = (Math.random() - 0.5) * size * 0.5;
-        ctx.beginPath(); ctx.arc(x + ox, y + oy, size * (1 + Math.random() * 0.5), 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, size * 0.65, 0, Math.PI * 2); ctx.fill();
+      // Grenli doku: küçük rastgele noktalar
+      ctx.globalAlpha = 0.12;
+      for (let i = 0; i < 10; i++) {
+        const nx = x + (Math.random() - 0.5) * size * 2.8;
+        const ny = y + (Math.random() - 0.5) * size * 2.8;
+        ctx.beginPath(); ctx.arc(nx, ny, Math.random() * size * 0.35, 0, Math.PI * 2); ctx.fill();
       }
-      ctx.globalAlpha = 1;
-    } else if (brushTexture === 'glitter') {
+
+    } else if (brushTexture === 'pastel') {
+      /* 🎨 PASTEL — yumuşak radyal gradient, pudralı */
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, size * 2);
+      grad.addColorStop(0, color + 'cc');
+      grad.addColorStop(0.45, color + '77');
+      grad.addColorStop(0.8, color + '33');
+      grad.addColorStop(1, color + '00');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(x, y, size * 2, 0, Math.PI * 2); ctx.fill();
+      // Beyaz pudra tanecikleri
+      ctx.globalAlpha = 0.07;
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 14; i++) {
+        const nx = x + (Math.random() - 0.5) * size * 2.5;
+        const ny = y + (Math.random() - 0.5) * size * 2.5;
+        ctx.beginPath(); ctx.arc(nx, ny, Math.random() * size * 0.3, 0, Math.PI * 2); ctx.fill();
+      }
+
+    } else if (brushTexture === 'crayon') {
+      /* 🖍️ KURUBOYA — balmumu, düzensiz katmanlar, kaba kenar */
+      const jitter = size * 0.35;
+      for (let i = 0; i < 7; i++) {
+        const nx = x + (Math.random() - 0.5) * jitter * 2;
+        const ny = y + (Math.random() - 0.5) * jitter * 2;
+        ctx.globalAlpha = 0.28 + Math.random() * 0.45;
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(nx, ny, size * (0.4 + Math.random() * 0.65), 0, Math.PI * 2); ctx.fill();
+      }
+      // Beyaz balmumu parıltısı
+      ctx.globalAlpha = 0.09;
+      ctx.fillStyle = '#fff';
+      for (let i = 0; i < 6; i++) {
+        const nx = x + (Math.random() - 0.5) * size * 2;
+        const ny = y + (Math.random() - 0.5) * size * 2;
+        ctx.beginPath(); ctx.arc(nx, ny, Math.random() * size * 0.28, 0, Math.PI * 2); ctx.fill();
+      }
+
+    } else if (brushTexture === 'watercolor') {
+      /* 💧 SULU BOYA — çok saydam, sızan, akan */
+      ctx.fillStyle = color;
+      for (let i = 0; i < 6; i++) {
+        const ox = (Math.random() - 0.5) * size * 1.0;
+        const oy = (Math.random() - 0.5) * size * 1.0;
+        ctx.globalAlpha = 0.06 + Math.random() * 0.05;
+        ctx.beginPath(); ctx.arc(x + ox, y + oy, size * (1 + Math.random() * 0.9), 0, Math.PI * 2); ctx.fill();
+      }
+
+    } else if (brushTexture === 'marker') {
+      /* 🖊️ KEÇELİ — bold, sert kenar, hafif kenar parlaması */
+      ctx.globalAlpha = 0.95;
       ctx.fillStyle = color;
       ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
-      // Glitter dots
-      for (let i = 0; i < 4; i++) {
-        const gx = x + (Math.random() - 0.5) * size * 2;
-        const gy = y + (Math.random() - 0.5) * size * 2;
-        ctx.fillStyle = `hsl(${Math.random() * 360}, 80%, ${70 + Math.random() * 20}%)`;
-        ctx.beginPath(); ctx.arc(gx, gy, 1 + Math.random() * 1.5, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.fillStyle = color;
-    } else if (brushTexture === 'pattern') {
-      ctx.fillStyle = color;
-      const step = Math.max(3, size * 0.6);
-      for (let dx = -size; dx <= size; dx += step) {
-        for (let dy = -size; dy <= size; dy += step) {
-          if (dx * dx + dy * dy <= size * size) {
-            ctx.beginPath(); ctx.arc(x + dx, y + dy, step * 0.35, 0, Math.PI * 2); ctx.fill();
-          }
-        }
-      }
+      // Kenar parlaması
+      const edgeGrad = ctx.createRadialGradient(x, y, size * 0.55, x, y, size * 1.15);
+      edgeGrad.addColorStop(0, 'rgba(255,255,255,0)');
+      edgeGrad.addColorStop(1, 'rgba(255,255,255,0.07)');
+      ctx.fillStyle = edgeGrad;
+      ctx.beginPath(); ctx.arc(x, y, size * 1.15, 0, Math.PI * 2); ctx.fill();
+
     } else {
+      /* ✨ SİMLİ — gökkuşağı parıltı noktaları */
+      ctx.globalAlpha = 0.88;
       ctx.fillStyle = color;
       ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+      for (let i = 0; i < 6; i++) {
+        const gx = x + (Math.random() - 0.5) * size * 3.5;
+        const gy = y + (Math.random() - 0.5) * size * 3.5;
+        ctx.globalAlpha = 0.55 + Math.random() * 0.45;
+        ctx.fillStyle = `hsl(${Math.random() * 360}, 95%, ${55 + Math.random() * 30}%)`;
+        ctx.beginPath(); ctx.arc(gx, gy, 0.8 + Math.random() * 2.2, 0, Math.PI * 2); ctx.fill();
+      }
     }
 
-    // Line to last pos
-    if (lastPosRef.current && brushTexture !== 'pattern') {
-      ctx.globalAlpha = brushTexture === 'watercolor' ? 0.12 : 1;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = size * 2 * (brushTexture === 'watercolor' ? 1.3 : 1);
+    ctx.restore();
+
+    /* Önceki noktaya çizgi bağla (pürüzsüz sürekli çizim) */
+    if (lastPosRef.current) {
+      ctx.save();
       ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      if (brushTexture === 'pencil') {
+        ctx.globalAlpha = 0.60; ctx.strokeStyle = color; ctx.lineWidth = size * 1.3;
+      } else if (brushTexture === 'pastel') {
+        ctx.globalAlpha = 0.22; ctx.strokeStyle = color; ctx.lineWidth = size * 3.5;
+      } else if (brushTexture === 'crayon') {
+        ctx.globalAlpha = 0.45; ctx.strokeStyle = color; ctx.lineWidth = size * 2.0;
+      } else if (brushTexture === 'watercolor') {
+        ctx.globalAlpha = 0.05; ctx.strokeStyle = color; ctx.lineWidth = size * 3.0;
+      } else if (brushTexture === 'marker') {
+        ctx.globalAlpha = 0.92; ctx.strokeStyle = color; ctx.lineWidth = size * 2.0; ctx.lineCap = 'square';
+      } else {
+        ctx.globalAlpha = 0.80; ctx.strokeStyle = color; ctx.lineWidth = size * 2.0;
+      }
       ctx.beginPath();
       ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
       ctx.lineTo(x, y);
       ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.restore();
     }
+
     lastPosRef.current = { x, y };
   }, [brushTexture]);
 
@@ -515,9 +602,8 @@ const ColoringBookGame = () => {
             { mode: 'eraser' as ToolMode, label: '🧹', title: 'Silgi' },
           ]).map(t => (
             <button key={t.mode} onClick={() => { setToolMode(t.mode); playPopSound(); }}
-              className={`px-3 py-2 rounded-lg text-sm font-bold transition-all touch-manipulation ${
-                toolMode === t.mode ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'hover:bg-white/10 text-muted-foreground'
-              }`} title={t.title}>
+              className={`px-3 py-2 rounded-lg text-sm font-bold transition-all touch-manipulation ${toolMode === t.mode ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'hover:bg-white/10 text-muted-foreground'
+                }`} title={t.title}>
               {t.label}
             </button>
           ))}
@@ -528,9 +614,8 @@ const ColoringBookGame = () => {
           <div className="flex gap-1 rounded-xl p-1" style={{ background: 'rgba(0,0,0,0.15)' }}>
             {BRUSH_SIZES.map(b => (
               <button key={b.label} onClick={() => { setBrushSize(b.size); playPopSound(); }}
-                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all touch-manipulation flex items-center justify-center ${
-                  brushSize === b.size ? 'bg-primary text-primary-foreground' : 'hover:bg-white/10 text-muted-foreground'
-                }`}>
+                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all touch-manipulation flex items-center justify-center ${brushSize === b.size ? 'bg-primary text-primary-foreground' : 'hover:bg-white/10 text-muted-foreground'
+                  }`}>
                 {b.label}
               </button>
             ))}
@@ -563,9 +648,8 @@ const ColoringBookGame = () => {
           const isActive = brushTexture === bt.id;
           return (
             <button key={bt.id} onClick={() => { setBrushTexture(bt.id); playPopSound(); }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all touch-manipulation ${
-                isActive ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105' : 'glass-card text-muted-foreground hover:bg-white/[0.06]'
-              }`}>
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all touch-manipulation ${isActive ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105' : 'glass-card text-muted-foreground hover:bg-white/[0.06]'
+                }`}>
               <span className="text-base">{bt.emoji}</span>
               <div className="flex flex-col items-start leading-tight">
                 <span>{bt.label}</span>

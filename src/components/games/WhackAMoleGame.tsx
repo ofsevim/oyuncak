@@ -13,16 +13,16 @@ import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 const DIFFS: Record<Difficulty, { label: string; time: number; holes: number; cols: number; multiChance: number }> = {
-  easy:   { label: '🌟 Kolay', time: 35, holes: 6,  cols: 3, multiChance: 0 },
-  medium: { label: '⭐ Orta',  time: 30, holes: 9,  cols: 3, multiChance: 0.2 },
-  hard:   { label: '🔥 Zor',   time: 25, holes: 12, cols: 4, multiChance: 0.35 },
+  easy: { label: '🌟 Kolay', time: 35, holes: 6, cols: 3, multiChance: 0 },
+  medium: { label: '⭐ Orta', time: 30, holes: 9, cols: 3, multiChance: 0.2 },
+  hard: { label: '🔥 Zor', time: 25, holes: 12, cols: 4, multiChance: 0.35 },
 };
 
 const MOLE_TYPES = [
-  { emoji: '🐹', points: 1,  name: 'Hamster',  color: 'from-amber-400 to-orange-500',  hitEmoji: '😵' },
-  { emoji: '🐰', points: 2,  name: 'Tavşan',   color: 'from-pink-400 to-rose-500',     hitEmoji: '🌟' },
-  { emoji: '🦊', points: 5,  name: 'Tilki',     color: 'from-orange-400 to-red-500',    hitEmoji: '💫' },
-  { emoji: '🦨', points: -3, name: 'Kokarca',   color: 'from-gray-400 to-gray-600',     hitEmoji: '💀' },
+  { emoji: '🐹', points: 1, name: 'Hamster', color: 'from-amber-400 to-orange-500', hitEmoji: '😵' },
+  { emoji: '🐰', points: 2, name: 'Tavşan', color: 'from-pink-400 to-rose-500', hitEmoji: '🌟' },
+  { emoji: '🦊', points: 5, name: 'Tilki', color: 'from-orange-400 to-red-500', hitEmoji: '💫' },
+  { emoji: '🦨', points: -3, name: 'Kokarca', color: 'from-gray-400 to-gray-600', hitEmoji: '😵‍💫' },
 ];
 
 interface ActiveMole {
@@ -338,8 +338,10 @@ const WhackAMoleGame = () => {
           {combo >= 3 && (
             <motion.div key={`combo-${combo}`} initial={{ scale: 0, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }}
               className="px-3 py-2 rounded-2xl"
-              style={{ background: combo >= 10 ? 'rgba(251,191,36,0.25)' : combo >= 5 ? 'rgba(168,85,247,0.2)' : 'rgba(249,115,22,0.2)',
-                backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              style={{
+                background: combo >= 10 ? 'rgba(251,191,36,0.25)' : combo >= 5 ? 'rgba(168,85,247,0.2)' : 'rgba(249,115,22,0.2)',
+                backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)'
+              }}>
               <span className={`text-sm font-black ${combo >= 10 ? 'text-yellow-400' : combo >= 5 ? 'text-purple-400' : 'text-orange-400'}`}>
                 🔥 x{combo >= 10 ? 5 : combo >= 5 ? 2 : combo}
               </span>
@@ -395,9 +397,11 @@ const WhackAMoleGame = () => {
         <div className="absolute bottom-0 left-0 right-0 h-8 -z-5 pointer-events-none overflow-hidden">
           {Array.from({ length: 20 }).map((_, i) => (
             <motion.div key={i} className="absolute bottom-0"
-              style={{ left: `${i * 5 + Math.random() * 3}%`, width: 3, height: 12 + Math.random() * 10,
+              style={{
+                left: `${i * 5 + Math.random() * 3}%`, width: 3, height: 12 + Math.random() * 10,
                 background: `hsl(${110 + Math.random() * 20}, 60%, ${40 + Math.random() * 20}%)`,
-                borderRadius: '2px 2px 0 0', transformOrigin: 'bottom center' }}
+                borderRadius: '2px 2px 0 0', transformOrigin: 'bottom center'
+              }}
               animate={{ rotate: [0, 5, -3, 4, 0] }}
               transition={{ repeat: Infinity, duration: 2 + Math.random(), delay: Math.random() }}
             />
@@ -446,16 +450,16 @@ const WhackAMoleGame = () => {
                             moleData.state === 'hit'
                               ? { y: '15%', rotate: [0, -15, 15, -10, 0], scale: [1, 0.8, 1.1, 0.9] }
                               : moleData.state === 'falling'
-                              ? { y: '100%' }
-                              : { y: '15%' }
+                                ? { y: '100%' }
+                                : { y: '15%' }
                           }
                           exit={{ y: '100%' }}
                           transition={
                             moleData.state === 'hit'
                               ? { duration: 0.4, ease: 'easeOut' }
                               : moleData.state === 'falling'
-                              ? { duration: 0.3, ease: 'easeIn' }
-                              : { type: 'spring', stiffness: 500, damping: 25 }
+                                ? { duration: 0.3, ease: 'easeIn' }
+                                : { type: 'spring', stiffness: 500, damping: 25 }
                           }
                         >
                           {/* Mole body background */}

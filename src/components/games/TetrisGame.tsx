@@ -316,8 +316,8 @@ const TetrisGame = () => {
                   </>
                 ) : (
                   <>
-                    <div className="text-5xl mb-3">💀</div>
-                    <h2 className="text-2xl font-black text-destructive mb-1">OYUN BİTTİ!</h2>
+                    <div className="text-5xl mb-3">😅</div>
+                    <h2 className="text-2xl font-black text-orange-400 mb-1">OYUN BİTTİ!</h2>
                     {isNewRecord && <motion.p initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-yellow-400 font-black mb-2 animate-pulse">🏆 YENİ REKOR!</motion.p>}
                     <p className="text-muted-foreground font-bold mb-1">Puan: <span className="text-primary text-xl">{score}</span></p>
                     <p className="text-xs text-muted-foreground mb-4">Seviye {level} • {linesClearedTotal} satır</p>

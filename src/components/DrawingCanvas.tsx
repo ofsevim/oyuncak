@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas as FabricCanvas, PencilBrush, Text as FabricText } from 'fabric';
+import { Canvas as FabricCanvas, FabricImage, FabricText } from 'fabric';
 import { Trash2, Undo, Download, Image, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
@@ -26,17 +26,17 @@ const COLORS = [
   { name: 'Beyaz', value: '#FAFAFA', light: '#FFFFFF' },
 ];
 
-const STICKERS = ['🐱','🐶','🦄','🌈','🌟','🚀','🍦','🎨','🐼','🐯','🦋','🌻','🐸','🎀','🌸','🐝','🍎','☀️'];
+const STICKERS = ['🐱', '🐶', '🦄', '🌈', '🌟', '🚀', '🍦', '🎨', '🐼', '🐯', '🦋', '🌻', '🐸', '🎀', '🌸', '🐝', '🍎', '☀️'];
+const RAINBOW = ['#EF5350', '#FFA726', '#FFEE58', '#66BB6A', '#42A5F5', '#AB47BC'];
 
-const RAINBOW = ['#EF5350','#FFA726','#FFEE58','#66BB6A','#42A5F5','#AB47BC'];
-
-const BRUSHES = [
-  { id: 'pencil',     name: 'Kalem',       icon: '✏️', opacity: 1,    widthMul: 1,   shadow: null, desc: 'İnce çizgiler' },
-  { id: 'pastel',     name: 'Pastel',      icon: '🖍️', opacity: 0.6,  widthMul: 2.5, shadow: { blur: 14, color: 'rgba(0,0,0,0.12)', offsetX: 1, offsetY: 2 }, desc: 'Yumuşak dokulu' },
-  { id: 'crayon',     name: 'Kuruboya',    icon: '🖊️', opacity: 0.85, widthMul: 1.8, shadow: { blur: 3, color: 'rgba(0,0,0,0.1)', offsetX: 1, offsetY: 1 }, desc: 'Kalın ve canlı' },
-  { id: 'watercolor', name: 'Sulu Boya',   icon: '💧', opacity: 0.25, widthMul: 3.5, shadow: { blur: 22, color: 'rgba(0,0,0,0.03)', offsetX: 0, offsetY: 0 }, desc: 'Şeffaf katmanlar' },
-  { id: 'marker',     name: 'Keçeli',      icon: '🖌️', opacity: 0.9,  widthMul: 2,   shadow: { blur: 1, color: 'rgba(0,0,0,0.06)', offsetX: 0, offsetY: 0 }, desc: 'Parlak ve düz' },
-  { id: 'glitter',    name: 'Simli',       icon: '✨', opacity: 0.8,  widthMul: 2,   shadow: { blur: 8, color: 'rgba(255,215,0,0.3)', offsetX: 0, offsetY: 0 }, desc: 'Parıltılı' },
+type BrushId = 'pencil' | 'pastel' | 'crayon' | 'watercolor' | 'marker' | 'glitter';
+const BRUSHES: { id: BrushId; name: string; icon: string; desc: string }[] = [
+  { id: 'pencil', name: 'Kalem', icon: '✏️', desc: 'İnce, hassas' },
+  { id: 'pastel', name: 'Pastel', icon: '🎨', desc: 'Yumuşak, grenli' },
+  { id: 'crayon', name: 'Kuruboya', icon: '🖍️', desc: 'Balmumu dokusu' },
+  { id: 'watercolor', name: 'Sulu Boya', icon: '💧', desc: 'Saydam, akan' },
+  { id: 'marker', name: 'Keçeli', icon: '🖌️', desc: 'Bold, canlı' },
+  { id: 'glitter', name: 'Simli', icon: '✨', desc: 'Parıltılı' },
 ];
 
 /* Glassmorphism pill */
@@ -49,152 +49,394 @@ const pill: React.CSSProperties = {
   boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
 };
 
-const hexToRgba = (hex: string, opacity: number) => {
+/* ═══════════════════════════════════════════
+   BRUSH STAMP FUNCTIONS — Gerçekçi piksel dab'ları
+   ═══════════════════════════════════════════ */
+const hexToRgb = (hex: string): [number, number, number] => {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${opacity})`;
+  return [r, g, b];
+};
+
+function stampPencil(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
+  const [r, g, b] = hexToRgb(color);
+  const radius = Math.max(size * 0.35, 1);
+  // Sert ince çizgi + grenli kenarlar
+  ctx.globalAlpha = 0.82;
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+  // Gren: kereste noktaları
+  for (let i = 0; i < 6; i++) {
+    const ox = (Math.random() - 0.5) * radius * 3;
+    const oy = (Math.random() - 0.5) * radius * 3;
+    ctx.globalAlpha = 0.04 + Math.random() * 0.06;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(x + ox, y + oy, 1, 1);
+  }
+}
+
+function stampPastel(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
+  const [r, g, b] = hexToRgb(color);
+  const spread = size * 2.5;
+  // Gerçek pastel: yüzlerce küçük kare parçacık, kağıt dokusu görünür
+  for (let i = 0; i < 55; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * spread;
+    const px = x + Math.cos(angle) * dist;
+    const py = y + Math.sin(angle) * dist;
+    // Merkezden uzaklaştıkça opacity düşer
+    const falloff = 1 - (dist / spread);
+    const alpha = falloff * (0.04 + Math.random() * 0.09);
+    ctx.globalAlpha = alpha;
+    // Renk varyasyonu
+    const rv = Math.floor(r + (Math.random() - 0.5) * 25);
+    const gv = Math.floor(g + (Math.random() - 0.5) * 25);
+    const bv = Math.floor(b + (Math.random() - 0.5) * 25);
+    ctx.fillStyle = `rgb(${Math.max(0, Math.min(255, rv))},${Math.max(0, Math.min(255, gv))},${Math.max(0, Math.min(255, bv))})`;
+    // Kare parçacık (kağıt dokusu hissi)
+    const dotSize = 0.8 + Math.random() * 2.5;
+    ctx.fillRect(px, py, dotSize, dotSize);
+  }
+  // Beyaz pudra parçacıkları (çok az)
+  for (let i = 0; i < 6; i++) {
+    const ox = (Math.random() - 0.5) * spread;
+    const oy = (Math.random() - 0.5) * spread;
+    ctx.globalAlpha = 0.03 + Math.random() * 0.04;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x + ox, y + oy, 1 + Math.random(), 1 + Math.random());
+  }
+}
+
+function stampCrayon(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
+  const [r, g, b] = hexToRgb(color);
+  const spread = size * 1.4;
+  // Balmumu dokusu: yoğun ama düzensiz katmanlar
+  for (let i = 0; i < 20; i++) {
+    const ox = (Math.random() - 0.5) * spread * 1.2;
+    const oy = (Math.random() - 0.5) * spread * 0.8;
+    const falloff = 1 - Math.sqrt(ox * ox + oy * oy) / (spread * 1.2);
+    if (falloff < 0) continue;
+    ctx.globalAlpha = falloff * (0.15 + Math.random() * 0.35);
+    // Renk noise
+    const noise = Math.floor((Math.random() - 0.5) * 18);
+    ctx.fillStyle = `rgb(${Math.max(0, Math.min(255, r + noise))},${Math.max(0, Math.min(255, g + noise))},${Math.max(0, Math.min(255, b + noise))})`;
+    const w = 1.5 + Math.random() * 3;
+    const h = 1 + Math.random() * 2;
+    ctx.fillRect(x + ox, y + oy, w, h);
+  }
+  // Beyaz balmumu parıltısı
+  if (Math.random() > 0.7) {
+    ctx.globalAlpha = 0.06;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(x + (Math.random() - 0.5) * spread, y + (Math.random() - 0.5) * spread, 2, 1);
+  }
+}
+
+function stampWatercolor(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
+  const [r, g, b] = hexToRgb(color);
+  const spread = size * 4;
+  // Çok saydam büyük daireler + kenar bleeding
+  for (let i = 0; i < 4; i++) {
+    const ox = (Math.random() - 0.5) * size * 0.8;
+    const oy = (Math.random() - 0.5) * size * 0.8;
+    ctx.globalAlpha = 0.015 + Math.random() * 0.02;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x + ox, y + oy, spread * (0.5 + Math.random() * 0.5), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Kenar efekti: dış halkada hafif yoğunlaşma
+  ctx.globalAlpha = 0.008;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, spread * 0.7, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function stampMarker(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
+  const radius = size * 1.3;
+  // Sert, opak, düz
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function stampGlitter(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
+  const radius = size * 1.1;
+  // Baz renk
+  ctx.globalAlpha = 0.7;
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+  // Gökkuşağı parçacıklar
+  for (let i = 0; i < 5; i++) {
+    const gx = x + (Math.random() - 0.5) * size * 4;
+    const gy = y + (Math.random() - 0.5) * size * 4;
+    ctx.globalAlpha = 0.5 + Math.random() * 0.5;
+    ctx.fillStyle = `hsl(${Math.random() * 360}, 100%, ${50 + Math.random() * 30}%)`;
+    ctx.beginPath(); ctx.arc(gx, gy, 0.5 + Math.random() * 2, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+const STAMP_FN: Record<BrushId, typeof stampPencil> = {
+  pencil: stampPencil,
+  pastel: stampPastel,
+  crayon: stampCrayon,
+  watercolor: stampWatercolor,
+  marker: stampMarker,
+  glitter: stampGlitter,
 };
 
 /* ═══════════════════════════════════════════
    COMPONENT
    ═══════════════════════════════════════════ */
 const DrawingCanvas = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricCanvasRef = useRef<HTMLCanvasElement>(null);
+  const drawCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [activeColor, setActiveColor] = useState(COLORS[4].value);
   const [isRainbow, setIsRainbow] = useState(false);
   const [brushSize, setBrushSize] = useState(8);
-  const [activeBrush, setActiveBrush] = useState(BRUSHES[0]);
+  const [activeBrush, setActiveBrush] = useState<BrushId>('pencil');
   const [showStickers, setShowStickers] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [showSaveToast, setShowSaveToast] = useState(false);
   const [clearAnim, setClearAnim] = useState(false);
+  const [canvasW, setCanvasW] = useState(620);
+  const [canvasH, setCanvasH] = useState(420);
+  const [isStickering, setIsStickering] = useState(false);
   const rainbowIdx = useRef(0);
 
-  /* ── Init Fabric canvas ── */
+  // Custom drawing state
+  const isDrawingRef = useRef(false);
+  const lastPtRef = useRef<{ x: number; y: number } | null>(null);
+  const undoStackRef = useRef<ImageData[]>([]);
+  const [undoLen, setUndoLen] = useState(0);
+
+  /* ── Canvas boyutlandırma ── */
   useEffect(() => {
-    if (!canvasRef.current || !containerRef.current) return;
-    const container = containerRef.current;
-    const width = Math.min(container.clientWidth - 16, 620);
-    const height = Math.min(window.innerHeight * 0.42, 420);
-
-    const canvas = new FabricCanvas(canvasRef.current, {
-      width, height,
-      backgroundColor: '#ffffff',
-      isDrawingMode: true,
-    });
-
-    const brush = new PencilBrush(canvas);
-    brush.color = activeColor;
-    brush.width = brushSize;
-    // Smooth bezier curves
-    (brush as any).decimate = 4;
-    canvas.freeDrawingBrush = brush;
-    setFabricCanvas(canvas);
-
-    const handleResize = () => {
+    const update = () => {
       if (!containerRef.current) return;
-      const nw = Math.min(containerRef.current.clientWidth - 16, 620);
-      const nh = Math.min(window.innerHeight * 0.42, 420);
-      canvas.setDimensions({ width: nw, height: nh });
-      canvas.renderAll();
+      const w = Math.min(containerRef.current.clientWidth - 16, 620);
+      const h = Math.min(window.innerHeight * 0.42, 420);
+      setCanvasW(w);
+      setCanvasH(h);
     };
-    window.addEventListener('resize', handleResize);
-    return () => { canvas.dispose(); window.removeEventListener('resize', handleResize); };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  /* ── Init Fabric (sadece sticker yönetimi için) ── */
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+    const canvas = new FabricCanvas(fabricCanvasRef.current, {
+      width: canvasW, height: canvasH,
+      backgroundColor: 'transparent',
+      isDrawingMode: false,
+      selection: true,
+    });
+    setFabricCanvas(canvas);
+    return () => { canvas.dispose(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ── Rainbow mode ── */
+  /* ── Fabric boyut güncelle ── */
   useEffect(() => {
-    if (!fabricCanvas) return;
-    if (isRainbow) {
-      const onMove = () => {
-        if (fabricCanvas.freeDrawingBrush) {
-          rainbowIdx.current = (rainbowIdx.current + 1) % RAINBOW.length;
-          fabricCanvas.freeDrawingBrush.color = hexToRgba(RAINBOW[rainbowIdx.current], activeBrush.opacity);
-        }
-      };
-      fabricCanvas.on('mouse:move', onMove);
-      return () => { fabricCanvas.off('mouse:move', onMove); };
-    } else {
-      if (fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush.color = hexToRgba(activeColor, activeBrush.opacity);
-      }
+    if (fabricCanvas) {
+      fabricCanvas.setDimensions({ width: canvasW, height: canvasH });
+      fabricCanvas.renderAll();
     }
-  }, [isRainbow, activeColor, activeBrush, fabricCanvas]);
+  }, [canvasW, canvasH, fabricCanvas]);
 
-  /* ── Brush size & type effects ── */
+  /* ── Çizim canvas'ı başlat (beyaz arka plan) ── */
   useEffect(() => {
-    if (!fabricCanvas?.freeDrawingBrush) return;
-    const brush = fabricCanvas.freeDrawingBrush as PencilBrush;
-    brush.width = brushSize * activeBrush.widthMul;
-    (brush as any).decimate = activeBrush.id === 'watercolor' ? 2 : 4;
-    if (activeBrush.shadow) {
-      brush.shadow = {
-        blur: activeBrush.shadow.blur, color: activeBrush.shadow.color,
-        offsetX: activeBrush.shadow.offsetX, offsetY: activeBrush.shadow.offsetY,
-        affectStroke: true, includeDefaultValues: true, nonScaling: false, id: 0, type: 'shadow',
-        toObject: () => ({}), toSVG: () => '', toString: () => '',
-      } as any;
-    } else {
-      brush.shadow = null as any;
+    const c = drawCanvasRef.current;
+    if (!c) return;
+    c.width = canvasW;
+    c.height = canvasH;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvasW, canvasH);
+    undoStackRef.current = [];
+    setUndoLen(0);
+  }, [canvasW, canvasH]);
+
+  /* ── Canvas pozisyon hesapla ── */
+  const getPos = useCallback((e: React.PointerEvent): { x: number; y: number } | null => {
+    const c = drawCanvasRef.current;
+    if (!c) return null;
+    const rect = c.getBoundingClientRect();
+    const scaleX = c.width / rect.width;
+    const scaleY = c.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  }, []);
+
+  /* ── İki nokta arasını interpolasyon yap ── */
+  const interpolate = useCallback((p1: { x: number; y: number }, p2: { x: number; y: number }, spacing: number) => {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const pts: { x: number; y: number }[] = [];
+    const steps = Math.max(1, Math.floor(dist / spacing));
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      pts.push({ x: p1.x + dx * t, y: p1.y + dy * t });
     }
-  }, [brushSize, activeBrush, fabricCanvas]);
+    return pts;
+  }, []);
+
+  /* ── Undo kaydet ── */
+  const saveUndo = useCallback(() => {
+    const c = drawCanvasRef.current;
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+    const stack = undoStackRef.current;
+    if (stack.length > 20) stack.shift();
+    stack.push(ctx.getImageData(0, 0, c.width, c.height));
+    setUndoLen(stack.length);
+  }, []);
+
+  /* ── Pointer olayları: custom fırça çizimi ── */
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (isStickering) return;
+    const pos = getPos(e);
+    if (!pos) return;
+    saveUndo();
+    isDrawingRef.current = true;
+    lastPtRef.current = pos;
+
+    const c = drawCanvasRef.current;
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+
+    let color = activeColor;
+    if (isRainbow) {
+      rainbowIdx.current = (rainbowIdx.current + 1) % RAINBOW.length;
+      color = RAINBOW[rainbowIdx.current];
+    }
+
+    ctx.save();
+    STAMP_FN[activeBrush](ctx, pos.x, pos.y, brushSize, color);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }, [getPos, saveUndo, activeColor, isRainbow, activeBrush, brushSize, isStickering]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDrawingRef.current || isStickering) return;
+    const pos = getPos(e);
+    if (!pos || !lastPtRef.current) return;
+
+    const c = drawCanvasRef.current;
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+
+    // Fırçaya göre stamp aralığı
+    const spacingMap: Record<BrushId, number> = {
+      pencil: 2, pastel: 3, crayon: 3, watercolor: 6, marker: 3, glitter: 4,
+    };
+    const spacing = spacingMap[activeBrush];
+
+    let color = activeColor;
+    const pts = interpolate(lastPtRef.current, pos, spacing);
+    for (const pt of pts) {
+      if (isRainbow) {
+        rainbowIdx.current = (rainbowIdx.current + 1) % RAINBOW.length;
+        color = RAINBOW[rainbowIdx.current];
+      }
+      ctx.save();
+      STAMP_FN[activeBrush](ctx, pt.x, pt.y, brushSize, color);
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+    lastPtRef.current = pos;
+  }, [getPos, activeColor, isRainbow, activeBrush, brushSize, interpolate, isStickering]);
+
+  const handlePointerUp = useCallback(() => {
+    isDrawingRef.current = false;
+    lastPtRef.current = null;
+  }, []);
 
   /* ── Actions ── */
   const handleClear = useCallback(() => {
-    if (!fabricCanvas) return;
     setClearAnim(true);
     setTimeout(() => {
-      fabricCanvas.clear();
-      fabricCanvas.backgroundColor = '#ffffff';
-      fabricCanvas.renderAll();
+      const c = drawCanvasRef.current;
+      if (c) {
+        const ctx = c.getContext('2d');
+        if (ctx) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height); }
+      }
+      if (fabricCanvas) { fabricCanvas.clear(); fabricCanvas.backgroundColor = 'transparent'; fabricCanvas.renderAll(); }
+      undoStackRef.current = [];
+      setUndoLen(0);
       setClearAnim(false);
     }, 400);
   }, [fabricCanvas]);
 
   const handleUndo = useCallback(() => {
-    if (!fabricCanvas) return;
-    const objects = fabricCanvas.getObjects();
-    if (objects.length > 0) {
-      fabricCanvas.remove(objects[objects.length - 1]);
-      fabricCanvas.renderAll();
-    }
-  }, [fabricCanvas]);
+    const stack = undoStackRef.current;
+    if (stack.length === 0) return;
+    const last = stack.pop()!;
+    setUndoLen(stack.length);
+    const c = drawCanvasRef.current;
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    if (ctx) ctx.putImageData(last, 0, 0);
+    playPopSound();
+  }, []);
 
   const handleColorSelect = (color: string) => {
-    setActiveColor(color); setIsRainbow(false); playPopSound();
-    if (fabricCanvas) {
-      fabricCanvas.isDrawingMode = true;
-      if (fabricCanvas.freeDrawingBrush) fabricCanvas.freeDrawingBrush.color = hexToRgba(color, activeBrush.opacity);
-    }
+    setActiveColor(color); setIsRainbow(false); setIsStickering(false); playPopSound();
   };
 
   const addSticker = (emoji: string) => {
     if (!fabricCanvas) return;
-    fabricCanvas.isDrawingMode = false;
-    const sticker = new FabricText(emoji, { fontSize: 70, left: fabricCanvas.width! / 2 - 35, top: fabricCanvas.height! / 2 - 35 });
+    setIsStickering(true);
+    const sticker = new FabricText(emoji, { fontSize: 70, left: canvasW / 2 - 35, top: canvasH / 2 - 35 });
     fabricCanvas.add(sticker);
     fabricCanvas.setActiveObject(sticker);
     fabricCanvas.renderAll();
     playPopSound();
   };
 
+  /* Birleşik export (çizim + sticker katmanı) */
+  const getMergedDataUrl = useCallback((): string => {
+    const mergeCanvas = document.createElement('canvas');
+    mergeCanvas.width = canvasW;
+    mergeCanvas.height = canvasH;
+    const mCtx = mergeCanvas.getContext('2d')!;
+    // 1. Çizim katmanı
+    if (drawCanvasRef.current) mCtx.drawImage(drawCanvasRef.current, 0, 0);
+    // 2. Sticker katmanı (Fabric)
+    if (fabricCanvas) {
+      const fabricEl = fabricCanvas.getElement() as HTMLCanvasElement;
+      mCtx.drawImage(fabricEl, 0, 0);
+    }
+    return mergeCanvas.toDataURL('image/png', 1);
+  }, [canvasW, canvasH, fabricCanvas]);
+
   const handleSave = () => {
-    if (!fabricCanvas) return;
-    const dataUrl = fabricCanvas.toDataURL({ format: 'png', quality: 1, multiplier: 1 });
+    const dataUrl = getMergedDataUrl();
     saveDrawing(dataUrl, `Çizim ${new Date().toLocaleDateString('tr-TR')}`);
     playSuccessSound();
-    confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 }, colors: ['#c4b5fd','#fbcfe8','#a7f3d0','#fde68a'] });
+    confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a'] });
     setShowSaveToast(true);
     setTimeout(() => setShowSaveToast(false), 2500);
   };
 
   const handleDownload = () => {
-    if (!fabricCanvas) return;
-    const dataUrl = fabricCanvas.toDataURL({ format: 'png', quality: 1, multiplier: 1 });
+    const dataUrl = getMergedDataUrl();
     const link = document.createElement('a');
     link.download = 'benim-resmim.png';
     link.href = dataUrl;
@@ -213,7 +455,6 @@ const DrawingCanvas = () => {
             linear-gradient(160deg, hsl(30 25% 14%) 0%, hsl(25 20% 11%) 50%, hsl(30 25% 13%) 100%)
           `,
         }} />
-        {/* Subtle warm vignette */}
         <div className="absolute inset-0" style={{
           background: 'radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(0,0,0,0.15) 100%)',
         }} />
@@ -224,11 +465,11 @@ const DrawingCanvas = () => {
         {/* ── Title ── */}
         <motion.h2 className="text-2xl md:text-3xl font-black text-gradient"
           initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          🎨 Sanat Stüdyosu
+          🖍️ Resim Çiz
         </motion.h2>
 
-        {/* ── Paper Canvas ── */}
-        <motion.div ref={containerRef} className="w-full flex justify-center relative touch-none"
+        {/* ── Canvas Area — stacked layers ── */}
+        <motion.div ref={containerRef} className="w-full flex justify-center relative"
           initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <div style={{
             borderRadius: 16,
@@ -236,6 +477,7 @@ const DrawingCanvas = () => {
             border: '1px solid rgba(255,255,255,0.08)',
             overflow: 'hidden',
             position: 'relative',
+            width: canvasW, height: canvasH,
           }}>
             {/* Clear animation overlay */}
             <AnimatePresence>
@@ -246,7 +488,28 @@ const DrawingCanvas = () => {
                   transition={{ duration: 0.4, times: [0, 0.3, 0.7, 1] }} />
               )}
             </AnimatePresence>
-            <canvas ref={canvasRef} className="drawing-canvas touch-none" />
+
+            {/* Layer 1: Çizim canvas'ı (beyaz arka plan + fırça çizimleri) */}
+            <canvas
+              ref={drawCanvasRef}
+              className="absolute inset-0 w-full h-full"
+              style={{ touchAction: 'none', cursor: 'crosshair', zIndex: 1 }}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+            />
+
+            {/* Layer 2: Fabric (sticker katmanı) */}
+            <canvas
+              ref={fabricCanvasRef}
+              className="absolute inset-0"
+              style={{
+                touchAction: 'none',
+                zIndex: isStickering ? 2 : 0,
+                pointerEvents: isStickering ? 'auto' : 'none',
+              }}
+            />
           </div>
         </motion.div>
 
@@ -261,12 +524,12 @@ const DrawingCanvas = () => {
           )}
         </AnimatePresence>
 
-        {/* ── Color Palette — bottom toolbar style ── */}
+        {/* ── Color Palette ── */}
         <motion.div className="flex flex-wrap justify-center gap-1.5 px-3 py-3"
           style={{ ...pill, borderRadius: 24 }}
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           {COLORS.map((color) => {
-            const isActive = activeColor === color.value && !isRainbow && fabricCanvas?.isDrawingMode;
+            const isActive = activeColor === color.value && !isRainbow;
             return (
               <motion.button key={color.value} onClick={() => handleColorSelect(color.value)}
                 className="relative rounded-full transition-all active:scale-75 touch-manipulation"
@@ -286,7 +549,7 @@ const DrawingCanvas = () => {
             );
           })}
           {/* Rainbow */}
-          <motion.button onClick={() => { setIsRainbow(!isRainbow); if (fabricCanvas) fabricCanvas.isDrawingMode = true; }}
+          <motion.button onClick={() => { setIsRainbow(!isRainbow); setIsStickering(false); }}
             className="relative rounded-full rainbow-gradient flex items-center justify-center active:scale-75 touch-manipulation"
             animate={{ y: isRainbow ? -6 : 0, scale: isRainbow ? 1.15 : 1 }}
             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.85 }}
@@ -300,10 +563,10 @@ const DrawingCanvas = () => {
         <motion.div className="flex flex-wrap justify-center gap-1.5"
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           {BRUSHES.map((brush) => {
-            const isActive = activeBrush.id === brush.id;
+            const isActive = activeBrush === brush.id;
             return (
               <motion.button key={brush.id}
-                onClick={() => { setActiveBrush(brush); playPopSound(); if (fabricCanvas) fabricCanvas.isDrawingMode = true; }}
+                onClick={() => { setActiveBrush(brush.id); setIsStickering(false); playPopSound(); }}
                 className="flex items-center gap-1.5 px-3 py-2 font-bold text-xs touch-manipulation transition-all"
                 animate={{ y: isActive ? -3 : 0 }}
                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.93 }}
@@ -327,7 +590,7 @@ const DrawingCanvas = () => {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
           <div className="w-2 h-2 rounded-full" style={{ background: isRainbow ? '#42A5F5' : activeColor, opacity: 0.6 }} />
           <input type="range" min="2" max="30" value={brushSize}
-            onChange={(e) => { setBrushSize(Number(e.target.value)); if (fabricCanvas) fabricCanvas.isDrawingMode = true; }}
+            onChange={(e) => setBrushSize(Number(e.target.value))}
             className="w-28 md:w-36 accent-primary" />
           <div className="w-4 h-4 rounded-full" style={{ background: isRainbow ? '#42A5F5' : activeColor, opacity: 0.6 }} />
           <div className="rounded-full border border-white/15"
@@ -371,7 +634,7 @@ const DrawingCanvas = () => {
         <motion.div className="flex flex-wrap justify-center gap-2"
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
           {[
-            { label: 'Geri Al', icon: <Undo className="w-4 h-4" />, action: () => { playPopSound(); handleUndo(); }, style: {} },
+            { label: 'Geri Al', icon: <Undo className="w-4 h-4" />, action: () => { handleUndo(); }, style: {}, disabled: undoLen === 0 },
             { label: 'Temizle', icon: <Trash2 className="w-4 h-4" />, action: () => { playPopSound(); handleClear(); }, style: { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.25)' } },
             { label: 'Kaydet', icon: <Download className="w-4 h-4" />, action: handleSave, style: { background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.25)' } },
             { label: 'İndir', icon: <Download className="w-4 h-4" />, action: () => { playPopSound(); handleDownload(); }, style: { background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.25)' } },
@@ -379,8 +642,9 @@ const DrawingCanvas = () => {
           ].map((btn) => (
             <motion.button key={btn.label} onClick={btn.action}
               whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.92 }}
-              className="flex items-center gap-2 px-4 py-2.5 font-bold text-sm touch-manipulation"
-              style={{ ...pill, ...btn.style }}>
+              className={`flex items-center gap-2 px-4 py-2.5 font-bold text-sm touch-manipulation ${'disabled' in btn && btn.disabled ? 'opacity-30' : ''}`}
+              style={{ ...pill, ...btn.style }}
+              disabled={'disabled' in btn ? btn.disabled as boolean : false}>
               {btn.icon}
               {btn.label}
             </motion.button>
