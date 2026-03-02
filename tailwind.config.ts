@@ -15,8 +15,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        display: ['Space Grotesk', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'sans-serif'],
+        display: ['Sora', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -110,21 +110,26 @@ export default {
           "0%, 100%": { opacity: "1", transform: "scale(1)" },
           "50%": { opacity: "0.5", transform: "scale(1.2)" },
         },
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(12px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "bounce-in": "bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+        "bounce-in": "bounce-in 0.5s cubic-bezier(0.68,-0.55,0.265,1.55)",
         "float-up": "float-up 3s ease-in-out infinite",
         "shake": "shake 0.5s ease-in-out",
         "sparkle": "sparkle 1.5s ease-in-out infinite",
+        "fade-in": "fade-in 0.45s ease-out both",
       },
       boxShadow: {
-        "playful": "0 8px 32px -8px hsl(200 85% 65% / 0.3)",
-        "bounce": "0 12px 40px -12px hsl(200 85% 65% / 0.4)",
-        "glow-primary": "0 0 30px hsl(200 85% 65% / 0.4)",
-        "glow-success": "0 0 30px hsl(140 70% 55% / 0.4)",
-        "glow-secondary": "0 0 30px hsl(45 95% 70% / 0.4)",
+        "playful": "0 2px 8px hsl(224 28% 3% / 0.4), 0 0 0 1px hsl(220 20% 100% / 0.04)",
+        "bounce": "0 12px 40px -12px hsl(258 88% 66% / 0.35)",
+        "glow-primary": "0 0 28px hsl(258 88% 66% / 0.35)",
+        "glow-success": "0 0 28px hsl(158 65% 48% / 0.35)",
+        "glow-accent": "0 0 28px hsl(338 80% 62% / 0.35)",
       },
     },
   },
