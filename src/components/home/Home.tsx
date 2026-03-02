@@ -40,39 +40,57 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
     >
       {/* ─── HERO ─── */}
       <motion.section variants={fadeUp} className="relative overflow-hidden rounded-[2rem] p-8 md:p-12 lg:p-16">
-        {/* Warm gradient background */}
+        {/* Colorful gradient background */}
         <div className="absolute inset-0 rounded-[2rem]" style={{
           background: `linear-gradient(135deg, 
-            hsl(270 60% 18%) 0%, 
-            hsl(230 40% 12%) 30%, 
-            hsl(200 50% 14%) 60%, 
-            hsl(320 40% 15%) 100%)`,
+            hsl(280 70% 25%) 0%, 
+            hsl(260 60% 20%) 20%,
+            hsl(200 70% 25%) 40%, 
+            hsl(320 60% 25%) 60%,
+            hsl(280 70% 20%) 80%,
+            hsl(240 60% 25%) 100%)`,
         }} />
-        {/* Soft blobs */}
-        <div className="absolute top-0 right-0 w-80 h-80 rounded-full opacity-20 blur-3xl" style={{ background: 'hsl(270 80% 60%)' }} />
-        <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full opacity-15 blur-3xl" style={{ background: 'hsl(185 80% 55%)' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-10 blur-3xl" style={{ background: 'hsl(320 70% 55%)' }} />
+        {/* Animated colorful blobs */}
+        <motion.div 
+          className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-30 blur-3xl" 
+          style={{ background: 'linear-gradient(135deg, #f472b6, #a78bfa)' }}
+          animate={{ scale: [1, 1.2, 1], x: [0, 20, 0], y: [0, -20, 0] }}
+          transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-25 blur-3xl" 
+          style={{ background: 'linear-gradient(135deg, #67e8f9, #4ade80)' }}
+          animate={{ scale: [1, 1.3, 1], x: [0, -30, 0], y: [0, 20, 0] }}
+          transition={{ repeat: Infinity, duration: 10, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-20 blur-3xl" 
+          style={{ background: 'linear-gradient(135deg, #fbbf24, #fb923c)' }}
+          animate={{ scale: [1, 1.15, 1], rotate: [0, 180, 360] }}
+          transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
+        />
 
-        {/* Floating emojis */}
+        {/* Floating emojis - optimized, fewer emojis */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-          {EMOJIS.slice(0, 8).map((emoji, i) => (
+          {EMOJIS.slice(0, 6).map((emoji, i) => (
             <motion.span
               key={i}
-              className="absolute text-2xl md:text-3xl select-none"
+              className="absolute text-3xl md:text-4xl select-none"
               style={{
-                left: `${10 + (i * 12) % 85}%`,
-                top: `${8 + (i * 17) % 75}%`,
-                opacity: 0.12,
+                left: `${10 + (i * 15) % 80}%`,
+                top: `${10 + (i * 18) % 75}%`,
+                opacity: 0.18,
+                filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
               }}
               animate={{
-                y: [0, -12, 0, 8, 0],
-                rotate: [0, 5, -5, 3, 0],
-                scale: [1, 1.05, 0.95, 1.02, 1],
+                y: [0, -15, 0],
+                rotate: [0, 8, -8, 0],
+                scale: [1, 1.1, 1],
               }}
               transition={{
-                duration: 6 + i * 0.8,
+                duration: 6 + i,
                 repeat: Infinity,
-                delay: i * 0.5,
+                delay: i * 0.4,
                 ease: "easeInOut",
               }}
             >
@@ -82,56 +100,65 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
         </div>
 
         <div className="relative flex flex-col items-center gap-6 text-center">
-          {/* Greeting */}
-          <motion.p variants={fadeUp} className="text-sm md:text-base text-white/50 font-medium">
+          {/* Greeting - more playful */}
+          <motion.p variants={fadeUp} className="text-base md:text-lg text-white/70 font-bold">
             {greetEmoji} {greeting}! Bugün ne oynayalım?
           </motion.p>
 
-          {/* Title */}
-          <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight">
+          {/* Title - bigger and more colorful */}
+          <motion.h1 variants={fadeUp} className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[1.05] tracking-tight">
             <span className="inline-block" style={{
               background: 'linear-gradient(135deg, #67e8f9, #a78bfa, #f472b6)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 2px 12px rgba(167,139,250,0.4))',
             }}>Oyna</span>
-            <span className="text-white/30">, </span>
+            <span className="text-white/40">, </span>
             <span className="inline-block" style={{
               background: 'linear-gradient(135deg, #fb923c, #f472b6, #c084fc)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 2px 12px rgba(244,114,182,0.4))',
             }}>Çiz</span>
-            <span className="text-white/30"> & </span>
+            <span className="text-white/40"> & </span>
             <span className="inline-block" style={{
               background: 'linear-gradient(135deg, #4ade80, #22d3ee, #818cf8)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 2px 12px rgba(74,222,128,0.4))',
             }}>Keşfet</span>
           </motion.h1>
 
-          <motion.p variants={fadeUp} className="mx-auto max-w-md text-sm md:text-base text-white/40 leading-relaxed">
+          <motion.p variants={fadeUp} className="mx-auto max-w-md text-base md:text-lg text-white/50 leading-relaxed font-medium">
             14+ eğlenceli oyun, serbest çizim ve interaktif hikayeler — hepsi ücretsiz ve reklamsız 🎉
           </motion.p>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons - more playful */}
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <button onClick={onGoGames}
-              className="group flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl font-bold text-sm transition-all duration-300 hover:-translate-y-1"
+            <motion.button onClick={onGoGames}
+              whileHover={{ scale: 1.05, y: -3 }}
+              whileTap={{ scale: 0.95 }}
+              className="group flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl font-black text-base transition-all duration-300"
               style={{
-                background: 'linear-gradient(135deg, hsl(185 80% 50%), hsl(270 70% 55%))',
-                boxShadow: '0 8px 32px hsl(185 80% 50% / 0.3)',
+                background: 'linear-gradient(135deg, #22d3ee, #a78bfa)',
+                boxShadow: '0 10px 40px rgba(34,211,238,0.4), 0 0 0 2px rgba(255,255,255,0.1)',
               }}>
               <Gamepad2 className="h-5 w-5" />
               <span>Oyunlara Başla</span>
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </button>
-            <button onClick={onGoDraw}
-              className="flex items-center justify-center gap-2 px-7 py-4 rounded-2xl font-bold text-sm border border-white/10 bg-white/[0.04] text-white/80 transition-all hover:bg-white/[0.08] hover:border-white/20 hover:-translate-y-1">
+            </motion.button>
+            <motion.button onClick={onGoDraw}
+              whileHover={{ scale: 1.05, y: -3 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center justify-center gap-2 px-7 py-4 rounded-2xl font-black text-base border-2 border-white/20 bg-white/[0.08] text-white transition-all hover:bg-white/[0.15] hover:border-white/30">
               <Pencil className="h-4 w-4" /> Çizmeye Başla
-            </button>
-            <button onClick={onGoStories}
-              className="flex items-center justify-center gap-2 px-7 py-4 rounded-2xl font-bold text-sm border border-white/10 bg-white/[0.04] text-white/80 transition-all hover:bg-white/[0.08] hover:border-white/20 hover:-translate-y-1">
+            </motion.button>
+            <motion.button onClick={onGoStories}
+              whileHover={{ scale: 1.05, y: -3 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center justify-center gap-2 px-7 py-4 rounded-2xl font-black text-base border-2 border-white/20 bg-white/[0.08] text-white transition-all hover:bg-white/[0.15] hover:border-white/30">
               <BookOpen className="h-4 w-4" /> Hikaye Oku
-            </button>
+            </motion.button>
           </motion.div>
         </div>
       </motion.section>
