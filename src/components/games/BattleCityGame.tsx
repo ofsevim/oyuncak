@@ -132,15 +132,13 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                     /* Scaled height: native oranını koru */
                     height: Math.round(NATIVE_H * scale),
                     overflow: 'hidden',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    position: 'relative',
                 }}
                 initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
                 onClick={focusIframe}
             >
-                {/* iframe native boyutta açılıp scale ile küçültülüyor */}
+                {/* iframe native boyutta açılıp scale ile küçültülüyor — tam ortalı */}
                 <iframe
                     ref={iframeRef}
                     src="/games/battlecity/BattleCity.html"
@@ -155,9 +153,11 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                         border: 'none',
                         outline: 'none',
                         display: 'block',
-                        transformOrigin: 'top left',
-                        transform: `scale(${scale})`,
-                        flexShrink: 0,
+                        position: 'absolute',
+                        top: 0,
+                        left: '50%',
+                        transformOrigin: 'top center',
+                        transform: `translateX(-50%) scale(${scale})`,
                     }}
                 />
             </motion.div>
