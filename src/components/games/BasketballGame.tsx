@@ -120,7 +120,7 @@ function drawBg(ctx: CanvasRenderingContext2D, tick: number) {
     ctx.stroke();
 }
 
-function drawHoop(ctx: CanvasRenderingContext2D, netStretch = 0) {
+function drawHoop(ctx: CanvasRenderingContext2D, netStretch = 0, netSway = 0) {
     const bx = HOOP_X, by = HOOP_Y;
     const BOARD_X = bx - 50;
 
@@ -151,29 +151,38 @@ function drawHoop(ctx: CanvasRenderingContext2D, netStretch = 0) {
     ctx.beginPath(); ctx.ellipse(bx, by, RIM_W, RIM_W * 0.26, 0, Math.PI, Math.PI * 2);
     ctx.stroke();
 
-    // Net — stretches down when ball goes through
-    const NET = 36 + netStretch * 22;   // max +22px stretch
-    const netAlpha = 0.5 + netStretch * 0.3;
-    ctx.strokeStyle = `rgba(240,240,240,${netAlpha})`; ctx.lineWidth = 1.5;
-    const SEGS = 8;
+    // Net — stretches down and sways when ball goes through
+    const NET_H = 34 + netStretch * 24;
+    const netAlpha = 0.5 + netStretch * 0.25;
+    ctx.strokeStyle = `rgba(240,240,240,${netAlpha})`; ctx.lineWidth = 1.4;
+    const SEGS = 10;
     for (let i = 0; i <= SEGS; i++) {
         const a = (i / SEGS) * Math.PI * 2;
         const rx = bx + Math.cos(a) * RIM_W, ry = by + Math.sin(a) * RIM_W * 0.26;
-        const bx2 = bx + Math.cos(a) * (9 - netStretch * 6);
-        const by2 = by + NET;
+
+        // Bottom positions with sway
+        const bx2 = bx + Math.cos(a) * (8 - netStretch * 3) + netSway;
+        const by2 = by + NET_H;
+
         ctx.beginPath(); ctx.moveTo(rx, ry);
-        ctx.quadraticCurveTo((rx + bx2) * 0.5, ry + NET * 0.5 + 4 + netStretch * 8, bx2, by2);
+        // Quadratic curve for a more "hanging cloth" look
+        const cx = (rx + bx2) * 0.5 + netSway * 0.2;
+        const cy = ry + (by2 - ry) * 0.6 + netStretch * 5;
+        ctx.quadraticCurveTo(cx, cy, bx2, by2);
         ctx.stroke();
     }
     // Horizontal net rings
     for (let r = 1; r <= 3; r++) {
         const t = r / 4;
-        const narrowing = 1 - t * 0.7 - netStretch * t * 0.15;
+        const narrowing = 1 - t * 0.65 - netStretch * t * 0.1;
+        const currentY = by + NET_H * t;
+        const currentSway = netSway * t;
         ctx.beginPath();
-        ctx.ellipse(bx, by + NET * t, RIM_W * narrowing, (RIM_W * narrowing) * 0.22, 0, 0, Math.PI * 2);
+        ctx.ellipse(bx + currentSway, currentY, RIM_W * narrowing, (RIM_W * narrowing) * 0.22, 0, 0, Math.PI * 2);
         ctx.stroke();
     }
 }
+
 
 function drawHoopFront(ctx: CanvasRenderingContext2D) {
     ctx.strokeStyle = '#E53E3E'; ctx.lineWidth = 5;
@@ -317,8 +326,10 @@ const BasketballGame = () => {
     const rafRef = useRef(0);
     // Basket feel
     const netStretchRef = useRef(0);
+    const netSwayRef = useRef(0);
     const flashRef = useRef(0);
     const scoredFramesRef = useRef(0);
+
     const prevBallY = useRef(SHOT_POSITIONS[0].y);
     const currentPosRef = useRef<ShotPos>(SHOT_POSITIONS[0]);
 
@@ -375,15 +386,30 @@ const BasketballGame = () => {
                 const sx = (HOOP_X / CW) * (canvasRef.current?.offsetWidth ?? CW);
                 const sy = ((HOOP_Y - 50) / CH) * (canvasRef.current?.offsetHeight ?? CH);
                 addFloat(sx, sy, nc > 2 ? `🔥 COMBO ×${nc} +${pts}` : `+${pts}`, nc > 2 ? '#FFE234' : '#4CD964');
-                if (nc > 1) playComboSound(nc); else { playSuccessSound(); playSwishSound(); }
+
+                // Daima file sesini çal (her zaman potadan geçiyor)
+                playSwishSound();
+
+                // Ödül seslerini (kombo/başarı) biraz geciktir ki file sesi önce net duyulsun
+                setTimeout(() => {
+                    if (nc > 1) {
+                        playComboSound(nc);
+                    } else {
+                        playSuccessSound();
+                    }
+                }, 150);
+
                 if (nc >= 3) confetti({ particleCount: 70, spread: 65, origin: { x: 0.18, y: 0.4 } });
-                // Trigger flash
+
+                // Trigger effects
                 flashRef.current = 0.55;
                 scoredFramesRef.current = 0;
-                // Dampen velocity so ball travels through net slowly
-                ballVX.current *= 0.25; // Daha yavaş geçiş
-                ballVY.current *= 0.25;
+                netSwayRef.current = ballVX.current * 1.8; // Set sway based on horizontal entry speed
+                // Dampen velocity so ball travels through net realistically
+                ballVX.current *= 0.2;
+                ballVY.current *= 0.22;
                 phaseRef.current = 'scored'; setPhase('scored');
+
                 return true;
             }
         }
@@ -403,7 +429,8 @@ const BasketballGame = () => {
 
         ctx.clearRect(0, 0, CW, CH);
         drawBg(ctx, tick);
-        drawHoop(ctx, netStretchRef.current);
+        drawHoop(ctx, netStretchRef.current, netSwayRef.current);
+
 
         /* Physics */
         if (ph === 'fly' || ph === 'scored') {
@@ -481,24 +508,38 @@ const BasketballGame = () => {
                 }
             }
 
-            // After scoring: animate net stretch then fade
+            // After scoring: animate net stretch + sway + drop
             if (ph === 'scored') {
                 scoredFramesRef.current++;
                 const sf = scoredFramesRef.current;
-                // Net stretches and wobbles
-                if (sf < 20) {
-                    netStretchRef.current = Math.sin((sf / 20) * Math.PI) * 1.2;
+
+                // Net physics: dynamic elastic behavior
+                if (sf < 30) {
+                    // Elastic snap
+                    netStretchRef.current = Math.sin((sf / 30) * Math.PI) * 1.3;
+                    // Damped oscillation for sway
+                    netSwayRef.current *= 0.93;
                 } else {
-                    netStretchRef.current = Math.max(0, netStretchRef.current * 0.9);
+                    netStretchRef.current *= 0.88;
+                    netSwayRef.current *= 0.88;
                 }
 
-                // Flash fades out quickly
-                flashRef.current = Math.max(0, flashRef.current - 0.05);
+                // Flash fades
+                flashRef.current = Math.max(0, flashRef.current - 0.04);
 
-                // Slow ball inside net for "weight" feel
-                ballVX.current *= 0.85;
-                ballVY.current *= 0.85;
+                // Realistic ball trajectory inside net
+                if (sf < 10) {
+                    // Friction phase
+                    ballVY.current *= 1.05; // gravity still pulls but friction is high
+                } else if (sf < 20) {
+                    // Mid phase
+                    ballVY.current += 0.15;
+                } else {
+                    // Acceleration as it pops out
+                    ballVY.current += 0.5;
+                }
             }
+
 
         } else if (ph === 'aim') {
             ballY.current = currentPosRef.current.y + Math.sin(tick * 0.05) * 2.5;
