@@ -200,16 +200,16 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
 
       {/* Game grid */}
       <div className="relative w-full flex flex-col items-center">
-        <div className="grid gap-1.5 sm:gap-2 md:gap-3 p-2 sm:p-3 md:p-4 glass-card neon-border rounded-[32px] w-full"
+        <div className="grid gap-1.5 sm:gap-2 p-2 sm:p-3 glass-card neon-border rounded-[32px] w-full"
           style={{
             gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
-            maxWidth: gridSize === 6 ? '650px' : gridSize === 5 ? '550px' : gridSize === 4 ? '480px' : '400px',
+            maxWidth: gridSize === 6 ? '480px' : gridSize === 5 ? '440px' : gridSize === 4 ? '400px' : '360px',
             width: '98%'
           }}>
           {cards.map((card) => {
             const isRevealed = card.isFlipped || card.isMatched;
-            const cardSize = gridSize === 3 ? 'w-16 h-16 sm:w-24 sm:h-24' : gridSize === 4 ? 'w-14 h-14 sm:w-20 sm:h-20' : gridSize === 5 ? 'w-12 h-12 sm:w-16 sm:h-16' : 'w-10 h-10 sm:w-14 sm:h-14';
-            const emojiSize = gridSize === 3 ? 'text-3xl sm:text-4xl' : gridSize === 4 ? 'text-2xl sm:text-3xl' : gridSize === 5 ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl';
+            const cardSize = 'w-full aspect-square';
+            const emojiSize = gridSize <= 3 ? 'text-3xl' : gridSize === 4 ? 'text-2xl' : gridSize === 5 ? 'text-xl' : 'text-base sm:text-lg';
             return (
               <button key={card.id} onClick={() => handleCardClick(card.id)} disabled={card.isMatched || card.isFlipped}
                 className={`${cardSize} rounded-xl transition-all duration-300 flex items-center justify-center relative overflow-hidden touch-manipulation ${isRevealed ? 'glass-card border border-white/10' : 'bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/20 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:scale-95'

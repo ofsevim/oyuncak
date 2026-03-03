@@ -114,13 +114,20 @@ const ColoringBookGame = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Canvas size
+  // Canvas size — kağıt alanının iç marjını hesaba kat
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
-        const isDesktop = window.innerWidth >= 1024;
-        const limit = isDesktop ? 850 : 580;
-        const maxWidth = Math.min(containerRef.current.clientWidth - 16, limit);
+        const w = window.innerWidth;
+        const isDesktop = w >= 1024;
+        const isMedium = w >= 768;
+        // m-3 (12px*2=24px) | md:m-8 (32px*2=64px) | lg:m-10 (40px*2=80px)
+        const paperMargin = isDesktop ? 80 : isMedium ? 64 : 24;
+        const limit = isDesktop ? 850 : 560;
+        const maxWidth = Math.max(
+          Math.min(containerRef.current.clientWidth - paperMargin - 4, limit),
+          180
+        );
         setCanvasSize({ width: maxWidth, height: maxWidth });
       }
     };

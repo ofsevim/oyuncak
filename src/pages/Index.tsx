@@ -7,10 +7,10 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import Home from '@/components/home/Home';
 import PWAInstall from '@/components/PWAInstall';
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
-import DrawingCanvas from '@/components/DrawingCanvas';
 
 type Tab = 'home' | 'draw' | 'games' | 'story';
 
+const DrawingCanvas = lazy(() => import('@/components/DrawingCanvas'));
 const GamesMenu = lazy(() => import('@/components/games/GamesMenu'));
 const StoryTime = lazy(() => import('@/components/StoryTime'));
 

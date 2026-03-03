@@ -233,8 +233,9 @@ const TetrisGame = () => {
 
   return (
     <div className="flex flex-col items-center gap-3 p-4 pb-32">
-      {/* Score panel */}
-      <div className="flex justify-between w-full max-w-[320px] items-center glass-card p-3">
+      {/* Score panel — genişliği görsel oyun alanıyla eşleştir */}
+      <div className="flex justify-between w-full items-center glass-card p-3"
+        style={{ maxWidth: Math.round((280 + 20) * scale) }}>
         <div className="flex gap-4">
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Puan</span>
@@ -267,8 +268,11 @@ const TetrisGame = () => {
         </div>
       </div>
 
-      {/* Game area */}
-      <div className="relative glass-card p-2 origin-top" style={{ transform: `scale(${scale})` }}>
+      {/* Game area — scale < 1 olduğunda altta boşluk kalmaz */}
+      <div className="relative glass-card p-2 origin-top" style={{
+        transform: `scale(${scale})`,
+        marginBottom: scale < 1 ? `${Math.round((scale - 1) * (cellH + 20))}px` : undefined
+      }}>
         <div className="grid gap-[1px] rounded-lg overflow-hidden relative"
           style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)`, width: 280, height: cellH, background: 'hsl(var(--muted) / 0.3)' }}>
           {grid.map((row, y) => row.map((cell, x) => (
@@ -330,9 +334,9 @@ const TetrisGame = () => {
         </div>
       </div>
 
-      {/* Controls */}
+      {/* Controls — genişliği görsel oyun alanıyla eşleştir */}
       {gameState === 'playing' && (
-        <div className="grid grid-cols-5 gap-2 w-full max-w-[300px]">
+        <div className="grid grid-cols-5 gap-2 w-full" style={{ maxWidth: Math.round((280 + 20) * scale) }}>
           {[
             { label: '⬅️', action: () => movePiece(-1, 0) },
             { label: '⬇️', action: () => movePiece(0, 1) },

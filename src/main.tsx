@@ -2,7 +2,8 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Eski cihazlarda loading spinner'ı kaldır
+// Yükleme tamamlandı: spinner ve timeout temizle
+if ((window as any).__appLoadTimer) clearTimeout((window as any).__appLoadTimer);
 const loader = document.getElementById("app-loader");
 if (loader) loader.remove();
 
