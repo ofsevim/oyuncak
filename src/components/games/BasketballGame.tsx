@@ -36,13 +36,15 @@ const MAX_DRAG = 150;      // pixels of drag = full power
 const MAX_SPEED = 22;      // max launch speed
 
 const getTargetScore = (lvl: number) => {
-    if (lvl === 1) return 25;
-    if (lvl === 2) return 45;
-    if (lvl === 3) return 85;
-    if (lvl === 4) return 135;
-    // 5. seviye ve sonrası için: Artış miktarını koruyarak devam et (40 -> 50 -> 60 -> ...)
-    return 135 + (lvl - 4) * 60;
+    if (lvl === 1) return 15;
+    if (lvl === 2) return 35;
+    if (lvl === 3) return 60;
+    if (lvl === 4) return 90;
+    if (lvl === 5) return 165;
+    // 6. seviye ve sonrası için: Artış miktarını koruyarak devam et (+75 increments roughly)
+    return 165 + (lvl - 5) * 80;
 };
+
 
 
 
