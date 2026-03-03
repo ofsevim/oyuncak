@@ -528,11 +528,20 @@ const ColoringBookGame = () => {
       <aside className="w-full lg:w-80 flex flex-col gap-6 lg:sticky lg:top-8 z-20">
         {/* Title */}
         <div className="flex items-center gap-3 lg:justify-start justify-center">
-          <motion.span className="text-4xl" animate={characterBlink ? { scaleY: [1, 0.1, 1] } : { rotate: [0, 3, -3, 0] }}
-            transition={characterBlink ? { duration: 0.2 } : { repeat: Infinity, duration: 4, ease: 'easeInOut' }}>
-            🎨
-          </motion.span>
-          <h2 className="text-2xl md:text-3xl font-black text-gradient">Boyama Defteri</h2>
+          <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} transition={{ repeat: Infinity, repeatType: 'reverse', duration: 3, ease: 'easeInOut' }}
+            className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl shadow-lg shadow-orange-500/20">
+            <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-white" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 21a9 9 0 1 1 0-18c4.97 0 9 3.582 9 8 0 1.035-.84 1.875-1.875 1.875H16.5c-1.035 0-1.875.84-1.875 1.875v1.125c0 1.035.84 1.875 1.875 1.875.5 0 1-.5 1-1" />
+              <path d="M8 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
+              <path d="M11 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
+              <path d="M14 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
+              <path d="M11 16a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
+            </svg>
+          </motion.div>
+          <div className="flex flex-col">
+            <h2 className="text-2xl md:text-3xl font-black text-gradient leading-none">Boyama Defteri</h2>
+            <span className="text-[10px] font-bold text-muted-foreground/50 tracking-widest uppercase mt-1">Renklerin Dünyası</span>
+          </div>
         </div>
 
         {/* Page selector */}
@@ -551,19 +560,8 @@ const ColoringBookGame = () => {
           </button>
         </div>
 
-        {/* Action buttons (Move up for easier access on PC) */}
-        <div className="hidden lg:flex justify-stretch gap-3">
-          <button onClick={handleClear}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 glass-card text-muted-foreground rounded-xl font-bold hover:text-destructive transition-all touch-manipulation">
-            <Trash2 className="w-4 h-4" /> Temizle
-          </button>
-          <button onClick={handleSave}
-            className="flex-2 flex items-center justify-center gap-2 px-5 py-3 btn-gaming rounded-xl font-bold touch-manipulation">
-            <Download className="w-4 h-4" /> Kaydet
-          </button>
-        </div>
-
         {/* Tool bar & Utilities */}
+
         <div className="flex flex-col gap-3 p-3 rounded-2xl"
           style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.1)' }}>
 
@@ -603,18 +601,8 @@ const ColoringBookGame = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-center gap-3 py-1 bg-black/20 rounded-xl">
-            <button onClick={() => setZoom(prev => Math.max(1, prev - 0.25))}
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 touch-manipulation text-muted-foreground">
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <span className="text-[12px] font-black min-w-[40px] text-center text-primary">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom(prev => Math.min(3, prev + 0.25))}
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 touch-manipulation text-muted-foreground">
-              <ZoomIn className="w-4 h-4" />
-            </button>
-          </div>
         </div>
+
 
         {/* Color Palette */}
         <div className="flex flex-col gap-3">
@@ -645,27 +633,8 @@ const ColoringBookGame = () => {
           </div>
         </div>
 
-        {/* Brush Textures */}
-        <div className="flex flex-col gap-3">
-          <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 px-1">Fırça Türü</span>
-          <div className="flex flex-col gap-2">
-            {BRUSH_TEXTURES.map(bt => {
-              const isActive = brushTexture === bt.id;
-              return (
-                <button key={bt.id} onClick={() => { setBrushTexture(bt.id); playPopSound(); }}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all touch-manipulation text-left ${isActive ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/[0.06]'
-                    }`}>
-                  <span className="text-xl">{bt.emoji}</span>
-                  <div className="flex flex-col items-start leading-tight">
-                    <span>{bt.label}</span>
-                    <span className={`text-[9px] opacity-60`}>{bt.desc}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
       </aside>
+
 
       {/* ── MAIN AREA: Canvas ── */}
       <main className="flex-1 w-full flex flex-col items-center gap-6">
@@ -699,7 +668,6 @@ const ColoringBookGame = () => {
             </div>
           </div>
 
-          {/* Sparkle/Pop overlays remain inside container for scoping */}
           <AnimatePresence>
             {sparkles.map(s => (
               <motion.div key={s.id} className="absolute pointer-events-none"
@@ -726,6 +694,73 @@ const ColoringBookGame = () => {
           </AnimatePresence>
         </div>
 
+        {/* ── Compact Consolidated Control Bar ── */}
+        <div className="flex flex-wrap lg:flex-nowrap items-center justify-center gap-2.5 w-full max-w-[1050px] px-2 mb-4">
+          {/* Zoom & Patterns Group */}
+          <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-2xl border border-white/5">
+            <div className="flex items-center gap-1 bg-white/5 rounded-xl px-1">
+              <button onClick={() => setZoom(prev => Math.max(1, prev - 0.25))}
+                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 transition-all text-muted-foreground active:scale-90">
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <span className="text-[10px] font-black text-primary min-w-[32px] text-center">{Math.round(zoom * 100)}%</span>
+              <button onClick={() => setZoom(prev => Math.min(3, prev + 0.25))}
+                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 transition-all text-muted-foreground active:scale-90">
+                <ZoomIn className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="w-px h-6 bg-white/10 mx-1 hidden lg:block" />
+
+            <div className="flex gap-1">
+              {BRUSH_TEXTURES.map(bt => {
+                const isActive = brushTexture === bt.id;
+                return (
+                  <button key={bt.id} onClick={() => { setBrushTexture(bt.id); playPopSound(); }}
+                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all active:scale-95 ${isActive ? 'bg-primary/20 text-foreground border border-primary/40' : 'bg-white/5 text-muted-foreground border border-white/5 hover:bg-white/10'}`} title={bt.label}>
+                    <span className="text-base">{bt.emoji}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Actions Group */}
+          <div className="flex-1 flex items-center gap-2">
+            <button onClick={handleUndo} disabled={undoStack.length === 0}
+              className={`w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-all ${undoStack.length === 0 ? 'opacity-20' : 'active:scale-95'}`} title="Geri Al">
+              <Undo2 className="w-5 h-5" />
+            </button>
+
+            <button onClick={handleSave}
+              className="flex-1 flex items-center justify-center gap-3 py-3.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-primary to-violet-600 text-white shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all min-w-[160px]">
+              <Download className="w-4 h-4" /> Boyamamı Kaydet ✨
+            </button>
+
+            <button onClick={handleClear}
+              className="w-12 h-12 flex items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all active:scale-95" title="Temizle">
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+
+        <button onClick={handleUndo} disabled={undoStack.length === 0}
+          className={`flex-1 lg:flex-none lg:w-32 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-xs bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-all ${undoStack.length === 0 ? 'opacity-20' : 'active:scale-95'}`}>
+          <Undo2 className="w-4 h-4" /> Geri Al
+        </button>
+
+        <button onClick={handleSave}
+          className="w-full lg:flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-sm bg-gradient-to-r from-primary to-violet-600 text-white shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+          <Download className="w-5 h-5" /> Boyamamı Kaydet ✨
+        </button>
+
+        <button onClick={handleClear}
+          className="flex-1 lg:flex-none lg:w-32 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-xs bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all active:scale-95">
+          <Trash2 className="w-4 h-4" /> Temizle
+        </button>
+
+
         {/* Color usage */}
         {colorUsage.size > 0 && (
           <div className="flex items-center gap-3 px-4 py-2 glass-card rounded-full text-sm">
@@ -738,19 +773,8 @@ const ColoringBookGame = () => {
             <span className="font-bold text-primary ml-2">{colorUsage.size}</span>
           </div>
         )}
-
-        {/* Action buttons (Mobile only footer) */}
-        <div className="flex lg:hidden justify-center gap-3 w-full">
-          <button onClick={handleClear}
-            className="flex-1 flex justify-center items-center gap-2 px-4 py-3 glass-card text-muted-foreground rounded-xl font-bold hover:text-destructive transition-all touch-manipulation">
-            <Trash2 className="w-4 h-4" /> Temizle
-          </button>
-          <button onClick={handleSave}
-            className="flex-1 flex justify-center items-center gap-2 px-5 py-3 btn-gaming rounded-xl font-bold touch-manipulation">
-            <Download className="w-4 h-4" /> Kaydet
-          </button>
-        </div>
       </main>
+
     </motion.div>
   );
 };

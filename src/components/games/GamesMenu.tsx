@@ -105,7 +105,7 @@ const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
 
   if (activeGame !== 'menu') {
     return (
-      <div className="pb-32 w-full flex flex-col items-center">
+      <div className="pb-12 md:pb-32 w-full flex flex-col items-center">
         <motion.button
           onClick={() => setActiveGame('menu')}
           className="mb-4 ml-4 mt-3 px-4 py-2.5 rounded-xl font-semibold flex items-center gap-2 self-start text-sm transition-all"

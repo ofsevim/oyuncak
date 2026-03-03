@@ -127,6 +127,7 @@ const RunnerGame = () => {
   const [showMagnet, setShowMagnet] = useState(false);
   const [showX2, setShowX2] = useState(false);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
+  const [isPortrait, setIsPortrait] = useState(false);
 
   /* ── Refs ── */
   const rafRef = useRef(0);
@@ -982,6 +983,16 @@ const RunnerGame = () => {
     setShowShield(false); setShowMagnet(false); setShowX2(false);
     setIsNewRecord(false); setFloatingTexts([]);
     setPhase('playing');
+
+    // Attempt fullscreen and orientation lock on mobile
+    try {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => { });
+      }
+      if ((window.screen?.orientation as any)?.lock) {
+        (window.screen.orientation as any).lock('landscape').catch(() => { });
+      }
+    } catch (err) { }
   }, [character, difficulty]);
 
   /* Start/stop loop */
@@ -1013,15 +1024,33 @@ const RunnerGame = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [jump, phase, startGame]);
 
-  /* Canvas resize — sadece genişlik bazlı, yükseklik capped değil */
+  /* Orientation check for mobile */
+  useEffect(() => {
+    const checkOrientation = () => {
+      const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      setIsPortrait(isMob && window.innerHeight > window.innerWidth);
+    };
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
+
+  /* Canvas resize — Hem genişlik hem dikey yükseklik bazlı */
   useEffect(() => {
     const resize = () => {
       if (!containerRef.current || !canvasRef.current) return;
       const container = containerRef.current;
       const canvas = canvasRef.current;
 
-      // Tüm genişliği kullan, oranı koru
-      const s = Math.min(container.clientWidth / CW, 1.4);
+      // Hem genişliği hem de dikey yüksekliği (viewport height) dikkate al
+      const sWidth = container.clientWidth / CW;
+      const sHeight = (window.innerHeight - (isPortrait ? 220 : 120)) / CH; // Portre modunda oyunun kesilmesini önlemek için daha fazla pay bırak
+
+      const s = Math.min(sWidth, sHeight, 1.4);
       scaleRef.current = s;
       canvas.style.width = `${CW * s}px`;
       canvas.style.height = `${CH * s}px`;
@@ -1029,8 +1058,12 @@ const RunnerGame = () => {
     resize();
     const ro = new ResizeObserver(resize);
     if (containerRef.current) ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, []);
+    window.addEventListener('resize', resize);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', resize);
+    };
+  }, [isPortrait]);
 
 
   /* ═══════════════════════════════════════════
@@ -1038,7 +1071,7 @@ const RunnerGame = () => {
      ═══════════════════════════════════════════ */
   if (phase === 'menu') {
     return (
-      <motion.div className="flex flex-col items-center gap-5 p-4 pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div className="flex flex-col items-center gap-5 p-4 pb-12 md:pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <motion.span className="text-6xl block" animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>🏃</motion.span>
         <h2 className="text-3xl md:text-4xl font-black text-gradient">Koşucu</h2>
         <p className="text-muted-foreground font-medium text-center text-sm">Engelleri atla, güçleri topla, rekoru kır!</p>
@@ -1111,7 +1144,7 @@ const RunnerGame = () => {
      PLAYING + GAME OVER — Glassmorphism UI
      ═══════════════════════════════════════════ */
   return (
-    <motion.div className="flex flex-col items-center gap-3 p-2 md:p-4 pb-32" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.div className="flex flex-col items-center gap-3 p-2 md:p-4 pb-12 md:pb-32" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
       {/* Canvas area */}
       <div ref={containerRef} className="w-full max-w-4xl relative touch-none" onClick={jump}>
@@ -1207,7 +1240,7 @@ const RunnerGame = () => {
           <motion.button
             onClick={jump}
             onPointerDown={(e) => { e.preventDefault(); jump(); }}
-            className="md:hidden fixed bottom-24 right-4 w-20 h-20 rounded-full flex items-center justify-center text-3xl font-black shadow-2xl z-50 touch-manipulation select-none"
+            className="md:hidden fixed bottom-6 right-6 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shadow-2xl z-50 touch-manipulation select-none"
             style={{
               touchAction: 'none',
               background: 'linear-gradient(135deg, #ef4444, #f97316)',
@@ -1234,31 +1267,31 @@ const RunnerGame = () => {
       <AnimatePresence>
         {phase === 'gameover' && (
           <motion.div
-            className="w-full max-w-2xl flex flex-col items-center gap-4 py-8 px-6 glass-card neon-border rounded-3xl text-center"
+            className="w-full max-w-2xl flex flex-col items-center gap-3 py-4 md:py-8 px-4 md:px-6 glass-card neon-border rounded-3xl text-center"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.9 }}
             transition={{ type: 'spring', damping: 20 }}>
-            <motion.p className="text-4xl md:text-5xl font-black text-gradient"
+            <motion.p className="text-3xl md:text-5xl font-black text-gradient"
               initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 10, delay: 0.1 }}>
-              Game Over!
+              Oyun Bitti!
             </motion.p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <div className="glass-card px-5 py-3 rounded-xl border border-primary/20">
-                <p className="text-xs text-muted-foreground font-bold">Skor</p>
-                <p className="text-2xl font-black text-primary">⭐ {score}</p>
+            <div className="flex flex-wrap justify-center gap-2 md:gap-4">
+              <div className="glass-card px-3 md:px-5 py-2 md:py-3 rounded-xl border border-primary/20">
+                <p className="text-[10px] md:text-xs text-muted-foreground font-bold">Skor</p>
+                <p className="text-xl md:text-2xl font-black text-primary">⭐ {score}</p>
               </div>
-              <div className="glass-card px-5 py-3 rounded-xl border border-white/10">
-                <p className="text-xs text-muted-foreground font-bold">Mesafe</p>
-                <p className="text-2xl font-black text-foreground">📏 {distance}m</p>
+              <div className="glass-card px-3 md:px-5 py-2 md:py-3 rounded-xl border border-white/10">
+                <p className="text-[10px] md:text-xs text-muted-foreground font-bold">Mesafe</p>
+                <p className="text-xl md:text-2xl font-black text-foreground">📏 {distance}m</p>
               </div>
-              <div className="glass-card px-5 py-3 rounded-xl border border-yellow-500/20">
-                <p className="text-xs text-muted-foreground font-bold">Maks Kombo</p>
-                <p className="text-2xl font-black text-yellow-400">🔥 x{maxCombo}</p>
+              <div className="glass-card px-3 md:px-5 py-2 md:py-3 rounded-xl border border-yellow-500/20">
+                <p className="text-[10px] md:text-xs text-muted-foreground font-bold">Kombo</p>
+                <p className="text-xl md:text-2xl font-black text-yellow-400">🔥 x{maxCombo}</p>
               </div>
-              <div className="glass-card px-5 py-3 rounded-xl border border-amber-500/20">
-                <p className="text-xs text-muted-foreground font-bold">Rekor</p>
-                <p className="text-2xl font-black text-amber-400">🏆 {highScore}</p>
+              <div className="glass-card px-3 md:px-5 py-2 md:py-3 rounded-xl border border-amber-500/20">
+                <p className="text-[10px] md:text-xs text-muted-foreground font-bold">Rekor</p>
+                <p className="text-xl md:text-2xl font-black text-amber-400">🏆 {highScore}</p>
               </div>
             </div>
             {isNewRecord && (
@@ -1278,6 +1311,27 @@ const RunnerGame = () => {
                 ← Menü
               </motion.button>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Rotate Prompt Overlay */}
+      <AnimatePresence>
+        {isPortrait && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 text-white p-6 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              animate={{ rotate: 90 }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              className="text-6xl mb-6"
+            >
+              📱
+            </motion.div>
+            <h3 className="text-2xl font-black mb-3 text-gradient">Lütfen Cihazı Döndürün</h3>
+            <p className="text-muted-foreground font-medium">Bu oyun en iyi yatay (landscape) modda oynanır.</p>
           </motion.div>
         )}
       </AnimatePresence>
