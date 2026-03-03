@@ -2,9 +2,10 @@
 
 import { motion } from 'framer-motion';
 import { Pencil, Gamepad2, Home, BookOpen } from 'lucide-react';
-import { playPopSound } from '@/utils/soundEffects';
+import { playNavSound } from '@/utils/soundEffects';
 
 type Tab = 'home' | 'draw' | 'games' | 'story';
+
 
 interface NavigationProps {
   activeTab: Tab;
@@ -12,17 +13,18 @@ interface NavigationProps {
 }
 
 const tabs = [
-  { id: 'home'  as Tab, icon: Home,     label: 'Ana Sayfa' },
-  { id: 'draw'  as Tab, icon: Pencil,   label: 'Çiz' },
+  { id: 'home' as Tab, icon: Home, label: 'Ana Sayfa' },
+  { id: 'draw' as Tab, icon: Pencil, label: 'Çiz' },
   { id: 'story' as Tab, icon: BookOpen, label: 'Hikaye' },
   { id: 'games' as Tab, icon: Gamepad2, label: 'Oyunlar' },
 ];
 
 const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   const handleTabChange = (tab: Tab) => {
-    playPopSound();
+    playNavSound();
     onTabChange(tab);
   };
+
 
   return (
     <nav

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 interface BattleCityGameProps {
@@ -14,22 +14,31 @@ const NATIVE_H = 448;
 const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const [scale, setScale] = useState(1);
 
     useEffect(() => {
         onActiveGameChange?.(true);
         return () => onActiveGameChange?.(false);
     }, [onActiveGameChange]);
 
-    /* Responsive scale: container genişliğine göre oyunu ölçekle */
+    /* Responsive scale: React state kullanmadan doğrudan DOM güncelle → re-render yok */
     useEffect(() => {
-        const el = containerRef.current;
-        if (!el) return;
+        const container = containerRef.current;
+        const iframe = iframeRef.current;
+        if (!container || !iframe) return;
+
+        const applyScale = (w: number) => {
+            const s = Math.min(1, w / NATIVE_W);
+            /* GPU layer: translate3d + will-change */
+            iframe.style.transform = `translateX(-50%) translate3d(0,0,0) scale(${s})`;
+            container.style.height = `${Math.round(NATIVE_H * s)}px`;
+        };
+
         const ro = new ResizeObserver(([entry]) => {
-            const w = entry.contentRect.width;
-            setScale(Math.min(1, w / NATIVE_W));
+            applyScale(entry.contentRect.width);
         });
-        ro.observe(el);
+        ro.observe(container);
+        /* İlk render için hemen uygula */
+        applyScale(container.getBoundingClientRect().width);
         return () => ro.disconnect();
     }, []);
 
@@ -82,8 +91,10 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
     const DpadBtn = ({ arrow, label, keyName }: { arrow: string; label: string; keyName: string }) => (
         <motion.button
             aria-label={label}
-            onTouchStart={() => startHold(keyName)}
-            onTouchEnd={() => stopHold(keyName)}
+            onTouchStart={(e) => { e.preventDefault(); startHold(keyName); }}
+            onTouchEnd={(e) => { e.preventDefault(); stopHold(keyName); }}
+            onTouchCancel={() => stopHold(keyName)}
+            onContextMenu={(e) => e.preventDefault()}
             onMouseDown={() => startHold(keyName)}
             onMouseUp={() => stopHold(keyName)}
             onMouseLeave={() => stopHold(keyName)}
@@ -99,6 +110,10 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 fontSize: 'clamp(18px, 5vw, 26px)',
                 WebkitTapHighlightColor: 'transparent',
                 touchAction: 'none',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                /* @ts-ignore */
+                WebkitTouchCallout: 'none',
             }}
         >
             {arrow}
@@ -120,7 +135,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 <p className="text-xs text-muted-foreground mt-0.5">Klasik atari oyunu</p>
             </motion.div>
 
-            {/* Game canvas wrapper — ölçek için referans container */}
+            {/* Game canvas wrapper */}
             <motion.div
                 ref={containerRef}
                 className="w-full"
@@ -129,16 +144,18 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                     background: '#000',
                     border: '1px solid hsl(220 20% 100% / 0.08)',
                     boxShadow: '0 8px 32px hsl(224 28% 3% / 0.5)',
-                    /* Scaled height: native oranını koru */
-                    height: Math.round(NATIVE_H * scale),
+                    /* Yükseklik ResizeObserver tarafından doğrudan DOM'a yazılır */
+                    height: NATIVE_H,
                     overflow: 'hidden',
                     position: 'relative',
+                    /* GPU compositor katmanı yarat */
+                    willChange: 'transform',
                 }}
                 initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
                 onClick={focusIframe}
             >
-                {/* iframe native boyutta açılıp scale ile küçültülüyor — tam ortalı */}
+                {/* iframe: GPU hızlandırmalı — transform doğrudan DOM'a yazılır */}
                 <iframe
                     ref={iframeRef}
                     src="/games/battlecity/BattleCity.html"
@@ -157,7 +174,11 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                         top: 0,
                         left: '50%',
                         transformOrigin: 'top center',
-                        transform: `translateX(-50%) scale(${scale})`,
+                        /* Başlangıç değeri — ResizeObserver override eder */
+                        transform: 'translateX(-50%) translate3d(0,0,0) scale(1)',
+                        willChange: 'transform',
+                        /* Tarayıcıya GPU katmanı aç */
+                        backfaceVisibility: 'hidden',
                     }}
                 />
             </motion.div>
@@ -171,7 +192,8 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
             >
                 {/* BAŞLAT / PAUSE */}
                 <motion.button
-                    onTouchStart={() => pressKey('Enter')}
+                    onTouchStart={(e) => { e.preventDefault(); pressKey('Enter'); }}
+                    onContextMenu={(e) => e.preventDefault()}
                     onClick={() => pressKey('Enter')}
                     whileTap={{ scale: 0.95 }}
                     className="w-full py-3 rounded-2xl font-bold text-sm select-none touch-manipulation"
@@ -213,8 +235,10 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
 
                     {/* Fire button */}
                     <motion.button
-                        onTouchStart={() => startHold(' ')}
-                        onTouchEnd={() => stopHold(' ')}
+                        onTouchStart={(e) => { e.preventDefault(); startHold(' '); }}
+                        onTouchEnd={(e) => { e.preventDefault(); stopHold(' '); }}
+                        onTouchCancel={() => stopHold(' ')}
+                        onContextMenu={(e) => e.preventDefault()}
                         onMouseDown={() => startHold(' ')}
                         onMouseUp={() => stopHold(' ')}
                         onMouseLeave={() => stopHold(' ')}
@@ -230,6 +254,10 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                             fontSize: 'clamp(24px, 7vw, 36px)',
                             WebkitTapHighlightColor: 'transparent',
                             touchAction: 'none',
+                            userSelect: 'none',
+                            WebkitUserSelect: 'none',
+                            /* @ts-ignore */
+                            WebkitTouchCallout: 'none',
                         }}
                     >
                         💥

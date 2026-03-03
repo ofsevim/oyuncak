@@ -194,22 +194,22 @@ const MELODIES = [
 ];
 
 const COLORS: Record<string, string> = {
-  // ── Beyaz tuşlar: Gökkuşağı — parlak & çocuk dostu ──
-  C: '#FF5F6D',   // Mercan Kırmızı
-  D: '#FF9A3C',   // Turuncu
-  E: '#FFE234',   // Parlak Sarı
-  F: '#4CD964',   // Çim Yeşili
-  G: '#2BBCF5',   // Gökyüzü Mavisi
-  A: '#B066FF',   // Lavanta Moru
-  B: '#FF66C4',   // Pembe Şeker
-  C2: '#FF5F6D',   // Mercan Kırmızı (üst oktav)
+  // ── Beyaz tuşlar: Gürlü, dolu renkler ──
+  C: '#F72C3A',   // Kırmızı
+  D: '#FF7600',   // Turuncu
+  E: '#F5C800',   // Altın Sarı
+  F: '#00C04B',   // Canlı Yeşil
+  G: '#009BDE',   // Gökyaşı Mavisi
+  A: '#8B2BE2',   // Köyü Mor
+  B: '#E8006A',   // Fuşya Pembe
+  C2: '#F72C3A',   // Kırmızı (üst oktav)
 
-  // ── Siyah tuşlar: biraz daha koyu ama hâlâ canlı ──
-  'C#': '#E0384A', // Koyu Mercan
-  'D#': '#E07820', // Koyu Turuncu
-  'F#': '#29A84A', // Koyu Yeşil
-  'G#': '#1A96D4', // Koyu Mavi
-  'A#': '#8A40E0', // Koyu Mor
+  // ── Siyah tuşlar: koyu-doygun ──
+  'C#': '#B5001D',
+  'D#': '#C45500',
+  'F#': '#007A30',
+  'G#': '#006BA0',
+  'A#': '#5C0BA5',
 };
 
 const PianoGame = () => {
@@ -258,6 +258,7 @@ const PianoGame = () => {
     setActiveNotes(prev => new Set(prev).add(note));
     setTimeout(() => setActiveNotes(prev => { const s = new Set(prev); s.delete(note); return s; }), 200);
   }, [getAudioContext]);
+
 
   const handleKeyClick = (noteStr: string) => {
     const noteData = ALL_NOTES.find(n => n.note === noteStr);
@@ -331,8 +332,23 @@ const PianoGame = () => {
   const nextNoteData = currentMelody ? ALL_NOTES.find(n => n.note === currentMelody.notes[melodyIndex]) : null;
 
   return (
-    <motion.div className="flex flex-col items-center gap-4 p-4 pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-      <h2 className="text-3xl font-black text-gradient">🎹 Renkli Piyano</h2>
+    <motion.div className="flex flex-col items-center gap-4 p-4 pb-32 w-full max-w-3xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <div className="flex items-center gap-3">
+        {/* SVG Piyano ikonu */}
+        <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="38" height="38" rx="8" fill="#1e1b4b" />
+          {/* Beyaz tuşlar */}
+          {(['#F72C3A', '#FF7600', '#F5C800', '#00C04B', '#009BDE', '#8B2BE2', '#E8006A'].map((c, i) => (
+            <rect key={i} x={2 + i * 5} y="8" width="4" height="22" rx="1" fill={c} />
+          )))}
+          {/* Siyah tuşlar */}
+          {([0, 1, 3, 4, 5].map((pos, i) => (
+            <rect key={i} x={4 + pos * 5} y="8" width="3" height="13" rx="0.8"
+              fill={['#B5001D', '#C45500', '#007A30', '#006BA0', '#5C0BA5'][i]} />
+          )))}
+        </svg>
+        <h2 className="text-3xl font-black text-gradient">Renkli Piyano</h2>
+      </div>
       <p className="text-sm text-muted-foreground font-medium text-center">Tuşlara tıkla veya klavyeden çal (A-K beyaz, W-E-T-Y-U siyah)</p>
 
       {/* Score bar */}
@@ -370,10 +386,10 @@ const PianoGame = () => {
         </div>
       )}
 
-      {/* Piano */}
-      <div className="w-full px-2">
-        <div className="glass-card p-2 md:p-4 rounded-2xl neon-border">
-          <div className="relative" style={{ height: 'clamp(180px, 25vw, 240px)', touchAction: 'none' }}>
+      {/* Piano — PC'de tam genişlik */}
+      <div className="w-full">
+        <div className="glass-card p-2 md:p-5 rounded-2xl neon-border">
+          <div className="relative" style={{ height: 'clamp(180px, 25vw, 280px)', touchAction: 'none' }}>
             {/* White keys */}
             <div className="flex gap-0.5 md:gap-1 h-full">
               {WHITE_NOTES.map(note => (
@@ -385,11 +401,11 @@ const PianoGame = () => {
                     minWidth: '0',
                     touchAction: 'none',
                     background: activeNotes.has(note.note)
-                      ? `linear-gradient(180deg, ${COLORS[note.note]} 0%, ${COLORS[note.note]}dd 100%)`
-                      : `linear-gradient(180deg, ${COLORS[note.note]}50 0%, ${COLORS[note.note]}80 50%, ${COLORS[note.note]}cc 100%)`,
+                      ? `linear-gradient(180deg, ${COLORS[note.note]} 0%, ${COLORS[note.note]}cc 100%)`
+                      : `linear-gradient(180deg, ${COLORS[note.note]}ee 0%, ${COLORS[note.note]} 100%)`,
                     boxShadow: activeNotes.has(note.note)
-                      ? `0 0 30px ${COLORS[note.note]}, inset 0 -4px 12px ${COLORS[note.note]}60`
-                      : `0 4px 8px rgba(0,0,0,0.3), inset 0 -3px 10px ${COLORS[note.note]}50`,
+                      ? `0 0 32px ${COLORS[note.note]}cc, inset 0 -4px 12px rgba(0,0,0,0.25)`
+                      : `0 4px 10px rgba(0,0,0,0.35), inset 0 -3px 10px rgba(0,0,0,0.2)`,
                     border: `3px solid ${COLORS[note.note]}`,
                   }}
                   whileTap={{ scale: 0.97 }}>
@@ -417,11 +433,11 @@ const PianoGame = () => {
                       height: '100%',
                       touchAction: 'none',
                       background: activeNotes.has(note.note)
-                        ? `linear-gradient(180deg, ${COLORS[note.note]} 0%, ${COLORS[note.note]}cc 100%)`
-                        : `linear-gradient(180deg, ${COLORS[note.note]}aa 0%, ${COLORS[note.note]}dd 50%, ${COLORS[note.note]} 100%)`,
+                        ? `linear-gradient(180deg, ${COLORS[note.note]} 0%, ${COLORS[note.note]}bb 100%)`
+                        : `linear-gradient(180deg, ${COLORS[note.note]}dd 0%, ${COLORS[note.note]} 100%)`,
                       boxShadow: activeNotes.has(note.note)
-                        ? `0 0 25px ${COLORS[note.note]}, inset 0 -3px 10px ${COLORS[note.note]}80`
-                        : `0 4px 8px rgba(0,0,0,0.5), inset 0 -2px 8px ${COLORS[note.note]}60`,
+                        ? `0 0 22px ${COLORS[note.note]}cc, inset 0 -3px 10px rgba(0,0,0,0.3)`
+                        : `0 4px 10px rgba(0,0,0,0.55), inset 0 -2px 8px rgba(0,0,0,0.3)`,
                       border: `2px md:border-3 solid ${COLORS[note.note]}`,
                     }}
                     whileTap={{ scale: 0.95 }}>
@@ -449,9 +465,9 @@ const PianoGame = () => {
       </div>
 
       {/* Melodies */}
-      <div className="space-y-3 w-full max-w-lg">
+      <div className="space-y-3 w-full">
         <p className="text-center font-bold text-sm">🎵 Melodileri Öğren</p>
-        <div className="grid grid-cols-1 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {MELODIES.map(melody => (
             <div key={melody.name} className="glass-card p-3 rounded-xl flex items-center justify-between gap-2">
               <div>

@@ -1013,29 +1013,23 @@ const RunnerGame = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [jump, phase, startGame]);
 
-  /* Canvas resize */
+  /* Canvas resize — sadece genişlik bazlı, yükseklik capped değil */
   useEffect(() => {
     const resize = () => {
       if (!containerRef.current || !canvasRef.current) return;
       const container = containerRef.current;
       const canvas = canvasRef.current;
-      
-      // Get available width (with padding)
-      const availableWidth = container.clientWidth;
-      const availableHeight = window.innerHeight * 0.5; // Max 50% of viewport height
-      
-      // Calculate scale to fit both width and height
-      const scaleW = availableWidth / CW;
-      const scaleH = availableHeight / CH;
-      const s = Math.min(scaleW, scaleH, 1.2); // Allow slight upscaling on mobile
-      
+
+      // Tüm genişliği kullan, oranı koru
+      const s = Math.min(container.clientWidth / CW, 1.4);
       scaleRef.current = s;
       canvas.style.width = `${CW * s}px`;
       canvas.style.height = `${CH * s}px`;
     };
     resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+    const ro = new ResizeObserver(resize);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
   }, []);
 
 
@@ -1126,7 +1120,11 @@ const RunnerGame = () => {
           width={CW}
           height={CH}
           className="rounded-2xl md:rounded-3xl shadow-2xl cursor-pointer block mx-auto"
-          style={{ border: '2px solid rgba(255,255,255,0.08)', maxWidth: '100%', height: 'auto' }}
+          style={{
+            border: '2px solid rgba(255,255,255,0.08)',
+            /* width/height resize ile doğrudan DOM'a yazılır */
+            willChange: 'transform',
+          }}
         />
 
         {/* ── Glassmorphism HUD overlay — inside canvas area ── */}
@@ -1216,7 +1214,7 @@ const RunnerGame = () => {
               boxShadow: '0 8px 32px rgba(239,68,68,0.6), 0 0 0 4px rgba(255,255,255,0.2)',
             }}
             whileTap={{ scale: 0.85 }}
-            animate={{ 
+            animate={{
               scale: [1, 1.1, 1],
               boxShadow: [
                 '0 8px 32px rgba(239,68,68,0.6), 0 0 0 4px rgba(255,255,255,0.2)',

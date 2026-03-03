@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Download, ChevronLeft, ChevronRight, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
+import { Trash2, Download, ChevronLeft, ChevronRight, Undo2, ZoomIn, ZoomOut, PaintBucket, Paintbrush, Eraser } from 'lucide-react';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
 
 /* ═══════════════════════════════════════════
@@ -99,13 +99,11 @@ const ColoringBookGame = () => {
   const [fillPops, setFillPops] = useState<FillPop[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [characterBlink, setCharacterBlink] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
   const isPinchingRef = useRef(false);
   const lastPinchDistRef = useRef(0);
   const sparkleIdRef = useRef(0);
   const popIdRef = useRef(0);
-  const fillCountRef = useRef(0);
 
   // Character blink interval
   useEffect(() => {
@@ -177,8 +175,6 @@ const ColoringBookGame = () => {
       setIsLoading(false);
       setUndoStack([]);
       setColorUsage(new Set());
-      fillCountRef.current = 0;
-      setShowCelebration(false);
     };
     img.onerror = () => setIsLoading(false);
     img.src = PAGES[pageIndex].image;
@@ -454,13 +450,6 @@ const ColoringBookGame = () => {
       setColorUsage(prev => new Set(prev).add(activeColor));
       addFillPop(pos.x, pos.y);
       addSparkle(pos.x, pos.y, activeColor);
-      fillCountRef.current++;
-      // Celebration after many fills
-      if (fillCountRef.current > 0 && fillCountRef.current % 8 === 0) {
-        setShowCelebration(true);
-        playSuccessSound();
-        setTimeout(() => setShowCelebration(false), 2500);
-      }
     } else {
       saveUndoState();
       setIsDrawing(true);
@@ -597,14 +586,14 @@ const ColoringBookGame = () => {
         {/* Tool mode */}
         <div className="flex gap-1 rounded-xl p-1" style={{ background: 'rgba(0,0,0,0.15)' }}>
           {([
-            { mode: 'fill' as ToolMode, label: '🪣', title: 'Doldur' },
-            { mode: 'brush' as ToolMode, label: '🖌️', title: 'Fırça' },
-            { mode: 'eraser' as ToolMode, label: '🧹', title: 'Silgi' },
+            { mode: 'fill' as ToolMode, icon: <PaintBucket className="w-4 h-4" />, title: 'Doldur' },
+            { mode: 'brush' as ToolMode, icon: <Paintbrush className="w-4 h-4" />, title: 'Fırça' },
+            { mode: 'eraser' as ToolMode, icon: <Eraser className="w-4 h-4" />, title: 'Silgi' },
           ]).map(t => (
             <button key={t.mode} onClick={() => { setToolMode(t.mode); playPopSound(); }}
-              className={`px-3 py-2 rounded-lg text-sm font-bold transition-all touch-manipulation ${toolMode === t.mode ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'hover:bg-white/10 text-muted-foreground'
+              className={`px-3 py-2 rounded-lg text-sm font-bold transition-all touch-manipulation flex items-center justify-center ${toolMode === t.mode ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'hover:bg-white/10 text-muted-foreground'
                 }`} title={t.title}>
-              {t.label}
+              {t.icon}
             </button>
           ))}
         </div>
@@ -729,31 +718,7 @@ const ColoringBookGame = () => {
           ))}
         </AnimatePresence>
 
-        {/* Celebration overlay */}
-        <AnimatePresence>
-          {showCelebration && (
-            <motion.div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <motion.div className="flex flex-col items-center gap-2 px-6 py-4 rounded-3xl"
-                style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}
-                initial={{ scale: 0, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }}
-                transition={{ type: 'spring', damping: 12 }}>
-                <motion.span className="text-4xl" animate={{ rotate: [0, -10, 10, -10, 0] }} transition={{ repeat: 2, duration: 0.4 }}>
-                  👏
-                </motion.span>
-                <span className="text-sm font-black text-gray-800">Harika gidiyor!</span>
-                <div className="flex gap-1">
-                  {['🌟', '🎨', '✨'].map((e, i) => (
-                    <motion.span key={i} className="text-lg" initial={{ y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 + i * 0.1 }}>
-                      {e}
-                    </motion.span>
-                  ))}
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
       </div>
 
       {/* ── Color usage indicator ── */}
