@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound, playSwishSound } from '@/utils/soundEffects';
+import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound, playSwishSound, playLevelUpSound } from '@/utils/soundEffects';
+
 
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
@@ -12,7 +13,8 @@ const CW = 800;
 const CH = 450;
 const GRAVITY = 0.4;
 const BALL_R = 18;
-const BALLS_PER_ROUND = 10;
+const BALLS_PER_ROUND = 7;
+
 const HOOP_X = 155;
 const HOOP_Y = 180;
 const RIM_W = 36;          // half-width of actual rim opening
@@ -32,6 +34,17 @@ const SHOT_POSITIONS: ShotPos[] = [
 
 const MAX_DRAG = 150;      // pixels of drag = full power
 const MAX_SPEED = 22;      // max launch speed
+
+const getTargetScore = (lvl: number) => {
+    if (lvl === 1) return 25;
+    if (lvl === 2) return 45;
+    if (lvl === 3) return 85;
+    if (lvl === 4) return 135;
+    // 5. seviye ve sonrası için: Artış miktarını koruyarak devam et (40 -> 50 -> 60 -> ...)
+    return 135 + (lvl - 4) * 60;
+};
+
+
 
 const BALL_TYPES = [
     { id: 'basketball', label: '🏀', name: 'Basketbol', color: '#E06611', accent: '#A03000' },
@@ -315,33 +328,38 @@ const BasketballGame = () => {
     const ballVY = useRef(0);
     const spinRef = useRef(0);
     const trailRef = useRef<TrailPt[]>([]);
+
+    // Game state refs
     const ballsLeftRef = useRef(BALLS_PER_ROUND);
     const scoreRef = useRef(0);
     const comboRef = useRef(0);
+    const levelRef = useRef(1);
     const tickRef = useRef(0);
+
     const dragging = useRef(false);
     const dragStart = useRef({ x: 0, y: 0 });
     const dragCur = useRef({ x: 0, y: 0 });
     const floatIdRef = useRef(0);
     const rafRef = useRef(0);
-    // Basket feel
+
+    // Basket feel refs
     const netStretchRef = useRef(0);
     const netSwayRef = useRef(0);
     const flashRef = useRef(0);
     const scoredFramesRef = useRef(0);
-
     const prevBallY = useRef(SHOT_POSITIONS[0].y);
     const currentPosRef = useRef<ShotPos>(SHOT_POSITIONS[0]);
+    const selectedBallRef = useRef('basketball');
 
+    // React State
     const [phase, setPhase] = useState<Phase>('aim');
     const [score, setScore] = useState(0);
     const [ballsLeft, setBallsLeft] = useState(BALLS_PER_ROUND);
     const [combo, setCombo] = useState(0);
-    const selectedBallRef = useRef('basketball');
+    const [level, setLevel] = useState(1);
+    const [showLevelUp, setShowLevelUp] = useState(false);
     const [selectedBall, setSelectedBall] = useState('basketball');
     const [highScore, setHighScore] = useState(() => getHighScore('basketball'));
-
-
     const [floatMsgs, setFloatMsgs] = useState<FloatMsg[]>([]);
     const [isNewRecord, setIsNewRecord] = useState(false);
 
@@ -367,9 +385,13 @@ const BasketballGame = () => {
 
     const startNewRound = useCallback(() => {
         ballsLeftRef.current = BALLS_PER_ROUND; scoreRef.current = 0; comboRef.current = 0;
-        setScore(0); setBallsLeft(BALLS_PER_ROUND); setCombo(0); setIsNewRecord(false);
+        levelRef.current = 1;
+        setScore(0); setBallsLeft(BALLS_PER_ROUND); setCombo(0); setLevel(1); setIsNewRecord(false);
         resetBall(); phaseRef.current = 'aim'; setPhase('aim');
     }, [resetBall]);
+
+
+
 
     const checkHoop = useCallback(() => {
         const x = ballX.current, y = ballY.current, py = prevBallY.current;
@@ -587,9 +609,21 @@ const BasketballGame = () => {
                 // ── Trajectory dots (perspektif zemin bounce simulasyonu ile) ──
                 let px = currentPosRef.current.x, py = currentPosRef.current.y;
                 let pvx = ndx * spd, pvy = ndy * spd;
-                for (let i = 1; i <= 60; i++) {
+
+                // Seviyeye göre gösterge uzunluğu (Daha kademeli geçiş)
+                let guideDots = 60;
+                const lvl = levelRef.current;
+                if (lvl === 2) guideDots = 45;
+                else if (lvl === 3) guideDots = 30;
+                else if (lvl === 4) guideDots = 18;
+                else if (lvl === 5) guideDots = 8;
+                else if (lvl >= 6) guideDots = 0;
+
+
+                for (let i = 1; i <= guideDots; i++) {
                     pvy += GRAVITY;
                     px += pvx; py += pvy;
+
                     // Zemin bounce (preview'da da görünsün)
                     const FLOOR = perspFloorY(px);
                     if (py + BALL_R >= FLOOR && pvy > 0) {
@@ -673,17 +707,55 @@ const BasketballGame = () => {
         const t = setTimeout(() => {
             ballsLeftRef.current -= 1;
             setBallsLeft(ballsLeftRef.current);
+
             if (ballsLeftRef.current <= 0) {
-                cancelAnimationFrame(rafRef.current);
-                const isNew = saveHighScoreObj('basketball', scoreRef.current);
-                if (isNew) { setHighScore(scoreRef.current); setIsNewRecord(true); playNewRecordSound(); confetti({ particleCount: 150, spread: 90 }); }
-                phaseRef.current = 'gameover'; setPhase('gameover');
+                // Tur bitti: Baraj puanını kontrol et
+                const target = getTargetScore(levelRef.current);
+
+                if (scoreRef.current >= target) {
+                    // Başarılı: Seviye atlat
+                    const currentTotal = scoreRef.current;
+                    const isNew = saveHighScoreObj('basketball', currentTotal);
+                    if (isNew) { setHighScore(currentTotal); setIsNewRecord(true); }
+
+                    const nextLevel = levelRef.current + 1;
+                    levelRef.current = nextLevel;
+                    setLevel(nextLevel);
+                    setShowLevelUp(true);
+                    playLevelUpSound();
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+
+                    setTimeout(() => {
+                        setShowLevelUp(false);
+                        ballsLeftRef.current = BALLS_PER_ROUND;
+                        setBallsLeft(BALLS_PER_ROUND);
+                        resetBall();
+                        phaseRef.current = 'aim';
+                        setPhase('aim');
+                    }, 2200);
+                } else {
+                    // Başarısız: Baraj geçilemedi, OYUN BİTTİ
+                    const finalTotal = scoreRef.current;
+                    const isNew = saveHighScoreObj('basketball', finalTotal);
+                    if (isNew) {
+                        setHighScore(finalTotal);
+                        setIsNewRecord(true);
+                        playNewRecordSound();
+                        confetti({ particleCount: 150, spread: 90 });
+                    } else {
+                        playErrorSound();
+                    }
+                    phaseRef.current = 'gameover';
+                    setPhase('gameover');
+                }
             } else {
                 resetBall(); phaseRef.current = 'aim'; setPhase('aim');
             }
         }, phase === 'scored' ? 650 : 450);
         return () => clearTimeout(t);
     }, [phase, resetBall]);
+
+
 
     /* Responsive canvas */
     useEffect(() => {
@@ -767,12 +839,20 @@ const BasketballGame = () => {
 
             {/* HUD */}
             <div className="flex items-center justify-between w-full mb-2 px-1">
-                <div className="flex gap-1">
-                    {Array.from({ length: BALLS_PER_ROUND }).map((_, i) => (
-                        <span key={i} style={{ fontSize: 17, opacity: i < ballsLeft ? 1 : 0.18 }}>🏀</span>
-                    ))}
+                <div className="flex flex-col gap-1 items-start">
+                    <div className="flex gap-1 mb-1">
+                        {Array.from({ length: BALLS_PER_ROUND }).map((_, i) => (
+                            <span key={i} style={{ fontSize: 13, opacity: i < ballsLeft ? 1 : 0.15 }}>🏀</span>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-primary px-1.5 py-0.5 bg-primary/10 rounded-md border border-primary/20 uppercase tracking-widest">{level}. Seviye</span>
+                        <span className="text-[10px] font-bold text-orange-500 px-1.5 py-0.5 bg-orange-500/10 rounded-md border border-orange-500/20 uppercase tracking-widest">Hedef: {getTargetScore(level)}</span>
+                    </div>
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-3 items-center bg-muted/30 px-3 py-1.5 rounded-2xl border border-white/5">
+
+
                     {combo > 1 && (
                         <motion.span key={combo} className="text-sm font-black px-2 py-0.5 rounded-full"
                             style={{ background: 'hsl(38 95% 58% / 0.2)', color: 'hsl(38 95% 58%)', border: '1px solid hsl(38 95% 58% / 0.3)' }}
