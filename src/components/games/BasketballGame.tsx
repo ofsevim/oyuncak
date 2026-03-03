@@ -379,13 +379,14 @@ const BasketballGame = () => {
                 const nc = comboRef.current + 1;
                 comboRef.current = nc;
                 const basePts = currentPosRef.current.pts;
-                const pts = basePts + (nc > 2 ? nc - 2 : 0);
+                const pts = basePts * nc;
                 scoreRef.current += pts;
                 setScore(scoreRef.current);
                 setCombo(nc);
                 const sx = (HOOP_X / CW) * (canvasRef.current?.offsetWidth ?? CW);
                 const sy = ((HOOP_Y - 50) / CH) * (canvasRef.current?.offsetHeight ?? CH);
-                addFloat(sx, sy, nc > 2 ? `🔥 COMBO ×${nc} +${pts}` : `+${pts}`, nc > 2 ? '#FFE234' : '#4CD964');
+                addFloat(sx, sy, nc > 1 ? `🔥 COMBO ×${nc} +${pts}` : `+${pts}`, nc > 1 ? '#FFE234' : '#4CD964');
+
 
                 // Daima file sesini çal (her zaman potadan geçiyor)
                 playSwishSound();
