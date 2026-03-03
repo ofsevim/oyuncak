@@ -5,6 +5,7 @@ import FloatingBubbles from '@/components/ui/FloatingBubbles';
 import Navigation from '@/components/Navigation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Home from '@/components/home/Home';
+import PWAInstall from '@/components/PWAInstall';
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 
 type Tab = 'home' | 'draw' | 'games' | 'story';
@@ -65,6 +66,7 @@ const Index = () => {
         </Suspense>
       </main>
       {!isGameActive && <Navigation activeTab={activeTab} onTabChange={setActiveTab} />}
+      <PWAInstall />
     </div>
   );
 };

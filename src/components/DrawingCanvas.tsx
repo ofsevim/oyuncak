@@ -447,7 +447,7 @@ const DrawingCanvas = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 lg:gap-10 p-4 pb-44 max-w-[1400px] mx-auto relative">
+    <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 p-4 pb-44 max-w-[1400px] mx-auto relative mt-12 lg:mt-0 transition-all duration-300">
 
       {/* ── Wood desk background ── */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
@@ -463,8 +463,8 @@ const DrawingCanvas = () => {
         }} />
       </div>
 
-      {/* ── LEFT PANEL: Tools & Controls ── */}
-      <aside className="relative z-20 w-full lg:w-80 flex flex-col gap-6 lg:sticky lg:top-8">
+      {/* ── TOOLS PANEL ── */}
+      <aside className="relative z-20 w-full lg:w-80 flex flex-col gap-6 lg:sticky lg:top-8 order-1 lg:order-none">
 
         {/* Title */}
         <div className="flex items-center gap-3 lg:justify-start justify-center">
@@ -478,7 +478,7 @@ const DrawingCanvas = () => {
               <path d="M8 8l-2 2" />
             </svg>
           </motion.div>
-          <div className="flex flex-col">
+          <div className="flex flex-col lg:items-start items-center">
             <h2 className="text-2xl md:text-3xl font-black text-gradient leading-none">Resim Çiz</h2>
             <span className="text-[10px] font-bold text-muted-foreground/50 tracking-widest uppercase mt-1">Yaratıcı Atölye</span>
           </div>
