@@ -222,11 +222,19 @@ const DrawingCanvas = () => {
     const update = () => {
       if (!containerRef.current) return;
       const isDesktop = window.innerWidth >= 1024;
-      const limitW = isDesktop ? 1000 : 620;
-      const w = Math.min(containerRef.current.clientWidth - 16, limitW);
-      const h = isDesktop ? window.innerHeight * 0.6 : Math.min(window.innerHeight * 0.42, 420);
-      setCanvasW(w);
-      setCanvasH(h);
+      if (isDesktop) {
+        // Desktop: geniş yatay canvas
+        const w = Math.min(containerRef.current.clientWidth - 16, 1000);
+        const h = window.innerHeight * 0.6;
+        setCanvasW(w);
+        setCanvasH(h);
+      } else {
+        // Mobil: dikey canvas (eski versiyon)
+        const w = Math.min(containerRef.current.clientWidth - 16, 400);
+        const h = Math.min(window.innerHeight * 0.55, 600);
+        setCanvasW(w);
+        setCanvasH(h);
+      }
     };
     update();
     window.addEventListener('resize', update);
@@ -251,8 +259,12 @@ const DrawingCanvas = () => {
   /* ── Fabric boyut güncelle ── */
   useEffect(() => {
     if (fabricCanvas) {
-      fabricCanvas.setDimensions({ width: canvasW, height: canvasH });
-      fabricCanvas.renderAll();
+      // Fabric 6 fix: Check if the canvas is still valid before setting dimensions
+      const anyCanvas = fabricCanvas as any;
+      if (anyCanvas.lowerCanvasEl || anyCanvas.elements) {
+        fabricCanvas.setDimensions({ width: canvasW, height: canvasH });
+        fabricCanvas.renderAll();
+      }
     }
   }, [canvasW, canvasH, fabricCanvas]);
 
@@ -262,7 +274,7 @@ const DrawingCanvas = () => {
     if (!c) return;
     c.width = canvasW;
     c.height = canvasH;
-    const ctx = c.getContext('2d');
+    const ctx = c.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvasW, canvasH);
@@ -301,7 +313,7 @@ const DrawingCanvas = () => {
   const saveUndo = useCallback(() => {
     const c = drawCanvasRef.current;
     if (!c) return;
-    const ctx = c.getContext('2d');
+    const ctx = c.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
     const stack = undoStackRef.current;
     if (stack.length > 20) stack.shift();
@@ -320,7 +332,7 @@ const DrawingCanvas = () => {
 
     const c = drawCanvasRef.current;
     if (!c) return;
-    const ctx = c.getContext('2d');
+    const ctx = c.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     let color = activeColor;
@@ -342,7 +354,7 @@ const DrawingCanvas = () => {
 
     const c = drawCanvasRef.current;
     if (!c) return;
-    const ctx = c.getContext('2d');
+    const ctx = c.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     // Fırçaya göre stamp aralığı
@@ -394,7 +406,7 @@ const DrawingCanvas = () => {
     setUndoLen(stack.length);
     const c = drawCanvasRef.current;
     if (!c) return;
-    const ctx = c.getContext('2d');
+    const ctx = c.getContext('2d', { willReadFrequently: true });
     if (ctx) ctx.putImageData(last, 0, 0);
     playPopSound();
   }, []);
@@ -418,7 +430,7 @@ const DrawingCanvas = () => {
     const mergeCanvas = document.createElement('canvas');
     mergeCanvas.width = canvasW;
     mergeCanvas.height = canvasH;
-    const mCtx = mergeCanvas.getContext('2d')!;
+    const mCtx = mergeCanvas.getContext('2d', { willReadFrequently: true })!;
     // 1. Çizim katmanı
     if (drawCanvasRef.current) mCtx.drawImage(drawCanvasRef.current, 0, 0);
     // 2. Sticker katmanı (Fabric)
@@ -447,7 +459,7 @@ const DrawingCanvas = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 p-4 pb-44 max-w-[1400px] mx-auto relative mt-12 lg:mt-0 transition-all duration-300">
+    <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 p-4 pb-44 max-w-[1400px] mx-auto relative transition-opacity duration-300">
 
       {/* ── Wood desk background ── */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
@@ -464,10 +476,10 @@ const DrawingCanvas = () => {
       </div>
 
       {/* ── TOOLS PANEL ── */}
-      <aside className="relative z-20 w-full lg:w-80 flex flex-col gap-6 lg:sticky lg:top-8 order-1 lg:order-none">
+      <aside className="relative z-20 w-full lg:w-80 flex flex-col gap-3 lg:gap-6 lg:sticky lg:top-8 order-1 lg:order-1">
 
-        {/* Title */}
-        <div className="flex items-center gap-3 lg:justify-start justify-center">
+        {/* Title - Mobilde gizli */}
+        <div className="hidden lg:flex items-center gap-3 lg:justify-start justify-center">
           <motion.div initial={{ rotate: -10 }} animate={{ rotate: 10 }} transition={{ repeat: Infinity, repeatType: 'reverse', duration: 2, ease: 'easeInOut' }}
             className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl shadow-lg shadow-violet-500/20">
             <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-white" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -486,23 +498,21 @@ const DrawingCanvas = () => {
 
 
         {/* Color Palette */}
-        <div className="flex flex-col gap-3">
-          <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 px-1">Renkler</span>
-          <motion.div className="grid grid-cols-6 lg:grid-cols-4 gap-2 lg:gap-3 bg-black/20 p-3 rounded-2xl border border-white/5"
+        <div className="flex flex-col gap-2">
+          <span className="text-[9px] lg:text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 px-1">Renkler</span>
+          <motion.div className="grid grid-cols-7 lg:grid-cols-4 gap-1.5 lg:gap-3 bg-black/20 p-2 lg:p-3 rounded-xl lg:rounded-2xl border border-white/5"
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
             {COLORS.map((color) => {
               const isActive = activeColor === color.value && !isRainbow;
               return (
                 <motion.button key={color.value} onClick={() => handleColorSelect(color.value)}
-                  className="relative aspect-square rounded-xl transition-all active:scale-75 touch-manipulation"
-                  whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.85 }}
-                  style={{ backgroundColor: color.value, boxShadow: isActive ? `0 0 12px ${color.value}80` : '0 2px 4px rgba(0,0,0,0.3)' }}
+                  className="relative aspect-square w-full rounded-lg lg:rounded-xl active:scale-75 touch-manipulation cursor-pointer flex items-center justify-center p-0"
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                  style={{ backgroundColor: color.value, boxShadow: isActive ? `0 0 15px ${color.value}` : '0 2px 4px rgba(0,0,0,0.3)' }}
                   title={color.name}>
-                  <span className="absolute inset-[2px] rounded-lg pointer-events-none"
-                    style={{ background: `radial-gradient(circle at 35% 30%, ${color.light}66 0%, transparent 60%)` }} />
                   {isActive && (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className={`text-xs font-black ${color.value === '#FAFAFA' || color.value === '#FDD835' ? 'text-gray-800' : 'text-white'}`}>✓</span>
+                    <span className="relative z-10 flex items-center justify-center pointer-events-none">
+                      <span className={`text-[10px] lg:text-xs font-black ${color.value === '#FAFAFA' || color.value === '#FDD835' ? 'text-gray-800' : 'text-white'}`}>✓</span>
                     </span>
                   )}
                 </motion.button>
@@ -510,32 +520,34 @@ const DrawingCanvas = () => {
             })}
             {/* Rainbow */}
             <motion.button onClick={() => { setIsRainbow(!isRainbow); setIsStickering(false); }}
-              className="relative aspect-square rounded-xl rainbow-gradient flex items-center justify-center active:scale-75 touch-manipulation"
-              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.85 }}
-              style={{ boxShadow: isRainbow ? '0 0 12px rgba(171,71,188,0.5)' : '0 2px 4px rgba(0,0,0,0.3)' }}>
-              <Sparkles className="w-4 h-4 text-white drop-shadow-md" />
-              {isRainbow && <span className="absolute inset-0 flex items-center justify-center"><span className="text-xs font-black text-white">✓</span></span>}
+              className="relative aspect-square w-full rounded-lg lg:rounded-xl rainbow-gradient flex items-center justify-center active:scale-75 touch-manipulation cursor-pointer"
+              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.85 }}
+              style={{ boxShadow: isRainbow ? '0 0 15px rgba(171,71,188,0.7)' : '0 2px 4px rgba(0,0,0,0.3)' }}>
+              <Sparkles className="w-3 lg:w-4 h-3 lg:h-4 text-white drop-shadow-md pointer-events-none" />
+              {isRainbow && <span className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-[10px] lg:text-xs font-black text-white">✓</span></span>}
             </motion.button>
           </motion.div>
         </div>
 
         {/* Brush Types - Circular Grid */}
-        <div className="flex flex-col gap-3">
-          <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 px-1">Fırça Türü</span>
-          <motion.div className="grid grid-cols-3 gap-2"
+        <div className="flex flex-col gap-2">
+          <span className="text-[9px] lg:text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 px-1">Fırça Türü</span>
+          <motion.div className="grid grid-cols-6 lg:grid-cols-3 gap-1.5 lg:gap-2"
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             {BRUSHES.map((brush) => {
               const isActive = activeBrush === brush.id;
               return (
                 <motion.button key={brush.id}
                   onClick={() => { setActiveBrush(brush.id); setIsStickering(false); playPopSound(); }}
-                  className={`relative flex flex-col items-center justify-center p-3 rounded-2xl aspect-square transition-all ${isActive ? 'bg-primary/20 text-foreground border-2 border-primary/50 shadow-lg shadow-primary/20' : 'bg-black/20 text-muted-foreground border border-white/5 hover:bg-white/5'
+                  className={`relative flex flex-col items-center justify-center rounded-xl lg:rounded-2xl aspect-square cursor-pointer p-1.5 lg:p-3 ${isActive ? 'bg-primary/20 text-foreground ring-2 ring-primary/50' : 'bg-black/20 text-muted-foreground border border-white/5 hover:bg-white/10'
                     }`}
                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }}>
-                  <span className="text-2xl mb-1">{brush.icon}</span>
-                  <span className="text-[10px] font-bold opacity-80">{brush.name}</span>
+                  <span className="text-lg lg:text-2xl mb-0 lg:mb-1 pointer-events-none">{brush.icon}</span>
+                  <span className="text-[8px] lg:text-[10px] font-bold opacity-80 pointer-events-none uppercase tracking-tighter">{brush.name}</span>
                   {isActive && (
-                    <motion.div layoutId="brush-active" className="absolute inset-0 rounded-2xl border-2 border-primary/30 pointer-events-none" />
+                    <motion.div layoutId="brush-active"
+                      className="absolute inset-0 rounded-xl lg:rounded-2xl bg-primary/10 pointer-events-none"
+                    />
                   )}
                 </motion.button>
               );
@@ -550,7 +562,7 @@ const DrawingCanvas = () => {
 
 
       {/* ── MAIN AREA: Canvas ── */}
-      <main className="relative z-10 flex-1 w-full flex flex-col items-center gap-6">
+      <main className="relative z-10 flex-1 w-full flex flex-col items-center gap-6 order-2 lg:order-2">
 
         <motion.div ref={containerRef} className="w-full flex justify-center relative touch-none"
           initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
