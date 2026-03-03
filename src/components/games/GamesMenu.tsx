@@ -114,7 +114,7 @@ const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
             border: '1px solid hsl(var(--border))',
             color: 'hsl(var(--muted-foreground))',
           }}
-          whileHover={{ x: -3, color: 'hsl(var(--foreground))' } as any}
+          whileHover={{ x: -3, color: 'hsl(var(--foreground))' }}
           whileTap={{ scale: 0.95 }}
         >
           <ArrowLeft className="w-4 h-4" /> Oyunlara Dön

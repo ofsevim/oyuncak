@@ -989,10 +989,12 @@ const RunnerGame = () => {
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(() => { });
       }
-      if ((window.screen?.orientation as any)?.lock) {
-        (window.screen.orientation as any).lock('landscape').catch(() => { });
-      }
-    } catch (err) { }
+
+      // Use a typed access to avoid `any` casts for orientation lock
+      type OrientationLock = { lock?: (mode: string) => Promise<void> };
+      const orientation = (window.screen as unknown as { orientation?: OrientationLock }).orientation;
+      orientation?.lock?.('landscape').catch(() => { });
+    } catch (err) { /* ignore */ }
   }, [character, difficulty]);
 
   /* Start/stop loop */

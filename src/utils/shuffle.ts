@@ -17,7 +17,7 @@ export const shuffleArray = <T,>(array: T[]): T[] => {
 export const smartShuffle = <T,>(array: T[], key?: keyof T): T[] => {
     if (array.length <= 1) return [...array];
 
-    let shuffled = shuffleArray(array);
+    const shuffled = shuffleArray(array);
     let attempts = 0;
     const maxAttempts = 10;
 

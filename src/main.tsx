@@ -2,8 +2,13 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
+// Global window property for the app load timer
+declare global {
+  interface Window { __appLoadTimer?: number }
+}
+
 // Yükleme tamamlandı: spinner ve timeout temizle
-if ((window as any).__appLoadTimer) clearTimeout((window as any).__appLoadTimer);
+if (window.__appLoadTimer) clearTimeout(window.__appLoadTimer);
 const loader = document.getElementById("app-loader");
 if (loader) loader.remove();
 
