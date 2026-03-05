@@ -274,8 +274,7 @@ const ColoringBookGame = () => {
         // Her ~8.pikzelde bir parlak nokta
         const spark = Math.random() > 0.88;
         if (spark) {
-          const h = Math.floor(Math.random() * 360);
-          // HSL → rough RGB for sparkle tint
+          // Sparkle tint: brighten the fill color
           data[pixelIdx] = Math.min(255, fillR + 80);
           data[pixelIdx + 1] = Math.min(255, fillG + 80);
           data[pixelIdx + 2] = Math.min(255, fillB + 80);
@@ -750,22 +749,6 @@ const ColoringBookGame = () => {
             </button>
           </div>
         </div>
-
-
-        <button onClick={handleUndo} disabled={undoStack.length === 0}
-          className={`flex-1 lg:flex-none lg:w-32 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-xs bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-all ${undoStack.length === 0 ? 'opacity-20' : 'active:scale-95'}`}>
-          <Undo2 className="w-4 h-4" /> Geri Al
-        </button>
-
-        <button onClick={handleSave}
-          className="w-full lg:flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-sm bg-gradient-to-r from-primary to-violet-600 text-white shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-          <Download className="w-5 h-5" /> Boyamamı Kaydet ✨
-        </button>
-
-        <button onClick={handleClear}
-          className="flex-1 lg:flex-none lg:w-32 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-xs bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all active:scale-95">
-          <Trash2 className="w-4 h-4" /> Temizle
-        </button>
 
 
         {/* Color usage */}

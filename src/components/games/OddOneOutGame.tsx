@@ -11,34 +11,34 @@ import confetti from 'canvas-confetti';
    ROUNDS DATA
    ═══════════════════════════════════════════ */
 const ROUNDS = [
-  { items: [{ id:'1',emoji:'🐕' },{ id:'2',emoji:'🐈' },{ id:'3',emoji:'🐰' },{ id:'4',emoji:'🚗' }], oddOne:'4', hint:'Hangisi hayvan değil?' },
-  { items: [{ id:'1',emoji:'🍎' },{ id:'2',emoji:'🍌' },{ id:'3',emoji:'🏠' },{ id:'4',emoji:'🍇' }], oddOne:'3', hint:'Hangisi meyve değil?' },
-  { items: [{ id:'1',emoji:'✈️' },{ id:'2',emoji:'🚂' },{ id:'3',emoji:'🌸' },{ id:'4',emoji:'🚀' }], oddOne:'3', hint:'Hangisi taşıt değil?' },
-  { items: [{ id:'1',emoji:'🔴' },{ id:'2',emoji:'🔵' },{ id:'3',emoji:'🟢' },{ id:'4',emoji:'📐' }], oddOne:'4', hint:'Hangisi renk değil?' },
-  { items: [{ id:'1',emoji:'🦁' },{ id:'2',emoji:'🐯' },{ id:'3',emoji:'🦒' },{ id:'4',emoji:'🐳' }], oddOne:'4', hint:'Hangisi karada yaşamaz?' },
-  { items: [{ id:'1',emoji:'🥦' },{ id:'2',emoji:'🥕' },{ id:'3',emoji:'🍦' },{ id:'4',emoji:'🌽' }], oddOne:'3', hint:'Hangisi sebze değil?' },
-  { items: [{ id:'1',emoji:'🎸' },{ id:'2',emoji:'🎺' },{ id:'3',emoji:'🎻' },{ id:'4',emoji:'🔨' }], oddOne:'4', hint:'Hangisi müzik aleti değil?' },
-  { items: [{ id:'1',emoji:'☀️' },{ id:'2',emoji:'☁️' },{ id:'3',emoji:'🌧️' },{ id:'4',emoji:'🍔' }], oddOne:'4', hint:'Hangisi hava durumu değil?' },
-  { items: [{ id:'1',emoji:'⚽' },{ id:'2',emoji:'🏀' },{ id:'3',emoji:'🎾' },{ id:'4',emoji:'🧸' }], oddOne:'4', hint:'Hangisi spor topu değil?' },
-  { items: [{ id:'1',emoji:'🐙' },{ id:'2',emoji:'🦀' },{ id:'3',emoji:'🐠' },{ id:'4',emoji:'🦋' }], oddOne:'4', hint:'Hangisi denizde yaşamaz?' },
-  { items: [{ id:'1',emoji:'🍕' },{ id:'2',emoji:'🍔' },{ id:'3',emoji:'🌭' },{ id:'4',emoji:'👕' }], oddOne:'4', hint:'Hangisi yemek değil?' },
-  { items: [{ id:'1',emoji:'📚' },{ id:'2',emoji:'📖' },{ id:'3',emoji:'📝' },{ id:'4',emoji:'🍕' }], oddOne:'4', hint:'Hangisi okul malzemesi değil?' },
-  { items: [{ id:'1',emoji:'🌲' },{ id:'2',emoji:'🌳' },{ id:'3',emoji:'🌴' },{ id:'4',emoji:'🚲' }], oddOne:'4', hint:'Hangisi ağaç değil?' },
-  { items: [{ id:'1',emoji:'👕' },{ id:'2',emoji:'👖' },{ id:'3',emoji:'👗' },{ id:'4',emoji:'🍌' }], oddOne:'4', hint:'Hangisi kıyafet değil?' },
-  { items: [{ id:'1',emoji:'🌙' },{ id:'2',emoji:'⭐' },{ id:'3',emoji:'☀️' },{ id:'4',emoji:'🏠' }], oddOne:'4', hint:'Hangisi gökyüzünde değil?' },
-  { items: [{ id:'1',emoji:'🍓' },{ id:'2',emoji:'🍉' },{ id:'3',emoji:'🍊' },{ id:'4',emoji:'🥖' }], oddOne:'4', hint:'Hangisi meyve değil?' },
-  { items: [{ id:'1',emoji:'🐝' },{ id:'2',emoji:'🦋' },{ id:'3',emoji:'🐞' },{ id:'4',emoji:'🐘' }], oddOne:'4', hint:'Hangisi böcek değil?' },
-  { items: [{ id:'1',emoji:'🎨' },{ id:'2',emoji:'🖌️' },{ id:'3',emoji:'✏️' },{ id:'4',emoji:'⚽' }], oddOne:'4', hint:'Hangisi çizim aracı değil?' },
-  { items: [{ id:'1',emoji:'❄️' },{ id:'2',emoji:'☃️' },{ id:'3',emoji:'🌨️' },{ id:'4',emoji:'🔥' }], oddOne:'4', hint:'Hangisi soğukla ilgili değil?' },
-  { items: [{ id:'1',emoji:'🏖️' },{ id:'2',emoji:'🏝️' },{ id:'3',emoji:'⛱️' },{ id:'4',emoji:'⛷️' }], oddOne:'4', hint:'Hangisi plajla ilgili değil?' },
+  { items: [{ id: '1', emoji: '🐕' }, { id: '2', emoji: '🐈' }, { id: '3', emoji: '🐰' }, { id: '4', emoji: '🚗' }], oddOne: '4', hint: 'Hangisi hayvan değil?' },
+  { items: [{ id: '1', emoji: '🍎' }, { id: '2', emoji: '🍌' }, { id: '3', emoji: '🏠' }, { id: '4', emoji: '🍇' }], oddOne: '3', hint: 'Hangisi meyve değil?' },
+  { items: [{ id: '1', emoji: '✈️' }, { id: '2', emoji: '🚂' }, { id: '3', emoji: '🌸' }, { id: '4', emoji: '🚀' }], oddOne: '3', hint: 'Hangisi taşıt değil?' },
+  { items: [{ id: '1', emoji: '🔴' }, { id: '2', emoji: '🔵' }, { id: '3', emoji: '🟢' }, { id: '4', emoji: '📐' }], oddOne: '4', hint: 'Hangisi renk değil?' },
+  { items: [{ id: '1', emoji: '🦁' }, { id: '2', emoji: '🐯' }, { id: '3', emoji: '🦒' }, { id: '4', emoji: '🐳' }], oddOne: '4', hint: 'Hangisi karada yaşamaz?' },
+  { items: [{ id: '1', emoji: '🥦' }, { id: '2', emoji: '🥕' }, { id: '3', emoji: '🍦' }, { id: '4', emoji: '🌽' }], oddOne: '3', hint: 'Hangisi sebze değil?' },
+  { items: [{ id: '1', emoji: '🎸' }, { id: '2', emoji: '🎺' }, { id: '3', emoji: '🎻' }, { id: '4', emoji: '🔨' }], oddOne: '4', hint: 'Hangisi müzik aleti değil?' },
+  { items: [{ id: '1', emoji: '☀️' }, { id: '2', emoji: '☁️' }, { id: '3', emoji: '🌧️' }, { id: '4', emoji: '🍔' }], oddOne: '4', hint: 'Hangisi hava durumu değil?' },
+  { items: [{ id: '1', emoji: '⚽' }, { id: '2', emoji: '🏀' }, { id: '3', emoji: '🎾' }, { id: '4', emoji: '🧸' }], oddOne: '4', hint: 'Hangisi spor topu değil?' },
+  { items: [{ id: '1', emoji: '🐙' }, { id: '2', emoji: '🦀' }, { id: '3', emoji: '🐠' }, { id: '4', emoji: '🦋' }], oddOne: '4', hint: 'Hangisi denizde yaşamaz?' },
+  { items: [{ id: '1', emoji: '🍕' }, { id: '2', emoji: '🍔' }, { id: '3', emoji: '🌭' }, { id: '4', emoji: '👕' }], oddOne: '4', hint: 'Hangisi yemek değil?' },
+  { items: [{ id: '1', emoji: '📚' }, { id: '2', emoji: '📖' }, { id: '3', emoji: '📝' }, { id: '4', emoji: '🍕' }], oddOne: '4', hint: 'Hangisi okul malzemesi değil?' },
+  { items: [{ id: '1', emoji: '🌲' }, { id: '2', emoji: '🌳' }, { id: '3', emoji: '🌴' }, { id: '4', emoji: '🚲' }], oddOne: '4', hint: 'Hangisi ağaç değil?' },
+  { items: [{ id: '1', emoji: '👕' }, { id: '2', emoji: '👖' }, { id: '3', emoji: '👗' }, { id: '4', emoji: '🍌' }], oddOne: '4', hint: 'Hangisi kıyafet değil?' },
+  { items: [{ id: '1', emoji: '🌙' }, { id: '2', emoji: '⭐' }, { id: '3', emoji: '☀️' }, { id: '4', emoji: '🏠' }], oddOne: '4', hint: 'Hangisi gökyüzünde değil?' },
+  { items: [{ id: '1', emoji: '🍓' }, { id: '2', emoji: '🍉' }, { id: '3', emoji: '🍊' }, { id: '4', emoji: '🥖' }], oddOne: '4', hint: 'Hangisi meyve değil?' },
+  { items: [{ id: '1', emoji: '🐝' }, { id: '2', emoji: '🦋' }, { id: '3', emoji: '🐞' }, { id: '4', emoji: '🐘' }], oddOne: '4', hint: 'Hangisi böcek değil?' },
+  { items: [{ id: '1', emoji: '🎨' }, { id: '2', emoji: '🖌️' }, { id: '3', emoji: '✏️' }, { id: '4', emoji: '⚽' }], oddOne: '4', hint: 'Hangisi çizim aracı değil?' },
+  { items: [{ id: '1', emoji: '❄️' }, { id: '2', emoji: '☃️' }, { id: '3', emoji: '🌨️' }, { id: '4', emoji: '🔥' }], oddOne: '4', hint: 'Hangisi soğukla ilgili değil?' },
+  { items: [{ id: '1', emoji: '🏖️' }, { id: '2', emoji: '🏝️' }, { id: '3', emoji: '⛱️' }, { id: '4', emoji: '⛷️' }], oddOne: '4', hint: 'Hangisi plajla ilgili değil?' },
 ];
 
 const HARD_ROUNDS = [
-  { items: [{ id:'1',emoji:'🐕' },{ id:'2',emoji:'🐈' },{ id:'3',emoji:'🐰' },{ id:'4',emoji:'🐻' },{ id:'5',emoji:'🦊' },{ id:'6',emoji:'🚗' }], oddOne:'6', hint:'Hangisi hayvan değil?' },
-  { items: [{ id:'1',emoji:'🍎' },{ id:'2',emoji:'🍌' },{ id:'3',emoji:'🍇' },{ id:'4',emoji:'🍊' },{ id:'5',emoji:'🍓' },{ id:'6',emoji:'🏠' }], oddOne:'6', hint:'Hangisi meyve değil?' },
-  { items: [{ id:'1',emoji:'✈️' },{ id:'2',emoji:'🚂' },{ id:'3',emoji:'🚀' },{ id:'4',emoji:'🚗' },{ id:'5',emoji:'🚢' },{ id:'6',emoji:'🌸' }], oddOne:'6', hint:'Hangisi taşıt değil?' },
-  { items: [{ id:'1',emoji:'⚽' },{ id:'2',emoji:'🏀' },{ id:'3',emoji:'🎾' },{ id:'4',emoji:'🏐' },{ id:'5',emoji:'🏈' },{ id:'6',emoji:'🧸' }], oddOne:'6', hint:'Hangisi top değil?' },
-  { items: [{ id:'1',emoji:'🎸' },{ id:'2',emoji:'🎺' },{ id:'3',emoji:'🎻' },{ id:'4',emoji:'🥁' },{ id:'5',emoji:'🎹' },{ id:'6',emoji:'🔨' }], oddOne:'6', hint:'Hangisi müzik aleti değil?' },
+  { items: [{ id: '1', emoji: '🐕' }, { id: '2', emoji: '🐈' }, { id: '3', emoji: '🐰' }, { id: '4', emoji: '🐻' }, { id: '5', emoji: '🦊' }, { id: '6', emoji: '🚗' }], oddOne: '6', hint: 'Hangisi hayvan değil?' },
+  { items: [{ id: '1', emoji: '🍎' }, { id: '2', emoji: '🍌' }, { id: '3', emoji: '🍇' }, { id: '4', emoji: '🍊' }, { id: '5', emoji: '🍓' }, { id: '6', emoji: '🏠' }], oddOne: '6', hint: 'Hangisi meyve değil?' },
+  { items: [{ id: '1', emoji: '✈️' }, { id: '2', emoji: '🚂' }, { id: '3', emoji: '🚀' }, { id: '4', emoji: '🚗' }, { id: '5', emoji: '🚢' }, { id: '6', emoji: '🌸' }], oddOne: '6', hint: 'Hangisi taşıt değil?' },
+  { items: [{ id: '1', emoji: '⚽' }, { id: '2', emoji: '🏀' }, { id: '3', emoji: '🎾' }, { id: '4', emoji: '🏐' }, { id: '5', emoji: '🏈' }, { id: '6', emoji: '🧸' }], oddOne: '6', hint: 'Hangisi top değil?' },
+  { items: [{ id: '1', emoji: '🎸' }, { id: '2', emoji: '🎺' }, { id: '3', emoji: '🎻' }, { id: '4', emoji: '🥁' }, { id: '5', emoji: '🎹' }, { id: '6', emoji: '🔨' }], oddOne: '6', hint: 'Hangisi müzik aleti değil?' },
 ];
 
 const PRAISE = ['Harika! 🌟', 'Süper! ⭐', 'Mükemmel! 💫', 'Bravo! 🎯', 'Aferin! 🏆', 'Şahane! 🎉'];
@@ -450,8 +450,8 @@ const OddOneOutGame = () => {
                   }}
                   transition={
                     isShaking ? { duration: 0.5 }
-                    : isPulsing ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
-                    : { delay: 0.1 + idx * 0.06, duration: 0.4, type: 'spring', stiffness: 250, damping: 18 }
+                      : isPulsing ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
+                        : { delay: 0.1 + idx * 0.06, duration: 0.4, type: 'spring', stiffness: 250, damping: 18 }
                   }
                   whileHover={!selectedId ? { scale: 1.06, y: -3 } : {}}
                   whileTap={!selectedId ? { scale: 0.92 } : {}}>
@@ -462,10 +462,10 @@ const OddOneOutGame = () => {
                         ? 'linear-gradient(135deg, rgba(52,211,153,0.2), rgba(16,185,129,0.1))'
                         : bg,
                       border: isSelected && isCorrect
-                        ? '3px solid rgba(52,211,153,0.5)'
+                        ? '2px solid rgba(52,211,153,0.5)'
                         : isPulsing
                           ? '2px solid rgba(167,139,250,0.4)'
-                          : '1px solid rgba(255,255,255,0.08)',
+                          : '2px solid rgba(255,255,255,0.08)',
                       boxShadow: isSelected && isCorrect
                         ? '0 0 30px rgba(52,211,153,0.3), 0 8px 24px rgba(0,0,0,0.12)'
                         : isPulsing

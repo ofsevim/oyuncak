@@ -56,6 +56,7 @@ const BalloonPopGame = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const balloonSpawnRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const nextRoundTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const specialTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setHighScore(getHighScore('balloon-pop')); }, []);
@@ -113,7 +114,11 @@ const BalloonPopGame = () => {
     setRound(r => r + 1);
   }, [targetColor, createBalloon]);
 
-  useEffect(() => () => { if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current); }, []);
+  useEffect(() => () => {
+    if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
+    specialTimersRef.current.forEach(clearTimeout);
+    specialTimersRef.current = [];
+  }, []);
 
   // Timer
   useEffect(() => {
@@ -177,24 +182,24 @@ const BalloonPopGame = () => {
     if (balloon.special === 'freeze') {
       playSuccessSound(); setIsFrozen(true);
       setBalloons(prev => prev.filter(b => b.id !== balloon.id));
-      setTimeout(() => setIsFrozen(false), 3000);
+      specialTimersRef.current.push(setTimeout(() => setIsFrozen(false), 3000));
       setPopEffects(prev => [...prev, { id: balloon.id, x: clientX, y: clientY, color: '#67e8f9', points: 0 }]);
-      setTimeout(() => setPopEffects(prev => prev.filter(p => p.id !== balloon.id)), 600);
+      specialTimersRef.current.push(setTimeout(() => setPopEffects(prev => prev.filter(p => p.id !== balloon.id)), 600));
       return;
     }
     if (balloon.special === 'double') {
       playSuccessSound(); setIsDouble(true);
       setBalloons(prev => prev.filter(b => b.id !== balloon.id));
-      setTimeout(() => setIsDouble(false), 5000);
+      specialTimersRef.current.push(setTimeout(() => setIsDouble(false), 5000));
       setPopEffects(prev => [...prev, { id: balloon.id, x: clientX, y: clientY, color: '#fbbf24', points: 0 }]);
-      setTimeout(() => setPopEffects(prev => prev.filter(p => p.id !== balloon.id)), 600);
+      specialTimersRef.current.push(setTimeout(() => setPopEffects(prev => prev.filter(p => p.id !== balloon.id)), 600));
       return;
     }
     if (balloon.special === 'bomb') {
       playErrorSound(); setCombo(0); setScore(prev => Math.max(0, prev - 5));
       setBalloons(prev => prev.filter(b => b.id !== balloon.id));
       setPopEffects(prev => [...prev, { id: balloon.id, x: clientX, y: clientY, color: '#ef4444', points: -5 }]);
-      setTimeout(() => setPopEffects(prev => prev.filter(p => p.id !== balloon.id)), 600);
+      specialTimersRef.current.push(setTimeout(() => setPopEffects(prev => prev.filter(p => p.id !== balloon.id)), 600));
       return;
     }
 

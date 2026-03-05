@@ -94,6 +94,15 @@ const Game2048 = () => {
   const [undoStack, setUndoStack] = useState<{ grid: Grid; score: number }[]>([]);
   const [isNewRecord, setIsNewRecord] = useState(false);
   const [mergeCombo, setMergeCombo] = useState(0);
+  const [hasWon, setHasWon] = useState(false); // tracks if 2048 was already reached
+
+  // Refs to avoid stale closures in handleMove
+  const gridRef = useRef(grid);
+  const scoreRef = useRef(score);
+  const mergeComboRef = useRef(mergeCombo);
+  useEffect(() => { gridRef.current = grid; }, [grid]);
+  useEffect(() => { scoreRef.current = score; }, [score]);
+  useEffect(() => { mergeComboRef.current = mergeCombo; }, [mergeCombo]);
 
   useEffect(() => { setBestScore(getHighScore('2048')); }, []);
 
@@ -101,7 +110,7 @@ const Game2048 = () => {
     let newGrid = createEmptyGrid();
     newGrid = addRandomTile(newGrid);
     newGrid = addRandomTile(newGrid);
-    setGrid(newGrid); setScore(0); setMoves(0); setUndoStack([]); setIsNewRecord(false); setMergeCombo(0);
+    setGrid(newGrid); setScore(0); setMoves(0); setUndoStack([]); setIsNewRecord(false); setMergeCombo(0); setHasWon(false);
     setGameState('playing');
   }, []);
 
@@ -115,15 +124,18 @@ const Game2048 = () => {
 
   const handleMove = useCallback((direction: 'left' | 'right' | 'up' | 'down') => {
     if (gameState !== 'playing') return;
-    const { newGrid, score: gained, moved, merges } = move(grid, direction);
+    const currentGrid = gridRef.current;
+    const currentScore = scoreRef.current;
+    const currentCombo = mergeComboRef.current;
+    const { newGrid, score: gained, moved, merges } = move(currentGrid, direction);
     if (!moved) return;
 
     // Save undo state
-    setUndoStack(prev => [...prev.slice(-5), { grid: grid.map(r => [...r]), score }]);
+    setUndoStack(prev => [...prev.slice(-5), { grid: currentGrid.map(r => [...r]), score: currentScore }]);
     setMoves(prev => prev + 1);
 
     if (merges > 0) {
-      const newCombo = mergeCombo + merges;
+      const newCombo = currentCombo + merges;
       setMergeCombo(newCombo);
       if (merges >= 2) playComboSound(merges); else playPopSound();
     } else { setMergeCombo(0); playPopSound(); }
@@ -137,15 +149,16 @@ const Game2048 = () => {
       return newScore;
     });
 
-    if (withNew.some(row => row.some(cell => cell === 2048))) {
+    if (!hasWon && withNew.some(row => row.some(cell => cell === 2048))) {
       playSuccessSound();
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
       playNewRecordSound();
+      setHasWon(true);
       setGameState('won');
       return;
     }
     if (!canMove(withNew)) { playErrorSound(); setGameState('gameover'); }
-  }, [grid, gameState, score, mergeCombo]);
+  }, [gameState, hasWon]);
 
   // Keyboard
   useEffect(() => {
@@ -249,6 +262,10 @@ const Game2048 = () => {
                 <>
                   <motion.p className="text-4xl font-black text-gradient" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 10 }}>🎉 2048!</motion.p>
                   <p className="text-lg font-bold text-muted-foreground">Tebrikler! Skor: {score}</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setGameState('playing')} className="btn-gaming px-6 py-3">▶ Devam Et</button>
+                    <button onClick={startGame} className="glass-card px-6 py-3 font-bold text-muted-foreground hover:text-primary transition-colors">🔄 Yeni Oyun</button>
+                  </div>
                 </>
               ) : (
                 <>
@@ -256,9 +273,9 @@ const Game2048 = () => {
                   {isNewRecord && <p className="text-yellow-400 font-black animate-pulse">🏆 YENİ REKOR!</p>}
                   <p className="text-lg font-bold text-muted-foreground">Skor: {score}</p>
                   <p className="text-xs text-muted-foreground">{moves} hamle | En büyük: {getMaxTile(grid)}</p>
+                  <button onClick={startGame} className="btn-gaming px-8 py-3">🔄 Tekrar Oyna</button>
                 </>
               )}
-              <button onClick={startGame} className="btn-gaming px-8 py-3">🔄 Tekrar Oyna</button>
             </motion.div>
           )}
         </AnimatePresence>

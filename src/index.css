@@ -79,9 +79,12 @@
   }
 
   button,
-  a {
+  a,
+  [role="button"] {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   ::-webkit-scrollbar {

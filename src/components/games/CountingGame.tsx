@@ -10,16 +10,16 @@ import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 /* ═══════════════════════════════════════════
    CONSTANTS
    ═══════════════════════════════════════════ */
-const ITEMS = ['🍎','⭐','🚗','🐱','🍦','🎈','🌸','🐶','🎸','🦋','🐸','🍊','🌻','🐝','🎀'];
+const ITEMS = ['🍎', '⭐', '🚗', '🐱', '🍦', '🎈', '🌸', '🐶', '🎸', '🦋', '🐸', '🍊', '🌻', '🐝', '🎀'];
 
 const PRAISE = ['Aferin! 🌟', 'Harika! ⭐', 'Süper! 💫', 'Bravo! 🎯', 'Mükemmel! 🏆', 'Şahane! 🎉'];
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 const DIFFS: Record<Difficulty, { label: string; emoji: string; range: [number, number]; options: number; timer: number; desc: string }> = {
-  easy:   { label: 'Kolay',    emoji: '🌟', range: [1, 5],  options: 3, timer: 0,  desc: '1-5 arası, süresiz' },
-  medium: { label: 'Orta',     emoji: '⭐', range: [1, 10], options: 4, timer: 15, desc: '1-10 arası, 15 saniye' },
-  hard:   { label: 'Zor',      emoji: '🔥', range: [1, 15], options: 5, timer: 10, desc: '1-15 arası, 10 saniye' },
+  easy: { label: 'Kolay', emoji: '🌟', range: [1, 5], options: 3, timer: 0, desc: '1-5 arası, süresiz' },
+  medium: { label: 'Orta', emoji: '⭐', range: [1, 10], options: 4, timer: 15, desc: '1-10 arası, 15 saniye' },
+  hard: { label: 'Zor', emoji: '🔥', range: [1, 15], options: 5, timer: 10, desc: '1-15 arası, 10 saniye' },
 };
 
 /* Button pastel gradients for answer options */
@@ -70,6 +70,7 @@ const CountingGame = () => {
 
   const nextRoundRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const floatTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const lastCountRef = useRef<number | null>(null);
   const lastEmojiRef = useRef<string | null>(null);
   const floatIdRef = useRef(0);
@@ -157,6 +158,8 @@ const CountingGame = () => {
     return () => {
       if (nextRoundRef.current) clearTimeout(nextRoundRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
+      floatTimersRef.current.forEach(clearTimeout);
+      floatTimersRef.current = [];
     };
   }, []);
 
@@ -194,7 +197,7 @@ const CountingGame = () => {
     if (pos) {
       const id = ++floatIdRef.current;
       setFloatingTexts(prev => [...prev, { id, text: String(newClicked.size), x: pos.x + 20, y: pos.y }]);
-      setTimeout(() => setFloatingTexts(prev => prev.filter(t => t.id !== id)), 1200);
+      floatTimersRef.current.push(setTimeout(() => setFloatingTexts(prev => prev.filter(t => t.id !== id)), 1200));
     }
   };
 
