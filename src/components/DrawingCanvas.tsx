@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas as FabricCanvas, FabricImage, FabricText } from 'fabric';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { Canvas as FabricCanvas, FabricText } from 'fabric';
 import { Trash2, Undo, Download, Image, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
@@ -39,15 +39,7 @@ const BRUSHES: { id: BrushId; name: string; icon: string; desc: string }[] = [
   { id: 'glitter', name: 'Simli', icon: '✨', desc: 'Parıltılı' },
 ];
 
-/* Glassmorphism pill */
-const pill: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.2)',
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 20,
-  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-};
+
 
 /* ═══════════════════════════════════════════
    BRUSH STAMP FUNCTIONS — Gerçekçi piksel dab'ları
@@ -211,6 +203,16 @@ const DrawingCanvas = () => {
   const [isStickering, setIsStickering] = useState(false);
   const rainbowIdx = useRef(0);
 
+  // Dynamic cursor based on brush color and size
+  const cursorStyle = useMemo(() => {
+    const r = Math.max(Math.min(brushSize, 50), 4);
+    const d = r * 2 + 4;
+    const c = r + 2;
+    // Outline so cursor is visible on both white and dark backgrounds
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${d}' height='${d}'><circle cx='${c}' cy='${c}' r='${r}' fill='none' stroke='${isRainbow ? '%2342A5F5' : activeColor.replace('#', '%23')}' stroke-width='2' opacity='0.7'/><circle cx='${c}' cy='${c}' r='${r}' fill='none' stroke='%23000000' stroke-width='0.5' opacity='0.3'/><line x1='${c}' y1='${c - 3}' x2='${c}' y2='${c + 3}' stroke='%23000000' stroke-width='0.8' opacity='0.5'/><line x1='${c - 3}' y1='${c}' x2='${c + 3}' y2='${c}' stroke='%23000000' stroke-width='0.8' opacity='0.5'/></svg>`;
+    return `url("data:image/svg+xml,${svg}") ${c} ${c}, crosshair`;
+  }, [brushSize, activeColor, isRainbow]);
+
   // Custom drawing state
   const isDrawingRef = useRef(false);
   const lastPtRef = useRef<{ x: number; y: number } | null>(null);
@@ -268,18 +270,37 @@ const DrawingCanvas = () => {
     }
   }, [canvasW, canvasH, fabricCanvas]);
 
-  /* ── Çizim canvas'ı başlat (beyaz arka plan) ── */
+  /* ── Çizim canvas'ı başlat / boyut değişiminde içeriği koru ── */
+  const canvasInitialized = useRef(false);
   useEffect(() => {
     const c = drawCanvasRef.current;
     if (!c) return;
-    c.width = canvasW;
-    c.height = canvasH;
     const ctx = c.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvasW, canvasH);
-    undoStackRef.current = [];
-    setUndoLen(0);
+
+    if (!canvasInitialized.current) {
+      // İlk açılış: beyaz arka plan
+      c.width = canvasW;
+      c.height = canvasH;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvasW, canvasH);
+      canvasInitialized.current = true;
+    } else {
+      // Boyut değişimi: mevcut çizimi koru
+      const temp = document.createElement('canvas');
+      temp.width = c.width;
+      temp.height = c.height;
+      const tempCtx = temp.getContext('2d');
+      if (tempCtx) tempCtx.drawImage(c, 0, 0);
+
+      c.width = canvasW;
+      c.height = canvasH;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvasW, canvasH);
+      // Eski çizimi geri koy (scaled)
+      ctx.drawImage(temp, 0, 0, temp.width, temp.height, 0, 0, canvasW, canvasH);
+      // Undo stack'i koru — sıfırlama
+    }
   }, [canvasW, canvasH]);
 
   /* ── Canvas pozisyon hesapla ── */
@@ -539,9 +560,11 @@ const DrawingCanvas = () => {
               return (
                 <motion.button key={brush.id}
                   onClick={() => { setActiveBrush(brush.id); setIsStickering(false); playPopSound(); }}
-                  className={`relative flex flex-col items-center justify-center rounded-xl lg:rounded-2xl aspect-square cursor-pointer p-1.5 lg:p-3 ${isActive ? 'bg-primary/20 text-foreground ring-2 ring-primary/50' : 'bg-black/20 text-muted-foreground border border-white/5 hover:bg-white/10'
+                  className={`relative flex flex-col items-center justify-center rounded-xl lg:rounded-2xl aspect-square cursor-pointer p-1.5 lg:p-3 transition-colors duration-150 ${isActive
+                    ? 'bg-primary/20 text-foreground ring-2 ring-primary/50 shadow-lg shadow-primary/20'
+                    : 'bg-black/20 text-muted-foreground border border-white/5 hover:bg-white/15 hover:border-white/20 hover:text-foreground hover:shadow-md hover:shadow-white/5'
                     }`}
-                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }}>
+                  whileHover={{ scale: 1.08, y: -2 }} whileTap={{ scale: 0.9 }}>
                   <span className="text-lg lg:text-2xl mb-0 lg:mb-1 pointer-events-none">{brush.icon}</span>
                   <span className="text-[8px] lg:text-[10px] font-bold opacity-80 pointer-events-none uppercase tracking-tighter">{brush.name}</span>
                   {isActive && (
@@ -583,7 +606,7 @@ const DrawingCanvas = () => {
             </AnimatePresence>
 
             <canvas ref={drawCanvasRef} className="absolute inset-0 w-full h-full rounded-[24px]"
-              style={{ touchAction: 'none', cursor: 'crosshair', zIndex: 1 }}
+              style={{ touchAction: 'none', cursor: cursorStyle, zIndex: 1 }}
               onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp} />
             <canvas ref={fabricCanvasRef} className="absolute inset-0 rounded-[24px]"
               style={{ touchAction: 'none', zIndex: isStickering ? 2 : 0, pointerEvents: isStickering ? 'auto' : 'none' }} />

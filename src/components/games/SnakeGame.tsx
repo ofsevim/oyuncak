@@ -65,6 +65,7 @@ const SnakeGame = () => {
   const dirRef = useRef<Dir>('RIGHT');
   const loopRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const snakeRef = useRef(snake);
+  const scoreRef = useRef(0);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const particleId = useRef(0);
 
@@ -140,7 +141,7 @@ const SnakeGame = () => {
     };
     animRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animRef.current);
-  }, [particles.length > 0]);
+  }, [particles.length]);
 
   /* ── Start game ── */
   const startGame = useCallback(() => {
@@ -161,8 +162,7 @@ const SnakeGame = () => {
     setScreenShake(true);
     setTimeout(() => setScreenShake(false), 400);
     setGameState('gameover');
-    const s = snakeRef.current.length * 10;
-    setScore(s);
+    const s = scoreRef.current;
     const isNew = saveHighScoreObj('snake', s);
     if (isNew) { setIsNewRecord(true); setHighScore(s); playNewRecordSound(); }
   }, []);
@@ -195,18 +195,22 @@ const SnakeGame = () => {
         setCombo(nc);
         setEaten(p => p + 1);
         const pts = FOOD_STYLES[food.type].points + Math.min(nc, 5) * 2;
-        setScore(p => p + pts);
+        setScore(p => { const next = p + pts; scoreRef.current = next; return next; });
         if (nc > 2) playComboSound(nc); else playSuccessSound();
 
         // Particle burst at food position
         burst(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, FOOD_STYLES[food.type].colors);
 
+        const eatenType = food.type; // capture before update
         setFood(spawnFood(ns, obstacles));
-        if (food.type === 'speed') setSpeed(p => Math.max(50, p - 12));
-        if (food.type === 'shrink' && ns.length > 4) { ns.pop(); ns.pop(); }
-        if (food.type === 'golden') confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
-        // Gradual eased speed increase
-        setSpeed(p => Math.max(50, p - 0.8));
+        if (eatenType === 'speed') {
+          setSpeed(p => Math.max(50, p - 12));
+        } else {
+          // Gradual eased speed increase (only for non-speed foods)
+          setSpeed(p => Math.max(50, p - 0.8));
+        }
+        if (eatenType === 'shrink' && ns.length > 4) { ns.pop(); ns.pop(); }
+        if (eatenType === 'golden') confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
       } else {
         ns.pop();
         setCombo(0);

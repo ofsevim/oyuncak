@@ -65,11 +65,9 @@ const MathGame = () => {
       display = `? ${operation} ${num2} = ${answer}`;
       answer = num1;
     } else if (qType === 'compare') {
-      // "Hangisi büyük? X op Y" — doğru cevap büyük olan sayı
-      const bigger = Math.max(num1 + num2, Math.abs(num1 - num2));
-      const smaller = Math.min(num1 + num2, Math.abs(num1 - num2));
+      // Compare: doğru cevap gerçek sonuç, farklı görünüm
       display = `${num1} ${operation} ${num2} = 🔍?`;
-      answer = num1 + num2; // normal hesap, sadece farklı görünüm
+      // answer zaten satır 61'de doğru hesaplandı
       // Simplified: compare type shows result vs a close number
       const offset = Math.floor(Math.random() * 4) + 1;
       const wrongAnswers2: number[] = [answer + offset, answer - offset, answer + offset * 2].filter(w => w !== answer && w >= 0);
@@ -182,7 +180,7 @@ const MathGame = () => {
               {options.map((option, i) => (
                 <button key={i} onClick={() => handleAnswer(option)} disabled={showResult !== null}
                   className={`w-20 h-20 md:w-24 md:h-24 text-2xl md:text-3xl font-black rounded-2xl transition-all touch-manipulation active:scale-90 ${showResult ? (option === question.answer ? 'bg-green-500/20 text-green-400 ring-2 ring-green-400 scale-105' : 'glass-card text-muted-foreground/40')
-                      : 'glass-card border border-primary/20 hover:bg-primary/10 hover:border-primary/40'
+                    : 'glass-card border border-primary/20 hover:bg-primary/10 hover:border-primary/40'
                     }`} style={{ touchAction: 'manipulation' }}>
                   {option}
                 </button>

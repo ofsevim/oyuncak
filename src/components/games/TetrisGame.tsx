@@ -178,7 +178,7 @@ const TetrisGame = () => {
       const piece: Piece = { pos: { x: Math.floor(COLS / 2) - 1, y: 0 }, type: holdPieceType, shape: TETROMINOS[holdPieceType].shape };
       setActivePiece(piece);
     } else {
-      spawnPiece(nextPieceType ?? undefined);
+      spawnPiece();
     }
     setHoldPieceType(currentType);
     playPopSound();

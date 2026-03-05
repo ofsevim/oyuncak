@@ -132,7 +132,8 @@ const WhackAMoleGame = () => {
         }
         return m;
       });
-      // Combo break on miss
+      // Combo break on miss — clear any pending combo timer first
+      if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
       comboRef.current = 0;
       setCombo(0);
       // Next spawn

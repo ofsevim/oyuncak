@@ -260,6 +260,8 @@ const PianoGame = () => {
   }, [getAudioContext]);
 
 
+  const handleKeyClickRef = useRef<(noteStr: string) => void>(() => { });
+
   const handleKeyClick = (noteStr: string) => {
     const noteData = ALL_NOTES.find(n => n.note === noteStr);
     if (!noteData) return;
@@ -292,6 +294,8 @@ const PianoGame = () => {
     }
   };
 
+  handleKeyClickRef.current = handleKeyClick;
+
   const playMelody = async (melody: typeof MELODIES[0]) => {
     if (isPlaying) return;
     setIsPlaying(true);
@@ -323,11 +327,11 @@ const PianoGame = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const note = ALL_NOTES.find(n => n.key === e.key.toLowerCase());
-      if (note) handleKeyClick(note.note);
+      if (note) handleKeyClickRef.current(note.note);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentMelody, melodyIndex, combo, score, isRecording]);
+  }, []);
 
   const nextNoteData = currentMelody ? ALL_NOTES.find(n => n.note === currentMelody.notes[melodyIndex]) : null;
 

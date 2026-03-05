@@ -52,12 +52,14 @@ const BalloonPopGame = () => {
   const [isFrozen, setIsFrozen] = useState(false);
   const [isDouble, setIsDouble] = useState(false);
   const [popEffects, setPopEffects] = useState<{ id: string; x: number; y: number; color: string; points: number }[]>([]);
+  const isFrozenRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const balloonSpawnRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const nextRoundTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setHighScore(getHighScore('balloon-pop')); }, []);
+  useEffect(() => { isFrozenRef.current = isFrozen; }, [isFrozen]);
 
   const config = DIFFICULTIES[difficulty];
 
@@ -117,7 +119,7 @@ const BalloonPopGame = () => {
   useEffect(() => {
     if (gamePhase !== 'playing') return;
     timerRef.current = setInterval(() => {
-      if (isFrozen) return;
+      if (isFrozenRef.current) return;
       setTimeLeft(prev => {
         if (prev <= 1) {
           setGamePhase('ended');
@@ -141,7 +143,7 @@ const BalloonPopGame = () => {
   useEffect(() => {
     if (gamePhase !== 'playing') return;
     balloonSpawnRef.current = setInterval(() => {
-      if (isFrozen) return;
+      if (isFrozenRef.current) return;
       setBalloons(prev => {
         if (prev.length >= config.maxBalloons) return prev;
         const count = 1 + Math.floor(Math.random() * 2);

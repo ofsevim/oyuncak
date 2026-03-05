@@ -28,10 +28,10 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50"
+      className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none"
       style={{ padding: '0 12px 12px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
-      <div className="max-w-sm mx-auto">
+      <div className="max-w-sm mx-auto pointer-events-auto">
         <motion.div
           className="flex items-center justify-around"
           style={{

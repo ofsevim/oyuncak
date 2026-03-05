@@ -2,10 +2,25 @@
 // Daha 'juicy' ve profesyonel bir his için katmanlı osilatörler ve yumuşak zarflar (envelopes) kullanılmıştır.
 let audioCtx: AudioContext | null = null;
 
+// Global ses kontrolü — localStorage ile kalıcı
+let _muted = false;
+try { _muted = typeof window !== 'undefined' && localStorage.getItem('oyuncak.muted') === 'true'; } catch { /* ignore */ }
+
+export const isMuted = (): boolean => _muted;
+export const setMuted = (val: boolean) => {
+  _muted = val;
+  try { localStorage.setItem('oyuncak.muted', String(val)); } catch { /* ignore */ }
+};
+export const toggleMute = (): boolean => {
+  setMuted(!_muted);
+  return _muted;
+};
+
 type WebkitAudioContextWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
 
 const getAudioCtx = (): AudioContext | null => {
   if (typeof window === 'undefined') return null;
+  if (_muted) return null;
   if (!audioCtx) {
     const Ctx = window.AudioContext || (window as WebkitAudioContextWindow).webkitAudioContext;
     if (!Ctx) return null;

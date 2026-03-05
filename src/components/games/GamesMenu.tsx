@@ -1,22 +1,23 @@
-'use client';
-
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Search, Brain, Hash, Palette, Wind, Piano, Calculator, Gamepad2, Rat, ArrowLeft, Flame, Star, Zap } from 'lucide-react';
+import { lazy, Suspense, useEffect, useRef, useState, useCallback } from 'react';
+import { Search, Brain, Hash, Palette, Wind, Piano, Calculator, Gamepad2, Rat, ArrowLeft, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import OddOneOutGame from './OddOneOutGame';
-import MemoryFlipGame from './MemoryFlipGame';
-import WhackAMoleGame from './WhackAMoleGame';
-import BattleCityGame from './BattleCityGame';
-import CountingGame from './CountingGame';
-import ColoringBookGame from './ColoringBookGame';
-import BalloonPopGame from './BalloonPopGame';
-import PianoGame from './PianoGame';
-import MathGame from './MathGame';
-import RunnerGame from './RunnerGame';
-import TetrisGame from './TetrisGame';
-import SnakeGame from './SnakeGame';
-import Game2048 from './Game2048';
-import BasketballGame from './BasketballGame';
+import { isMuted, toggleMute } from '@/utils/soundEffects';
+import ErrorBoundary from '@/components/ErrorBoundary';
+
+const OddOneOutGame = lazy(() => import('./OddOneOutGame'));
+const MemoryFlipGame = lazy(() => import('./MemoryFlipGame'));
+const WhackAMoleGame = lazy(() => import('./WhackAMoleGame'));
+const BattleCityGame = lazy(() => import('./BattleCityGame'));
+const CountingGame = lazy(() => import('./CountingGame'));
+const ColoringBookGame = lazy(() => import('./ColoringBookGame'));
+const BalloonPopGame = lazy(() => import('./BalloonPopGame'));
+const PianoGame = lazy(() => import('./PianoGame'));
+const MathGame = lazy(() => import('./MathGame'));
+const RunnerGame = lazy(() => import('./RunnerGame'));
+const TetrisGame = lazy(() => import('./TetrisGame'));
+const SnakeGame = lazy(() => import('./SnakeGame'));
+const Game2048 = lazy(() => import('./Game2048'));
+const BasketballGame = lazy(() => import('./BasketballGame'));
 
 type GameType = 'menu' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battlecity' | 'basketball';
 type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
@@ -66,6 +67,7 @@ interface GamesMenuProps {
 const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
   const [activeCategory, setActiveCategory] = useState<GameCategory>('all');
+  const [muted, setMutedState] = useState(isMuted());
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -119,7 +121,18 @@ const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
         >
           <ArrowLeft className="w-4 h-4" /> Oyunlara Dön
         </motion.button>
-        {renderActiveGame()}
+        <Suspense fallback={
+          <div className="flex items-center justify-center py-20 w-full">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin" />
+              <p className="text-sm text-muted-foreground font-medium">Yükleniyor…</p>
+            </div>
+          </div>
+        }>
+          <ErrorBoundary>
+            {renderActiveGame()}
+          </ErrorBoundary>
+        </Suspense>
       </div>
     );
   }
@@ -143,6 +156,14 @@ const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
           <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
             Oyun <span className="text-gradient">Merkezi</span>
           </h2>
+          <button
+            onClick={() => { toggleMute(); setMutedState(isMuted()); }}
+            className="p-2 rounded-xl transition-all hover:scale-110"
+            style={{ background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))' }}
+            title={muted ? 'Sesi Aç' : 'Sesi Kapat'}
+          >
+            {muted ? <VolumeX className="w-5 h-5 text-muted-foreground" /> : <Volume2 className="w-5 h-5 text-primary" />}
+          </button>
         </div>
         <p className="text-sm text-muted-foreground">
           <span className="font-semibold text-foreground">{games.length}</span> oyun seni bekliyor

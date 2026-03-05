@@ -105,7 +105,15 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
     if (!card || card.isFlipped || card.isMatched || flippedCards.length >= 2) return;
     if (!isTimerRunning) setIsTimerRunning(true);
 
-    if (card.emoji === '⭐' && flippedCards.length === 0) {
+    if (card.emoji === '⭐') {
+      // Yıldız kartı her zaman otomatik eşlenir (tek kart, eşi yok)
+      if (flippedCards.length > 0) {
+        // Önceden açılmış kartı geri çevir
+        setCards(prev => prev.map(c =>
+          flippedCards.includes(c.id) && !c.isMatched ? { ...c, isFlipped: false } : c
+        ));
+        setFlippedCards([]);
+      }
       playPopSound(); playSuccessSound();
       setCards(prev => prev.map(c => c.id === cardId ? { ...c, isFlipped: true, isMatched: true } : c));
       setMoves(p => p + 1); setMatchedCount(p => p + 1);
