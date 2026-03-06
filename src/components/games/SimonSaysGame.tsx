@@ -29,6 +29,7 @@ const SimonSaysGame = () => {
     const [highScore, setHighScore] = useState(0);
     const [isNewRecord, setIsNewRecord] = useState(false);
     const [activeButton, setActiveButton] = useState<number | null>(null);
+    const [wrongButton, setWrongButton] = useState<number | null>(null);
 
     const audioCtxRef = useRef<AudioContext | null>(null);
     const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -158,9 +159,16 @@ const SimonSaysGame = () => {
                 setPlayerIndex(nextIndex);
             }
         } else {
-            // Wrong
+            // Wrong - Show feedback first
             playErrorSound();
-            finishGame();
+            setWrongButton(btnId);
+            setGameState('showing'); // Block input
+
+            const t = setTimeout(() => {
+                setWrongButton(null);
+                finishGame();
+            }, 600);
+            timeoutsRef.current.push(t);
         }
     };
 
@@ -277,19 +285,22 @@ const SimonSaysGame = () => {
                 <div className="grid grid-cols-2 gap-4 sm:gap-6 mt-10 p-6 rounded-full" style={{ background: 'rgba(255,255,255,0.02)', border: '2px solid rgba(255,255,255,0.05)', boxShadow: 'inset 0 0 50px rgba(0,0,0,0.2)' }}>
                     {BUTTONS.map((btn, index) => {
                         const isActive = activeButton === index;
+                        const isWrong = wrongButton === index;
                         return (
                             <motion.button
                                 key={btn.id}
                                 disabled={gameState !== 'playing'}
                                 onMouseDown={() => handleButtonClick(btn.id)}
                                 onTouchStart={() => handleButtonClick(btn.id)}
-                                onTouchEnd={(e) => { e.preventDefault(); }} // Prevent ghost click without affecting passive start listener
+                                onTouchEnd={(e) => { e.preventDefault(); }}
+                                animate={isWrong ? { x: [-10, 10, -10, 10, 0] } : {}}
+                                transition={{ duration: 0.4 }}
                                 className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl sm:rounded-3xl border-4 transition-colors flex items-center justify-center text-4xl sm:text-5xl"
                                 style={{
-                                    backgroundColor: isActive ? btn.color : `${btn.color}40`,
-                                    borderColor: isActive ? '#fff' : btn.color,
-                                    boxShadow: isActive ? `0 0 40px ${btn.glow}, inset 0 0 20px rgba(255,255,255,0.5)` : `0 4px 15px rgba(0,0,0,0.3), inset 0 2px 5px rgba(255,255,255,0.1)`,
-                                    filter: isActive ? 'brightness(1.5)' : 'brightness(0.9)',
+                                    backgroundColor: isActive ? btn.color : isWrong ? '#ef4444' : `${btn.color}40`,
+                                    borderColor: isActive ? '#fff' : isWrong ? '#ef4444' : btn.color,
+                                    boxShadow: isActive ? `0 0 40px ${btn.glow}, inset 0 0 20px rgba(255,255,255,0.5)` : isWrong ? '0 0 30px rgba(239,68,68,0.8)' : `0 4px 15px rgba(0,0,0,0.3), inset 0 2px 5px rgba(255,255,255,0.1)`,
+                                    filter: isActive ? 'brightness(1.5)' : isWrong ? 'brightness(1.2)' : 'brightness(0.9)',
                                     transform: isActive ? 'scale(0.95)' : 'scale(1)'
                                 }}
                             >

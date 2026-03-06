@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
-import { playPopSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getNextRandomIndex } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 
@@ -206,7 +205,7 @@ const WhackAMoleGame = () => {
   useEffect(() => {
     if (gamePhase !== 'ended') return;
     const isNew = saveHighScoreObj('whack-a-mole', scoreRef.current);
-    if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); playNewRecordSound(); }
+    if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); }
   }, [gamePhase]);
 
 
@@ -224,7 +223,6 @@ const WhackAMoleGame = () => {
 
     if (moleData.type.points < 0) {
       // Bad mole — penalty
-      playErrorSound();
       comboRef.current = 0; setCombo(0);
       scoreRef.current = Math.max(0, scoreRef.current + moleData.type.points);
       setScore(scoreRef.current);
@@ -250,10 +248,7 @@ const WhackAMoleGame = () => {
       addFloat(fx, fy, `+${points}${comboText}`, multiplier >= 5 ? '#fbbf24' : multiplier >= 2 ? '#a855f7' : '#22c55e');
 
       if (comboRef.current >= 5) {
-        playComboSound(comboRef.current);
         addFloat(fx - 30, fy - 20, `🔥 ${comboRef.current} Kombo!`, '#f97316');
-      } else {
-        playPopSound();
       }
 
       triggerShake();
@@ -414,17 +409,18 @@ const WhackAMoleGame = () => {
           style={{ gridTemplateColumns: `repeat(${config.cols}, 1fr)` }}>
           {Array.from({ length: config.holes }).map((_, i) => {
             const moleData = activeHoles.get(i);
-            const holeSize = config.cols === 4 ? 'clamp(68px, 20vw, 100px)' : 'clamp(75px, 24vw, 115px)';
+            const holeSizeW = config.cols === 4 ? 'clamp(60px, 18vw, 85px)' : 'clamp(70px, 22vw, 100px)';
+            const holeSizeH = config.cols === 4 ? 'clamp(65px, 20vw, 95px)' : 'clamp(75px, 24vw, 110px)';
 
             return (
               <div key={i} className="flex flex-col items-center">
                 {/* Hole container with depth */}
-                <div className="relative" style={{ width: holeSize, height: holeSize }}>
+                <div className="relative" style={{ width: holeSizeW, height: holeSizeH }}>
                   {/* Hole background — 3D depth */}
                   <div className="absolute inset-0 rounded-[50%] overflow-hidden"
                     style={{
-                      background: 'radial-gradient(ellipse at 50% 40%, #5c4033 0%, #3e2723 40%, #1a0f0a 100%)',
-                      boxShadow: 'inset 0 8px 20px rgba(0,0,0,0.7), inset 0 -4px 8px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.3)',
+                      background: 'radial-gradient(ellipse at 50% 30%, #4a352a 0%, #2e1d1a 60%, #0d0805 100%)',
+                      boxShadow: 'inset 0 10px 25px rgba(0,0,0,0.8), inset 0 -4px 10px rgba(0,0,0,0.4), 0 5px 15px rgba(0,0,0,0.4)',
                     }}
                   />
 
@@ -493,11 +489,12 @@ const WhackAMoleGame = () => {
                   </div>
 
                   {/* Dirt rim on top — covers mole bottom for depth illusion */}
-                  <div className="absolute bottom-0 left-0 right-0 h-[35%] rounded-b-[50%] pointer-events-none"
+                  <div className="absolute bottom-0 left-[-5%] right-[-5%] h-[40%] rounded-b-[50%] pointer-events-none"
                     style={{
-                      background: 'linear-gradient(180deg, transparent 0%, #6d4c2a 20%, #8B6914 60%, #7a5c2e 100%)',
+                      background: 'linear-gradient(180deg, transparent 0%, #5c4023 20%, #7A5C12 60%, #634b25 100%)',
                       zIndex: 4,
-                      boxShadow: '0 -2px 6px rgba(0,0,0,0.2)',
+                      boxShadow: '0 -3px 8px rgba(0,0,0,0.3)',
+                      clipPath: 'ellipse(50% 50% at 50% 50%)'
                     }}
                   />
 

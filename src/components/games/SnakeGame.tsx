@@ -92,7 +92,7 @@ const SnakeGame = () => {
   /* ── Spawn helpers ── */
   const spawnFood = useCallback((s: Pos[], obs: Pos[] = []): Pos & { type: FoodKind } => {
     let pos: Pos;
-    do { pos = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) }; }
+    do { pos = { x: 1 + Math.floor(Math.random() * (GRID - 2)), y: 1 + Math.floor(Math.random() * (GRID - 2)) }; }
     while (s.some(p => p.x === pos.x && p.y === pos.y) || obs.some(o => o.x === pos.x && o.y === pos.y));
     const r = Math.random();
     const type: FoodKind = r < 0.08 ? 'golden' : r < 0.15 ? 'speed' : r < 0.2 ? 'shrink' : 'normal';

@@ -20,12 +20,11 @@ const SnakeGame = lazy(() => import('./SnakeGame'));
 const Game2048 = lazy(() => import('./Game2048'));
 const BasketballGame = lazy(() => import('./BasketballGame'));
 const ShapeMatchGame = lazy(() => import('./ShapeMatchGame'));
-const WordCatchGame = lazy(() => import('./WordCatchGame'));
 const SimonSaysGame = lazy(() => import('./SimonSaysGame'));
 const CodingTurtleGame = lazy(() => import('./CodingTurtleGame'));
 const ComparisonGame = lazy(() => import('./ComparisonGame'));
 
-type GameType = 'menu' | 'odd-one-out' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloon' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battle-city' | 'basketball' | 'shapematch' | 'wordcatch' | 'simonsays' | 'codingturtle' | 'comparison';
+type GameType = 'menu' | 'odd-one-out' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloon' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battle-city' | 'basketball' | 'shapematch' | 'simonsays' | 'codingturtle' | 'comparison';
 type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
 
 interface GameDef {
@@ -58,7 +57,6 @@ const games: GameDef[] = [
   { id: 'piano', title: 'Piyano', emoji: '🎹', icon: Piano, color: 'hsl(255 75% 62%)', colorSoft: 'hsl(255 75% 62% / 0.1)', description: 'Melodiler çal, müzik yap!', category: ['creative'] },
   { id: 'counting', title: 'Sayma Oyunu', emoji: '🔢', icon: Hash, color: 'hsl(278 75% 60%)', colorSoft: 'hsl(278 75% 60% / 0.1)', description: 'Nesneleri say, rakamı bul!', category: ['learn'] },
   { id: 'math', title: 'Matematik', emoji: '➕', icon: Calculator, color: 'hsl(200 80% 52%)', colorSoft: 'hsl(200 80% 52% / 0.1)', description: 'Toplama ve çıkarma işlemleri!', category: ['learn'] },
-  { id: 'wordcatch', title: 'Kelime Avı', emoji: '🎈', icon: Hash, color: 'hsl(190 80% 60%)', colorSoft: 'hsl(190 80% 60% / 0.1)', description: 'Balonlardaki harflerle kelimeyi tamamla!', category: ['learn'] },
   { id: 'codingturtle', title: 'Tavşan Kodlama', emoji: '🐇', icon: Brain, color: 'hsl(140 70% 50%)', colorSoft: 'hsl(140 70% 50% / 0.1)', description: 'Tavşanı komutlarla havuca ulaştır!', category: ['learn'] },
   { id: 'comparison', title: 'Karşılaştırma', emoji: '⚖️', icon: Calculator, color: 'hsl(30 80% 60%)', colorSoft: 'hsl(30 80% 60% / 0.1)', description: 'Hangisi daha büyük veya daha ağır?', category: ['learn'] },
 ];
@@ -114,7 +112,6 @@ const GamesMenu = () => {
       case 'snake': return <SnakeGame />;
       case '2048': return <Game2048 />;
       case 'shapematch': return <ShapeMatchGame />;
-      case 'wordcatch': return <WordCatchGame />;
       case 'simonsays': return <SimonSaysGame />;
       case 'codingturtle': return <CodingTurtleGame />;
       case 'comparison': return <ComparisonGame />;
@@ -134,7 +131,7 @@ const GamesMenu = () => {
             color: 'hsl(var(--muted-foreground))',
           }}
           whileHover={{ x: -3, color: 'hsl(var(--foreground))' }}
-          whileTap={{ }}
+          whileTap={{}}
         >
           <ArrowLeft className="w-4 h-4" /> Oyunlara Dön
         </motion.button>

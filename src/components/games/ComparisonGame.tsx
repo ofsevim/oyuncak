@@ -392,25 +392,25 @@ const ComparisonGame = () => {
                                 key={`${item.label}-${idx}`}
                                 disabled={isCorrect}
                                 onClick={(e) => handleSelect(idx, e)}
-                                initial={{ y: 20, opacity: 0, scale: 0.8 }}
+                                initial={{ y: 0, opacity: 0, scale: 0.95 }}
                                 animate={{
                                     y: 0,
                                     opacity: isLoserGimmick ? 0.3 : 1,
-                                    scale: isWinnerGimmick ? 1.1 : isLoserGimmick ? 0.8 : 1,
+                                    scale: isWinnerGimmick ? 1.08 : isLoserGimmick ? 0.9 : 1,
                                     x: wrongShake ? [-10, 10, -10, 10, 0] : 0,
                                 }}
                                 transition={{
-                                    delay: isCorrect ? 0 : idx * 0.1,
-                                    type: 'spring', stiffness: wrongShake ? 600 : 200, damping: wrongShake ? 10 : 20
+                                    delay: isCorrect ? 0 : idx * 0.05,
+                                    type: 'spring', stiffness: wrongShake ? 600 : 350, damping: 25
                                 }}
-                                whileHover={{ y: -5 }}
+                                whileHover={{ y: -3 }}
                                 whileTap={{}}
-                                className="flex-1 flex flex-col items-center justify-center rounded-[30px] border-[3px] transition-all relative overflow-hidden aspect-square max-w-[200px]"
+                                className="flex-1 flex flex-col items-center justify-center rounded-[24px] border-[2.5px] transition-all relative overflow-hidden aspect-square max-w-[160px]"
                                 style={{
                                     background: 'rgba(255,255,255,0.05)',
                                     backdropFilter: 'blur(10px)',
                                     borderColor: isTarget ? 'rgba(52,211,153,0.9)' : wrongShake ? 'rgba(239,68,68,0.8)' : 'rgba(255,255,255,0.1)',
-                                    boxShadow: isTarget ? '0 0 30px rgba(52,211,153,0.5)' : wrongShake ? '0 0 20px rgba(239,68,68,0.5)' : '0 10px 30px rgba(0,0,0,0.15)',
+                                    boxShadow: isTarget ? '0 0 30px rgba(52,211,153,0.5)' : wrongShake ? '0 0 20px rgba(239,68,68,0.5)' : '0 8px 25px rgba(0,0,0,0.15)',
                                 }}
                             >
                                 {/* Active glow inside target option */}
@@ -421,7 +421,7 @@ const ComparisonGame = () => {
                                         initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                                     />
                                 )}
-                                <span className={`text-[80px] sm:text-[100px] drop-shadow-lg z-10`}>
+                                <span className="text-[60px] sm:text-[80px] drop-shadow-lg z-10">
                                     {item.emoji}
                                 </span>
 
