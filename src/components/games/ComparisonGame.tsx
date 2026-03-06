@@ -55,6 +55,7 @@ const ComparisonGame = () => {
     const [gameState, setGameState] = useState<'menu' | 'playing' | 'complete'>('menu');
     const [score, setScore] = useState(0);
     const [streak, setStreak] = useState(0);
+    const [bestStreak, setBestStreak] = useState(0);
     const [roundLeft, setRoundLeft] = useState(15);
     const [useTimer, setUseTimer] = useState(false);
     const [timeLeft, setTimeLeft] = useState(15);
@@ -100,18 +101,23 @@ const ComparisonGame = () => {
     const generateNewRound = useCallback(() => {
         let prop: PropertyType = Math.random() > 0.5 ? 'weight' : 'size';
 
-        // Pick two different levels to ensure a huge difference, no ambiguity
-        let levelA = Math.floor(Math.random() * 3) + 1;
-        let levelB = Math.floor(Math.random() * 3) + 1;
-        while (levelA === levelB) {
-            levelB = Math.floor(Math.random() * 3) + 1;
-        }
+        let a: typeof ITEMS[0], b: typeof ITEMS[0];
+        let attempts = 0;
+        do {
+            // Pick two different levels to ensure a huge difference, no ambiguity
+            let levelA = Math.floor(Math.random() * 3) + 1;
+            let levelB = Math.floor(Math.random() * 3) + 1;
+            while (levelA === levelB) {
+                levelB = Math.floor(Math.random() * 3) + 1;
+            }
 
-        const itemsA = ITEMS.filter(i => i.level === levelA);
-        const itemsB = ITEMS.filter(i => i.level === levelB);
+            const itemsA = ITEMS.filter(i => i.level === levelA);
+            const itemsB = ITEMS.filter(i => i.level === levelB);
 
-        let a = itemsA[Math.floor(Math.random() * itemsA.length)];
-        let b = itemsB[Math.floor(Math.random() * itemsB.length)];
+            a = itemsA[Math.floor(Math.random() * itemsA.length)];
+            b = itemsB[Math.floor(Math.random() * itemsB.length)];
+            attempts++;
+        } while (a[prop] === b[prop] && attempts < 10);
 
         // Randomize layout (A left, B right OR vice versa)
         if (Math.random() > 0.5) {
@@ -142,11 +148,19 @@ const ComparisonGame = () => {
         if (timerRef.current) clearInterval(timerRef.current);
 
         setGameState('playing'); setScore(0); scoreRef.current = 0;
-        setStreak(0); setRoundLeft(15); setSparkles([]);
+        setStreak(0); setBestStreak(0); setRoundLeft(15); setSparkles([]);
         setIsNewRecord(false); setShowPraise(false);
 
         generateNewRound();
     }, [clearAllTimeouts, generateNewRound]);
+
+    const finishGame = useCallback(() => {
+        setGameState('complete');
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#fb923c', '#38bdf8', '#a78bfa', '#34d399'] });
+        const isNew = saveHighScoreObj('comparison', scoreRef.current);
+        if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); playNewRecordSound(); }
+        else playLevelUpSound();
+    }, []);
 
     useEffect(() => {
         if (!useTimer || gameState !== 'playing' || !currentRound || isCorrect) {
@@ -159,31 +173,25 @@ const ComparisonGame = () => {
                 if (prev <= 1) {
                     playErrorSound(); setStreak(0);
                     setShakeIndex(currentRound.biggerIndex === 0 ? 1 : 0); // Shake the wrong one
+                    const ts = setTimeout(() => setShakeIndex(null), 500);
+                    timeoutsRef.current.push(ts);
 
                     setRoundLeft(r => {
                         if (r <= 1) { finishGame(); return 0; }
+                        const t = setTimeout(() => { generateNewRound(); }, 800);
+                        timeoutsRef.current.push(t);
                         return r - 1;
                     });
 
-                    const t = setTimeout(() => { generateNewRound(); }, 800);
-                    timeoutsRef.current.push(t);
                     return 10;
                 }
                 return prev - 1;
             });
         }, 1000);
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [useTimer, currentRound, isCorrect, gameState, generateNewRound]);
+    }, [useTimer, currentRound, isCorrect, gameState, generateNewRound, finishGame]);
 
-    const finishGame = () => {
-        setGameState('complete');
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#fb923c', '#38bdf8', '#a78bfa', '#34d399'] });
-        const isNew = saveHighScoreObj('comparison', scoreRef.current);
-        if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); playNewRecordSound(); }
-        else playLevelUpSound();
-    };
-
-    const handleSelect = (index: number, e: React.MouseEvent | React.TouchEvent) => {
+    const handleSelect = useCallback((index: number, e: React.MouseEvent | React.TouchEvent) => {
         if (isCorrect || gameState !== 'playing' || !currentRound) return;
 
         if (index === currentRound.biggerIndex) {
@@ -192,9 +200,12 @@ const ComparisonGame = () => {
             playPopSound(); playSuccessSound();
 
             const newStreak = streak + 1;
+            setStreak(newStreak);
+            setBestStreak(prev => Math.max(prev, newStreak));
+
             const bonus = useTimer ? Math.ceil(timeLeft / 2) : 0;
             const pts = 10 + bonus + (newStreak >= 3 ? Math.min(newStreak, 5) * 2 : 0);
-            scoreRef.current += pts; setScore(scoreRef.current); setStreak(newStreak);
+            scoreRef.current += pts; setScore(scoreRef.current);
             if (newStreak >= 3) playComboSound(newStreak);
             if (newStreak % 5 === 0) playLevelUpSound();
 
@@ -223,7 +234,7 @@ const ComparisonGame = () => {
             const t = setTimeout(() => setShakeIndex(null), 500);
             timeoutsRef.current.push(t);
         }
-    };
+    }, [isCorrect, gameState, currentRound, streak, useTimer, timeLeft, finishGame, generateNewRound, addSparkles]);
 
     const Background = (
         <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
@@ -307,7 +318,7 @@ const ComparisonGame = () => {
                         style={{ ...pill, boxShadow: '0 8px 40px rgba(0,0,0,0.12)' }}
                         initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
                         <p className="text-3xl font-black text-orange-400">✨ {score} Puan</p>
-                        {streak > 2 && <p className="text-sm font-bold text-yellow-400">🔥 En iyi seri: x{streak}</p>}
+                        {bestStreak > 2 && <p className="text-sm font-bold text-yellow-400">🔥 En iyi seri: x{bestStreak}</p>}
                     </motion.div>
 
                     <motion.div className="flex gap-3 mt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
