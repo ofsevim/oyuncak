@@ -11,9 +11,10 @@ interface SuccessPopupProps {
   onClose: () => void;
   message?: string;
   level?: number;
+  disableVoice?: boolean;
 }
 
-const SuccessPopup = ({ isOpen, onClose, message = 'Harikasın!', level }: SuccessPopupProps) => {
+const SuccessPopup = ({ isOpen, onClose, message = 'Harikasın!', level, disableVoice = false }: SuccessPopupProps) => {
   useEffect(() => {
     if (isOpen) {
       const duration = 2000;
@@ -35,12 +36,12 @@ const SuccessPopup = ({ isOpen, onClose, message = 'Harikasın!', level }: Succe
           spread: randomInRange(50, 70),
           origin: { x: randomInRange(0.1, 0.9), y: randomInRange(0.1, 0.5) },
           colors: colors,
-          shapes: ['star', 'circle'],
-          scalar: 1.2,
         });
       }, 50);
 
-      speakSuccess();
+      if (!disableVoice) {
+        speakSuccess();
+      }
 
       const timeout = setTimeout(() => {
         onClose();

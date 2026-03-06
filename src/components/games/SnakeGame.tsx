@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
+import { playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
 
@@ -63,11 +63,17 @@ const SnakeGame = () => {
   const [screenShake, setScreenShake] = useState(false);
 
   const dirRef = useRef<Dir>('RIGHT');
+  const inputQueueRef = useRef<Dir[]>([]);
   const loopRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const snakeRef = useRef(snake);
   const scoreRef = useRef(0);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const particleId = useRef(0);
+
+  // Refs for tracking rapidly changing state to avoid interval resets
+  const comboRef = useRef(0);
+  const foodRef = useRef(food);
+  const obstaclesRef = useRef(obstacles);
 
   const animRef = useRef<number>(0);
   const [boardScale, setBoardScale] = useState(1);
@@ -91,9 +97,18 @@ const SnakeGame = () => {
 
   /* ── Spawn helpers ── */
   const spawnFood = useCallback((s: Pos[], obs: Pos[] = []): Pos & { type: FoodKind } => {
-    let pos: Pos;
-    do { pos = { x: 1 + Math.floor(Math.random() * (GRID - 2)), y: 1 + Math.floor(Math.random() * (GRID - 2)) }; }
-    while (s.some(p => p.x === pos.x && p.y === pos.y) || obs.some(o => o.x === pos.x && o.y === pos.y));
+    const emptyPos: Pos[] = [];
+    for (let x = 1; x < GRID - 1; x++) {
+      for (let y = 1; y < GRID - 1; y++) {
+        const isOccupied = s.some(p => p.x === x && p.y === y) || obs.some(o => o.x === x && o.y === y);
+        if (!isOccupied) emptyPos.push({ x, y });
+      }
+    }
+
+    // Fallback if board is completely full (very rare)
+    if (emptyPos.length === 0) return { x: 1, y: 1, type: 'normal' };
+
+    const pos = emptyPos[Math.floor(Math.random() * emptyPos.length)];
     const r = Math.random();
     const type: FoodKind = r < 0.08 ? 'golden' : r < 0.15 ? 'speed' : r < 0.2 ? 'shrink' : 'normal';
     return { ...pos, type };
@@ -103,11 +118,26 @@ const SnakeGame = () => {
     if (!DIFFS[diff].obstacles) return [];
     const obs: Pos[] = [];
     const count = 4 + Math.floor(Math.random() * 4);
+
+    const maxAttempts = 100;
+    const center = Math.floor(GRID / 2);
+
     for (let i = 0; i < count; i++) {
-      let pos: Pos;
-      do { pos = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) }; }
-      while (s.some(p => p.x === pos.x && p.y === pos.y) || obs.some(o => o.x === pos.x && o.y === pos.y) || (Math.abs(pos.x - 9) < 3 && Math.abs(pos.y - 9) < 3));
-      obs.push(pos);
+      let pos: Pos = { x: 0, y: 0 };
+      let isValid = false;
+      let attempts = 0;
+
+      while (!isValid && attempts < maxAttempts) {
+        pos = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
+        const isOccupied = s.some(p => p.x === pos.x && p.y === pos.y) ||
+          obs.some(o => o.x === pos.x && o.y === pos.y);
+        const isNearCenter = Math.abs(pos.x - center) < 3 && Math.abs(pos.y - center) < 3;
+        if (!isOccupied && !isNearCenter) {
+          isValid = true;
+        }
+        attempts++;
+      }
+      if (isValid) obs.push(pos);
     }
     return obs;
   }, [diff]);
@@ -145,13 +175,17 @@ const SnakeGame = () => {
 
   /* ── Start game ── */
   const startGame = useCallback(() => {
-    const init = [{ x: 9, y: 9 }, { x: 8, y: 9 }, { x: 7, y: 9 }];
+    const center = Math.floor(GRID / 2);
+    const init = [{ x: center, y: center }, { x: center - 1, y: center }, { x: center - 2, y: center }];
     const obs = spawnObstacles(init);
     setSnake(init); snakeRef.current = init;
-    setObstacles(obs);
-    setFood(spawnFood(init, obs));
+    setObstacles(obs); obstaclesRef.current = obs;
+    const initialFood = spawnFood(init, obs);
+    setFood(initialFood); foodRef.current = initialFood;
     setDir('RIGHT'); dirRef.current = 'RIGHT';
-    setScore(0); setSpeed(cfg.speed); setCombo(0); setEaten(0); setIsNewRecord(false);
+    inputQueueRef.current = [];
+    scoreRef.current = 0;
+    setScore(0); setSpeed(cfg.speed); setCombo(0); comboRef.current = 0; setEaten(0); setIsNewRecord(false);
     setParticles([]);
     setGameState('playing');
   }, [spawnFood, spawnObstacles, cfg.speed]);
@@ -170,14 +204,27 @@ const SnakeGame = () => {
   /* ── Game loop ── */
   useEffect(() => {
     if (gameState !== 'playing') { if (loopRef.current) clearInterval(loopRef.current); return; }
+
+    // Clear previous interval before setting a new one (only depends on speed and gameState)
+    if (loopRef.current) clearInterval(loopRef.current);
+
     loopRef.current = setInterval(() => {
       const cur = [...snakeRef.current];
       const head = { ...cur[0] };
-      const d = dirRef.current;
-      if (d === 'UP') head.y -= 1;
-      if (d === 'DOWN') head.y += 1;
-      if (d === 'LEFT') head.x -= 1;
-      if (d === 'RIGHT') head.x += 1;
+      const currentFood = foodRef.current;
+      const currentObs = obstaclesRef.current;
+
+      let nextDir = dirRef.current;
+      if (inputQueueRef.current.length > 0) {
+        nextDir = inputQueueRef.current.shift()!;
+        dirRef.current = nextDir;
+        setDir(nextDir);
+      }
+
+      if (nextDir === 'UP') head.y -= 1;
+      if (nextDir === 'DOWN') head.y += 1;
+      if (nextDir === 'LEFT') head.x -= 1;
+      if (nextDir === 'RIGHT') head.x += 1;
 
       if (cfg.wrap) {
         head.x = (head.x + GRID) % GRID;
@@ -186,23 +233,29 @@ const SnakeGame = () => {
         endGame(); return;
       }
       if (cur.some(s => s.x === head.x && s.y === head.y)) { endGame(); return; }
-      if (obstacles.some(o => o.x === head.x && o.y === head.y)) { endGame(); return; }
+      if (currentObs.some(o => o.x === head.x && o.y === head.y)) { endGame(); return; }
 
       const ns = [head, ...cur];
 
-      if (head.x === food.x && head.y === food.y) {
-        const nc = combo + 1;
+      if (head.x === currentFood.x && head.y === currentFood.y) {
+        comboRef.current += 1;
+        const nc = comboRef.current;
         setCombo(nc);
         setEaten(p => p + 1);
-        const pts = FOOD_STYLES[food.type].points + Math.min(nc, 5) * 2;
-        setScore(p => { const next = p + pts; scoreRef.current = next; return next; });
+        const pts = FOOD_STYLES[currentFood.type].points + Math.min(nc, 5) * 2;
+
+        scoreRef.current += pts;
+        setScore(scoreRef.current);
+
         if (nc > 2) playComboSound(nc); else playSuccessSound();
 
         // Particle burst at food position
-        burst(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, FOOD_STYLES[food.type].colors);
+        burst(currentFood.x * CELL + CELL / 2, currentFood.y * CELL + CELL / 2, FOOD_STYLES[currentFood.type].colors);
 
-        const eatenType = food.type; // capture before update
-        setFood(spawnFood(ns, obstacles));
+        const eatenType = currentFood.type; // capture before update
+        const newFood = spawnFood(ns, currentObs);
+        setFood(newFood); foodRef.current = newFood;
+
         if (eatenType === 'speed') {
           // Lightning bolt now gives a SMALL SPEED REWARD (slows down) instead of penalty
           setSpeed(p => Math.min(cfg.speed, p + 20));
@@ -215,45 +268,73 @@ const SnakeGame = () => {
       } else {
         ns.pop();
         setCombo(0);
+        comboRef.current = 0;
       }
 
       setSnake(ns); snakeRef.current = ns;
     }, speed);
     return () => { if (loopRef.current) clearInterval(loopRef.current); };
-  }, [gameState, speed, food, obstacles, combo, cfg.wrap, spawnFood, endGame, burst]);
+  }, [gameState, speed, cfg.wrap, spawnFood, endGame, burst]);
 
   /* ── Keyboard ── */
   useEffect(() => {
     const handle = (e: KeyboardEvent) => {
       if (gameState !== 'playing') return;
-      const d = dirRef.current;
+
+      const lastDir = inputQueueRef.current.length > 0 ? inputQueueRef.current[inputQueueRef.current.length - 1] : dirRef.current;
+
       const map: Record<string, [Dir, Dir]> = {
         ArrowUp: ['UP', 'DOWN'], w: ['UP', 'DOWN'], ArrowDown: ['DOWN', 'UP'], s: ['DOWN', 'UP'],
         ArrowLeft: ['LEFT', 'RIGHT'], a: ['LEFT', 'RIGHT'], ArrowRight: ['RIGHT', 'LEFT'], d: ['RIGHT', 'LEFT'],
       };
+
       const entry = map[e.key];
-      if (entry && d !== entry[1]) { e.preventDefault(); setDir(entry[0]); }
+      if (entry && lastDir !== entry[1] && lastDir !== entry[0]) {
+        e.preventDefault();
+        if (inputQueueRef.current.length < 3) inputQueueRef.current.push(entry[0]);
+      }
     };
     window.addEventListener('keydown', handle);
     return () => window.removeEventListener('keydown', handle);
   }, [gameState]);
 
-  /* ── Touch swipe ── */
-  const onTouchStart = (e: React.TouchEvent) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStart.current) return;
-    const dx = e.changedTouches[0].clientX - touchStart.current.x;
-    const dy = e.changedTouches[0].clientY - touchStart.current.y;
-    const d = dirRef.current;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 20 && d !== 'LEFT') setDir('RIGHT');
-      if (dx < -20 && d !== 'RIGHT') setDir('LEFT');
-    } else {
-      if (dy > 20 && d !== 'UP') setDir('DOWN');
-      if (dy < -20 && d !== 'DOWN') setDir('UP');
+  /* ── Touch event listeners directly on board for passive: false ── */
+  const boardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+      touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+      if (!touchStart.current || gameState !== 'playing') return;
+      const dx = e.changedTouches[0].clientX - touchStart.current.x;
+      const dy = e.changedTouches[0].clientY - touchStart.current.y;
+
+      const lastDir = inputQueueRef.current.length > 0 ? inputQueueRef.current[inputQueueRef.current.length - 1] : dirRef.current;
+
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 20 && lastDir !== 'LEFT' && lastDir !== 'RIGHT') inputQueueRef.current.push('RIGHT');
+        if (dx < -20 && lastDir !== 'RIGHT' && lastDir !== 'LEFT') inputQueueRef.current.push('LEFT');
+      } else {
+        if (dy > 20 && lastDir !== 'UP' && lastDir !== 'DOWN') inputQueueRef.current.push('DOWN');
+        if (dy < -20 && lastDir !== 'DOWN' && lastDir !== 'UP') inputQueueRef.current.push('UP');
+      }
+      touchStart.current = null;
+    };
+
+    board.addEventListener('touchstart', handleTouchStart, { passive: false });
+    board.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    return () => {
+      board.removeEventListener('touchstart', handleTouchStart);
+      board.removeEventListener('touchend', handleTouchEnd);
     }
-    touchStart.current = null;
-  };
+  }, [gameState]);
 
   /* ── Snake color gradient ── */
   const segColor = (i: number, total: number) => {
@@ -274,7 +355,7 @@ const SnakeGame = () => {
   };
 
   /* ── Segment connection (rounded fluid body) ── */
-  const getSegmentRadius = (i: number, total: number, prev?: Pos, next?: Pos, cur?: Pos) => {
+  const getSegmentRadius = (i: number, total: number) => {
     if (i === 0) return CELL * 0.45; // Head is round
     if (i === total - 1) return CELL * 0.35; // Tail tapers
     return CELL * 0.38;
@@ -357,6 +438,9 @@ const SnakeGame = () => {
         justifyContent: 'flex-start',
       }}>
         <div className="relative overflow-hidden"
+          ref={boardRef}
+          role="application"
+          aria-label="Snake Game Board"
           style={{
             width: FIELD + 8, height: FIELD + 8, padding: 4,
             borderRadius: 20,
@@ -364,8 +448,7 @@ const SnakeGame = () => {
             border: '1px solid rgba(255,255,255,0.06)',
             transform: `scale(${boardScale})`,
             transformOrigin: 'top left',
-          }}
-          onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+          }}>
 
           {/* Grass texture background */}
           <div className="absolute inset-0" style={{
@@ -499,17 +582,17 @@ const SnakeGame = () => {
       </div>
 
       {/* ── Mobile D-pad ── */}
-      <div className="grid grid-cols-3 gap-3 w-56 md:hidden mt-2">
+      <div className="grid grid-cols-3 gap-3 w-56 md:hidden mt-2" role="group" aria-label="Game Controls">
         <div />
-        <motion.button whileTap={{ scale: 0.85 }} onClick={() => dirRef.current !== 'DOWN' && setDir('UP')}
-          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }}>⬆️</motion.button>
+        <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'DOWN') inputQueueRef.current.push('UP'); }}
+          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }} aria-label="Move Up">⬆️</motion.button>
         <div />
-        <motion.button whileTap={{ scale: 0.85 }} onClick={() => dirRef.current !== 'RIGHT' && setDir('LEFT')}
-          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }}>⬅️</motion.button>
-        <motion.button whileTap={{ scale: 0.85 }} onClick={() => dirRef.current !== 'UP' && setDir('DOWN')}
-          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }}>⬇️</motion.button>
-        <motion.button whileTap={{ scale: 0.85 }} onClick={() => dirRef.current !== 'LEFT' && setDir('RIGHT')}
-          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }}>➡️</motion.button>
+        <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'RIGHT') inputQueueRef.current.push('LEFT'); }}
+          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }} aria-label="Move Left">⬅️</motion.button>
+        <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'UP') inputQueueRef.current.push('DOWN'); }}
+          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }} aria-label="Move Down">⬇️</motion.button>
+        <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'LEFT') inputQueueRef.current.push('RIGHT'); }}
+          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }} aria-label="Move Right">➡️</motion.button>
       </div>
     </motion.div>
   );

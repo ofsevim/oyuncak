@@ -108,6 +108,22 @@ const MTN_FAR = generateMountainLayer(1.2, 3, 20, 65, 40);
 const MTN_MID = generateMountainLayer(2.7, 4, 15, 55, 50);
 const MTN_NEAR = generateMountainLayer(4.1, 5, 10, 45, 60);
 
+/* ── 0. Canvas Compatibility Polyfill ── */
+function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  if (ctx.roundRect) {
+    ctx.roundRect(x, y, w, h, r);
+  } else {
+    // Fallback for older browsers
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+  }
+}
+
 /* ═══════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════ */
@@ -154,6 +170,8 @@ const RunnerGame = () => {
   const diffRef = useRef(DIFF_CONFIG['normal']);
   const floatIdRef = useRef(0);
   const charRef = useRef(CHARACTERS[0]);
+  const maxComboRef = useRef(0);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   /* Sync refs */
   useEffect(() => { phaseRef.current = phase; }, [phase]);
@@ -163,12 +181,19 @@ const RunnerGame = () => {
   useEffect(() => { x2Ref.current = showX2; }, [showX2]);
   useEffect(() => { charRef.current = character; }, [character]);
 
+  /* Safe Timer Management */
+  const safeTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(fn, ms);
+    timersRef.current.push(id);
+    return id;
+  }, []);
+
   /* Helpers */
   const addFloat = useCallback((x: number, y: number, text: string, color: string) => {
     const id = floatIdRef.current++;
     setFloatingTexts(prev => [...prev, { id, x, y, text, color }]);
-    setTimeout(() => setFloatingTexts(prev => prev.filter(f => f.id !== id)), 900);
-  }, []);
+    safeTimeout(() => setFloatingTexts(prev => prev.filter(f => f.id !== id)), 900);
+  }, [safeTimeout]);
 
   const spawnP = useCallback((x: number, y: number, n: number, color: string, type: Particle['type'] = 'sparkle') => {
     for (let i = 0; i < n; i++) {
@@ -269,17 +294,25 @@ const RunnerGame = () => {
     const drawMountainLayer = (pts: number[], baseY: number, speed: number, fillTop: string, fillBot: string, alpha: number) => {
       ctx.save();
       ctx.globalAlpha = alpha;
-      const off = (gOff * speed) % W;
+      const totalW = W + 200;
+      const off = (gOff * speed) % totalW;
+
       const grad = ctx.createLinearGradient(0, baseY - 60, 0, baseY);
       grad.addColorStop(0, fillTop);
       grad.addColorStop(1, fillBot);
       ctx.fillStyle = grad;
+
       ctx.beginPath();
       ctx.moveTo(0, baseY);
+      // First pass
       for (let i = 0; i < pts.length; i++) {
-        const x = (i / (pts.length - 1)) * (W + 200) - (off % (W + 200));
-        const xw = x < -100 ? x + W + 200 : x;
-        ctx.lineTo(xw, baseY - pts[i]);
+        const x = (i / (pts.length - 1)) * totalW - off;
+        ctx.lineTo(x, baseY - pts[i]);
+      }
+      // Second pass for seamless wrap
+      for (let i = 0; i < pts.length; i++) {
+        const x = (i / (pts.length - 1)) * totalW - off + totalW;
+        ctx.lineTo(x, baseY - pts[i]);
       }
       ctx.lineTo(W, baseY);
       ctx.closePath();
@@ -374,16 +407,16 @@ const RunnerGame = () => {
         cg.addColorStop(1, '#15803d');
         ctx.fillStyle = cg;
         // Main body
-        ctx.beginPath(); ctx.roundRect(-7, -obs.h * 0.45, 14, obs.h * 0.9, 6); ctx.fill();
+        ctx.beginPath(); drawRoundRect(ctx, -7, -obs.h * 0.45, 14, obs.h * 0.9, 6); ctx.fill();
         // Left arm
-        ctx.beginPath(); ctx.roundRect(-18, -obs.h * 0.2, 12, 8, 4); ctx.fill();
-        ctx.beginPath(); ctx.roundRect(-18, -obs.h * 0.35, 8, 18, 4); ctx.fill();
+        ctx.beginPath(); drawRoundRect(ctx, -18, -obs.h * 0.2, 12, 8, 4); ctx.fill();
+        ctx.beginPath(); drawRoundRect(ctx, -18, -obs.h * 0.35, 8, 18, 4); ctx.fill();
         // Right arm
-        ctx.beginPath(); ctx.roundRect(6, -obs.h * 0.1, 12, 8, 4); ctx.fill();
-        ctx.beginPath(); ctx.roundRect(12, -obs.h * 0.28, 8, 20, 4); ctx.fill();
+        ctx.beginPath(); drawRoundRect(ctx, 6, -obs.h * 0.1, 12, 8, 4); ctx.fill();
+        ctx.beginPath(); drawRoundRect(ctx, 12, -obs.h * 0.28, 8, 20, 4); ctx.fill();
         // Highlight
         ctx.fillStyle = 'rgba(255,255,255,0.15)';
-        ctx.beginPath(); ctx.roundRect(-4, -obs.h * 0.4, 5, obs.h * 0.7, 3); ctx.fill();
+        ctx.beginPath(); drawRoundRect(ctx, -4, -obs.h * 0.4, 5, obs.h * 0.7, 3); ctx.fill();
       } else if (obs.type === 'bird') {
         // Animated bird
         const wingUp = Math.sin(f * 0.2 + obs.id) > 0;
@@ -414,7 +447,7 @@ const RunnerGame = () => {
         const cg2 = ctx.createLinearGradient(8, -obs.h / 2, 16, obs.h / 2);
         cg2.addColorStop(0, '#4ade80'); cg2.addColorStop(1, '#15803d');
         ctx.fillStyle = cg2;
-        ctx.beginPath(); ctx.roundRect(6, -obs.h * 0.4, 12, obs.h * 0.8, 5); ctx.fill();
+        ctx.beginPath(); drawRoundRect(ctx, 6, -obs.h * 0.4, 12, obs.h * 0.8, 5); ctx.fill();
       }
       ctx.restore();
     }
@@ -624,12 +657,12 @@ const RunnerGame = () => {
       ctx.save();
       ctx.translate(0, -p.h);
       ctx.rotate(Math.sin(f * 0.1) * 0.05); // subtle ear wiggle
-      ctx.beginPath(); ctx.roundRect(-bw / 2 + 2, -18, 9, 22, 5); ctx.fill();
-      ctx.beginPath(); ctx.roundRect(bw / 2 - 11, -18, 9, 22, 5); ctx.fill();
+      ctx.beginPath(); drawRoundRect(ctx, -bw / 2 + 2, -18, 9, 22, 5); ctx.fill();
+      ctx.beginPath(); drawRoundRect(ctx, bw / 2 - 11, -18, 9, 22, 5); ctx.fill();
       // Inner ears
       ctx.fillStyle = charRef.current.bodyH;
-      ctx.beginPath(); ctx.roundRect(-bw / 2 + 4.5, -15, 4, 16, 2); ctx.fill();
-      ctx.beginPath(); ctx.roundRect(bw / 2 - 8.5, -15, 4, 16, 2); ctx.fill();
+      ctx.beginPath(); drawRoundRect(ctx, -bw / 2 + 4.5, -15, 4, 16, 2); ctx.fill();
+      ctx.beginPath(); drawRoundRect(ctx, bw / 2 - 8.5, -15, 4, 16, 2); ctx.fill();
       ctx.restore();
     } else if (charRef.current.id === 'fox') {
       // Sharp fox ears
@@ -673,7 +706,7 @@ const RunnerGame = () => {
     bodyG.addColorStop(0.3, charRef.current.color);
     bodyG.addColorStop(1, charRef.current.accent);
     ctx.fillStyle = bodyG;
-    ctx.beginPath(); ctx.roundRect(-bw / 2, -p.h, bw, bh, 14); ctx.fill();
+    ctx.beginPath(); drawRoundRect(ctx, -bw / 2, -p.h, bw, bh, 14); ctx.fill();
 
     // Body highlight
     ctx.fillStyle = 'rgba(255,255,255,0.2)';
@@ -710,20 +743,20 @@ const RunnerGame = () => {
       const legA = Math.sin(f * 0.28) * 18;
       // Left leg
       ctx.save(); ctx.translate(-9, -10); ctx.rotate((legA * Math.PI) / 180);
-      ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 16, 3); ctx.fill(); ctx.restore();
+      ctx.beginPath(); drawRoundRect(ctx, -3.5, 0, 7, 16, 3); ctx.fill(); ctx.restore();
       // Right leg
       ctx.save(); ctx.translate(9, -10); ctx.rotate((-legA * Math.PI) / 180);
-      ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, 16, 3); ctx.fill(); ctx.restore();
+      ctx.beginPath(); drawRoundRect(ctx, -3.5, 0, 7, 16, 3); ctx.fill(); ctx.restore();
     } else {
       // Tucked in air
-      ctx.beginPath(); ctx.roundRect(-12, -14, 7, 12, 3); ctx.fill();
-      ctx.beginPath(); ctx.roundRect(5, -14, 7, 12, 3); ctx.fill();
+      ctx.beginPath(); drawRoundRect(ctx, -12, -14, 7, 12, 3); ctx.fill();
+      ctx.beginPath(); drawRoundRect(ctx, 5, -14, 7, 12, 3); ctx.fill();
     }
 
     // Invincible flash
     if (invincibleRef.current && f % 6 < 3) {
       ctx.fillStyle = 'rgba(255,255,255,0.35)';
-      ctx.beginPath(); ctx.roundRect(-bw / 2, -p.h, bw, bh, 14); ctx.fill();
+      ctx.beginPath(); drawRoundRect(ctx, -bw / 2, -p.h, bw, bh, 14); ctx.fill();
     }
 
     ctx.restore();
@@ -767,7 +800,7 @@ const RunnerGame = () => {
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, W, H);
 
-  }, []);
+  }, []); // Logic relies on refs: charRef, shieldRef, magnetRef, invincibleRef
 
 
   /* ═══════════════════════════════════════════
@@ -826,33 +859,51 @@ const RunnerGame = () => {
       });
     }
 
-    /* Move obstacles */
-    obstaclesRef.current = obstaclesRef.current
-      .map(o => ({ ...o, x: o.x - spd }))
-      .filter(o => o.x > -70);
+    /* Move obstacles — In-place to reduce GC */
+    let oWrite = 0;
+    for (let i = 0; i < obstaclesRef.current.length; i++) {
+      const o = obstaclesRef.current[i];
+      o.x -= spd;
+      if (o.x > -70) {
+        obstaclesRef.current[oWrite++] = o;
+      }
+    }
+    obstaclesRef.current.length = oWrite;
 
-    /* Move collectibles + magnet pull */
-    collectiblesRef.current = collectiblesRef.current
-      .map(c => {
-        if (c.collected) return c;
-        let nx = c.x - spd;
-        let ny = c.y;
+    /* Move collectibles + magnet pull — In-place */
+    let cWrite = 0;
+    for (let i = 0; i < collectiblesRef.current.length; i++) {
+      const c = collectiblesRef.current[i];
+      if (!c.collected) {
+        c.x -= spd;
         if (magnetRef.current) {
           const dx = p.x - c.x, dy = (p.y - p.h / 2) - c.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 130 && dist > 5) {
-            nx += (dx / dist) * 5;
-            ny += (dy / dist) * 5;
+            c.x += (dx / dist) * 5;
+            c.y += (dy / dist) * 5;
           }
         }
-        return { ...c, x: nx, y: ny };
-      })
-      .filter(c => c.x > -40);
+      }
+      if (c.x > -40) {
+        collectiblesRef.current[cWrite++] = c;
+      }
+    }
+    collectiblesRef.current.length = cWrite;
 
-    /* Update particles */
-    particlesRef.current = particlesRef.current
-      .map(pt => ({ ...pt, x: pt.x + pt.vx, y: pt.y + pt.vy, vy: pt.vy + 0.12, life: pt.life - 1 }))
-      .filter(pt => pt.life > 0);
+    /* Update particles — In-place */
+    let pWrite = 0;
+    for (let i = 0; i < particlesRef.current.length; i++) {
+      const pt = particlesRef.current[i];
+      pt.x += pt.vx;
+      pt.y += pt.vy;
+      pt.vy += 0.12;
+      pt.life -= 1;
+      if (pt.life > 0) {
+        particlesRef.current[pWrite++] = pt;
+      }
+    }
+    particlesRef.current.length = pWrite;
 
     /* Running dust particles */
     if (p.grounded && f % 4 === 0) {
@@ -879,11 +930,12 @@ const RunnerGame = () => {
           playErrorSound();
           obstaclesRef.current.splice(i, 1);
           if (livesRef.current <= 0) {
+            phaseRef.current = 'gameover'; // Immediate sync to prevent next frame logic
             setPhase('gameover');
             return;
           }
           invincibleRef.current = true;
-          setTimeout(() => { invincibleRef.current = false; }, 1500);
+          safeTimeout(() => { invincibleRef.current = false; }, 1500);
         }
         break;
       }
@@ -904,7 +956,10 @@ const RunnerGame = () => {
           const pts = def.points * mul;
           comboRef.current++;
           setCombo(comboRef.current);
-          if (comboRef.current > maxCombo) setMaxCombo(comboRef.current);
+          if (comboRef.current > maxComboRef.current) {
+            maxComboRef.current = comboRef.current;
+            setMaxCombo(comboRef.current);
+          }
           const comboBonus = comboRef.current >= 5 ? Math.min(comboRef.current, 10) * 5 : 0;
           const total = pts + comboBonus;
           scoreRef.current += total;
@@ -920,7 +975,7 @@ const RunnerGame = () => {
             case 'magnet':
               setShowMagnet(true); magnetRef.current = true;
               addFloat(c.x, c.y - 15, '🧲 Mıknatıs!', '#ef4444');
-              setTimeout(() => { setShowMagnet(false); magnetRef.current = false; }, 8000);
+              safeTimeout(() => { setShowMagnet(false); magnetRef.current = false; }, 8000);
               playSuccessSound(); break;
             case 'shield':
               setShowShield(true); shieldRef.current = true;
@@ -929,7 +984,7 @@ const RunnerGame = () => {
             case 'x2':
               setShowX2(true); x2Ref.current = true;
               addFloat(c.x, c.y - 15, '×2 Çarpan!', '#a855f7');
-              setTimeout(() => { setShowX2(false); x2Ref.current = false; }, 10000);
+              safeTimeout(() => { setShowX2(false); x2Ref.current = false; }, 10000);
               playSuccessSound(); break;
           }
         }
@@ -942,7 +997,7 @@ const RunnerGame = () => {
     /* Draw everything */
     draw(ctx);
     rafRef.current = requestAnimationFrame(gameLoop);
-  }, [draw, spawnP, addFloat, maxCombo]);
+  }, [draw, spawnP, addFloat]); // Removed maxCombo dependency
 
 
   /* ═══════════════════════════════════════════
@@ -973,20 +1028,29 @@ const RunnerGame = () => {
     scoreRef.current = 0; comboRef.current = 0; livesRef.current = 3;
     invincibleRef.current = false; shieldRef.current = false; magnetRef.current = false; x2Ref.current = false;
     setScore(0); setDistance(0); setLives(3); setCombo(0); setMaxCombo(0);
+    maxComboRef.current = 0;
     setShowShield(false); setShowMagnet(false); setShowX2(false);
     setIsNewRecord(false); setFloatingTexts([]);
+
+    // Clear all pending timers
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
+    phaseRef.current = 'playing';
     setPhase('playing');
 
-    // Attempt fullscreen and orientation lock on mobile
+    // Attempt orientation lock on mobile
     try {
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => { });
+      const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMob) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => { });
+        }
+        type OrientationLockMode = 'landscape' | 'portrait' | 'any';
+        type OrientationLock = { lock?: (mode: OrientationLockMode) => Promise<void> };
+        const orientation = (window.screen as unknown as { orientation?: OrientationLock }).orientation;
+        orientation?.lock?.('landscape').catch(() => { });
       }
-
-      // Use a typed access to avoid `any` casts for orientation lock
-      type OrientationLock = { lock?: (mode: string) => Promise<void> };
-      const orientation = (window.screen as unknown as { orientation?: OrientationLock }).orientation;
-      orientation?.lock?.('landscape').catch(() => { });
     } catch (err) { /* ignore */ }
   }, [character, difficulty]);
 
@@ -1021,76 +1085,135 @@ const RunnerGame = () => {
 
   /* Orientation check for mobile */
   useEffect(() => {
+    const setVH = () => {
+      // Gerçek görünür yüksekliğin 1%'ini hesapla
+      const vh = (window.visualViewport?.height ?? window.innerHeight) * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
     const checkOrientation = () => {
       const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       setIsPortrait(isMob && window.innerHeight > window.innerWidth);
+      setVH();
     };
+
     checkOrientation();
     window.addEventListener('resize', checkOrientation);
     window.addEventListener('orientationchange', checkOrientation);
+    window.visualViewport?.addEventListener('resize', setVH);
+
     return () => {
       window.removeEventListener('resize', checkOrientation);
       window.removeEventListener('orientationchange', checkOrientation);
+      window.visualViewport?.removeEventListener('resize', setVH);
+
+      // Cleanup timers
+      timersRef.current.forEach(clearTimeout);
 
       // Reset orientation and exit fullscreen on unmount
       try {
         if (document.exitFullscreen && document.fullscreenElement) {
           document.exitFullscreen().catch(() => { });
         }
-        const orientation = (window.screen as any).orientation;
+        const orientation = (window.screen as unknown as { orientation?: { unlock?: () => void } }).orientation;
         orientation?.unlock?.();
       } catch (err) { /* ignore */ }
     };
   }, []);
 
-  /* Canvas resize — Hem genişlik hem dikey yükseklik bazlı */
+  /* Canvas resize — visualViewport API ile */
   useEffect(() => {
     const resize = () => {
       if (!containerRef.current || !canvasRef.current) return;
       const container = containerRef.current;
       const canvas = canvasRef.current;
 
-      // Strictly "Contain" logic to fit inside the viewport with padding
-      const padding = 20;
-      const aw = container.clientWidth - padding;
-      const ah = window.innerHeight - (isPortrait ? 200 : 40) - padding;
+      // visualViewport = adres çubuğu hariç gerçek görünür alan
+      const vvp = window.visualViewport;
+      const viewW = vvp?.width ?? window.innerWidth;
+      const viewH = vvp?.height ?? window.innerHeight;
 
-      const sx = aw / CW;
-      const sy = ah / CH;
+      const padding = 8;
 
-      // Limit scale to max 1.1x to prevent oversized UI on desktop, strictly min for mobile
-      const s = Math.min(sx, sy, 1.1);
+      // Container genişliğini kullan (parent tarafından sınırlanır)
+      const availW = Math.min(container.clientWidth, viewW) - padding * 2;
+
+      // Yükseklik: Görünür viewport - üst HUD (56px) - alt boşluk
+      const hudReserve = 56;
+      const bottomReserve = phase === 'gameover' ? 200 : 16;
+      const availH = viewH - hudReserve - bottomReserve;
+
+      const sx = availW / CW;
+      const sy = availH / CH;
+
+      // Limit scale to max 1.15x
+      const s = Math.min(sx, sy, 1.15);
       scaleRef.current = s;
 
       canvas.style.width = `${CW * s}px`;
       canvas.style.height = `${CH * s}px`;
-
-      // Center with relative positioning
-      canvas.style.position = 'relative';
-      canvas.style.margin = 'auto';
     };
+
     resize();
+
     const ro = new ResizeObserver(resize);
     if (containerRef.current) ro.observe(containerRef.current);
     window.addEventListener('resize', resize);
 
+    const onVVResize = () => resize();
+    window.visualViewport?.addEventListener('resize', onVVResize);
+    window.visualViewport?.addEventListener('scroll', onVVResize);
+
     return () => {
       ro.disconnect();
       window.removeEventListener('resize', resize);
+      window.visualViewport?.removeEventListener('resize', onVVResize);
+      window.visualViewport?.removeEventListener('scroll', onVVResize);
     };
-  }, [isPortrait]);
+  }, [isPortrait, phase]);
 
-  // Hide body scrollbars ONLY during active gameplay
+  // ✅ Scroll Kilitleme — iOS Safari dahil tam kilit
   useEffect(() => {
     if (phase !== 'playing') return;
 
-    // Scroll to top INSTANTLY to ensure the navigation button is visible when game starts
     window.scrollTo({ top: 0, left: 0 });
 
-    const originalStyle = document.body.style.overflow;
+    // Orijinal stilleri sakla
+    const origOverflow = document.body.style.overflow;
+    const origPosition = document.body.style.position;
+    const origTop = document.body.style.top;
+    const origWidth = document.body.style.width;
+    const origHeight = document.body.style.height;
+    const origHTMLOverflow = document.documentElement.style.overflow;
+
+    // Tam kilit — iOS dahil
+    const scrollY = window.scrollY;
     document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    document.documentElement.style.overflow = 'hidden';
+
+    // Touch scroll'u da engelle
+    const preventTouchScroll = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-game-area]') || target.tagName === 'CANVAS') {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('touchmove', preventTouchScroll, { passive: false });
+
     return () => {
-      document.body.style.overflow = originalStyle;
+      document.body.style.overflow = origOverflow;
+      document.body.style.position = origPosition;
+      document.body.style.top = origTop;
+      document.body.style.width = origWidth;
+      document.body.style.height = origHeight;
+      document.documentElement.style.overflow = origHTMLOverflow;
+      document.removeEventListener('touchmove', preventTouchScroll);
+
+      window.scrollTo(0, scrollY);
     };
   }, [phase]);
 
@@ -1173,21 +1296,43 @@ const RunnerGame = () => {
      PLAYING + GAME OVER — Glassmorphism UI
      ═══════════════════════════════════════════ */
   return (
-    <motion.div className="flex flex-col items-center gap-3 p-2 md:p-4 mt-2 w-full max-w-[100vw] overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-
-      {/* Canvas area */}
-      <div ref={containerRef} className="w-full h-[60vh] md:h-[75vh] landscape:h-[80vh] relative touch-none overflow-hidden rounded-2xl md:rounded-3xl shadow-2xl flex items-center justify-center bg-black/5" onClick={jump}>
+    <motion.div
+      className="flex flex-col items-center gap-1 md:gap-3 p-1 md:p-4 w-full overflow-hidden"
+      data-game-area
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{
+        height: phase === 'playing' ? '100dvh' : 'auto',
+        maxHeight: '100dvh',
+        // @ts-ignore
+        ['--fallback-h' as string]: 'calc(var(--vh, 1vh) * 100)',
+        touchAction: 'none',
+        overscrollBehavior: 'none',
+        WebkitOverflowScrolling: 'auto',
+      }}
+    >
+      {/* Canvas area — flex-1 ile kalan alanı doldur */}
+      <div
+        ref={containerRef}
+        className="w-full flex-1 min-h-0 relative touch-none overflow-hidden rounded-xl md:rounded-3xl shadow-2xl flex items-center justify-center bg-black/5"
+        style={{ maxHeight: 'calc(100dvh - 20px)' }}
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest('button')) return;
+          jump();
+        }}>
         <canvas
           ref={canvasRef}
           width={CW}
           height={CH}
-          className="block mx-auto"
+          className="block"
           style={{
             border: '2px solid rgba(255,255,255,0.08)',
             filter: 'saturate(1.25) brightness(1.1) contrast(1.05)',
-            objectFit: 'cover',
-            /* width/height resize ile doğrudan DOM'a yazılır */
             willChange: 'transform',
+            touchAction: 'none',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            WebkitTouchCallout: 'none',
           }}
         />
 
@@ -1308,8 +1453,7 @@ const RunnerGame = () => {
       <AnimatePresence>
         {phase === 'playing' && (
           <motion.button
-            onClick={jump}
-            onPointerDown={(e) => { e.preventDefault(); jump(); }}
+            onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); jump(); }}
             className="md:hidden fixed bottom-6 right-6 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shadow-2xl z-50 touch-manipulation select-none"
             style={{
               touchAction: 'none',
@@ -1378,8 +1522,9 @@ const RunnerGame = () => {
               <motion.button onClick={() => {
                 setPhase('menu');
                 // Reset orientation and exit fullscreen when returning to menu
+                // Reset orientation and exit fullscreen when returning to menu
                 try {
-                  const orientation = (window.screen as any).orientation;
+                  const orientation = (window.screen as unknown as { orientation?: { unlock?: () => void } }).orientation;
                   orientation?.unlock?.();
                   if (document.exitFullscreen && document.fullscreenElement) {
                     document.exitFullscreen().catch(() => { });

@@ -35,15 +35,8 @@ const SHOT_POSITIONS: ShotPos[] = [
 const MAX_DRAG = 150;      // pixels of drag = full power
 const MAX_SPEED = 22;      // max launch speed
 
-const getTargetScore = (lvl: number) => {
-    if (lvl === 1) return 15;
-    if (lvl === 2) return 35;
-    if (lvl === 3) return 60;
-    if (lvl === 4) return 90;
-    if (lvl === 5) return 165;
-    // 6. seviye ve sonrası için: Artış miktarını koruyarak devam et (+75 increments roughly)
-    return 165 + (lvl - 5) * 80;
-};
+const TARGETS = [0, 15, 35, 60, 90, 165];
+const getTargetScore = (lvl: number) => lvl <= 5 ? TARGETS[lvl] : 165 + (lvl - 5) * 80;
 
 
 
@@ -63,6 +56,11 @@ interface TrailPt { x: number; y: number }
 interface FloatMsg { id: number; x: number; y: number; text: string; color: string }
 
 /* ═══════════════ BACKGROUND HELPERS ═══════════════ */
+const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number | number[]) => {
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+    else ctx.rect(x, y, w, h);
+};
+
 function drawBg(ctx: CanvasRenderingContext2D, tick: number) {
     // Sky
     const sky = ctx.createLinearGradient(0, 0, 0, CH * 0.62);
@@ -147,11 +145,11 @@ function drawHoop(ctx: CanvasRenderingContext2D, netStretch = 0, netSway = 0) {
 
     // Pole joint floor base
     ctx.fillStyle = '#48486A';
-    ctx.beginPath(); ctx.roundRect(BOARD_X - 26, CH * 0.62 - 40, 28, 40 + CH * 0.38, 4); ctx.fill();
+    ctx.beginPath(); safeRoundRect(ctx, BOARD_X - 26, CH * 0.62 - 40, 28, 40 + CH * 0.38, 4); ctx.fill();
 
     // Backboard (white with purple edge)
     ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#5A5A82'; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.roundRect(BOARD_X - 18, by - 110, 18, 140, 4); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); safeRoundRect(ctx, BOARD_X - 18, by - 110, 18, 140, 4); ctx.fill(); ctx.stroke();
 
     // Red square on board
     ctx.strokeStyle = '#E53E3E'; ctx.lineWidth = 2.5;
@@ -342,6 +340,7 @@ const BasketballGame = () => {
     const dragStart = useRef({ x: 0, y: 0 });
     const dragCur = useRef({ x: 0, y: 0 });
     const floatIdRef = useRef(0);
+    const floatTimeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
     const rafRef = useRef(0);
 
     // Basket feel refs
@@ -368,7 +367,18 @@ const BasketballGame = () => {
     const addFloat = useCallback((x: number, y: number, text: string, color: string) => {
         const id = floatIdRef.current++;
         setFloatMsgs(p => [...p, { id, x, y, text, color }]);
-        setTimeout(() => setFloatMsgs(p => p.filter(m => m.id !== id)), 950);
+        const tid = setTimeout(() => {
+            setFloatMsgs(p => p.filter(m => m.id !== id));
+            floatTimeoutsRef.current.delete(tid);
+        }, 950);
+        floatTimeoutsRef.current.add(tid);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            floatTimeoutsRef.current.forEach(clearTimeout);
+            floatTimeoutsRef.current.clear();
+        };
     }, []);
 
     const resetBall = useCallback(() => {
@@ -471,15 +481,16 @@ const BasketballGame = () => {
             spinRef.current += ballVX.current * 0.045;
 
             // ── Perspektif-farkında zemin sekme fiziği ──
-            if (ph === 'fly') {
+            if (ph === 'fly' || ph === 'scored') {
                 const FLOOR_Y = perspFloorY(ballX.current);
                 if (ballY.current + BALL_R >= FLOOR_Y && ballVY.current > 0) {
+                    const impactSpeed = Math.abs(ballVY.current);
                     ballY.current = FLOOR_Y - BALL_R;
                     ballVY.current = -ballVY.current * 0.58;  // güçlü sıçrama
                     ballVX.current *= 0.78;                    // zemin sürtünmesi
                     spinRef.current *= 0.65;
-                    if (Math.abs(ballVY.current) < 2.0) ballVY.current = 0; // minik sıçramaları durdur
-                    playPopSound();
+                    if (Math.abs(ballVY.current) < 2.0) { ballVY.current = 0; ballVX.current *= 0.5; }
+                    if (impactSpeed > 3) playPopSound();
                 }
             }
 
@@ -668,11 +679,11 @@ const BasketballGame = () => {
                 // Power bar (konumu currentPos'tan al)
                 const cpx = currentPosRef.current.x, cpy = currentPosRef.current.y;
                 const bW = 56, bX = cpx - bW / 2, bY = cpy + 34;
-                ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.roundRect(bX, bY, bW, 7, 3); ctx.fill();
+                ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); safeRoundRect(ctx, bX, bY, bW, 7, 3); ctx.fill();
                 const col = power < 0.5 ? '#4CD964' : power < 0.8 ? '#FFE234' : '#FF5F6D';
-                ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(bX, bY, bW * power, 7, 3); ctx.fill();
+                ctx.fillStyle = col; ctx.beginPath(); safeRoundRect(ctx, bX, bY, bW * power, 7, 3); ctx.fill();
                 ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1;
-                ctx.beginPath(); ctx.roundRect(bX, bY, bW, 7, 3); ctx.stroke();
+                ctx.beginPath(); safeRoundRect(ctx, bX, bY, bW, 7, 3); ctx.stroke();
 
                 // Pozisyon etiketi + yıldız zorluk
                 const pos = currentPosRef.current;
@@ -737,6 +748,7 @@ const BasketballGame = () => {
                     }, 2200);
                 } else {
                     // Başarısız: Baraj geçilemedi, OYUN BİTTİ
+                    setIsNewRecord(false);
                     const finalTotal = scoreRef.current;
                     const isNew = saveHighScoreObj('basketball', finalTotal);
                     if (isNew) {
@@ -766,8 +778,13 @@ const BasketballGame = () => {
             if (!el || !canvas) return;
             const s = Math.min(el.clientWidth / CW, 1);
             scaleRef.current = s;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = CW * dpr;
+            canvas.height = CH * dpr;
             canvas.style.width = `${CW * s}px`;
             canvas.style.height = `${CH * s}px`;
+            const ctx = canvas.getContext('2d');
+            ctx?.scale(dpr, dpr);
         };
         resize(); window.addEventListener('resize', resize);
         return () => window.removeEventListener('resize', resize);
@@ -785,11 +802,11 @@ const BasketballGame = () => {
 
     const onDown = (e: React.PointerEvent) => {
         if (phaseRef.current !== 'aim') return;
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
         e.preventDefault();
         const pos = toCanvas(e);
         dragging.current = true;
         dragStart.current = pos; dragCur.current = pos;
-        playPopSound();
     };
 
     const onMove = (e: React.PointerEvent) => {
@@ -827,6 +844,7 @@ const BasketballGame = () => {
                     {BALL_TYPES.map(ball => (
                         <button
                             key={ball.id}
+                            aria-pressed={selectedBall === ball.id ? 'true' : 'false'}
                             onClick={() => { setSelectedBall(ball.id); selectedBallRef.current = ball.id; }}
                             className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${selectedBall === ball.id ? 'bg-primary ring-2 ring-primary/40 scale-110 shadow-lg' : 'bg-muted hover:bg-muted/80'}`}
                             title={ball.name}
@@ -869,6 +887,7 @@ const BasketballGame = () => {
             <div ref={containerRef} className="relative w-full select-none" style={{ touchAction: 'none' }}
                 onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}>
                 <canvas ref={canvasRef} width={CW} height={CH}
+                    role="application" aria-label="Basketbol Sahası"
                     className="block rounded-2xl"
                     style={{ cursor: phase === 'aim' ? 'crosshair' : 'default', boxShadow: '0 8px 32px hsl(224 28% 3% / 0.5)' }} />
 
@@ -888,6 +907,18 @@ const BasketballGame = () => {
                             <div className="px-5 py-2 text-lg font-black text-white rounded-2xl"
                                 style={{ background: 'hsl(4 82% 48% / 0.88)', backdropFilter: 'blur(8px)' }}>
                                 😅 Kaçtı!
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {showLevelUp && (
+                        <motion.div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none"
+                            initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ opacity: 0 }}>
+                            <div className="px-8 py-4 text-2xl font-black text-white rounded-2xl shadow-xl"
+                                style={{ background: 'hsl(280 80% 50% / 0.9)', backdropFilter: 'blur(4px)' }}>
+                                🎉 Seviye {level}!
                             </div>
                         </motion.div>
                     )}
@@ -937,7 +968,7 @@ const BasketballGame = () => {
                                 ))}
                             </div>
                             <motion.button onClick={startNewRound}
-                                whileHover={{ y: -2 }} whileTap={{ }}
+                                whileHover={{ y: -2 }} whileTap={{}}
                                 className="w-full py-3 rounded-2xl font-black text-white text-base"
                                 style={{ background: 'hsl(var(--primary))', boxShadow: '0 4px 20px hsl(var(--primary) / 0.4)' }}>
                                 🏀 Tekrar Oyna

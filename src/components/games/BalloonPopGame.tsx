@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
@@ -52,23 +52,65 @@ const BalloonPopGame = () => {
   const [isFrozen, setIsFrozen] = useState(false);
   const [isDouble, setIsDouble] = useState(false);
   const [popEffects, setPopEffects] = useState<{ id: string; x: number; y: number; color: string; points: number }[]>([]);
+
+  // Refs for stable logic & sync
+  const scoreRef = useRef(0);
+  const comboRef = useRef(0);
+  const bestComboRef = useRef(0);
+  const balloonIdRef = useRef(0);
+  const gamePhaseRef = useRef<GamePhase>(gamePhase);
   const isFrozenRef = useRef(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const balloonSpawnRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const nextRoundTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const specialTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const isDoubleRef = useRef(false);
+  const allTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const allIntervalsRef = useRef<Set<ReturnType<typeof setInterval>>>(new Set());
+
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setHighScore(getHighScore('balloon-pop')); }, []);
+  useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
   useEffect(() => { isFrozenRef.current = isFrozen; }, [isFrozen]);
+  useEffect(() => { isDoubleRef.current = isDouble; }, [isDouble]);
+  useEffect(() => { setHighScore(getHighScore('balloon-pop')); }, []);
 
-  const config = DIFFICULTIES[difficulty];
+  const config = useMemo(() => DIFFICULTIES[difficulty], [difficulty]);
+
+  /* Central timer management */
+  const safeTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      allTimersRef.current.delete(id);
+      if (gamePhaseRef.current !== 'playing') return;
+      fn();
+    }, ms);
+    allTimersRef.current.add(id);
+    return id;
+  }, []);
+
+  const safeInterval = useCallback((fn: () => void, ms: number) => {
+    const id = setInterval(() => {
+      if (gamePhaseRef.current !== 'playing') return;
+      fn();
+    }, ms);
+    allIntervalsRef.current.add(id);
+    return id;
+  }, []);
+
+  const clearAllTimers = useCallback(() => {
+    allTimersRef.current.forEach(clearTimeout);
+    allTimersRef.current.clear();
+    allIntervalsRef.current.forEach(clearInterval);
+    allIntervalsRef.current.clear();
+  }, []);
+
+  useEffect(() => () => clearAllTimers(), [clearAllTimers]);
+
+  /* Helper for ID generation safely */
+  const sanitizeId = (str: string) => str.replace(/[^a-zA-Z0-9-]/g, '').toLowerCase();
 
   const createBalloon = useCallback((color: typeof BALLOON_COLORS[0], delay = 0): Balloon => {
     const spd = config.speed;
     const special = Math.random() < 0.06 ? (['freeze', 'double', 'bomb'] as const)[Math.floor(Math.random() * 3)] : undefined;
+    const id = `b-${balloonIdRef.current++}`;
     return {
-      id: Math.random().toString(36).substr(2, 9) + Date.now(),
+      id,
       color: special ? { name: 'Özel', value: special === 'freeze' ? '#67e8f9' : special === 'double' ? '#fbbf24' : '#1f2937', glow: '#ffffff40' } : color,
       x: Math.random() * 85 + 5,
       duration: spd[0] + Math.random() * (spd[1] - spd[0]),
@@ -93,6 +135,11 @@ const BalloonPopGame = () => {
   }, [createBalloon]);
 
   const startGame = useCallback(() => {
+    clearAllTimers();
+    setPopEffects([]); // Ensure orphan pop effects are cleared
+    scoreRef.current = 0;
+    comboRef.current = 0;
+    bestComboRef.current = 0;
     setScore(0); setCombo(0); setBestCombo(0);
     setTimeLeft(config.time); setRound(1);
     setGamePhase('playing'); setIsNewRecord(false);
@@ -100,7 +147,7 @@ const BalloonPopGame = () => {
     const nextColor = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
     setTargetColor(nextColor);
     setBalloons(generateBalloons(nextColor));
-  }, [generateBalloons, config.time]);
+  }, [generateBalloons, config.time, clearAllTimers]);
 
   const startNewRound = useCallback(() => {
     const remaining = BALLOON_COLORS.filter(c => c.value !== targetColor.value);
@@ -114,16 +161,10 @@ const BalloonPopGame = () => {
     setRound(r => r + 1);
   }, [targetColor, createBalloon]);
 
-  useEffect(() => () => {
-    if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
-    specialTimersRef.current.forEach(clearTimeout);
-    specialTimersRef.current = [];
-  }, []);
-
   // Timer
   useEffect(() => {
     if (gamePhase !== 'playing') return;
-    timerRef.current = setInterval(() => {
+    const intervalId = safeInterval(() => {
       if (isFrozenRef.current) return;
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -133,21 +174,22 @@ const BalloonPopGame = () => {
         return prev - 1;
       });
     }, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [gamePhase, isFrozen]);
+    return () => clearInterval(intervalId);
+  }, [gamePhase, safeInterval]);
 
   // End game effects
   useEffect(() => {
     if (gamePhase !== 'ended') return;
     confetti({ particleCount: 150, spread: 100 });
-    const isNew = saveHighScoreObj('balloon-pop', score);
-    if (isNew) { setIsNewRecord(true); setHighScore(score); playNewRecordSound(); }
-  }, [gamePhase, score]);
+    const finalScore = scoreRef.current;
+    const isNew = saveHighScoreObj('balloon-pop', finalScore);
+    if (isNew) { setIsNewRecord(true); setHighScore(finalScore); playNewRecordSound(); }
+  }, [gamePhase]);
 
   // Spawn balloons
   useEffect(() => {
     if (gamePhase !== 'playing') return;
-    balloonSpawnRef.current = setInterval(() => {
+    const spawnId = safeInterval(() => {
       if (isFrozenRef.current) return;
       setBalloons(prev => {
         if (prev.length >= config.maxBalloons) return prev;
@@ -161,70 +203,92 @@ const BalloonPopGame = () => {
         return [...prev, ...newOnes];
       });
     }, config.spawnRate);
-    return () => { if (balloonSpawnRef.current) clearInterval(balloonSpawnRef.current); };
-  }, [gamePhase, targetColor, createBalloon, isFrozen, config]);
+    return () => clearInterval(spawnId);
+  }, [gamePhase, targetColor, createBalloon, config, safeInterval]);
 
   // Cleanup
   useEffect(() => {
     if (gamePhase !== 'playing') return;
-    const id = setInterval(() => {
+    const cleanupId = safeInterval(() => {
       setBalloons(prev => prev.length > config.maxBalloons * 1.5 ? prev.slice(-config.maxBalloons) : prev);
     }, 5000);
-    return () => clearInterval(id);
-  }, [gamePhase, config.maxBalloons]);
+    return () => clearInterval(cleanupId);
+  }, [gamePhase, config.maxBalloons, safeInterval]);
 
   const handlePop = (balloon: Balloon, e: React.PointerEvent) => {
-    if (gamePhase !== 'playing') return;
-    const clientX = e.clientX;
-    const clientY = e.clientY;
+    if (gamePhaseRef.current !== 'playing') return;
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const relX = e.clientX - rect.left;
+    const relY = e.clientY - rect.top;
+
+    const triggerEffect = (color: string, points: number) => {
+      const effectId = balloon.id;
+      setPopEffects(prev => [...prev, { id: effectId, x: relX, y: relY, color, points }]);
+      // Pure timeout, regardless of phase logic so effect unmounts properly.
+      setTimeout(() => setPopEffects(prev => prev.filter(p => p.id !== effectId)), 600);
+    };
 
     // Special balloons
     if (balloon.special === 'freeze') {
       playSuccessSound(); setIsFrozen(true);
       setBalloons(prev => prev.filter(b => b.id !== balloon.id));
-      specialTimersRef.current.push(setTimeout(() => setIsFrozen(false), 3000));
-      setPopEffects(prev => [...prev, { id: balloon.id, x: clientX, y: clientY, color: '#67e8f9', points: 0 }]);
-      specialTimersRef.current.push(setTimeout(() => setPopEffects(prev => prev.filter(p => p.id !== balloon.id)), 600));
+      safeTimeout(() => setIsFrozen(false), 3000);
+      triggerEffect('#67e8f9', 0);
       return;
     }
     if (balloon.special === 'double') {
       playSuccessSound(); setIsDouble(true);
       setBalloons(prev => prev.filter(b => b.id !== balloon.id));
-      specialTimersRef.current.push(setTimeout(() => setIsDouble(false), 5000));
-      setPopEffects(prev => [...prev, { id: balloon.id, x: clientX, y: clientY, color: '#fbbf24', points: 0 }]);
-      specialTimersRef.current.push(setTimeout(() => setPopEffects(prev => prev.filter(p => p.id !== balloon.id)), 600));
+      safeTimeout(() => setIsDouble(false), 5000);
+      triggerEffect('#fbbf24', 0);
       return;
     }
     if (balloon.special === 'bomb') {
-      playErrorSound(); setCombo(0); setScore(prev => Math.max(0, prev - 5));
+      playErrorSound();
+      comboRef.current = 0; setCombo(0);
+      scoreRef.current = Math.max(0, scoreRef.current - 5);
+      setScore(scoreRef.current);
       setBalloons(prev => prev.filter(b => b.id !== balloon.id));
-      setPopEffects(prev => [...prev, { id: balloon.id, x: clientX, y: clientY, color: '#ef4444', points: -5 }]);
-      specialTimersRef.current.push(setTimeout(() => setPopEffects(prev => prev.filter(p => p.id !== balloon.id)), 600));
+      triggerEffect('#ef4444', -5);
       return;
     }
 
     if (balloon.color.value === targetColor.value) {
-      const newCombo = combo + 1;
+      comboRef.current += 1;
+      const newCombo = comboRef.current;
       const multiplier = Math.min(newCombo, 5);
-      const points = multiplier * (isDouble ? 2 : 1);
+      const points = multiplier * (isDoubleRef.current ? 2 : 1);
+
       if (newCombo > 2) playComboSound(newCombo); else playPopSound();
+
       setCombo(newCombo);
-      setBestCombo(prev => Math.max(prev, newCombo));
+      if (newCombo > bestComboRef.current) {
+        bestComboRef.current = newCombo;
+        setBestCombo(newCombo);
+      }
+
+      const prevScore = scoreRef.current;
+      scoreRef.current += points;
+      const currentScore = scoreRef.current;
+      setScore(currentScore);
+
       setBalloons(prev => prev.filter(b => b.id !== balloon.id));
-      setPopEffects(prev => [...prev, { id: balloon.id, x: clientX, y: clientY, color: balloon.color.value, points }]);
-      setTimeout(() => setPopEffects(prev => prev.filter(p => p.id !== balloon.id)), 600);
-      setScore(prev => {
-        const newScore = prev + points;
-        if (newScore > 0 && newScore % 15 === 0) {
-          playSuccessSound();
-          confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-          if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
-          nextRoundTimeoutRef.current = setTimeout(startNewRound, 1000);
-        }
-        return newScore;
-      });
+      triggerEffect(balloon.color.value, points);
+
+      const prevMilestone = Math.floor((prevScore) / 15);
+      const newMilestone = Math.floor(currentScore / 15);
+
+      if (newMilestone > Math.max(0, prevMilestone)) {
+        playSuccessSound();
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+        safeTimeout(startNewRound, 1000);
+      }
     } else {
-      playErrorSound(); setCombo(0);
+      playErrorSound();
+      comboRef.current = 0;
+      setCombo(0);
     }
   };
 
@@ -272,9 +336,44 @@ const BalloonPopGame = () => {
   }
 
   // PLAYING
+  const supportsDvh = typeof CSS !== 'undefined' && CSS.supports?.('height', '1dvh');
+
   return (
-    <div ref={containerRef} className="relative w-full max-w-2xl mx-auto h-[60vh] md:h-[75vh] rounded-2xl overflow-hidden neon-border touch-none"
-      style={{ background: 'linear-gradient(180deg, hsl(230 20% 12%) 0%, hsl(230 25% 8%) 100%)' }}>
+    <div ref={containerRef}
+      className="relative w-full max-w-2xl mx-auto rounded-2xl overflow-hidden neon-border touch-none"
+      style={{
+        background: 'linear-gradient(180deg, hsl(230 20% 12%) 0%, hsl(230 25% 8%) 100%)',
+        height: supportsDvh ? 'clamp(380px, 65dvh, 750px)' : 'clamp(380px, 65vh, 750px)'
+      }}>
+
+      {/* Shared SVG Gradients */}
+      <svg width="0" height="0" className="absolute invisible">
+        <defs>
+          {BALLOON_COLORS.map(c => (
+            <radialGradient key={c.name} id={`bal-grad-${sanitizeId(c.name)}`} cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stopColor="white" stopOpacity="0.4" />
+              <stop offset="40%" stopColor={c.value} stopOpacity="0.9" />
+              <stop offset="100%" stopColor={c.value} stopOpacity="1" />
+            </radialGradient>
+          ))}
+          <radialGradient id="bal-grad-freeze" cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.4" />
+            <stop offset="40%" stopColor="#67e8f9" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#67e8f9" stopOpacity="1" />
+          </radialGradient>
+          <radialGradient id="bal-grad-double" cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.4" />
+            <stop offset="40%" stopColor="#fbbf24" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#fbbf24" stopOpacity="1" />
+          </radialGradient>
+          <radialGradient id="bal-grad-bomb" cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.4" />
+            <stop offset="40%" stopColor="#1f2937" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#1f2937" stopOpacity="1" />
+          </radialGradient>
+        </defs>
+      </svg>
+
       {/* Frozen overlay */}
       {isFrozen && <div className="absolute inset-0 z-30 pointer-events-none border-4 border-cyan-400/50 rounded-2xl"><div className="absolute inset-0 bg-cyan-400/5" /></div>}
       {/* Double overlay */}
@@ -283,7 +382,7 @@ const BalloonPopGame = () => {
       {/* Pop effects */}
       <AnimatePresence>
         {popEffects.map(effect => (
-          <motion.div key={effect.id} className="fixed z-50 pointer-events-none" style={{ left: effect.x, top: effect.y }}
+          <motion.div key={effect.id} className="absolute z-50 pointer-events-none" style={{ left: effect.x, top: effect.y }}
             initial={{ scale: 0 }} animate={{ scale: [0, 1.5, 0], opacity: [1, 0.8, 0] }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
             <div className="w-16 h-16 rounded-full -translate-x-1/2 -translate-y-1/2" style={{ background: `radial-gradient(circle, ${effect.color}60, transparent)` }} />
             {effect.points !== 0 && (
@@ -317,36 +416,51 @@ const BalloonPopGame = () => {
         </motion.div>
       </div>
 
-      {/* Balloons */}
+      {/* Balloons Container */}
       <AnimatePresence>
         {balloons.map((balloon) => (
-          <motion.div key={balloon.id} className="absolute z-10" style={{ left: `${balloon.x}%` }}
-            initial={{ top: '105%' }} animate={{ top: '-80px' }} exit={{ scale: 1.5, opacity: 0 }}
-            transition={{ top: { duration: isFrozen ? 9999 : balloon.duration, delay: balloon.delay, ease: "linear" }, scale: { duration: 0.12 } }}
-            onAnimationComplete={() => setBalloons(prev => prev.filter(b => b.id !== balloon.id))}>
-            <motion.div animate={{ x: [-balloon.swayAmount, balloon.swayAmount, -balloon.swayAmount], rotate: [-3, 3, -3] }}
-              transition={{ duration: balloon.swayDuration, repeat: Infinity, ease: "easeInOut" }}>
-              <button onPointerDown={(e) => { e.preventDefault(); handlePop(balloon, e); }}
-                className="relative group active:scale-90 transition-transform cursor-pointer" style={{ transform: `scale(${balloon.size})`, touchAction: 'none' }}>
+          <motion.div key={balloon.id}
+            exit={{ scale: 1.3, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-10 balloon-animate"
+            style={{
+              left: `${balloon.x}%`,
+              '--rise-duration': `${balloon.duration}s`,
+              '--rise-delay': `${balloon.delay}s`,
+              '--play-state': isFrozen ? 'paused' : 'running'
+            } as any}
+            onAnimationEnd={(e) => {
+              if (e.animationName === 'balloon-rise') {
+                setBalloons(prev => prev.filter(b => b.id !== balloon.id));
+              }
+            }}
+          >
+            <div className="balloon-sway-animate" style={{
+              '--sway': `${balloon.swayAmount}px`,
+              '--sway-duration': `${balloon.swayDuration}s`,
+              '--play-state': isFrozen ? 'paused' : 'running'
+            } as any}>
+              <button
+                onPointerDown={(e) => { e.preventDefault(); handlePop(balloon, e); }}
+                className="relative group active:scale-95 transition-transform cursor-pointer block p-0 bg-transparent border-none"
+                style={{ transform: `scale(${balloon.size})`, touchAction: 'none' }}
+              >
                 <svg width="48" height="64" viewBox="0 0 48 64" className="drop-shadow-lg">
-                  <defs>
-                    <radialGradient id={`grad-${balloon.id}`} cx="35%" cy="30%" r="65%">
-                      <stop offset="0%" stopColor="white" stopOpacity="0.4" />
-                      <stop offset="40%" stopColor={balloon.color.value} stopOpacity="0.9" />
-                      <stop offset="100%" stopColor={balloon.color.value} stopOpacity="1" />
-                    </radialGradient>
-                  </defs>
                   <ellipse cx="24" cy="26" rx="20" ry="24" fill={balloon.color.glow} opacity="0.5" />
-                  <ellipse cx="24" cy="26" rx="18" ry="22" fill={`url(#grad-${balloon.id})`} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+                  <ellipse cx="24" cy="26" rx="18" ry="22"
+                    fill={`url(#bal-grad-${balloon.special || sanitizeId(balloon.color.name)})`}
+                    stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
                   <ellipse cx="17" cy="18" rx="4" ry="6" fill="white" opacity="0.3" transform="rotate(-20 17 18)" />
+
                   {balloon.special === 'freeze' && <text x="24" y="30" textAnchor="middle" fontSize="14">❄️</text>}
                   {balloon.special === 'double' && <text x="24" y="30" textAnchor="middle" fontSize="14">2x</text>}
                   {balloon.special === 'bomb' && <text x="24" y="30" textAnchor="middle" fontSize="14">💣</text>}
+
                   <ellipse cx="24" cy="48" rx="3" ry="2" fill={balloon.color.value} opacity="0.8" />
                   <path d="M24 50 Q22 56 24 62" stroke="rgba(255,255,255,0.3)" strokeWidth="1" fill="none" />
                 </svg>
               </button>
-            </motion.div>
+            </div>
           </motion.div>
         ))}
       </AnimatePresence>

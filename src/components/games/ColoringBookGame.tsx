@@ -83,7 +83,6 @@ const colorsMatch = (r1: number, g1: number, b1: number, r2: number, g2: number,
    ═══════════════════════════════════════════ */
 const ColoringBookGame = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const trailCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeColor, setActiveColor] = useState(COLORS[0].value);
   const [activePage, setActivePage] = useState(0);
@@ -92,80 +91,110 @@ const ColoringBookGame = () => {
   const [toolMode, setToolMode] = useState<ToolMode>('fill');
   const [brushSize, setBrushSize] = useState(8);
   const [brushTexture, setBrushTexture] = useState<BrushTexture>('pencil');
+
+  // High-performance Zoom & Undo
   const [zoom, setZoom] = useState(1);
-  const [undoStack, setUndoStack] = useState<ImageData[]>([]);
+  const zoomRef = useRef(1);
+  const isPinchingRef = useRef(false);
+  const lastPinchDistRef = useRef(0);
+
+  const undoStackRef = useRef<ImageData[]>([]);
+  const [undoCount, setUndoCount] = useState(0);
+
   const [colorUsage, setColorUsage] = useState<Set<string>>(new Set());
   const [sparkles, setSparkles] = useState<Sparkle[]>([]);
   const [fillPops, setFillPops] = useState<FillPop[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [characterBlink, setCharacterBlink] = useState(false);
+
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
-  const isPinchingRef = useRef(false);
-  const lastPinchDistRef = useRef(0);
+  const lastSparkleTimeRef = useRef(0);
   const sparkleIdRef = useRef(0);
   const popIdRef = useRef(0);
 
-  // Character blink interval
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCharacterBlink(true);
-      setTimeout(() => setCharacterBlink(false), 200);
-    }, 3000 + Math.random() * 2000);
-    return () => clearInterval(interval);
-  }, []);
+  // No longer needed: characterBlink interval
 
-  // Canvas size — kağıt alanının iç marjını hesaba kat
+  // 1. Canvas size calculation logic
   useEffect(() => {
     const updateSize = () => {
-      if (containerRef.current) {
-        const w = window.innerWidth;
-        const isDesktop = w >= 1024;
-        const isMedium = w >= 768;
-        // m-3 (12px*2=24px) | md:m-8 (32px*2=64px) | lg:m-10 (40px*2=80px)
-        const paperMargin = isDesktop ? 80 : isMedium ? 64 : 24;
-        const limit = isDesktop ? 850 : 560;
-        const maxWidth = Math.max(
-          Math.min(containerRef.current.clientWidth - paperMargin - 4, limit),
-          180
-        );
-        setCanvasSize({ width: maxWidth, height: maxWidth });
-      }
+      if (!containerRef.current) return;
+      const w = window.innerWidth;
+      const isDesktop = w >= 1024;
+      const isMedium = w >= 768;
+
+      const containerW = containerRef.current.clientWidth;
+      const paperMargin = isDesktop ? 80 : isMedium ? 16 : 8;
+      const borderAndPadding = 4;
+      const availableW = containerW - paperMargin - borderAndPadding;
+
+      const maxH = window.innerHeight * (isDesktop ? 0.75 : 0.55);
+      const size = Math.min(
+        Math.max(availableW, 180),
+        isDesktop ? 850 : 560,
+        maxH
+      );
+
+      setCanvasSize({ width: size, height: size });
     };
     updateSize();
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-
-  // Sparkle decay
+  // 2. Preserving drawing on canvas resize
   useEffect(() => {
-    if (sparkles.length === 0) return;
-    const id = requestAnimationFrame(() => {
-      setSparkles(prev => prev
-        .map(s => ({ ...s, life: s.life - 1, opacity: s.opacity * 0.92, y: s.y - 0.5, size: s.size * 0.96 }))
-        .filter(s => s.life > 0)
-      );
-    });
-    return () => cancelAnimationFrame(id);
-  }, [sparkles]);
+    const canvas = canvasRef.current;
+    if (!canvas || canvas.width === 0) return;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+
+    // Save existing drawing
+    const oldData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const oldW = canvas.width;
+    const oldH = canvas.height;
+
+    // Apply new size
+    canvas.width = canvasSize.width;
+    canvas.height = canvasSize.height;
+
+    // Re-draw background color
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Scale back the drawing
+    if (oldW > 0 && oldH > 0) {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = oldW;
+      tempCanvas.height = oldH;
+      tempCanvas.getContext('2d')!.putImageData(oldData, 0, 0);
+      ctx.drawImage(tempCanvas, 0, 0, oldW, oldH, 0, 0, canvas.width, canvas.height);
+    }
+  }, [canvasSize]);
+
+
+  // Sparkle decay by CSS, logic removed from rAF to prevent infinite loops
 
   const saveUndoState = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
-    setUndoStack(prev => [...prev.slice(-15), ctx.getImageData(0, 0, canvas.width, canvas.height)]);
+    const stack = undoStackRef.current;
+    if (stack.length >= 16) stack.shift();
+    stack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    setUndoCount(stack.length);
   }, []);
 
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || undoStack.length === 0) return;
+    const stack = undoStackRef.current;
+    if (!canvas || stack.length === 0) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.putImageData(undoStack[undoStack.length - 1], 0, 0);
-    setUndoStack(prev => prev.slice(0, -1));
+    const data = stack.pop()!;
+    ctx.putImageData(data, 0, 0);
+    setUndoCount(stack.length);
     playPopSound();
-  };
+  }, []);
 
   const loadBackgroundImage = useCallback((pageIndex: number) => {
     const canvas = canvasRef.current;
@@ -183,7 +212,8 @@ const ColoringBookGame = () => {
       const y = (canvas.height - img.height * scale) / 2;
       ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
       setIsLoading(false);
-      setUndoStack([]);
+      undoStackRef.current = [];
+      setUndoCount(0);
       setColorUsage(new Set());
     };
     img.onerror = () => setIsLoading(false);
@@ -193,7 +223,8 @@ const ColoringBookGame = () => {
   useEffect(() => {
     loadBackgroundImage(activePage);
     setZoom(1);
-  }, [activePage, canvasSize, loadBackgroundImage]);
+    zoomRef.current = 1;
+  }, [activePage, loadBackgroundImage]);
 
   const getCanvasPos = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -218,17 +249,24 @@ const ColoringBookGame = () => {
     if (!rect) return;
     const sx = (x / canvasSize.width) * rect.width + rect.left - (containerRef.current?.getBoundingClientRect().left || 0);
     const sy = (y / canvasSize.height) * rect.height + rect.top - (containerRef.current?.getBoundingClientRect().top || 0);
-    for (let i = 0; i < 3; i++) {
-      setSparkles(prev => [...prev, {
-        id: sparkleIdRef.current++,
+
+    const newSparkles: Sparkle[] = [];
+    for (let i = 0; i < 2; i++) {
+      const id = sparkleIdRef.current++;
+      newSparkles.push({
+        id,
         x: sx + (Math.random() - 0.5) * 20,
         y: sy + (Math.random() - 0.5) * 20,
         size: 3 + Math.random() * 4,
-        opacity: 0.8 + Math.random() * 0.2,
+        opacity: 0.8,
         color: brushTexture === 'glitter' ? `hsl(${Math.random() * 360}, 80%, 70%)` : color,
-        life: 15 + Math.floor(Math.random() * 10),
-      }]);
+        life: 20,
+      });
+      setTimeout(() => {
+        setSparkles(prev => prev.filter(s => s.id !== id));
+      }, 500);
     }
+    setSparkles(prev => [...prev.slice(-30), ...newSparkles]);
   }, [canvasSize, brushTexture]);
 
   /* Add fill pop */
@@ -243,74 +281,86 @@ const ColoringBookGame = () => {
   }, [canvasSize]);
 
 
-  /* Flood Fill */
+  /* Scanline Flood Fill — Fast & No Stack Overflow */
   const floodFill = useCallback((startX: number, startY: number, fillColor: string) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
+
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
-    const width = canvas.width, height = canvas.height;
+    const w = canvas.width, h = canvas.height;
     const [fillR, fillG, fillB] = hexToRgb(fillColor);
-    const startIdx = (startY * width + startX) * 4;
+
+    const startIdx = (startY * w + startX) * 4;
     const startR = data[startIdx], startG = data[startIdx + 1], startB = data[startIdx + 2];
+
     if (startR < 60 && startG < 60 && startB < 60) return;
     if (colorsMatch(startR, startG, startB, fillR, fillG, fillB, 10)) return;
-    const stack: [number, number][] = [[startX, startY]];
-    const visited = new Set<number>();
-    while (stack.length > 0) {
-      const [x, y] = stack.pop()!;
-      const idx = y * width + x;
-      if (visited.has(idx)) continue;
-      if (x < 0 || x >= width || y < 0 || y >= height) continue;
-      const pixelIdx = idx * 4;
-      const r = data[pixelIdx], g = data[pixelIdx + 1], b = data[pixelIdx + 2];
-      if (!colorsMatch(r, g, b, startR, startG, startB, 32)) continue;
-      visited.add(idx);
 
-      // Apply texture per-pixel during flood fill
-      if (brushTexture === 'glitter') {
-        // Her ~8.pikzelde bir parlak nokta
-        const spark = Math.random() > 0.88;
-        if (spark) {
-          // Sparkle tint: brighten the fill color
-          data[pixelIdx] = Math.min(255, fillR + 80);
-          data[pixelIdx + 1] = Math.min(255, fillG + 80);
-          data[pixelIdx + 2] = Math.min(255, fillB + 80);
-        } else {
-          data[pixelIdx] = fillR; data[pixelIdx + 1] = fillG; data[pixelIdx + 2] = fillB;
-        }
+    const colorsMatchLocal = (idx: number, tr: number, tg: number, tb: number) => {
+      const pi = idx * 4;
+      return Math.abs(data[pi] - tr) <= 32 && Math.abs(data[pi + 1] - tg) <= 32 && Math.abs(data[pi + 2] - tb) <= 32;
+    };
+
+    const fillPixel = (idx: number) => {
+      const pi = idx * 4;
+      if (brushTexture === 'glitter' && Math.random() > 0.88) {
+        data[pi] = Math.min(255, fillR + 80);
+        data[pi + 1] = Math.min(255, fillG + 80);
+        data[pi + 2] = Math.min(255, fillB + 80);
       } else if (brushTexture === 'watercolor') {
-        // Hafif saydam dolgu: arka planla blend
-        const blend = 0.55 + Math.random() * 0.25;
-        data[pixelIdx] = Math.floor(r * (1 - blend) + fillR * blend);
-        data[pixelIdx + 1] = Math.floor(g * (1 - blend) + fillG * blend);
-        data[pixelIdx + 2] = Math.floor(b * (1 - blend) + fillB * blend);
+        const b = 0.55 + Math.random() * 0.25;
+        data[pi] = Math.floor(data[pi] * (1 - b) + fillR * b);
+        data[pi + 1] = Math.floor(data[pi + 1] * (1 - b) + fillG * b);
+        data[pi + 2] = Math.floor(data[pi + 2] * (1 - b) + fillB * b);
       } else if (brushTexture === 'pastel') {
-        // Pudralı: hafif beyaz nokta katkısı
         const grain = Math.random() > 0.7 ? 20 : 0;
-        data[pixelIdx] = Math.min(255, fillR + grain);
-        data[pixelIdx + 1] = Math.min(255, fillG + grain);
-        data[pixelIdx + 2] = Math.min(255, fillB + grain);
+        data[pi] = Math.min(255, fillR + grain);
+        data[pi + 1] = Math.min(255, fillG + grain);
+        data[pi + 2] = Math.min(255, fillB + grain);
       } else if (brushTexture === 'crayon') {
-        // Balmumu: düzensiz opaklık simülasyonu
-        const noise = Math.floor((Math.random() - 0.5) * 30);
-        data[pixelIdx] = Math.min(255, Math.max(0, fillR + noise));
-        data[pixelIdx + 1] = Math.min(255, Math.max(0, fillG + noise));
-        data[pixelIdx + 2] = Math.min(255, Math.max(0, fillB + noise));
+        const n = Math.floor((Math.random() - 0.5) * 30);
+        data[pi] = Math.min(255, Math.max(0, fillR + n));
+        data[pi + 1] = Math.min(255, Math.max(0, fillG + n));
+        data[pi + 2] = Math.min(255, Math.max(0, fillB + n));
       } else if (brushTexture === 'pencil') {
-        // Kalem: soluk, hafif grenli
-        const fade = Math.random() > 0.85 ? 0.6 : 0.85;
-        data[pixelIdx] = Math.floor(r * (1 - fade) + fillR * fade);
-        data[pixelIdx + 1] = Math.floor(g * (1 - fade) + fillG * fade);
-        data[pixelIdx + 2] = Math.floor(b * (1 - fade) + fillB * fade);
+        const f = Math.random() > 0.85 ? 0.6 : 0.85;
+        data[pi] = Math.floor(data[pi] * (1 - f) + fillR * f);
+        data[pi + 1] = Math.floor(data[pi + 1] * (1 - f) + fillG * f);
+        data[pi + 2] = Math.floor(data[pi + 2] * (1 - f) + fillB * f);
       } else {
-        // marker / normal: tam dolu
-        data[pixelIdx] = fillR; data[pixelIdx + 1] = fillG; data[pixelIdx + 2] = fillB;
+        data[pi] = fillR; data[pi + 1] = fillG; data[pi + 2] = fillB;
       }
-      data[pixelIdx + 3] = 255;
-      stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+      data[pi + 3] = 255;
+    };
+
+    const scanStack: [number, number, number, number][] = [];
+    let xl = startX, xr = startX;
+    while (xl > 0 && colorsMatchLocal(startY * w + xl - 1, startR, startG, startB)) xl--;
+    while (xr < w - 1 && colorsMatchLocal(startY * w + xr + 1, startR, startG, startB)) xr++;
+    for (let x = xl; x <= xr; x++) fillPixel(startY * w + x);
+    scanStack.push([startY, xl, xr, 1]);
+    scanStack.push([startY, xl, xr, -1]);
+
+    while (scanStack.length > 0) {
+      const [py, pxl, pxr, dir] = scanStack.pop()!;
+      const ny = py + dir;
+      if (ny < 0 || ny >= h) continue;
+      let x = pxl;
+      while (x <= pxr) {
+        if (!colorsMatchLocal(ny * w + x, startR, startG, startB)) { x++; continue; }
+        let sl = x;
+        while (sl > 0 && colorsMatchLocal(ny * w + sl - 1, startR, startG, startB)) sl--;
+        let sr = x;
+        while (sr < w - 1 && colorsMatchLocal(ny * w + sr + 1, startR, startG, startB)) sr++;
+        for (let fx = sl; fx <= sr; fx++) fillPixel(ny * w + fx);
+        scanStack.push([ny, sl, sr, dir]);
+        if (sl < pxl) scanStack.push([ny, sl, pxl - 1, -dir]);
+        if (sr > pxr) scanStack.push([ny, pxr + 1, sr, -dir]);
+        x = sr + 1;
+      }
     }
     ctx.putImageData(imageData, 0, 0);
   }, [brushTexture]);
@@ -441,7 +491,8 @@ const ColoringBookGame = () => {
 
 
   /* Event handlers */
-  const handleCanvasDown = (e: React.MouseEvent | React.TouchEvent) => {
+  /* Event handlers */
+  const handleCanvasDown = useCallback((e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
     if (isLoading) return;
     if ('touches' in e && e.touches.length >= 2) {
       isPinchingRef.current = true;
@@ -450,13 +501,16 @@ const ColoringBookGame = () => {
       lastPinchDistRef.current = Math.sqrt(dx * dx + dy * dy);
       return;
     }
-    const pos = getCanvasPos(e);
+    const pos = getCanvasPos(e as React.MouseEvent | React.TouchEvent);
     if (!pos) return;
     if (toolMode === 'fill') {
       saveUndoState();
       playPopSound();
       floodFill(pos.x, pos.y, activeColor);
-      setColorUsage(prev => new Set(prev).add(activeColor));
+      setColorUsage(prev => {
+        if (prev.has(activeColor)) return prev;
+        return new Set(prev).add(activeColor);
+      });
       addFillPop(pos.x, pos.y);
       addSparkle(pos.x, pos.y, activeColor);
     } else {
@@ -465,39 +519,72 @@ const ColoringBookGame = () => {
       const color = toolMode === 'eraser' ? '#FFFFFF' : activeColor;
       drawBrush(pos.x, pos.y, color, brushSize);
       if (toolMode !== 'eraser') {
-        setColorUsage(prev => new Set(prev).add(activeColor));
+        setColorUsage(prev => {
+          if (prev.has(activeColor)) return prev;
+          return new Set(prev).add(activeColor);
+        });
         addSparkle(pos.x, pos.y, activeColor);
       }
     }
-  };
+  }, [isLoading, toolMode, activeColor, brushSize, saveUndoState, floodFill, addFillPop, addSparkle, drawBrush]);
 
-  const handleCanvasMove = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleCanvasMove = useCallback((e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
     if ('touches' in e && e.touches.length >= 2 && isPinchingRef.current) {
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       const delta = dist - lastPinchDistRef.current;
-      setZoom(prev => Math.max(1, Math.min(3, prev + delta * 0.005)));
+      zoomRef.current = Math.max(1, Math.min(3, zoomRef.current + delta * 0.005));
+      const paperDiv = containerRef.current?.querySelector('[data-paper]');
+      if (paperDiv) { (paperDiv as HTMLElement).style.transform = `scale(${zoomRef.current})`; }
       lastPinchDistRef.current = dist;
       return;
     }
     if (!isDrawing || toolMode === 'fill') return;
-    const pos = getCanvasPos(e);
+    const pos = getCanvasPos(e as React.MouseEvent | React.TouchEvent);
     if (!pos) return;
     const color = toolMode === 'eraser' ? '#FFFFFF' : activeColor;
     drawBrush(pos.x, pos.y, color, brushSize);
-    // Trail sparkles while drawing
-    if (toolMode !== 'eraser' && Math.random() > 0.5) {
+
+    // Trail sparkles with throttle
+    const now = Date.now();
+    if (toolMode !== 'eraser' && now - lastSparkleTimeRef.current > 80) {
+      lastSparkleTimeRef.current = now;
       addSparkle(pos.x, pos.y, activeColor);
     }
-  };
+  }, [isDrawing, toolMode, activeColor, brushSize, drawBrush, addSparkle]);
 
-  const handleCanvasUp = () => {
+  const handleCanvasUp = useCallback(() => {
     setIsDrawing(false);
+    setZoom(zoomRef.current);
     lastPosRef.current = null;
     isPinchingRef.current = false;
-  };
+  }, []);
+
+  // 3. Manual Touch Listeners to avoid passive event issues
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+      handleCanvasDown(e);
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+      handleCanvasMove(e);
+    };
+
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('touchstart', onTouchStart);
+      canvas.removeEventListener('touchmove', onTouchMove);
+    };
+  }, [handleCanvasDown, handleCanvasMove]);
 
   const handleClear = () => {
     saveUndoState();
@@ -526,12 +613,12 @@ const ColoringBookGame = () => {
      ═══════════════════════════════════════════ */
   return (
     <motion.div
-      className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 lg:gap-10 p-4 pb-32 max-w-[1400px] mx-auto relative"
+      className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-3 lg:gap-10 p-2 md:p-4 pb-6 md:pb-16 max-w-[1400px] mx-auto relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      {/* ── LEFT PANEL: Tools & Controls ── */}
-      <aside className="w-full lg:w-80 flex flex-col gap-6 lg:sticky lg:top-8 z-20">
+      {/* ── Desktop Sidebar — Hidden on mobile ── */}
+      <aside className="hidden lg:flex w-80 flex-col gap-6 sticky top-8 z-20">
         {/* Title */}
         <div className="flex items-center gap-3 lg:justify-start justify-center">
           <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} transition={{ repeat: Infinity, repeatType: 'reverse', duration: 3, ease: 'easeInOut' }}
@@ -574,7 +661,7 @@ const ColoringBookGame = () => {
           <div className="flex items-center justify-between px-1">
             <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/60">Araçlar</span>
             <div className="flex items-center gap-1">
-              <button onClick={handleUndo} disabled={undoStack.length === 0}
+              <button onClick={handleUndo} disabled={undoCount === 0}
                 className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/10 touch-manipulation disabled:opacity-30 text-muted-foreground">
                 <Undo2 className="w-3.5 h-3.5" />
               </button>
@@ -643,10 +730,60 @@ const ColoringBookGame = () => {
 
 
       {/* ── MAIN AREA: Canvas ── */}
-      <main className="flex-1 w-full flex flex-col items-center gap-6">
-        <div ref={containerRef} className="relative w-full rounded-3xl overflow-hidden shadow-2xl"
+      <main className="flex-1 w-full flex flex-col items-center gap-3 md:gap-6">
+        {/* ── MOBILE COMPACT BAR ── */}
+        <div className="lg:hidden w-full flex flex-col gap-2">
+          <div className="flex items-center gap-2 justify-center">
+            <button onClick={() => handlePageChange((activePage - 1 + PAGES.length) % PAGES.length)}
+              className="p-2 glass-card rounded-full touch-manipulation active:scale-90">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-sm font-bold truncate max-w-[200px]">{PAGES[activePage].name}</span>
+            <button onClick={() => handlePageChange((activePage + 1) % PAGES.length)}
+              className="p-2 glass-card rounded-full touch-manipulation active:scale-90">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 justify-center">
+            {([
+              { mode: 'fill' as ToolMode, icon: <PaintBucket className="w-4 h-4" /> },
+              { mode: 'brush' as ToolMode, icon: <Paintbrush className="w-4 h-4" /> },
+              { mode: 'eraser' as ToolMode, icon: <Eraser className="w-4 h-4" /> },
+            ]).map(t => (
+              <button key={t.mode} onClick={() => { setToolMode(t.mode); playPopSound(); }}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${toolMode === t.mode ? 'bg-primary text-primary-foreground shadow-lg' : 'glass-card text-muted-foreground'}`}>
+                {t.icon}
+              </button>
+            ))}
+            <div className="w-px h-6 bg-white/10 mx-1" />
+            {toolMode !== 'fill' && BRUSH_SIZES.map(b => (
+              <button key={b.label} onClick={() => setBrushSize(b.size)}
+                className={`w-8 h-8 rounded-lg text-[10px] font-bold flex items-center justify-center ${brushSize === b.size ? 'bg-primary text-primary-foreground' : 'glass-card text-muted-foreground'}`}>
+                {b.label}
+              </button>
+            ))}
+            <div className="w-px h-6 bg-white/10 mx-1" />
+            <button onClick={handleUndo} disabled={undoCount === 0}
+              className="w-9 h-9 rounded-xl glass-card flex items-center justify-center disabled:opacity-20 text-muted-foreground">
+              <Undo2 className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex gap-1.5 overflow-x-auto pb-1 px-1 no-scrollbar">
+            {COLORS.map(c => (
+              <button key={c.value}
+                onClick={() => { setActiveColor(c.value); if (toolMode === 'eraser') setToolMode('fill'); }}
+                className={`w-8 h-8 rounded-lg flex-shrink-0 border-2 transition-all ${activeColor === c.value && toolMode !== 'eraser' ? 'border-primary scale-110 shadow-lg' : 'border-transparent'}`}
+                style={{ backgroundColor: c.value }} />
+            ))}
+          </div>
+        </div>
+        <div ref={containerRef} data-game-area className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl"
           style={{
             maxWidth: 1000,
+            touchAction: 'none',
+            overscrollBehavior: 'none',
             background: `
               radial-gradient(circle at 20% 30%, rgba(251,207,232,0.3) 0%, transparent 50%),
               radial-gradient(circle at 80% 70%, rgba(191,219,254,0.3) 0%, transparent 50%),
@@ -654,8 +791,13 @@ const ColoringBookGame = () => {
             `
           }}>
           {/* Paper area */}
-          <div className="relative m-3 md:m-8 lg:m-10 rounded-2xl overflow-hidden bg-white shadow-xl"
-            style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(0,0,0,0.05)' }}>
+          <div data-paper className="relative m-2 md:m-8 lg:m-10 rounded-xl md:rounded-2xl overflow-hidden bg-white shadow-xl"
+            style={{
+              boxShadow: '0 20px 50px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(0,0,0,0.05)',
+              transform: `scale(${zoom})`,
+              transformOrigin: 'center center',
+              transition: isPinchingRef.current ? 'none' : 'transform 0.2s ease-out'
+            }}>
 
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10 rounded-2xl">
@@ -663,15 +805,17 @@ const ColoringBookGame = () => {
               </div>
             )}
 
-            <div style={{ transform: `scale(${zoom})`, transformOrigin: 'center center', transition: 'transform 0.2s ease-out' }}>
-              <canvas ref={canvasRef} width={canvasSize.width} height={canvasSize.height}
-                onMouseDown={handleCanvasDown} onMouseMove={handleCanvasMove} onMouseUp={handleCanvasUp} onMouseLeave={handleCanvasUp}
-                onTouchStart={(e) => { e.preventDefault(); handleCanvasDown(e); }}
-                onTouchMove={(e) => { e.preventDefault(); handleCanvasMove(e); }}
-                onTouchEnd={handleCanvasUp}
-                className="w-full h-auto rounded-2xl"
-                style={{ touchAction: 'none', cursor: toolMode === 'fill' ? 'crosshair' : toolMode === 'eraser' ? 'cell' : 'default' }} />
-            </div>
+            <canvas ref={canvasRef} width={canvasSize.width} height={canvasSize.height}
+              onMouseDown={handleCanvasDown} onMouseMove={handleCanvasMove} onMouseUp={handleCanvasUp} onMouseLeave={handleCanvasUp}
+              onTouchEnd={handleCanvasUp}
+              className="w-full h-auto rounded-xl md:rounded-2xl"
+              style={{
+                touchAction: 'none',
+                cursor: toolMode === 'fill' ? 'crosshair' : toolMode === 'eraser' ? 'cell' : 'default',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none'
+              }} />
           </div>
 
           <AnimatePresence>
@@ -701,7 +845,7 @@ const ColoringBookGame = () => {
         </div>
 
         {/* ── Compact Consolidated Control Bar ── */}
-        <div className="flex flex-wrap lg:flex-nowrap items-center justify-center gap-2.5 w-full max-w-[1050px] px-2 mb-4">
+        <div className="hidden lg:flex flex-wrap lg:flex-nowrap items-center justify-center gap-2.5 w-full max-w-[1050px] px-2 mb-4">
           {/* Zoom & Patterns Group */}
           <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-2xl border border-white/5">
             <div className="flex items-center gap-1 bg-white/5 rounded-xl px-1">
@@ -733,8 +877,8 @@ const ColoringBookGame = () => {
 
           {/* Actions Group */}
           <div className="flex-1 flex items-center gap-2">
-            <button onClick={handleUndo} disabled={undoStack.length === 0}
-              className={`w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-all ${undoStack.length === 0 ? 'opacity-20' : 'active:scale-95'}`} title="Geri Al">
+            <button onClick={handleUndo} disabled={undoCount === 0}
+              className={`hidden lg:flex w-12 h-12 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-all ${undoCount === 0 ? 'opacity-20' : 'active:scale-95'}`} title="Geri Al">
               <Undo2 className="w-5 h-5" />
             </button>
 

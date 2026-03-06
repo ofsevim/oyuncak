@@ -383,6 +383,19 @@
   z-index: 0;
 }
 
+/* ── Balloon Animations ── */
+.balloon-animate {
+  top: 105%;
+  /* Hide at bottom before animation starts */
+  animation: balloon-rise var(--rise-duration) var(--rise-delay) linear both;
+  animation-play-state: var(--play-state);
+}
+
+.balloon-sway-animate {
+  animation: balloon-sway var(--sway-duration) ease-in-out infinite;
+  animation-play-state: var(--play-state);
+}
+
 
 /* ════════════════════════════════════════
    UTILITIES
@@ -425,12 +438,35 @@
 /* ════════════════════════════════════════
    KEYFRAMES
    ════════════════════════════════════════ */
+@keyframes balloon-rise {
+  from {
+    top: 105%;
+  }
+
+  to {
+    top: -120px;
+  }
+}
+
+@keyframes balloon-sway {
+
+  0%,
+  100% {
+    transform: translateX(calc(-1 * var(--sway))) rotate(-3deg);
+  }
+
+  50% {
+    transform: translateX(var(--sway)) rotate(3deg);
+  }
+}
+
 @keyframes orb-float {
 
   0%,
   100% {
     transform: translate(0, 0) scale(1);
   }
+
 
   33% {
     transform: translate(30px, -50px) scale(1.1);

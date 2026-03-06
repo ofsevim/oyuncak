@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { getNextRandomIndex } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
+import { playPopSound, playErrorSound, playComboSound, playSuccessSound, playNewRecordSound } from '@/utils/soundEffects';
 
 /* ═══════════════════════════════════════════
    TYPES & CONSTANTS
@@ -45,7 +46,7 @@ interface Butterfly {
 const WhackAMoleGame = () => {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(30);
-  const [activeHoles, setActiveHoles] = useState<Map<number, ActiveMole>>(new Map());
+  const [, setHoleVersion] = useState(0); // For forcing renders on ref update
   const [gamePhase, setGamePhase] = useState<'start' | 'playing' | 'ended'>('start');
   const [showSuccess, setShowSuccess] = useState(false);
   const [combo, setCombo] = useState(0);
@@ -54,45 +55,111 @@ const WhackAMoleGame = () => {
   const [highScore, setHighScore] = useState(0);
   const [isNewRecord, setIsNewRecord] = useState(false);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
-  const [screenShake, setScreenShake] = useState(false);
-  const [butterflies] = useState<Butterfly[]>(() =>
+
+  // Refs for stable logic & sync
+  const containerRef = useRef<HTMLDivElement>(null);
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const gamePhaseRef = useRef(gamePhase);
+  const activeHolesRef = useRef<Map<number, ActiveMole>>(new Map());
+  const spawnMoleRef = useRef<() => void>(() => { });
+  const lastHoleRef = useRef<number | null>(null);
+  const floatIdRef = useRef(0);
+  const lastWhackRef = useRef(0);
+  const scoreRef = useRef(0);
+  const comboRef = useRef(0);
+  const maxComboRef = useRef(0);
+
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const moleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const comboTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const config = useMemo(() => DIFFS[difficulty], [difficulty]);
+
+  useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
+  useEffect(() => { setHighScore(getHighScore('whack-a-mole')); }, []);
+
+  // Stabilize decorative elements
+  const butterflies = useMemo(() =>
     Array.from({ length: 5 }, (_, i) => ({
       id: i, x: Math.random() * 100, y: 10 + Math.random() * 30,
       speed: 0.3 + Math.random() * 0.4, phase: Math.random() * Math.PI * 2,
     }))
-  );
+    , []);
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const moleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastHoleRef = useRef<number | null>(null);
-  const floatIdRef = useRef(0);
-  const comboTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const scoreRef = useRef(0);
-  const comboRef = useRef(0);
+  const grassBlades = useMemo(() =>
+    Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      left: i * 5 + Math.random() * 3,
+      height: 12 + Math.random() * 10,
+      hue: 110 + Math.random() * 20,
+      lightness: 40 + Math.random() * 20,
+      duration: 2 + Math.random(),
+      delay: Math.random(),
+    }))
+    , []);
 
-  const config = DIFFS[difficulty];
+  /* Helper to force render after ref mutation */
+  const updateHoles = useCallback((updater: (m: Map<number, ActiveMole>) => void) => {
+    updater(activeHolesRef.current);
+    setHoleVersion(v => v + 1);
+  }, []);
 
-  useEffect(() => { setHighScore(getHighScore('whack-a-mole')); }, []);
+  /* Central timer management */
+  const safeTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timersRef.current.delete(id);
+      if (gamePhaseRef.current !== 'playing') return;
+      fn();
+    }, ms);
+    timersRef.current.add(id);
+    return id;
+  }, []);
+
+  const clearAllTimers = useCallback(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current.clear();
+    if (moleRef.current) clearTimeout(moleRef.current);
+    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, []);
+
+  useEffect(() => () => clearAllTimers(), [clearAllTimers]);
 
   /* Floating text helper */
   const addFloat = useCallback((x: number, y: number, text: string, color: string) => {
     const id = floatIdRef.current++;
-    setFloatingTexts(prev => [...prev, { id, x, y, text, color }]);
-    setTimeout(() => setFloatingTexts(prev => prev.filter(f => f.id !== id)), 1000);
-  }, []);
+    const container = containerRef.current?.getBoundingClientRect();
+    const cx = x - (container?.left || 0);
+    const cy = y - (container?.top || 0);
 
-  /* Screen shake */
+    setFloatingTexts(prev => [...prev, { id, x: cx, y: cy, text, color }]);
+    safeTimeout(() => setFloatingTexts(prev => prev.filter(f => f.id !== id)), 1000);
+  }, [safeTimeout]);
+
+  /* Screen shake via class */
   const triggerShake = useCallback(() => {
-    setScreenShake(true);
-    setTimeout(() => setScreenShake(false), 200);
+    const el = containerRef.current;
+    if (!el) return;
+    el.classList.add('shake-anim');
+    setTimeout(() => el.classList.remove('shake-anim'), 200);
   }, []);
 
   /* Spawn mole */
   const spawnMole = useCallback(() => {
-    if (gamePhase !== 'playing') return;
+    if (gamePhaseRef.current !== 'playing') return;
     if (moleRef.current) clearTimeout(moleRef.current);
 
-    const hole = getNextRandomIndex(config.holes, lastHoleRef.current);
+    // Find available holes
+    const activeSet = new Set(activeHolesRef.current.keys());
+    const available = Array.from({ length: config.holes }, (_, i) => i)
+      .filter(i => !activeSet.has(i));
+
+    if (available.length === 0) {
+      moleRef.current = safeTimeout(() => spawnMoleRef.current(), 100);
+      return;
+    }
+
+    const hole = available[Math.floor(Math.random() * available.length)];
     lastHoleRef.current = hole;
 
     // Type selection
@@ -104,85 +171,96 @@ const WhackAMoleGame = () => {
     else type = MOLE_TYPES[0];                    // hamster
 
     const mole: ActiveMole = { type, state: 'rising' };
-
-    setActiveHoles(prev => { const m = new Map(prev); m.set(hole, mole); return m; });
+    updateHoles(m => m.set(hole, mole));
 
     // Rising → up
-    setTimeout(() => {
-      setActiveHoles(prev => {
-        const m = new Map(prev);
+    safeTimeout(() => {
+      updateHoles(m => {
         const existing = m.get(hole);
         if (existing && existing.state === 'rising') m.set(hole, { ...existing, state: 'up' });
-        return m;
       });
     }, 200);
 
-    // Auto-hide after duration
-    const duration = Math.max(600, 1600 - (scoreRef.current * 8));
-    moleRef.current = setTimeout(() => {
-      setActiveHoles(prev => {
-        const m = new Map(prev);
+    // Dynamic duration based on time and score
+    const elapsed = config.time - timeLeft;
+    const timeFactor = Math.min(elapsed / config.time, 1);
+    const scoreFactor = Math.min(scoreRef.current / 120, 1);
+    const difficultyFactor = Math.max(timeFactor, scoreFactor);
+
+    const duration = Math.max(500, 1600 - difficultyFactor * 950);
+
+    moleRef.current = safeTimeout(() => {
+      updateHoles(m => {
         const existing = m.get(hole);
         if (existing && (existing.state === 'up' || existing.state === 'rising')) {
           m.set(hole, { ...existing, state: 'falling' });
-          setTimeout(() => {
-            setActiveHoles(p => { const mm = new Map(p); mm.delete(hole); return mm; });
-          }, 300);
+          safeTimeout(() => updateHoles(mm => mm.delete(hole)), 300);
         }
-        return m;
       });
-      // Combo break on miss — clear any pending combo timer first
+      // Combo break on miss
       if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
       comboRef.current = 0;
       setCombo(0);
+
       // Next spawn
       const nextDelay = Math.random() * 250 + 100;
-      moleRef.current = setTimeout(spawnMole, nextDelay);
+      moleRef.current = safeTimeout(() => spawnMoleRef.current(), nextDelay);
     }, duration);
-  }, [gamePhase, config.holes]);
+  }, [config, timeLeft, safeTimeout, updateHoles]);
+
+  useEffect(() => { spawnMoleRef.current = spawnMole; }, [spawnMole]);
 
   /* Multi-mole spawn for medium/hard */
+  /* Multi-mole spawn loop */
   useEffect(() => {
     if (gamePhase !== 'playing' || config.multiChance === 0) return;
-    const id = setInterval(() => {
+    const interval = setInterval(() => {
       if (Math.random() < config.multiChance) {
-        const hole = getNextRandomIndex(config.holes, lastHoleRef.current);
+        // Find available holes excluding last spawn and current active ones
+        const activeSet = new Set(activeHolesRef.current.keys());
+        const available = Array.from({ length: config.holes }, (_, i) => i)
+          .filter(i => !activeSet.has(i) && i !== lastHoleRef.current);
+
+        if (available.length === 0) return;
+
+        const hole = available[Math.floor(Math.random() * available.length)];
         const type = MOLE_TYPES[Math.floor(Math.random() * 3)];
         const mole: ActiveMole = { type, state: 'up' };
-        setActiveHoles(prev => { const m = new Map(prev); m.set(hole, mole); return m; });
-        setTimeout(() => {
-          setActiveHoles(prev => {
-            const m = new Map(prev);
+
+        updateHoles(m => m.set(hole, mole));
+
+        safeTimeout(() => {
+          updateHoles(m => {
             const existing = m.get(hole);
             if (existing && existing.state === 'up') {
               m.set(hole, { ...existing, state: 'falling' });
-              setTimeout(() => { setActiveHoles(p => { const mm = new Map(p); mm.delete(hole); return mm; }); }, 300);
+              safeTimeout(() => updateHoles(mm => mm.delete(hole)), 300);
             }
-            return m;
           });
         }, 900);
       }
     }, 2200);
-    return () => clearInterval(id);
-  }, [gamePhase, config]);
+    return () => clearInterval(interval);
+  }, [gamePhase, config, safeTimeout, updateHoles]);
 
   /* Start game loop */
+  /* Initial spawn delay */
   useEffect(() => {
     if (gamePhase === 'playing') {
-      const t = setTimeout(spawnMole, 600);
-      return () => { clearTimeout(t); if (moleRef.current) clearTimeout(moleRef.current); };
+      const t = safeTimeout(() => spawnMoleRef.current(), 600);
+      return () => clearTimeout(t);
     } else {
-      setActiveHoles(new Map());
-      if (moleRef.current) clearTimeout(moleRef.current);
+      updateHoles(m => m.clear());
     }
-  }, [gamePhase, spawnMole]);
+  }, [gamePhase, safeTimeout, updateHoles]);
 
   const startGame = useCallback(() => {
-    scoreRef.current = 0; comboRef.current = 0;
+    clearAllTimers();
+    scoreRef.current = 0; comboRef.current = 0; maxComboRef.current = 0;
     setScore(0); setTimeLeft(config.time); setGamePhase('playing');
     setShowSuccess(false); setCombo(0); setMaxCombo(0); setIsNewRecord(false);
     setFloatingTexts([]);
-  }, [config.time]);
+  }, [config.time, clearAllTimers]);
 
   /* Timer */
   useEffect(() => {
@@ -205,16 +283,27 @@ const WhackAMoleGame = () => {
   useEffect(() => {
     if (gamePhase !== 'ended') return;
     const isNew = saveHighScoreObj('whack-a-mole', scoreRef.current);
-    if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); }
+    if (isNew) {
+      setIsNewRecord(true);
+      setHighScore(scoreRef.current);
+      playNewRecordSound();
+    } else {
+      playSuccessSound();
+    }
   }, [gamePhase]);
 
 
   /* ═══════════════════════════════════════════
      WHACK HANDLER
      ═══════════════════════════════════════════ */
-  const handleWhack = (index: number, e: React.MouseEvent | React.TouchEvent) => {
-    const moleData = activeHoles.get(index);
-    if (!moleData || moleData.state === 'hit' || moleData.state === 'falling' || gamePhase !== 'playing') return;
+  const handleWhack = (index: number, e: React.MouseEvent | React.TouchEvent | React.PointerEvent) => {
+    // Debounce & Multi-touch protection (80ms)
+    const now = Date.now();
+    if (now - lastWhackRef.current < 80) return;
+    lastWhackRef.current = now;
+
+    const moleData = activeHolesRef.current.get(index);
+    if (!moleData || moleData.state === 'hit' || moleData.state === 'falling' || gamePhaseRef.current !== 'playing') return;
 
     // Get click position for floating text
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -223,7 +312,9 @@ const WhackAMoleGame = () => {
 
     if (moleData.type.points < 0) {
       // Bad mole — penalty
-      comboRef.current = 0; setCombo(0);
+      playErrorSound();
+      comboRef.current = 0;
+      setCombo(0);
       scoreRef.current = Math.max(0, scoreRef.current + moleData.type.points);
       setScore(scoreRef.current);
       addFloat(fx, fy, `${moleData.type.points}`, '#ef4444');
@@ -232,7 +323,11 @@ const WhackAMoleGame = () => {
       // Good mole — score + combo
       comboRef.current++;
       setCombo(comboRef.current);
-      if (comboRef.current > maxCombo) setMaxCombo(comboRef.current);
+
+      if (comboRef.current > maxComboRef.current) {
+        maxComboRef.current = comboRef.current;
+        setMaxCombo(comboRef.current);
+      }
 
       // Combo multiplier
       let multiplier = 1;
@@ -242,6 +337,12 @@ const WhackAMoleGame = () => {
       const points = moleData.type.points * multiplier;
       scoreRef.current += points;
       setScore(scoreRef.current);
+
+      if (comboRef.current > 2) {
+        playComboSound(comboRef.current);
+      } else {
+        playPopSound();
+      }
 
       // Floating text
       const comboText = multiplier > 1 ? ` x${multiplier}` : '';
@@ -256,22 +357,21 @@ const WhackAMoleGame = () => {
       // Reset combo timer
       if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
       comboTimerRef.current = setTimeout(() => {
-        comboRef.current = 0; setCombo(0);
+        comboRef.current = 0;
+        setCombo(0);
       }, 2000);
     }
 
     // Set mole to hit state
-    setActiveHoles(prev => {
-      const m = new Map(prev);
+    updateHoles(m => {
       m.set(index, { ...moleData, state: 'hit', hitTime: Date.now() });
-      return m;
     });
 
     // Remove after hit animation
-    setTimeout(() => {
-      setActiveHoles(prev => { const m = new Map(prev); m.delete(index); return m; });
+    safeTimeout(() => {
+      updateHoles(m => m.delete(index));
       if (moleRef.current) clearTimeout(moleRef.current);
-      moleRef.current = setTimeout(spawnMole, Math.random() * 120 + 60);
+      moleRef.current = safeTimeout(() => spawnMoleRef.current(), Math.random() * 120 + 60);
     }, 500);
   };
 
@@ -315,9 +415,40 @@ const WhackAMoleGame = () => {
      GAME SCREEN — Professional quality
      ═══════════════════════════════════════════ */
   return (
-    <motion.div className="flex flex-col items-center gap-4 p-4 pb-32"
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      style={{ transform: screenShake ? `translate(${(Math.random() - 0.5) * 6}px, ${(Math.random() - 0.5) * 4}px)` : 'none', transition: 'transform 0.05s' }}>
+    <motion.div
+      ref={containerRef}
+      className="flex flex-col items-center gap-4 p-4 pb-32 relative"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <style>{`
+        @keyframes gameShake {
+          0%, 100% { transform: translate(0, 0); }
+          25% { transform: translate(-4px, 2px); }
+          50% { transform: translate(4px, -2px); }
+          75% { transform: translate(-2px, 4px); }
+        }
+        .shake-anim { animation: gameShake 0.15s ease-in-out; }
+
+        @keyframes butterfly-float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(30px, -15px) rotate(5deg); }
+            50% { transform: translate(-20px, 10px) rotate(-5deg); }
+            75% { transform: translate(40px, -20px) rotate(3deg); }
+        }
+        .animate-butterfly { animation: butterfly-float var(--duration, 8s) ease-in-out infinite; }
+
+        @keyframes grass-sway {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(6deg); }
+          50% { transform: rotate(-4deg); }
+          75% { transform: rotate(5deg); }
+        }
+        .animate-grass-sway { animation: grass-sway var(--duration, 2s) ease-in-out infinite; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
 
       {/* ── HUD — Glassmorphism ── */}
       <div className="flex gap-2 items-center flex-wrap justify-center">
@@ -378,28 +509,31 @@ const WhackAMoleGame = () => {
 
         {/* Butterflies */}
         {butterflies.map(b => (
-          <motion.div key={b.id} className="absolute pointer-events-none -z-5 text-lg"
-            style={{ left: `${b.x}%`, top: `${b.y}%` }}
-            animate={{
-              x: [0, 30, -20, 40, 0],
-              y: [0, -15, 10, -20, 0],
-            }}
-            transition={{ repeat: Infinity, duration: 8 / b.speed, ease: 'easeInOut', delay: b.phase }}>
+          <div key={b.id} className="absolute pointer-events-none -z-5 text-lg animate-butterfly"
+            style={{
+              left: `${b.x}%`,
+              top: `${b.y}%`,
+              '--duration': `${8 / b.speed}s`,
+              animationDelay: `${b.phase}s`
+            } as any}>
             🦋
-          </motion.div>
+          </div>
         ))}
 
         {/* Grass blades at bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-8 -z-5 pointer-events-none overflow-hidden">
-          {Array.from({ length: 20 }).map((_, i) => (
-            <motion.div key={i} className="absolute bottom-0"
+          {grassBlades.map(gb => (
+            <div key={gb.id} className="absolute bottom-0 animate-grass-sway"
               style={{
-                left: `${i * 5 + Math.random() * 3}%`, width: 3, height: 12 + Math.random() * 10,
-                background: `hsl(${110 + Math.random() * 20}, 60%, ${40 + Math.random() * 20}%)`,
-                borderRadius: '2px 2px 0 0', transformOrigin: 'bottom center'
-              }}
-              animate={{ rotate: [0, 5, -3, 4, 0] }}
-              transition={{ repeat: Infinity, duration: 2 + Math.random(), delay: Math.random() }}
+                left: `${gb.left}%`,
+                width: 3,
+                height: gb.height,
+                background: `hsl(${gb.hue}, 60%, ${gb.lightness}%)`,
+                borderRadius: '2px 2px 0 0',
+                transformOrigin: 'bottom center',
+                '--duration': `${gb.duration}s`,
+                animationDelay: `${gb.delay}s`
+              } as any}
             />
           ))}
         </div>
@@ -408,7 +542,7 @@ const WhackAMoleGame = () => {
         <div className={`grid gap-3 md:gap-4 p-4 md:p-6 rounded-3xl relative`}
           style={{ gridTemplateColumns: `repeat(${config.cols}, 1fr)` }}>
           {Array.from({ length: config.holes }).map((_, i) => {
-            const moleData = activeHoles.get(i);
+            const moleData = activeHolesRef.current.get(i);
             const holeSizeW = config.cols === 4 ? 'clamp(60px, 18vw, 85px)' : 'clamp(70px, 22vw, 100px)';
             const holeSizeH = config.cols === 4 ? 'clamp(65px, 20vw, 95px)' : 'clamp(75px, 24vw, 110px)';
 
@@ -438,8 +572,11 @@ const WhackAMoleGame = () => {
                       {moleData && (
                         <motion.button
                           key={`mole-${i}-${moleData.state}`}
-                          onClick={(e) => handleWhack(i, e)}
-                          onTouchEnd={(e) => { e.preventDefault(); handleWhack(i, e); }}
+                          onPointerDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleWhack(i, e);
+                          }}
                           className="absolute inset-0 flex items-center justify-center cursor-pointer touch-manipulation select-none"
                           style={{ touchAction: 'manipulation', zIndex: 3 }}
                           initial={{ y: '100%' }}
@@ -515,12 +652,12 @@ const WhackAMoleGame = () => {
         </div>
       </div>
 
-      {/* ── Floating texts overlay ── */}
+      {/* ── Floating texts overlay — Absolute to container ── */}
       <AnimatePresence>
         {floatingTexts.map(ft => (
           <motion.div key={ft.id}
-            className="fixed pointer-events-none font-black text-lg z-50"
-            style={{ left: ft.x, top: ft.y, color: ft.color, textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}
+            className="absolute pointer-events-none font-black text-lg z-50 transition-none"
+            style={{ left: ft.x, top: ft.y, color: ft.color, textShadow: '0 2px 8px rgba(0,0,0,0.4)', position: 'absolute' }}
             initial={{ opacity: 1, y: 0, scale: 0.5 }}
             animate={{ opacity: 0, y: -60, scale: 1.4 }}
             exit={{ opacity: 0 }}
@@ -530,7 +667,7 @@ const WhackAMoleGame = () => {
         ))}
       </AnimatePresence>
 
-      <SuccessPopup isOpen={showSuccess} onClose={() => setGamePhase('start')}
+      <SuccessPopup isOpen={showSuccess} onClose={() => setGamePhase('start')} disableVoice={true}
         message={`${score} puan! ${isNewRecord ? '🏆 Yeni Rekor!' : `Maks Kombo: x${maxCombo}`}`} />
     </motion.div>
   );
