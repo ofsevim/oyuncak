@@ -204,10 +204,11 @@ const SnakeGame = () => {
         const eatenType = food.type; // capture before update
         setFood(spawnFood(ns, obstacles));
         if (eatenType === 'speed') {
-          setSpeed(p => Math.max(50, p - 12));
+          // Lightning bolt now gives a SMALL SPEED REWARD (slows down) instead of penalty
+          setSpeed(p => Math.min(cfg.speed, p + 20));
         } else {
-          // Gradual eased speed increase (only for non-speed foods)
-          setSpeed(p => Math.max(50, p - 0.8));
+          // Gradual speed increase (more noticeable than before)
+          setSpeed(p => Math.max(40, p - 1.5));
         }
         if (eatenType === 'shrink' && ns.length > 4) { ns.pop(); ns.pop(); }
         if (eatenType === 'golden') confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
@@ -297,7 +298,7 @@ const SnakeGame = () => {
           <p className="text-xs font-bold text-muted-foreground text-center uppercase tracking-wider">Zorluk Seç</p>
           {(Object.entries(DIFFS) as [Diff, typeof DIFFS['easy']][]).map(([key, val]) => (
             <motion.button key={key} onClick={() => setDiff(key)}
-              whileHover={{ }} whileTap={{ }}
+              whileHover={{}} whileTap={{}}
               className="p-4 text-left touch-manipulation transition-all"
               style={{ ...pill, background: diff === key ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.03)', border: diff === key ? '1px solid rgba(52,211,153,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
               <div className="flex items-center gap-3">
@@ -312,10 +313,10 @@ const SnakeGame = () => {
         </div>
         <div className="p-4 text-center text-sm space-y-1" style={pill}>
           <p className="font-bold">🎮 Ok tuşları / WASD / Kaydır</p>
-          <p className="text-muted-foreground text-xs">⭐ Altın=50 | ⚡ Hız | ✂️ Kısalt</p>
+          <p className="text-muted-foreground text-xs">⭐ Altın=50 | ⚡ Yavaşlatır | ✂️ Kısalt</p>
         </div>
         <motion.button onClick={startGame} className="btn-gaming px-12 py-4 text-lg"
-          whileHover={{ y: -2 }} whileTap={{ }}>🚀 BAŞLA!</motion.button>
+          whileHover={{ y: -2 }} whileTap={{}}>🚀 BAŞLA!</motion.button>
       </motion.div>
     );
   }
@@ -498,17 +499,17 @@ const SnakeGame = () => {
       </div>
 
       {/* ── Mobile D-pad ── */}
-      <div className="grid grid-cols-3 gap-2 w-40 md:hidden mt-1">
+      <div className="grid grid-cols-3 gap-3 w-56 md:hidden mt-2">
         <div />
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => dirRef.current !== 'DOWN' && setDir('UP')}
-          className="flex items-center justify-center text-lg touch-manipulation p-3" style={{ ...pill, borderRadius: 14 }}>⬆️</motion.button>
+          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }}>⬆️</motion.button>
         <div />
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => dirRef.current !== 'RIGHT' && setDir('LEFT')}
-          className="flex items-center justify-center text-lg touch-manipulation p-3" style={{ ...pill, borderRadius: 14 }}>⬅️</motion.button>
+          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }}>⬅️</motion.button>
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => dirRef.current !== 'UP' && setDir('DOWN')}
-          className="flex items-center justify-center text-lg touch-manipulation p-3" style={{ ...pill, borderRadius: 14 }}>⬇️</motion.button>
+          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }}>⬇️</motion.button>
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => dirRef.current !== 'LEFT' && setDir('RIGHT')}
-          className="flex items-center justify-center text-lg touch-manipulation p-3" style={{ ...pill, borderRadius: 14 }}>➡️</motion.button>
+          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }}>➡️</motion.button>
       </div>
     </motion.div>
   );
