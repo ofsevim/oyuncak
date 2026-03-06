@@ -166,8 +166,10 @@ const TetrisGame = () => {
     while (!checkCollision(activePiece.pos.x, newY + 1, activePiece.shape)) newY++;
     const dropDist = newY - activePiece.pos.y;
     setScore(prev => prev + dropDist * 2);
-    setActivePiece(prev => prev ? { ...prev, pos: { ...prev.pos, y: newY } } : null);
-    setTimeout(lockPiece, 10);
+    // Directly mutate position so lockPiece sees the correct Y
+    activePiece.pos.y = newY;
+    setActivePiece({ ...activePiece, pos: { ...activePiece.pos, y: newY } });
+    lockPiece();
   }, [activePiece, gameState, checkCollision, lockPiece]);
 
   const holdPiece = useCallback(() => {
