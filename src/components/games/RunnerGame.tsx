@@ -1074,16 +1074,21 @@ const RunnerGame = () => {
     if (containerRef.current) ro.observe(containerRef.current);
     window.addEventListener('resize', resize);
 
-    // Hide body scrollbars during gameplay
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
     return () => {
       ro.disconnect();
       window.removeEventListener('resize', resize);
-      document.body.style.overflow = originalOverflow;
     };
   }, [isPortrait]);
+
+  // Hide body scrollbars ONLY during active gameplay
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, [phase]);
 
 
   /* ═══════════════════════════════════════════
