@@ -7,39 +7,68 @@ import { smartShuffle, shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
 
-/* ═══════════════════════════════════════════
-   ROUNDS DATA
-   ═══════════════════════════════════════════ */
-const ROUNDS = [
-  { items: [{ id: '1', emoji: '🐕' }, { id: '2', emoji: '🐈' }, { id: '3', emoji: '🐰' }, { id: '4', emoji: '🚗' }], oddOne: '4', hint: 'Hangisi hayvan değil?' },
-  { items: [{ id: '1', emoji: '🍎' }, { id: '2', emoji: '🍌' }, { id: '3', emoji: '🏠' }, { id: '4', emoji: '🍇' }], oddOne: '3', hint: 'Hangisi meyve değil?' },
-  { items: [{ id: '1', emoji: '✈️' }, { id: '2', emoji: '🚂' }, { id: '3', emoji: '🌸' }, { id: '4', emoji: '🚀' }], oddOne: '3', hint: 'Hangisi taşıt değil?' },
-  { items: [{ id: '1', emoji: '🔴' }, { id: '2', emoji: '🔵' }, { id: '3', emoji: '🟢' }, { id: '4', emoji: '📐' }], oddOne: '4', hint: 'Hangisi renk değil?' },
-  { items: [{ id: '1', emoji: '🦁' }, { id: '2', emoji: '🐯' }, { id: '3', emoji: '🦒' }, { id: '4', emoji: '🐳' }], oddOne: '4', hint: 'Hangisi karada yaşamaz?' },
-  { items: [{ id: '1', emoji: '🥦' }, { id: '2', emoji: '🥕' }, { id: '3', emoji: '🍦' }, { id: '4', emoji: '🌽' }], oddOne: '3', hint: 'Hangisi sebze değil?' },
-  { items: [{ id: '1', emoji: '🎸' }, { id: '2', emoji: '🎺' }, { id: '3', emoji: '🎻' }, { id: '4', emoji: '🔨' }], oddOne: '4', hint: 'Hangisi müzik aleti değil?' },
-  { items: [{ id: '1', emoji: '☀️' }, { id: '2', emoji: '☁️' }, { id: '3', emoji: '🌧️' }, { id: '4', emoji: '🍔' }], oddOne: '4', hint: 'Hangisi hava durumu değil?' },
-  { items: [{ id: '1', emoji: '⚽' }, { id: '2', emoji: '🏀' }, { id: '3', emoji: '🎾' }, { id: '4', emoji: '🧸' }], oddOne: '4', hint: 'Hangisi spor topu değil?' },
-  { items: [{ id: '1', emoji: '🐙' }, { id: '2', emoji: '🦀' }, { id: '3', emoji: '🐠' }, { id: '4', emoji: '🦋' }], oddOne: '4', hint: 'Hangisi denizde yaşamaz?' },
-  { items: [{ id: '1', emoji: '🍕' }, { id: '2', emoji: '🍔' }, { id: '3', emoji: '🌭' }, { id: '4', emoji: '👕' }], oddOne: '4', hint: 'Hangisi yemek değil?' },
-  { items: [{ id: '1', emoji: '📚' }, { id: '2', emoji: '📖' }, { id: '3', emoji: '📝' }, { id: '4', emoji: '🍕' }], oddOne: '4', hint: 'Hangisi okul malzemesi değil?' },
-  { items: [{ id: '1', emoji: '🌲' }, { id: '2', emoji: '🌳' }, { id: '3', emoji: '🌴' }, { id: '4', emoji: '🚲' }], oddOne: '4', hint: 'Hangisi ağaç değil?' },
-  { items: [{ id: '1', emoji: '👕' }, { id: '2', emoji: '👖' }, { id: '3', emoji: '👗' }, { id: '4', emoji: '🍌' }], oddOne: '4', hint: 'Hangisi kıyafet değil?' },
-  { items: [{ id: '1', emoji: '🌙' }, { id: '2', emoji: '⭐' }, { id: '3', emoji: '☀️' }, { id: '4', emoji: '🏠' }], oddOne: '4', hint: 'Hangisi gökyüzünde değil?' },
-  { items: [{ id: '1', emoji: '🍓' }, { id: '2', emoji: '🍉' }, { id: '3', emoji: '🍊' }, { id: '4', emoji: '🥖' }], oddOne: '4', hint: 'Hangisi meyve değil?' },
-  { items: [{ id: '1', emoji: '🐝' }, { id: '2', emoji: '🦋' }, { id: '3', emoji: '🐞' }, { id: '4', emoji: '🐘' }], oddOne: '4', hint: 'Hangisi böcek değil?' },
-  { items: [{ id: '1', emoji: '🎨' }, { id: '2', emoji: '🖌️' }, { id: '3', emoji: '✏️' }, { id: '4', emoji: '⚽' }], oddOne: '4', hint: 'Hangisi çizim aracı değil?' },
-  { items: [{ id: '1', emoji: '❄️' }, { id: '2', emoji: '☃️' }, { id: '3', emoji: '🌨️' }, { id: '4', emoji: '🔥' }], oddOne: '4', hint: 'Hangisi soğukla ilgili değil?' },
-  { items: [{ id: '1', emoji: '🏖️' }, { id: '2', emoji: '🏝️' }, { id: '3', emoji: '⛱️' }, { id: '4', emoji: '⛷️' }], oddOne: '4', hint: 'Hangisi plajla ilgili değil?' },
+import { CATEGORIES } from '@/data/categories';
+
+const QUESTION_TEMPLATES = [
+  { hint: 'Hangisi hayvan değil?', category: 'animals' },
+  { hint: 'Hangisi araç değil?', category: 'vehicles' },
+  { hint: 'Hangisi meyve değil?', category: 'fruits' },
+  { hint: 'Hangisi renk değil?', category: 'colors' },
+  { hint: 'Hangisi sebze değil?', category: 'vegetables' },
+  { hint: 'Hangisi müzik aleti değil?', category: 'instruments' },
+  { hint: 'Hangisi hava durumu ile ilgili değil?', category: 'weather' },
+  { hint: 'Hangisi spor aleti/topu değil?', category: 'sports' },
+  { hint: 'Hangisi deniz canlısı değil?', category: 'seaCreatures' },
+  { hint: 'Hangisi tatlı/yemek değil?', category: 'food' },
+  { hint: 'Hangisi okul veya çizim eşyası değil?', category: 'school' },
+  { hint: 'Hangisi bitki değil?', category: 'trees' },
+  { hint: 'Hangisi kıyafet değil?', category: 'clothes' },
+  { hint: 'Hangisi gökyüzü/uzay ile ilgili değil?', category: 'sky' },
+  { hint: 'Hangisi böcek değil?', category: 'insects' },
+  { hint: 'Hangisi kışla/soğukla ilgili değil?', category: 'cold' },
+  { hint: 'Hangisi plajda görülmez?', category: 'beach' },
+  { hint: 'Hangisi meslek değil?', category: 'jobs' },
+  { hint: 'Hangisi kahvaltıda yenmez?', category: 'breakfast' },
+  { hint: 'Hangisi hayali bir karakter/canlı değil?', category: 'mythical' },
+  { hint: 'Hangisi vücudumuzun bir parçası değil?', category: 'bodyParts' },
+  { hint: 'Hangisi oyuncak değil?', category: 'toys' }
 ];
 
-const HARD_ROUNDS = [
-  { items: [{ id: '1', emoji: '🐕' }, { id: '2', emoji: '🐈' }, { id: '3', emoji: '🐰' }, { id: '4', emoji: '🐻' }, { id: '5', emoji: '🦊' }, { id: '6', emoji: '🚗' }], oddOne: '6', hint: 'Hangisi hayvan değil?' },
-  { items: [{ id: '1', emoji: '🍎' }, { id: '2', emoji: '🍌' }, { id: '3', emoji: '🍇' }, { id: '4', emoji: '🍊' }, { id: '5', emoji: '🍓' }, { id: '6', emoji: '🏠' }], oddOne: '6', hint: 'Hangisi meyve değil?' },
-  { items: [{ id: '1', emoji: '✈️' }, { id: '2', emoji: '🚂' }, { id: '3', emoji: '🚀' }, { id: '4', emoji: '🚗' }, { id: '5', emoji: '🚢' }, { id: '6', emoji: '🌸' }], oddOne: '6', hint: 'Hangisi taşıt değil?' },
-  { items: [{ id: '1', emoji: '⚽' }, { id: '2', emoji: '🏀' }, { id: '3', emoji: '🎾' }, { id: '4', emoji: '🏐' }, { id: '5', emoji: '🏈' }, { id: '6', emoji: '🧸' }], oddOne: '6', hint: 'Hangisi top değil?' },
-  { items: [{ id: '1', emoji: '🎸' }, { id: '2', emoji: '🎺' }, { id: '3', emoji: '🎻' }, { id: '4', emoji: '🥁' }, { id: '5', emoji: '🎹' }, { id: '6', emoji: '🔨' }], oddOne: '6', hint: 'Hangisi müzik aleti değil?' },
-];
+function generateDynamicRounds(isHardMode: boolean) {
+  const templates = shuffleArray([...QUESTION_TEMPLATES]);
+  const generatedRounds = [];
+
+  // Sabit sayıda (örn. 15) soru oynatalım
+  const roundCount = Math.min(15, templates.length);
+
+  for (let i = 0; i < roundCount; i++) {
+    const template = templates[i];
+    const targetEmojis = CATEGORIES[template.category].items;
+    const count = isHardMode ? 6 : 4;
+
+    // Doğru kategoriye ait şıkları seç
+    const validEmojis = shuffleArray([...targetEmojis]).slice(0, count - 1);
+
+    // Yanlış şıkkı (istenen cevap) farklı bir kategoriden seç
+    const allOtherEmojis = Object.entries(CATEGORIES)
+      .filter(([key]) => key !== template.category)
+      .flatMap(([, catData]) => catData.items)
+      .filter(emoji => !targetEmojis.includes(emoji)); // Kazara aynı emojiyi seçmemek için
+
+    const invalidEmoji = shuffleArray(allOtherEmojis)[0];
+
+    // Tüm şıkları birleştirip karıştır
+    const items = validEmojis.map((emoji, index) => ({ id: `valid_${index}`, emoji }));
+    items.push({ id: 'odd_one', emoji: invalidEmoji });
+
+    generatedRounds.push({
+      items: shuffleArray(items),
+      oddOne: 'odd_one',
+      hint: template.hint
+    });
+  }
+  return generatedRounds;
+}
 
 const PRAISE = ['Harika! 🌟', 'Süper! ⭐', 'Mükemmel! 💫', 'Bravo! 🎯', 'Aferin! 🏆', 'Şahane! 🎉'];
 
@@ -69,7 +98,7 @@ const pill: React.CSSProperties = {
    COMPONENT
    ═══════════════════════════════════════════ */
 const OddOneOutGame = () => {
-  const [shuffledRounds, setShuffledRounds] = useState([...ROUNDS]);
+  const [shuffledRounds, setShuffledRounds] = useState<{ items: { id: string, emoji: string }[], oddOne: string, hint: string }[]>([]);
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -122,7 +151,7 @@ const OddOneOutGame = () => {
   const initGame = useCallback(() => {
     clearAllTimeouts();
     if (timerRef.current) clearInterval(timerRef.current);
-    const rounds = useHardMode ? smartShuffle([...ROUNDS, ...HARD_ROUNDS], 'hint') : smartShuffle(ROUNDS, 'hint');
+    const rounds = generateDynamicRounds(useHardMode);
     setShuffledRounds(rounds);
     setCurrentRoundIndex(0); setSelectedId(null); setIsCorrect(false);
     setShakeId(null); setFadedId(null);

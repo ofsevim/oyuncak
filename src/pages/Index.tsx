@@ -1,6 +1,7 @@
 'use client';
 
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy } from 'react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import FloatingBubbles from '@/components/ui/FloatingBubbles';
 import Navigation from '@/components/Navigation';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -15,13 +16,21 @@ const GamesMenu = lazy(() => import('@/components/games/GamesMenu'));
 const StoryTime = lazy(() => import('@/components/StoryTime'));
 
 const Index = () => {
-  const [activeTab, setActiveTabRaw] = useState<Tab>('home');
-  const [isGameActive, setIsGameActive] = useState(false);
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { gameId } = useParams();
   const [, setPreferredGameId] = useLocalStorageState<string | null>("oyuncak.preferredGameId", null);
 
+  let activeTab: Tab = 'home';
+  if (pathname.startsWith('/draw')) activeTab = 'draw';
+  else if (pathname.startsWith('/games')) activeTab = 'games';
+  else if (pathname.startsWith('/story')) activeTab = 'story';
+
+  const isGameActive = activeTab === 'games' && !!gameId;
+
   const setActiveTab = (tab: Tab) => {
-    setActiveTabRaw(tab);
-    setIsGameActive(false); // Reset when tab changes
+    if (tab === 'home') navigate('/');
+    else navigate(`/${tab}`);
   };
 
   const renderContent = () => {
@@ -29,7 +38,7 @@ const Index = () => {
       case 'draw':
         return <DrawingCanvas />;
       case 'games':
-        return <GamesMenu onActiveGameChange={setIsGameActive} />;
+        return <GamesMenu />;
       case 'story':
         return <StoryTime />;
       default:
@@ -38,9 +47,9 @@ const Index = () => {
             onGoDraw={() => setActiveTab('draw')}
             onGoGames={() => setActiveTab('games')}
             onGoStories={() => setActiveTab('story')}
-            onGoFeaturedGame={(gameId) => {
-              setPreferredGameId(gameId);
-              setActiveTab("games");
+            onGoFeaturedGame={(id) => {
+              setPreferredGameId(id);
+              navigate(`/games/${id}`);
             }}
           />
         );
@@ -70,6 +79,5 @@ const Index = () => {
     </div>
   );
 };
-
 
 export default Index;

@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Search, Brain, Hash, Palette, Wind, Piano, Calculator, Gamepad2, Rat, ArrowLeft, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isMuted, toggleMute } from '@/utils/soundEffects';
@@ -18,8 +19,13 @@ const TetrisGame = lazy(() => import('./TetrisGame'));
 const SnakeGame = lazy(() => import('./SnakeGame'));
 const Game2048 = lazy(() => import('./Game2048'));
 const BasketballGame = lazy(() => import('./BasketballGame'));
+const ShapeMatchGame = lazy(() => import('./ShapeMatchGame'));
+const WordCatchGame = lazy(() => import('./WordCatchGame'));
+const SimonSaysGame = lazy(() => import('./SimonSaysGame'));
+const CodingTurtleGame = lazy(() => import('./CodingTurtleGame'));
+const ComparisonGame = lazy(() => import('./ComparisonGame'));
 
-type GameType = 'menu' | 'oddone' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloons' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battlecity' | 'basketball';
+type GameType = 'menu' | 'odd-one-out' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloon' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battle-city' | 'basketball' | 'shapematch' | 'wordcatch' | 'simonsays' | 'codingturtle' | 'comparison';
 type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
 
 interface GameDef {
@@ -36,20 +42,25 @@ interface GameDef {
 }
 
 const games: GameDef[] = [
-  { id: 'balloons', title: 'Balon Patlat', emoji: '🎈', icon: Wind, color: 'hsl(198 85% 50%)', colorSoft: 'hsl(198 85% 50% / 0.1)', description: 'Doğru renkli balonları yakala!', category: ['action'], badge: 'Popüler', badgeColor: 'hsl(198 85% 50%)' },
+  { id: 'balloon', title: 'Balon Patlat', emoji: '🎈', icon: Wind, color: 'hsl(198 85% 50%)', colorSoft: 'hsl(198 85% 50% / 0.1)', description: 'Doğru renkli balonları yakala!', category: ['action'], badge: 'Popüler', badgeColor: 'hsl(198 85% 50%)' },
   { id: 'basketball', title: 'Basket At', emoji: '🏀', icon: Gamepad2, color: 'hsl(28 90% 55%)', colorSoft: 'hsl(28 90% 55% / 0.1)', description: 'Çek bırak — topu potaya sok!', category: ['action'], badge: 'Yeni', badgeColor: 'hsl(158 65% 48%)' },
-  { id: 'battlecity', title: 'Tank 1990', emoji: '🕹️', icon: Gamepad2, color: 'hsl(220 18% 45%)', colorSoft: 'hsl(220 18% 45% / 0.1)', description: 'Atari salonlarının efsanesi!', category: ['action'], badge: 'Retro', badgeColor: 'hsl(220 18% 55%)' },
+  { id: 'battle-city', title: 'Tank 1990', emoji: '🕹️', icon: Gamepad2, color: 'hsl(220 18% 45%)', colorSoft: 'hsl(220 18% 45% / 0.1)', description: 'Atari salonlarının efsanesi!', category: ['action'], badge: 'Retro', badgeColor: 'hsl(220 18% 55%)' },
   { id: 'whack', title: 'Köstebek Yakala', emoji: '🐹', icon: Rat, color: 'hsl(28 90% 55%)', colorSoft: 'hsl(28 90% 55% / 0.1)', description: 'Hızlı ol, köstebekleri yakala!', category: ['action'], badge: 'Eğlenceli', badgeColor: 'hsl(28 90% 55%)' },
   { id: 'runner', title: 'Koşucu', emoji: '🏃', icon: Gamepad2, color: 'hsl(152 65% 45%)', colorSoft: 'hsl(152 65% 45% / 0.1)', description: 'Engelleri atla, yıldız topla!', category: ['action'] },
   { id: 'tetris', title: 'Tetris', emoji: '🧱', icon: Zap, color: 'hsl(220 85% 58%)', colorSoft: 'hsl(220 85% 58% / 0.1)', description: 'Blokları yerleştir, puanları yakala!', category: ['action', 'brain'], badge: 'Klasik', badgeColor: 'hsl(220 85% 58%)' },
   { id: 'snake', title: 'Yılan Oyunu', emoji: '🐍', icon: Zap, color: 'hsl(140 60% 45%)', colorSoft: 'hsl(140 60% 45% / 0.1)', description: 'Yemleri ye, büyü, duvarlara çarpma!', category: ['action'], badge: 'Klasik', badgeColor: 'hsl(140 60% 45%)' },
-  { id: 'oddone', title: 'Farklı Olanı Bul', emoji: '🔍', icon: Search, color: 'hsl(338 80% 58%)', colorSoft: 'hsl(338 80% 58% / 0.1)', description: 'Gruba uymayan resmi bul!', category: ['brain'] },
+  { id: 'odd-one-out', title: 'Farklı Olanı Bul', emoji: '🔍', icon: Search, color: 'hsl(338 80% 58%)', colorSoft: 'hsl(338 80% 58% / 0.1)', description: 'Gruba uymayan resmi bul!', category: ['brain'] },
+  { id: 'shapematch', title: 'Şekil Eşleştirme', emoji: '🧩', icon: Brain, color: 'hsl(330 80% 60%)', colorSoft: 'hsl(330 80% 60% / 0.1)', description: 'Gölgelerin sahiplerini bul!', category: ['brain'] },
+  { id: 'simonsays', title: 'Müzikal Hafıza', emoji: '🧠', icon: Brain, color: 'hsl(220 70% 60%)', colorSoft: 'hsl(220 70% 60% / 0.1)', description: 'Renk ve ses kalıplarını ezberle!', category: ['brain'] },
   { id: 'memory', title: 'Hafıza Oyunu', emoji: '🃏', icon: Brain, color: 'hsl(258 88% 62%)', colorSoft: 'hsl(258 88% 62% / 0.1)', description: 'Kartları çevir, eşleri bul!', category: ['brain'], badge: 'Beyin', badgeColor: 'hsl(258 88% 62%)' },
   { id: '2048', title: '2048', emoji: '🔢', icon: Brain, color: 'hsl(38 90% 55%)', colorSoft: 'hsl(38 90% 55% / 0.1)', description: "Kaydır, birleştir, 2048'e ulaş!", category: ['brain'], badge: 'Popüler', badgeColor: 'hsl(38 90% 55%)' },
   { id: 'coloring', title: 'Boyama Kitabı', emoji: '🎨', icon: Palette, color: 'hsl(318 75% 58%)', colorSoft: 'hsl(318 75% 58% / 0.1)', description: 'Resimleri dilediğince boya!', category: ['creative'] },
   { id: 'piano', title: 'Piyano', emoji: '🎹', icon: Piano, color: 'hsl(255 75% 62%)', colorSoft: 'hsl(255 75% 62% / 0.1)', description: 'Melodiler çal, müzik yap!', category: ['creative'] },
   { id: 'counting', title: 'Sayma Oyunu', emoji: '🔢', icon: Hash, color: 'hsl(278 75% 60%)', colorSoft: 'hsl(278 75% 60% / 0.1)', description: 'Nesneleri say, rakamı bul!', category: ['learn'] },
   { id: 'math', title: 'Matematik', emoji: '➕', icon: Calculator, color: 'hsl(200 80% 52%)', colorSoft: 'hsl(200 80% 52% / 0.1)', description: 'Toplama ve çıkarma işlemleri!', category: ['learn'] },
+  { id: 'wordcatch', title: 'Kelime Avı', emoji: '🎈', icon: Hash, color: 'hsl(190 80% 60%)', colorSoft: 'hsl(190 80% 60% / 0.1)', description: 'Balonlardaki harflerle kelimeyi tamamla!', category: ['learn'] },
+  { id: 'codingturtle', title: 'Tavşan Kodlama', emoji: '🐇', icon: Brain, color: 'hsl(140 70% 50%)', colorSoft: 'hsl(140 70% 50% / 0.1)', description: 'Tavşanı komutlarla havuca ulaştır!', category: ['learn'] },
+  { id: 'comparison', title: 'Karşılaştırma', emoji: '⚖️', icon: Calculator, color: 'hsl(30 80% 60%)', colorSoft: 'hsl(30 80% 60% / 0.1)', description: 'Hangisi daha büyük veya daha ağır?', category: ['learn'] },
 ];
 
 const CATEGORIES: { id: GameCategory; label: string; icon: typeof Flame }[] = [
@@ -60,19 +71,14 @@ const CATEGORIES: { id: GameCategory; label: string; icon: typeof Flame }[] = [
   { id: 'learn', label: 'Öğren', icon: Zap },
 ];
 
-interface GamesMenuProps {
-  onActiveGameChange?: (active: boolean) => void;
-}
+const GamesMenu = () => {
+  const navigate = useNavigate();
+  const { gameId } = useParams();
+  const activeGame = gameId || 'menu';
 
-const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
-  const [activeGame, setActiveGame] = useState<GameType>('menu');
   const [activeCategory, setActiveCategory] = useState<GameCategory>('all');
   const [muted, setMutedState] = useState(isMuted());
   const gridRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    onActiveGameChange?.(activeGame !== 'menu');
-  }, [activeGame, onActiveGameChange]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const cards = gridRef.current?.querySelectorAll<HTMLElement>('.game-card');
@@ -86,21 +92,32 @@ const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
   const filteredGames = activeCategory === 'all' ? games : games.filter(g => g.category.includes(activeCategory));
 
   const renderActiveGame = () => {
+    // Provide a generic callback for games that want to handle active state
+    // but we use routing now, so they can navigate away if needed.
+    const onActiveGameChange = (active: boolean) => {
+      // noop
+    };
+
     switch (activeGame) {
       case 'basketball': return <BasketballGame />;
-      case 'oddone': return <OddOneOutGame />;
+      case 'odd-one-out': return <OddOneOutGame />;
       case 'memory': return <MemoryFlipGame onActiveGameChange={onActiveGameChange} />;
       case 'whack': return <WhackAMoleGame />;
-      case 'battlecity': return <BattleCityGame onActiveGameChange={onActiveGameChange} />;
+      case 'battle-city': return <BattleCityGame onActiveGameChange={onActiveGameChange} />;
       case 'counting': return <CountingGame />;
       case 'coloring': return <ColoringBookGame />;
-      case 'balloons': return <BalloonPopGame />;
+      case 'balloon': return <BalloonPopGame />;
       case 'piano': return <PianoGame />;
       case 'math': return <MathGame />;
       case 'runner': return <RunnerGame />;
       case 'tetris': return <TetrisGame />;
       case 'snake': return <SnakeGame />;
       case '2048': return <Game2048 />;
+      case 'shapematch': return <ShapeMatchGame />;
+      case 'wordcatch': return <WordCatchGame />;
+      case 'simonsays': return <SimonSaysGame />;
+      case 'codingturtle': return <CodingTurtleGame />;
+      case 'comparison': return <ComparisonGame />;
       default: return null;
     }
   };
@@ -109,7 +126,7 @@ const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
     return (
       <div className="pb-12 md:pb-32 w-full flex flex-col items-center">
         <motion.button
-          onClick={() => setActiveGame('menu')}
+          onClick={() => navigate('/games')}
           className="mb-4 ml-4 mt-3 px-4 py-2.5 rounded-xl font-semibold flex items-center gap-2 self-start text-sm transition-all"
           style={{
             background: 'hsl(var(--muted) / 0.5)',
@@ -216,7 +233,7 @@ const GamesMenu = ({ onActiveGameChange }: GamesMenuProps) => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ delay: i * 0.035, duration: 0.3, type: 'spring', stiffness: 220, damping: 26 }}
-                onClick={() => setActiveGame(game.id)}
+                onClick={() => navigate(`/games/${game.id}`)}
                 className="game-card group text-left p-4 md:p-5"
               >
                 {/* Badge */}
