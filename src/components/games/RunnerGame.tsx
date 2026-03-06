@@ -1304,12 +1304,12 @@ const RunnerGame = () => {
             )}
             <div className="flex gap-3 mt-2">
               <motion.button onClick={startGame} className="btn-gaming px-8 py-3 text-lg"
-                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                whileHover={{ }} whileTap={{ }}>
                 🔄 Tekrar
               </motion.button>
               <motion.button onClick={() => setPhase('menu')}
                 className="px-8 py-3 glass-card text-foreground rounded-xl font-bold hover:bg-white/[0.06] transition-all"
-                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                whileHover={{ }} whileTap={{ }}>
                 ← Menü
               </motion.button>
             </div>

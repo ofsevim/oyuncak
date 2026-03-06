@@ -261,7 +261,7 @@ const CountingGame = () => {
             <motion.button key={key} onClick={() => setDifficulty(key)}
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 + i * 0.08 }}
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+              whileHover={{ }} whileTap={{ }}
               className="w-full p-4 text-left touch-manipulation transition-all"
               style={{
                 ...pill,
@@ -280,7 +280,7 @@ const CountingGame = () => {
         </div>
 
         <motion.button onClick={startGame} className="btn-gaming px-12 py-4 text-lg"
-          whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
+          whileHover={{ y: -2 }} whileTap={{ }}
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           🚀 BAŞLA!
         </motion.button>
@@ -472,8 +472,8 @@ const CountingGame = () => {
                   scale: isCorrectRevealed ? [1, 1.2, 1.1] : isHinting ? [1, 1.08, 1, 1.08, 1] : 1,
                 }}
                 transition={isShaking ? { duration: 0.5 } : isHinting ? { duration: 1.2, repeat: 2 } : { duration: 0.3 }}
-                whileHover={showResult ? {} : { scale: 1.12, y: -4 }}
-                whileTap={showResult ? {} : { scale: 0.9 }}>
+                whileHover={showResult ? {} : { y: -4 }}
+                whileTap={showResult ? {} : { }}>
                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-black"
                   style={{
                     background: isWrongRevealed ? 'rgba(255,255,255,0.05)' : color.bg,
@@ -502,7 +502,7 @@ const CountingGame = () => {
 
         {/* ── Bottom ── */}
         <motion.button onClick={() => setGameState('menu')}
-          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.92 }}
+          whileHover={{ }} whileTap={{ }}
           className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation mt-2" style={pill}>
           ← Menü
         </motion.button>

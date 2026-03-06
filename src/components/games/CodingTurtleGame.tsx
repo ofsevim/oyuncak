@@ -263,7 +263,7 @@ const CodingTurtleGame = () => {
 
                     <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg mt-4"
                         style={{ background: 'linear-gradient(135deg, #10b981, #d946ef)' }}
-                        whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                        whileHover={{ y: -2 }} whileTap={{ }}>
                         🚀 BAŞLA!
                     </motion.button>
                 </motion.div>
@@ -304,10 +304,10 @@ const CodingTurtleGame = () => {
                     </motion.div>
 
                     <motion.div className="flex gap-3 mt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        <motion.button whileHover={{ }} whileTap={{ }}
                             style={{ background: 'linear-gradient(135deg, #10b981, #d946ef)' }}
                             onClick={initGame} className="btn-gaming px-8 py-3 text-base text-white">🔄 Tekrar Oyna</motion.button>
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        <motion.button whileHover={{ }} whileTap={{ }}
                             onClick={() => setGameState('menu')}
                             className="px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
                     </motion.div>
@@ -405,14 +405,14 @@ const CodingTurtleGame = () => {
 
                 {/* Controls Layout */}
                 <div className="flex flex-col items-center gap-2 mt-4 z-20">
-                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }} disabled={gameState === 'animating'}
+                    <motion.button whileHover={{ }} whileTap={{ }} disabled={gameState === 'animating'}
                         onClick={() => addCommand('UP')} className="w-16 h-14 bg-white/10 border-b-4 border-white/20 rounded-xl flex items-center justify-center text-3xl pb-1 touch-manipulation disabled:opacity-50">⬆️</motion.button>
                     <div className="flex gap-2">
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }} disabled={gameState === 'animating'}
+                        <motion.button whileHover={{ }} whileTap={{ }} disabled={gameState === 'animating'}
                             onClick={() => addCommand('LEFT')} className="w-16 h-14 bg-white/10 border-b-4 border-white/20 rounded-xl flex items-center justify-center text-3xl pb-1 touch-manipulation disabled:opacity-50">⬅️</motion.button>
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }} disabled={gameState === 'animating'}
+                        <motion.button whileHover={{ }} whileTap={{ }} disabled={gameState === 'animating'}
                             onClick={() => addCommand('DOWN')} className="w-16 h-14 bg-white/10 border-b-4 border-white/20 rounded-xl flex items-center justify-center text-3xl pb-1 touch-manipulation disabled:opacity-50">⬇️</motion.button>
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }} disabled={gameState === 'animating'}
+                        <motion.button whileHover={{ }} whileTap={{ }} disabled={gameState === 'animating'}
                             onClick={() => addCommand('RIGHT')} className="w-16 h-14 bg-white/10 border-b-4 border-white/20 rounded-xl flex items-center justify-center text-3xl pb-1 touch-manipulation disabled:opacity-50">➡️</motion.button>
                     </div>
                 </div>
@@ -420,7 +420,7 @@ const CodingTurtleGame = () => {
                 <div className="flex gap-4 mt-6 z-20">
                     {gameState === 'playing' ? (
                         <motion.button
-                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                            whileHover={{ }} whileTap={{ }}
                             onClick={executeCommands}
                             className="px-10 py-3 rounded-full font-black text-white shadow-lg disabled:opacity-50"
                             style={{ background: 'linear-gradient(to right, #10b981, #3b82f6)' }}
@@ -429,7 +429,7 @@ const CodingTurtleGame = () => {
                         </motion.button>
                     ) : (
                         <motion.button
-                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                            whileHover={{ }} whileTap={{ }}
                             onClick={resetRun}
                             className="px-10 py-3 rounded-full font-black text-white shadow-lg"
                             style={{ background: 'linear-gradient(to right, #f59e0b, #ef4444)' }}
@@ -457,11 +457,11 @@ const CodingTurtleGame = () => {
                 {/* Bottom Menu */}
                 <motion.div className="flex gap-3 absolute bottom-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto"
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.92 }}
+                    <motion.button whileHover={{ }} whileTap={{ }}
                         onClick={() => { setCommands([]); resetRun(); generateLevel(level); }} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}>
                         ↺ Yeni Bölüm
                     </motion.button>
-                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.92 }}
+                    <motion.button whileHover={{ }} whileTap={{ }}
                         onClick={() => setGameState('menu')} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}>
                         ← Çıkış
                     </motion.button>

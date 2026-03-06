@@ -297,7 +297,7 @@ const SnakeGame = () => {
           <p className="text-xs font-bold text-muted-foreground text-center uppercase tracking-wider">Zorluk Seç</p>
           {(Object.entries(DIFFS) as [Diff, typeof DIFFS['easy']][]).map(([key, val]) => (
             <motion.button key={key} onClick={() => setDiff(key)}
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+              whileHover={{ }} whileTap={{ }}
               className="p-4 text-left touch-manipulation transition-all"
               style={{ ...pill, background: diff === key ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.03)', border: diff === key ? '1px solid rgba(52,211,153,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
               <div className="flex items-center gap-3">
@@ -315,7 +315,7 @@ const SnakeGame = () => {
           <p className="text-muted-foreground text-xs">⭐ Altın=50 | ⚡ Hız | ✂️ Kısalt</p>
         </div>
         <motion.button onClick={startGame} className="btn-gaming px-12 py-4 text-lg"
-          whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>🚀 BAŞLA!</motion.button>
+          whileHover={{ y: -2 }} whileTap={{ }}>🚀 BAŞLA!</motion.button>
       </motion.div>
     );
   }

@@ -298,13 +298,13 @@ const OddOneOutGame = () => {
           )}
 
           <div className="flex gap-3 flex-wrap justify-center">
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            <motion.button whileHover={{ }} whileTap={{ }}
               onClick={() => setUseTimer(p => !p)}
               className="px-5 py-3 touch-manipulation font-bold text-sm"
               style={{ ...pill, background: useTimer ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.03)', border: useTimer ? '1px solid rgba(249,115,22,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
               ⏱️ Zamanlı {useTimer ? '✓' : ''}
             </motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            <motion.button whileHover={{ }} whileTap={{ }}
               onClick={() => setUseHardMode(p => !p)}
               className="px-5 py-3 touch-manipulation font-bold text-sm"
               style={{ ...pill, background: useHardMode ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.03)', border: useHardMode ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
@@ -313,7 +313,7 @@ const OddOneOutGame = () => {
           </div>
 
           <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg"
-            whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+            whileHover={{ y: -2 }} whileTap={{ }}>
             🚀 BAŞLA!
           </motion.button>
         </motion.div>
@@ -360,9 +360,9 @@ const OddOneOutGame = () => {
           </motion.div>
 
           <motion.div className="flex gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            <motion.button whileHover={{ }} whileTap={{ }}
               onClick={initGame} className="btn-gaming px-8 py-3 text-base">🔄 Tekrar Oyna</motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            <motion.button whileHover={{ }} whileTap={{ }}
               onClick={() => setGameState('menu')}
               className="px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
           </motion.div>
@@ -482,8 +482,8 @@ const OddOneOutGame = () => {
                       : isPulsing ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
                         : { delay: 0.1 + idx * 0.06, duration: 0.4, type: 'spring', stiffness: 250, damping: 18 }
                   }
-                  whileHover={!selectedId ? { scale: 1.06, y: -3 } : {}}
-                  whileTap={!selectedId ? { scale: 0.92 } : {}}>
+                  whileHover={!selectedId ? { y: -3 } : {}}
+                  whileTap={!selectedId ? { } : {}}>
                   <div className="w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center text-4xl sm:text-5xl"
                     style={{
                       borderRadius: 20,
@@ -515,11 +515,11 @@ const OddOneOutGame = () => {
         {/* ── Bottom controls ── */}
         <motion.div className="flex gap-3 mt-2"
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.92 }}
+          <motion.button whileHover={{ }} whileTap={{ }}
             onClick={initGame} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={pill}>
             🔄 Yeniden
           </motion.button>
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.92 }}
+          <motion.button whileHover={{ }} whileTap={{ }}
             onClick={() => setGameState('menu')} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={pill}>
             ← Menü
           </motion.button>

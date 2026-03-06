@@ -937,7 +937,7 @@ const BasketballGame = () => {
                                 ))}
                             </div>
                             <motion.button onClick={startNewRound}
-                                whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
+                                whileHover={{ y: -2 }} whileTap={{ }}
                                 className="w-full py-3 rounded-2xl font-black text-white text-base"
                                 style={{ background: 'hsl(var(--primary))', boxShadow: '0 4px 20px hsl(var(--primary) / 0.4)' }}>
                                 🏀 Tekrar Oyna

@@ -134,7 +134,7 @@ const GamesMenu = () => {
             color: 'hsl(var(--muted-foreground))',
           }}
           whileHover={{ x: -3, color: 'hsl(var(--foreground))' }}
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ }}
         >
           <ArrowLeft className="w-4 h-4" /> Oyunlara Dön
         </motion.button>

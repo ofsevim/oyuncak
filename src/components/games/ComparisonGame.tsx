@@ -13,14 +13,14 @@ const ITEMS = [
     // Seviye 3 (Çok Büyük/Ağır)
     { emoji: '🐘', label: 'Fil', weight: 5000, size: 5000, level: 3 },
     { emoji: '🐳', label: 'Balina', weight: 150000, size: 100000, level: 3 },
-    { emoji: '⛰️', label: 'Dağ', weight: 9999999, size: 9999999, level: 3 },
-    { emoji: '🏙️', label: 'Bina', weight: 500000, size: 800000, level: 3 },
+    { emoji: '☀️', label: 'Güneş', weight: 9999999, size: 9999999, level: 3 }, // Dağ yerine Güneş
+    { emoji: '🏠', label: 'Ev', weight: 500000, size: 800000, level: 3 },     // Bina yerine Ev
     { emoji: '🌍', label: 'Dünya', weight: 99999999, size: 99999999, level: 3 },
 
     // Seviye 2 (Orta Büyük/Ağır)
     { emoji: '🚗', label: 'Araba', weight: 1500, size: 300, level: 2 },
-    { emoji: '🐄', label: 'İnek', weight: 700, size: 200, level: 2 },
-    { emoji: '🛋️', label: 'Koltuk', weight: 80, size: 50, level: 2 },
+    { emoji: '🐎', label: 'At', weight: 700, size: 200, level: 2 },            // İnek yerine At (daha yaygın ikon)
+    { emoji: '📺', label: 'Televizyon', weight: 30, size: 50, level: 2 },      // Koltuk yerine Televizyon
     { emoji: '🐻', label: 'Ayı', weight: 400, size: 180, level: 2 },
 
     // Seviye 1 (Hafif/Küçük)
@@ -28,7 +28,7 @@ const ITEMS = [
     { emoji: '🐁', label: 'Fare', weight: 1, size: 1, level: 1 },
     { emoji: '🍓', label: 'Çilek', weight: 0.5, size: 2, level: 1 },
     { emoji: '✏️', label: 'Kalem', weight: 0.5, size: 4, level: 1 },
-    { emoji: '🪙', label: 'Para', weight: 0.2, size: 1, level: 1 },
+    { emoji: '⚽', label: 'Top', weight: 0.4, size: 3, level: 1 },             // Bozuk para yerine Top
 ];
 
 type PropertyType = 'weight' | 'size';
@@ -259,7 +259,7 @@ const ComparisonGame = () => {
                     )}
 
                     <div className="flex gap-3 flex-wrap justify-center">
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        <motion.button whileHover={{}} whileTap={{}}
                             onClick={() => setUseTimer(p => !p)}
                             className="px-5 py-3 touch-manipulation font-bold text-sm"
                             style={{ ...pill, background: useTimer ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.03)', border: useTimer ? '1px solid rgba(249,115,22,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
@@ -269,7 +269,7 @@ const ComparisonGame = () => {
 
                     <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg"
                         style={{ background: 'linear-gradient(135deg, #fb923c, #8b5cf6)' }}
-                        whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                        whileHover={{ y: -2 }} whileTap={{}}>
                         🚀 BAŞLA!
                     </motion.button>
                 </motion.div>
@@ -311,10 +311,10 @@ const ComparisonGame = () => {
                     </motion.div>
 
                     <motion.div className="flex gap-3 mt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        <motion.button whileHover={{}} whileTap={{}}
                             style={{ background: 'linear-gradient(135deg, #fb923c, #8b5cf6)' }}
                             onClick={initGame} className="btn-gaming px-8 py-3 text-base text-white">🔄 Tekrar Oyna</motion.button>
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        <motion.button whileHover={{}} whileTap={{}}
                             onClick={() => setGameState('menu')}
                             className="px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
                     </motion.div>
@@ -403,8 +403,8 @@ const ComparisonGame = () => {
                                     delay: isCorrect ? 0 : idx * 0.1,
                                     type: 'spring', stiffness: wrongShake ? 600 : 200, damping: wrongShake ? 10 : 20
                                 }}
-                                whileHover={{ y: -5, scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ y: -5 }}
+                                whileTap={{}}
                                 className="flex-1 flex flex-col items-center justify-center rounded-[30px] border-[3px] transition-all relative overflow-hidden aspect-square max-w-[200px]"
                                 style={{
                                     background: 'rgba(255,255,255,0.05)',
@@ -425,16 +425,7 @@ const ComparisonGame = () => {
                                     {item.emoji}
                                 </span>
 
-                                {isCorrect && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                        className="absolute bottom-4 left-0 right-0 text-center z-20"
-                                    >
-                                        <span className="bg-black/50 text-white px-3 py-1 rounded-full text-sm font-bold">
-                                            {currentRound.prop === 'weight' ? `${item.weight} Birim` : `${item.size} Birim`}
-                                        </span>
-                                    </motion.div>
-                                )}
+
                             </motion.button>
                         );
                     })}
@@ -443,11 +434,11 @@ const ComparisonGame = () => {
                 {/* Bottom controls */}
                 <motion.div className="flex gap-3 mt-10 z-20"
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.92 }}
+                    <motion.button whileHover={{}} whileTap={{}}
                         onClick={initGame} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={pill}>
                         🔄 Yeniden
                     </motion.button>
-                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.92 }}
+                    <motion.button whileHover={{}} whileTap={{}}
                         onClick={() => setGameState('menu')} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={pill}>
                         ← Çıkış
                     </motion.button>

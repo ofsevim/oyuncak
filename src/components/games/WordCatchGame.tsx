@@ -239,13 +239,13 @@ const WordCatchGame = () => {
                     )}
 
                     <div className="flex gap-3 flex-wrap justify-center">
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        <motion.button whileHover={{ }} whileTap={{ }}
                             onClick={() => setUseTimer(p => !p)}
                             className="px-5 py-3 touch-manipulation font-bold text-sm"
                             style={{ ...pill, background: useTimer ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.03)', border: useTimer ? '1px solid rgba(249,115,22,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
                             ⏱️ Zamanlı {useTimer ? '✓' : ''}
                         </motion.button>
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        <motion.button whileHover={{ }} whileTap={{ }}
                             onClick={() => setUseHardMode(p => !p)}
                             className="px-5 py-3 touch-manipulation font-bold text-sm"
                             style={{ ...pill, background: useHardMode ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.03)', border: useHardMode ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
@@ -255,7 +255,7 @@ const WordCatchGame = () => {
 
                     <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg"
                         style={{ background: 'linear-gradient(135deg, #22d3ee, #c026d3)' }}
-                        whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                        whileHover={{ y: -2 }} whileTap={{ }}>
                         🚀 BAŞLA!
                     </motion.button>
                 </motion.div>
@@ -297,10 +297,10 @@ const WordCatchGame = () => {
                     </motion.div>
 
                     <motion.div className="flex gap-3 mt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        <motion.button whileHover={{ }} whileTap={{ }}
                             style={{ background: 'linear-gradient(135deg, #22d3ee, #c026d3)' }}
                             onClick={initGame} className="btn-gaming px-8 py-3 text-base text-white">🔄 Tekrar Oyna</motion.button>
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        <motion.button whileHover={{ }} whileTap={{ }}
                             onClick={() => setGameState('menu')}
                             className="px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
                     </motion.div>
@@ -397,8 +397,8 @@ const WordCatchGame = () => {
                                 y: { duration: b.duration, delay: b.delay, repeat: Infinity, ease: 'linear' },
                                 x: { duration: 3, delay: b.delay, repeat: Infinity, ease: 'easeInOut', repeatType: 'mirror' }
                             }}
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
+                            whileHover={{ }}
+                            whileTap={{ }}
                         >
                             <div
                                 className={`w-16 h-20 rounded-[50%] flex items-center justify-center shadow-lg bg-gradient-to-br ${b.color} relative border-2 border-white/20`}
@@ -436,11 +436,11 @@ const WordCatchGame = () => {
                 {/* Bottom controls */}
                 <motion.div className="flex gap-3 absolute bottom-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto"
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.92 }}
+                    <motion.button whileHover={{ }} whileTap={{ }}
                         onClick={initGame} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}>
                         🔄 Yeniden
                     </motion.button>
-                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.92 }}
+                    <motion.button whileHover={{ }} whileTap={{ }}
                         onClick={() => setGameState('menu')} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}>
                         ← Çıkış
                     </motion.button>
