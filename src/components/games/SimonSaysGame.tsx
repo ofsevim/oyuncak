@@ -200,7 +200,7 @@ const SimonSaysGame = () => {
 
                     <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg mt-4"
                         style={{ background: 'linear-gradient(135deg, #3b82f6, #10b981)' }}
-                        whileHover={{ y: -2 }} whileTap={{ }}>
+                        whileHover={{ y: -2 }} whileTap={{}}>
                         🚀 BAŞLA!
                     </motion.button>
                 </motion.div>
@@ -242,10 +242,10 @@ const SimonSaysGame = () => {
                     </motion.div>
 
                     <motion.div className="flex gap-3 mt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-                        <motion.button whileHover={{ }} whileTap={{ }}
+                        <motion.button whileHover={{}} whileTap={{}}
                             style={{ background: 'linear-gradient(135deg, #3b82f6, #10b981)' }}
                             onClick={initGame} className="btn-gaming px-8 py-3 text-base text-white">🔄 Tekrar Oyna</motion.button>
-                        <motion.button whileHover={{ }} whileTap={{ }}
+                        <motion.button whileHover={{}} whileTap={{}}
                             onClick={() => setGameState('menu')}
                             className="px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
                     </motion.div>
@@ -282,7 +282,8 @@ const SimonSaysGame = () => {
                                 key={btn.id}
                                 disabled={gameState !== 'playing'}
                                 onMouseDown={() => handleButtonClick(btn.id)}
-                                onTouchStart={(e) => { e.preventDefault(); handleButtonClick(btn.id); }}
+                                onTouchStart={() => handleButtonClick(btn.id)}
+                                onTouchEnd={(e) => { e.preventDefault(); }} // Prevent ghost click without affecting passive start listener
                                 className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl sm:rounded-3xl border-4 transition-colors flex items-center justify-center text-4xl sm:text-5xl"
                                 style={{
                                     backgroundColor: isActive ? btn.color : `${btn.color}40`,
@@ -308,11 +309,11 @@ const SimonSaysGame = () => {
                 {/* Bottom controls */}
                 <motion.div className="flex gap-3 absolute bottom-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto"
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-                    <motion.button whileHover={{ }} whileTap={{ }}
+                    <motion.button whileHover={{}} whileTap={{}}
                         onClick={initGame} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}>
                         🔄 Yeniden
                     </motion.button>
-                    <motion.button whileHover={{ }} whileTap={{ }}
+                    <motion.button whileHover={{}} whileTap={{}}
                         onClick={() => setGameState('menu')} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}>
                         ← Çıkış
                     </motion.button>

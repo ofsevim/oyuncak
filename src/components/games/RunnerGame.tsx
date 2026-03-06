@@ -193,15 +193,15 @@ const RunnerGame = () => {
     const gOff = groundOffRef.current;
     ctx.clearRect(0, 0, W, H);
 
-    /* ── 1. SUNBURN GRADIENT SKY ── */
+    /* ── 1. SUNBURN GRADIENT SKY — VIBRANT SUNSET ── */
     const sky = ctx.createLinearGradient(0, 0, 0, GROUND_Y + 10);
-    sky.addColorStop(0, '#1e1b4b');       // deep indigo top
-    sky.addColorStop(0.15, '#4338ca');     // indigo
-    sky.addColorStop(0.35, '#7c3aed');     // violet
-    sky.addColorStop(0.55, '#e879f9');     // fuchsia
-    sky.addColorStop(0.72, '#fb923c');     // orange
-    sky.addColorStop(0.88, '#fde68a');     // amber glow
-    sky.addColorStop(1, '#fef3c7');        // warm cream at horizon
+    sky.addColorStop(0, '#0f172a');       // deep slate top
+    sky.addColorStop(0.2, '#1e1b4b');     // deep indigo
+    sky.addColorStop(0.4, '#4c1d95');     // rich violet
+    sky.addColorStop(0.6, '#9d174d');     // deep pink/ruby
+    sky.addColorStop(0.75, '#be123c');    // rich rose
+    sky.addColorStop(0.88, '#f59e0b');    // vibrant amber
+    sky.addColorStop(1, '#ffedd5');       // warm sunset glow at horizon
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, GROUND_Y + 10);
 
@@ -299,16 +299,16 @@ const RunnerGame = () => {
     drawMountainLayer(MTN_NEAR, GROUND_Y + 1, 0.1, '#6d28d9', '#8b5cf6', 0.35);
 
     /* ── 5. TEXTURED GROUND ── */
-    // Main ground gradient — pastel earthy
+    // Main ground gradient — VIBRANT pastel earthy
     const gGrad = ctx.createLinearGradient(0, GROUND_Y, 0, H);
-    gGrad.addColorStop(0, '#86efac');   // pastel green
-    gGrad.addColorStop(0.08, '#4ade80');
-    gGrad.addColorStop(0.18, '#a3e635'); // lime transition
-    gGrad.addColorStop(0.3, '#d4a574');  // sandy
-    gGrad.addColorStop(0.6, '#c2956b');
-    gGrad.addColorStop(1, '#a67c52');
+    gGrad.addColorStop(0, '#22c55e');   // vibrant green top
+    gGrad.addColorStop(0.1, '#16a34a');
+    gGrad.addColorStop(0.2, '#84cc16'); // lime transition
+    gGrad.addColorStop(0.35, '#d97706'); // amber/sandy
+    gGrad.addColorStop(0.7, '#b45309');
+    gGrad.addColorStop(1, '#78350f');
     ctx.fillStyle = gGrad;
-    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+    ctx.fillRect(0, 0, W, H); // fill full canvas backdrop for bottom bleed
 
     // Ground texture — small dots and pebbles
     const dOff = gOff % 20;
@@ -1038,6 +1038,15 @@ const RunnerGame = () => {
     return () => {
       window.removeEventListener('resize', checkOrientation);
       window.removeEventListener('orientationchange', checkOrientation);
+
+      // Reset orientation and exit fullscreen on unmount
+      try {
+        if (document.exitFullscreen && document.fullscreenElement) {
+          document.exitFullscreen().catch(() => { });
+        }
+        const orientation = (window.screen as any).orientation;
+        orientation?.unlock?.();
+      } catch (err) { /* ignore */ }
     };
   }, []);
 
@@ -1048,14 +1057,25 @@ const RunnerGame = () => {
       const container = containerRef.current;
       const canvas = canvasRef.current;
 
-      // Hem genişliği hem de dikey yüksekliği (viewport height) dikkate al
-      const sWidth = container.clientWidth / CW;
-      const sHeight = (window.innerHeight - (isPortrait ? 220 : 120)) / CH; // Portre modunda oyunun kesilmesini önlemek için daha fazla pay bırak
+      // Full Screen Compatibility: Cover available space without gaps for modern phone screens
+      const availableW = container.clientWidth;
+      const availableH = window.innerHeight - (isPortrait ? 180 : 0); // No extra pay in landscape for true fullscreen
 
-      const s = Math.min(sWidth, sHeight, 1.4);
+      const scaleX = availableW / CW;
+      const scaleY = availableH / CH;
+
+      // Use "Contain" logic to ensure the entire game is visible and not too large
+      const s = Math.min(scaleX, scaleY, 1.25);
       scaleRef.current = s;
+
       canvas.style.width = `${CW * s}px`;
       canvas.style.height = `${CH * s}px`;
+
+      // Reset positioning
+      canvas.style.position = '';
+      canvas.style.left = '';
+      canvas.style.top = '';
+      canvas.style.transform = '';
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -1149,14 +1169,16 @@ const RunnerGame = () => {
     <motion.div className="flex flex-col items-center gap-3 p-2 md:p-4 pb-12 md:pb-32" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
       {/* Canvas area */}
-      <div ref={containerRef} className="w-full max-w-4xl relative touch-none" onClick={jump}>
+      <div ref={containerRef} className="w-full h-[60vh] md:h-[75vh] landscape:h-screen relative touch-none overflow-hidden rounded-2xl md:rounded-3xl shadow-2xl" onClick={jump}>
         <canvas
           ref={canvasRef}
           width={CW}
           height={CH}
-          className="rounded-2xl md:rounded-3xl shadow-2xl cursor-pointer block mx-auto"
+          className="block mx-auto"
           style={{
             border: '2px solid rgba(255,255,255,0.08)',
+            filter: 'saturate(1.25) brightness(1.1) contrast(1.05)',
+            objectFit: 'cover',
             /* width/height resize ile doğrudan DOM'a yazılır */
             willChange: 'transform',
           }}
@@ -1166,10 +1188,16 @@ const RunnerGame = () => {
         <div className="absolute top-2 md:top-3 left-2 md:left-3 right-2 md:right-3 flex items-center justify-between pointer-events-none" style={{ zIndex: 10 }}>
           {/* Lives — glassmorphism */}
           <div className="flex items-center gap-0.5 md:gap-1 px-2 md:px-3 py-1 md:py-2 rounded-xl md:rounded-2xl"
-            style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            style={{
+              background: 'rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              filter: 'drop-shadow(0 0 12px rgba(239,68,68,0.4))'
+            }}>
             {Array.from({ length: MAX_LIVES }).map((_, i) => (
-              <motion.span key={i} className={`text-xs md:text-sm ${i < lives ? '' : 'opacity-20'}`}
-                animate={i === lives - 1 && lives <= 2 ? { scale: [1, 1.3, 1] } : {}}
+              <motion.span key={i} className={`text-xs md:text-sm drop-shadow-lg ${i < lives ? '' : 'opacity-20'}`}
+                animate={i === lives - 1 && lives <= 2 ? { scale: [1, 1.3, 1], filter: 'drop-shadow(0 0 8px #ef4444)' } : {}}
                 transition={{ repeat: Infinity, duration: 0.5 }}>
                 ❤️
               </motion.span>
@@ -1178,14 +1206,26 @@ const RunnerGame = () => {
 
           {/* Score — glassmorphism */}
           <div className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-2 rounded-xl md:rounded-2xl"
-            style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <span className="text-xs md:text-sm font-black text-amber-300" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>⭐ {score}</span>
+            style={{
+              background: 'rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              filter: 'drop-shadow(0 0 10px rgba(251,191,36,0.3))'
+            }}>
+            <span className="text-xs md:text-sm font-black text-amber-300" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 12px rgba(251,191,36,0.4)' }}>⭐ {score}</span>
           </div>
 
           {/* Distance — glassmorphism */}
           <div className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-2 rounded-xl md:rounded-2xl"
-            style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <span className="text-xs md:text-sm font-bold text-white/80" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>📏 {distance}m</span>
+            style={{
+              background: 'rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.2))'
+            }}>
+            <span className="text-xs md:text-sm font-bold text-white/90" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.5)' }}>📏 {distance}m</span>
           </div>
         </div>
 
@@ -1195,25 +1235,46 @@ const RunnerGame = () => {
             {combo >= 3 && (
               <motion.div key={combo} initial={{ scale: 0.5 }} animate={{ scale: 1 }}
                 className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black text-yellow-300"
-                style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                style={{
+                  background: 'rgba(251,191,36,0.15)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(251,191,36,0.3)',
+                  textShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                  boxShadow: '0 4px 12px rgba(251,191,36,0.2)'
+                }}>
                 🔥 x{combo}
               </motion.div>
             )}
             {showShield && (
               <div className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-blue-300"
-                style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                style={{
+                  background: 'rgba(59,130,246,0.15)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(59,130,246,0.4)',
+                  boxShadow: '0 4px 12px rgba(59,130,246,0.2)'
+                }}>
                 🛡️
               </div>
             )}
             {showMagnet && (
               <div className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-red-300"
-                style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                style={{
+                  background: 'rgba(239,68,68,0.15)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(239,68,68,0.4)',
+                  boxShadow: '0 4px 12px rgba(239,68,68,0.2)'
+                }}>
                 🧲
               </div>
             )}
             {showX2 && (
               <div className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-purple-300"
-                style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(168,85,247,0.2)' }}>
+                style={{
+                  background: 'rgba(168,85,247,0.15)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(168,85,247,0.4)',
+                  boxShadow: '0 4px 12px rgba(168,85,247,0.2)'
+                }}>
                 ×2
               </div>
             )}
@@ -1304,12 +1365,22 @@ const RunnerGame = () => {
             )}
             <div className="flex gap-3 mt-2">
               <motion.button onClick={startGame} className="btn-gaming px-8 py-3 text-lg"
-                whileHover={{ }} whileTap={{ }}>
+                whileHover={{}} whileTap={{}}>
                 🔄 Tekrar
               </motion.button>
-              <motion.button onClick={() => setPhase('menu')}
+              <motion.button onClick={() => {
+                setPhase('menu');
+                // Reset orientation and exit fullscreen when returning to menu
+                try {
+                  const orientation = (window.screen as any).orientation;
+                  orientation?.unlock?.();
+                  if (document.exitFullscreen && document.fullscreenElement) {
+                    document.exitFullscreen().catch(() => { });
+                  }
+                } catch (err) { /* ignore */ }
+              }}
                 className="px-8 py-3 glass-card text-foreground rounded-xl font-bold hover:bg-white/[0.06] transition-all"
-                whileHover={{ }} whileTap={{ }}>
+                whileHover={{}} whileTap={{}}>
                 ← Menü
               </motion.button>
             </div>
