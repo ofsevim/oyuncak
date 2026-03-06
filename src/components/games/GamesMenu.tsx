@@ -124,7 +124,7 @@ const GamesMenu = () => {
       <div className="pb-12 md:pb-32 w-full flex flex-col items-center">
         <motion.button
           onClick={() => navigate('/games')}
-          className="mb-4 ml-4 mt-3 px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 self-start text-xs transition-all shadow-xl"
+          className="mb-4 ml-4 mt-3 px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 self-start text-xs transition-all shadow-xl relative z-[60]"
           style={{
             background: 'rgba(255, 255, 255, 0.05)',
             backdropFilter: 'blur(10px)',

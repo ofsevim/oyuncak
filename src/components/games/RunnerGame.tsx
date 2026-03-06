@@ -1084,8 +1084,8 @@ const RunnerGame = () => {
   useEffect(() => {
     if (phase !== 'playing') return;
 
-    // Scroll to top to ensure the navigation button is visible when game starts
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to top INSTANTLY to ensure the navigation button is visible when game starts
+    window.scrollTo({ top: 0, left: 0 });
 
     const originalStyle = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -1173,10 +1173,10 @@ const RunnerGame = () => {
      PLAYING + GAME OVER — Glassmorphism UI
      ═══════════════════════════════════════════ */
   return (
-    <motion.div className="flex flex-col items-center gap-3 p-2 md:p-4 w-full max-w-[100vw] overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.div className="flex flex-col items-center gap-3 p-2 md:p-4 mt-2 w-full max-w-[100vw] overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
       {/* Canvas area */}
-      <div ref={containerRef} className="w-full h-[60vh] md:h-[75vh] landscape:h-[85vh] relative touch-none overflow-hidden rounded-2xl md:rounded-3xl shadow-2xl flex items-center justify-center bg-black/5" onClick={jump}>
+      <div ref={containerRef} className="w-full h-[60vh] md:h-[75vh] landscape:h-[80vh] relative touch-none overflow-hidden rounded-2xl md:rounded-3xl shadow-2xl flex items-center justify-center bg-black/5" onClick={jump}>
         <canvas
           ref={canvasRef}
           width={CW}
@@ -1210,7 +1210,6 @@ const RunnerGame = () => {
               </motion.span>
             ))}
           </div>
-
           {/* Score — glassmorphism */}
           <div className="flex items-center gap-1.5 md:gap-2.5 px-3 md:px-5 py-1.5 md:py-2.5 rounded-2xl md:rounded-3xl"
             style={{
