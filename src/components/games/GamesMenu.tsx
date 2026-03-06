@@ -124,14 +124,17 @@ const GamesMenu = () => {
       <div className="pb-12 md:pb-32 w-full flex flex-col items-center">
         <motion.button
           onClick={() => navigate('/games')}
-          className="mb-4 ml-4 mt-3 px-4 py-2.5 rounded-xl font-semibold flex items-center gap-2 self-start text-sm transition-all"
+          className="mb-4 ml-4 mt-3 px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 self-start text-xs transition-all shadow-xl"
           style={{
-            background: 'hsl(var(--muted) / 0.5)',
-            border: '1px solid hsl(var(--border))',
-            color: 'hsl(var(--muted-foreground))',
+            background: 'rgba(255, 255, 255, 0.05)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: 'hsl(var(--foreground))',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
           }}
-          whileHover={{ x: -3, color: 'hsl(var(--foreground))' }}
-          whileTap={{}}
+          whileHover={{ x: -2, background: 'rgba(255, 255, 255, 0.1)', scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           <ArrowLeft className="w-4 h-4" /> Oyunlara Dön
         </motion.button>

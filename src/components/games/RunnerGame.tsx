@@ -193,17 +193,12 @@ const RunnerGame = () => {
     const gOff = groundOffRef.current;
     ctx.clearRect(0, 0, W, H);
 
-    /* ── 1. SUNBURN GRADIENT SKY — VIBRANT SUNSET ── */
-    const sky = ctx.createLinearGradient(0, 0, 0, GROUND_Y + 10);
-    sky.addColorStop(0, '#0f172a');       // deep slate top
-    sky.addColorStop(0.2, '#1e1b4b');     // deep indigo
-    sky.addColorStop(0.4, '#4c1d95');     // rich violet
-    sky.addColorStop(0.6, '#9d174d');     // deep pink/ruby
-    sky.addColorStop(0.75, '#be123c');    // rich rose
-    sky.addColorStop(0.88, '#f59e0b');    // vibrant amber
-    sky.addColorStop(1, '#ffedd5');       // warm sunset glow at horizon
+    /* ── 1. VIBRANT SKY GRADIENT ── */
+    const sky = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+    sky.addColorStop(0, '#4facfe'); // Bright sky blue
+    sky.addColorStop(1, '#00f2fe'); // Cyan/Light blue
     ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, GROUND_Y + 10);
+    ctx.fillRect(0, 0, W, GROUND_Y);
 
     /* ── 2. SUN with LENS FLARE ── */
     const sunX = W * 0.78, sunY = GROUND_Y * 0.32;
@@ -299,25 +294,23 @@ const RunnerGame = () => {
     drawMountainLayer(MTN_NEAR, GROUND_Y + 1, 0.1, '#6d28d9', '#8b5cf6', 0.35);
 
     /* ── 5. TEXTURED GROUND ── */
-    // Main ground gradient — VIBRANT pastel earthy
+    // Main ground gradient — Soft Amber/Orange transition
     const gGrad = ctx.createLinearGradient(0, GROUND_Y, 0, H);
-    gGrad.addColorStop(0, '#22c55e');   // vibrant green top
-    gGrad.addColorStop(0.1, '#16a34a');
-    gGrad.addColorStop(0.2, '#84cc16'); // lime transition
-    gGrad.addColorStop(0.35, '#d97706'); // amber/sandy
-    gGrad.addColorStop(0.7, '#b45309');
-    gGrad.addColorStop(1, '#78350f');
+    gGrad.addColorStop(0, '#f59e0b');   // Amber top
+    gGrad.addColorStop(0.3, '#d97706'); // Orange
+    gGrad.addColorStop(1, '#92400e');   // Deep brown
     ctx.fillStyle = gGrad;
-    ctx.fillRect(0, 0, W, H); // fill full canvas backdrop for bottom bleed
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
 
-    // Ground texture — small dots and pebbles
-    const dOff = gOff % 20;
-    ctx.fillStyle = 'rgba(120,80,40,0.08)';
-    for (let x = -dOff; x < W; x += 20) {
-      for (let y = GROUND_Y + 22; y < H; y += 18) {
-        const jx = x + Math.sin(y * 0.5 + x * 0.3) * 4;
-        const sz = 1.5 + Math.sin(x * 0.7 + y * 0.4) * 0.8;
-        ctx.beginPath(); ctx.arc(jx, y, sz, 0, Math.PI * 2); ctx.fill();
+    // Ground texture — very subtle organic "pebbles"
+    const dOff = gOff % 24;
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    for (let x = -dOff; x < W; x += 24) {
+      for (let y = GROUND_Y + 15; y < H; y += 20) {
+        const jx = x + Math.cos(y * 0.4) * 8;
+        const jy = y + Math.sin(x * 0.3) * 5;
+        const sz = 1 + Math.sin(x * 0.5) * 0.5;
+        ctx.beginPath(); ctx.ellipse(jx, jy, sz * 2, sz, 0.4, 0, Math.PI * 2); ctx.fill();
       }
     }
 
@@ -1057,33 +1050,38 @@ const RunnerGame = () => {
       const container = containerRef.current;
       const canvas = canvasRef.current;
 
-      // Full Screen Compatibility: Cover available space without gaps for modern phone screens
-      const availableW = container.clientWidth;
-      const availableH = window.innerHeight - (isPortrait ? 180 : 0); // No extra pay in landscape for true fullscreen
+      // Strictly "Contain" logic to fit inside the viewport with padding
+      const padding = 20;
+      const aw = container.clientWidth - padding;
+      const ah = window.innerHeight - (isPortrait ? 200 : 40) - padding;
 
-      const scaleX = availableW / CW;
-      const scaleY = availableH / CH;
+      const sx = aw / CW;
+      const sy = ah / CH;
 
-      // Use "Contain" logic to ensure the entire game is visible and not too large
-      const s = Math.min(scaleX, scaleY, 1.25);
+      // Limit scale to max 1.1x to prevent oversized UI on desktop, strictly min for mobile
+      const s = Math.min(sx, sy, 1.1);
       scaleRef.current = s;
 
       canvas.style.width = `${CW * s}px`;
       canvas.style.height = `${CH * s}px`;
 
-      // Reset positioning
-      canvas.style.position = '';
-      canvas.style.left = '';
-      canvas.style.top = '';
-      canvas.style.transform = '';
+      // Center with relative positioning
+      canvas.style.position = 'relative';
+      canvas.style.margin = 'auto';
     };
     resize();
     const ro = new ResizeObserver(resize);
     if (containerRef.current) ro.observe(containerRef.current);
     window.addEventListener('resize', resize);
+
+    // Hide body scrollbars during gameplay
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
     return () => {
       ro.disconnect();
       window.removeEventListener('resize', resize);
+      document.body.style.overflow = originalOverflow;
     };
   }, [isPortrait]);
 
@@ -1166,10 +1164,10 @@ const RunnerGame = () => {
      PLAYING + GAME OVER — Glassmorphism UI
      ═══════════════════════════════════════════ */
   return (
-    <motion.div className="flex flex-col items-center gap-3 p-2 md:p-4 pb-12 md:pb-32" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.div className="flex flex-col items-center gap-3 p-2 md:p-4 w-full max-w-[100vw] h-screen max-h-[100vh] overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
       {/* Canvas area */}
-      <div ref={containerRef} className="w-full h-[60vh] md:h-[75vh] landscape:h-screen relative touch-none overflow-hidden rounded-2xl md:rounded-3xl shadow-2xl" onClick={jump}>
+      <div ref={containerRef} className="w-full flex-1 relative touch-none overflow-hidden rounded-2xl md:rounded-3xl shadow-2xl flex items-center justify-center bg-black/5" onClick={jump}>
         <canvas
           ref={canvasRef}
           width={CW}
@@ -1205,15 +1203,16 @@ const RunnerGame = () => {
           </div>
 
           {/* Score — glassmorphism */}
-          <div className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-2 rounded-xl md:rounded-2xl"
+          <div className="flex items-center gap-1.5 md:gap-2.5 px-3 md:px-5 py-1.5 md:py-2.5 rounded-2xl md:rounded-3xl"
             style={{
-              background: 'rgba(0,0,0,0.3)',
-              backdropFilter: 'blur(16px)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              filter: 'drop-shadow(0 0 10px rgba(251,191,36,0.3))'
+              background: 'rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(12px) saturate(1.5)',
+              WebkitBackdropFilter: 'blur(12px) saturate(1.5)',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              filter: 'drop-shadow(0 0 15px rgba(251,191,36,0.35))'
             }}>
-            <span className="text-xs md:text-sm font-black text-amber-300" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 12px rgba(251,191,36,0.4)' }}>⭐ {score}</span>
+            <span className="text-sm md:text-lg font-black text-amber-300" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.6), 0 0 15px rgba(251,191,36,0.5)' }}>⭐ {score}</span>
           </div>
 
           {/* Distance — glassmorphism */}
