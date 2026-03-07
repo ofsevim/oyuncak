@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════════════════════════════
    CONSTANTS
@@ -64,7 +66,7 @@ const SnakeGame = () => {
 
   const dirRef = useRef<Dir>('RIGHT');
   const inputQueueRef = useRef<Dir[]>([]);
-  const loopRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { safeTimeout, safeInterval, clearAllIntervals } = useSafeTimeouts();
   const snakeRef = useRef(snake);
   const scoreRef = useRef(0);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -194,7 +196,7 @@ const SnakeGame = () => {
   const endGame = useCallback(() => {
     playErrorSound();
     setScreenShake(true);
-    setTimeout(() => setScreenShake(false), 400);
+    safeTimeout(() => setScreenShake(false), 400);
     setGameState('gameover');
     const s = scoreRef.current;
     const isNew = saveHighScoreObj('snake', s);
@@ -203,12 +205,10 @@ const SnakeGame = () => {
 
   /* ── Game loop ── */
   useEffect(() => {
-    if (gameState !== 'playing') { if (loopRef.current) clearInterval(loopRef.current); return; }
+    clearAllIntervals();
+    if (gameState !== 'playing') { return; }
 
-    // Clear previous interval before setting a new one (only depends on speed and gameState)
-    if (loopRef.current) clearInterval(loopRef.current);
-
-    loopRef.current = setInterval(() => {
+    safeInterval(() => {
       const cur = [...snakeRef.current];
       const head = { ...cur[0] };
       const currentFood = foodRef.current;
@@ -273,8 +273,7 @@ const SnakeGame = () => {
 
       setSnake(ns); snakeRef.current = ns;
     }, speed);
-    return () => { if (loopRef.current) clearInterval(loopRef.current); };
-  }, [gameState, speed, cfg.wrap, spawnFood, endGame, burst]);
+  }, [gameState, speed, cfg.wrap, spawnFood, endGame, burst, safeInterval, clearAllIntervals]);
 
   /* ── Keyboard ── */
   useEffect(() => {
@@ -366,7 +365,7 @@ const SnakeGame = () => {
      ═══════════════════════════════════════════ */
   if (gameState === 'menu') {
     return (
-      <motion.div className="flex flex-col items-center gap-6 p-5 pb-32 max-w-lg mx-auto"
+      <motion.div className="flex flex-col items-center gap-6 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <motion.div className="text-7xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(52,211,153,0.3))' }}
           animate={{ x: [0, 12, 0, -12, 0], rotate: [0, 3, 0, -3, 0] }}
@@ -396,6 +395,8 @@ const SnakeGame = () => {
           <p className="font-bold">🎮 Ok tuşları / WASD / Kaydır</p>
           <p className="text-muted-foreground text-xs">⭐ Altın=50 | ⚡ Yavaşlatır | ✂️ Kısalt</p>
         </div>
+        <Leaderboard gameId="snake" />
+
         <motion.button onClick={startGame} className="btn-gaming px-12 py-4 text-lg"
           whileHover={{ y: -2 }} whileTap={{}}>🚀 BAŞLA!</motion.button>
       </motion.div>
@@ -409,7 +410,7 @@ const SnakeGame = () => {
   const foodStyle = FOOD_STYLES[food.type];
 
   return (
-    <motion.div className="flex flex-col items-center gap-3 p-4 pb-32"
+    <motion.div className="flex flex-col items-center gap-3 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]"
       initial={{ opacity: 0 }} animate={{ opacity: 1, x: screenShake ? [0, -5, 5, -4, 4, 0] : 0 }}
       transition={screenShake ? { duration: 0.35 } : { duration: 0.4 }}>
 

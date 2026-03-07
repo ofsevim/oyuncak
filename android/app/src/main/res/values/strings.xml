@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Oyuncak</string>
+    <string name="title_activity_main">Oyuncak</string>
+    <string name="package_name">com.oyuncak.app</string>
+    <string name="custom_url_scheme">com.oyuncak.app</string>
+</resources>

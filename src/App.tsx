@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProfileProvider } from "@/contexts/ProfileContext";
+import NicknameModal from "@/components/NicknameModal";
 import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
@@ -16,6 +17,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <NicknameModal />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />

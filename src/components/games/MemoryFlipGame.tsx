@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound } from '@/utils/soundEffects';
 import { shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 const ALL_EMOJIS = [
   '🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐮',
@@ -39,8 +41,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
   const [matchedCount, setMatchedCount] = useState(0);
   const [bestMoves, setBestMoves] = useState<Record<GridSize, number>>({ 3: 0, 4: 0, 5: 0, 6: 0 });
   const [autoAdvance, setAutoAdvance] = useState(true);
-  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { safeTimeout, safeInterval, clearAll, clearAllIntervals } = useSafeTimeouts();
 
   useEffect(() => {
     const bests: Record<GridSize, number> = { 3: 0, 4: 0, 5: 0, 6: 0 };
@@ -48,16 +49,9 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
     setBestMoves(bests);
   }, []);
 
-  const clearAllTimeouts = useCallback(() => {
-    timeoutsRef.current.forEach(clearTimeout);
-    timeoutsRef.current = [];
-  }, []);
-
-  useEffect(() => () => { clearAllTimeouts(); if (timerRef.current) clearInterval(timerRef.current); }, [clearAllTimeouts]);
-
   const initializeGame = useCallback((size?: GridSize) => {
-    clearAllTimeouts();
-    if (timerRef.current) clearInterval(timerRef.current);
+    clearAll();
+    clearAllIntervals();
     const gs = size ?? gridSize;
     const totalCards = gs * gs;
     const pairCount = Math.floor(totalCards / 2);
@@ -75,28 +69,27 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
     setHintsLeft(gs <= 4 ? 1 : 2);
     setShowHint(false);
     setMatchedCount(0);
-  }, [gridSize, clearAllTimeouts]);
+  }, [gridSize, clearAll, clearAllIntervals]);
 
   useEffect(() => { initializeGame(); }, [initializeGame]);
 
   // Timer
   useEffect(() => {
     if (isTimerRunning) {
-      timerRef.current = setInterval(() => setTimer(p => p + 1), 1000);
-    } else if (timerRef.current) clearInterval(timerRef.current);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [isTimerRunning]);
+      const id = safeInterval(() => setTimer(p => p + 1), 1000);
+      return () => clearInterval(id);
+    }
+  }, [isTimerRunning, safeInterval]);
 
   const useHint = () => {
     if (hintsLeft <= 0 || showHint) return;
     setHintsLeft(p => p - 1);
     setShowHint(true);
     setCards(prev => prev.map(c => ({ ...c, isFlipped: true })));
-    const t = setTimeout(() => {
+    safeTimeout(() => {
       setCards(prev => prev.map(c => c.isMatched ? c : { ...c, isFlipped: false }));
       setShowHint(false);
     }, 1500);
-    timeoutsRef.current.push(t);
   };
 
   const handleCardClick = (cardId: number) => {
@@ -131,19 +124,17 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
       const secondCard = cards.find(c => c.id === cardId);
       if (firstCard && secondCard && firstCard.emoji === secondCard.emoji) {
         playPopSound(); playSuccessSound();
-        const t = setTimeout(() => {
+        safeTimeout(() => {
           setCards(prev => prev.map(c => (c.id === firstId || c.id === secondId) ? { ...c, isMatched: true } : c));
           setFlippedCards([]); setIsChecking(false);
           setMatchedCount(p => p + 1);
         }, 400);
-        timeoutsRef.current.push(t);
       } else {
         playErrorSound();
-        const t = setTimeout(() => {
+        safeTimeout(() => {
           setCards(prev => prev.map(c => (c.id === firstId || c.id === secondId) ? { ...c, isFlipped: false } : c));
           setFlippedCards([]); setIsChecking(false);
         }, 800);
-        timeoutsRef.current.push(t);
       }
     }
   };
@@ -155,12 +146,11 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
     if (!allMatched || showSuccess) return;
     setIsTimerRunning(false);
     saveHighScoreObj(`memory-${gridSize}x${gridSize}`, moves > 0 ? Math.floor(10000 / moves) : 0);
-    const t = setTimeout(() => {
+    safeTimeout(() => {
       setShowSuccess(true);
       if (autoAdvance && gridSize < 6) playLevelUpSound();
     }, 500);
-    timeoutsRef.current.push(t);
-  }, [allMatched, showSuccess, gridSize, moves, autoAdvance]);
+  }, [allMatched, showSuccess, gridSize, moves, autoAdvance, safeTimeout]);
 
   const handleSuccessClose = () => {
     setShowSuccess(false);
@@ -176,14 +166,16 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <motion.div className="flex flex-col items-center gap-4 p-4 pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.div className="flex flex-col items-center gap-4 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ touchAction: 'manipulation' }}>
       <h2 className="text-2xl md:text-3xl font-black text-gradient">🃏 Hafıza Oyunu</h2>
+
+      <Leaderboard gameId="memory" />
 
       {/* Grid size selector */}
       <div className="flex gap-1.5 p-1 rounded-xl glass-card border border-white/10">
         {([3, 4, 5, 6] as GridSize[]).map((size) => (
           <button key={size} onClick={() => { setGridSize(size); initializeGame(size); }}
-            className={`px-3 py-1.5 rounded-lg font-bold text-sm transition-all ${gridSize === size ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
+            className={`px-3 py-1.5 rounded-lg font-bold text-sm transition-all ${gridSize === size ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'text-muted-foreground hover:text-foreground hover:bg-white/5 active:text-foreground active:bg-white/5'}`}>
             {size}x{size}
           </button>
         ))}
@@ -201,7 +193,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
           <span className="text-sm font-bold text-green-400">✓ {matchedCount}/{totalPairs}</span>
         </div>
         <button onClick={useHint} disabled={hintsLeft <= 0 || showHint}
-          className={`glass-card px-3 py-1.5 rounded-xl text-sm font-bold transition-all ${hintsLeft > 0 ? 'text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/10' : 'text-muted-foreground/40 border border-white/5'}`}>
+          className={`glass-card px-3 py-1.5 rounded-xl text-sm font-bold transition-all ${hintsLeft > 0 ? 'text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/10 active:bg-yellow-500/10' : 'text-muted-foreground/40 border border-white/5'}`}>
           💡 İpucu ({hintsLeft})
         </button>
       </div>
@@ -220,7 +212,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
             const emojiSize = gridSize <= 3 ? 'text-3xl' : gridSize === 4 ? 'text-2xl' : gridSize === 5 ? 'text-xl' : 'text-base sm:text-lg';
             return (
               <button key={card.id} onClick={() => handleCardClick(card.id)} disabled={card.isMatched || card.isFlipped}
-                className={`${cardSize} rounded-xl transition-all duration-300 flex items-center justify-center relative overflow-hidden touch-manipulation ${isRevealed ? 'glass-card border border-white/10' : 'bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/20 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:scale-95'
+                className={`${cardSize} rounded-xl transition-all duration-300 flex items-center justify-center relative overflow-hidden touch-manipulation ${isRevealed ? 'glass-card border border-white/10' : 'bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/20 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:scale-95 active:border-primary/50'
                   } ${card.isMatched ? 'ring-2 ring-green-400/50 shadow-lg shadow-green-400/20' : ''}`}
                 style={{ touchAction: 'manipulation' }}>
                 {isRevealed ? (
@@ -236,7 +228,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
           })}
         </div>
         <div className="flex justify-center mt-6">
-          <button onClick={() => initializeGame()} className="px-6 py-2.5 glass-card border border-primary/20 text-primary rounded-full font-bold text-base hover:bg-primary/10 transition-colors">
+          <button onClick={() => initializeGame()} className="px-6 py-2.5 glass-card border border-primary/20 text-primary rounded-full font-bold text-base hover:bg-primary/10 active:bg-primary/10 transition-colors">
             🔄 Yeniden Başla
           </button>
         </div>

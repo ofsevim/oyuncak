@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound, playSwishSound, playLevelUpSound } from '@/utils/soundEffects';
-
-
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════ CONSTANTS ═══════════════ */
 const CW = 800;
@@ -340,7 +340,7 @@ const BasketballGame = () => {
     const dragStart = useRef({ x: 0, y: 0 });
     const dragCur = useRef({ x: 0, y: 0 });
     const floatIdRef = useRef(0);
-    const floatTimeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+    const { safeTimeout } = useSafeTimeouts();
     const rafRef = useRef(0);
 
     // Basket feel refs
@@ -367,19 +367,10 @@ const BasketballGame = () => {
     const addFloat = useCallback((x: number, y: number, text: string, color: string) => {
         const id = floatIdRef.current++;
         setFloatMsgs(p => [...p, { id, x, y, text, color }]);
-        const tid = setTimeout(() => {
+        safeTimeout(() => {
             setFloatMsgs(p => p.filter(m => m.id !== id));
-            floatTimeoutsRef.current.delete(tid);
         }, 950);
-        floatTimeoutsRef.current.add(tid);
-    }, []);
-
-    useEffect(() => {
-        return () => {
-            floatTimeoutsRef.current.forEach(clearTimeout);
-            floatTimeoutsRef.current.clear();
-        };
-    }, []);
+    }, [safeTimeout]);
 
     const resetBall = useCallback(() => {
         const pos = SHOT_POSITIONS[Math.floor(Math.random() * SHOT_POSITIONS.length)];
@@ -426,7 +417,7 @@ const BasketballGame = () => {
                 playSwishSound();
 
                 // Ödül seslerini (kombo/başarı) biraz geciktir ki file sesi önce net duyulsun
-                setTimeout(() => {
+                safeTimeout(() => {
                     if (nc > 1) {
                         playComboSound(nc);
                     } else {
@@ -717,16 +708,14 @@ const BasketballGame = () => {
     /* Advance after scored/missed */
     useEffect(() => {
         if (phase !== 'scored' && phase !== 'missed') return;
-        const t = setTimeout(() => {
+        const t = safeTimeout(() => {
             ballsLeftRef.current -= 1;
             setBallsLeft(ballsLeftRef.current);
 
             if (ballsLeftRef.current <= 0) {
-                // Tur bitti: Baraj puanını kontrol et
                 const target = getTargetScore(levelRef.current);
 
                 if (scoreRef.current >= target) {
-                    // Başarılı: Seviye atlat
                     const currentTotal = scoreRef.current;
                     const isNew = saveHighScoreObj('basketball', currentTotal);
                     if (isNew) { setHighScore(currentTotal); setIsNewRecord(true); }
@@ -738,7 +727,7 @@ const BasketballGame = () => {
                     playLevelUpSound();
                     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
-                    setTimeout(() => {
+                    safeTimeout(() => {
                         setShowLevelUp(false);
                         ballsLeftRef.current = BALLS_PER_ROUND;
                         setBallsLeft(BALLS_PER_ROUND);
@@ -767,7 +756,7 @@ const BasketballGame = () => {
             }
         }, phase === 'scored' ? 650 : 450);
         return () => clearTimeout(t);
-    }, [phase, resetBall]);
+    }, [phase, resetBall, safeTimeout]);
 
 
 
@@ -967,6 +956,7 @@ const BasketballGame = () => {
                                     </div>
                                 ))}
                             </div>
+                            <Leaderboard gameId="basketball" />
                             <motion.button onClick={startNewRound}
                                 whileHover={{ y: -2 }} whileTap={{}}
                                 className="w-full py-3 rounded-2xl font-black text-white text-base"

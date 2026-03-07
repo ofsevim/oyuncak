@@ -36,7 +36,7 @@ export default function StoryLibrary() {
       if (typeof p === "number" && p > 0) map.set(s.id, p);
     }
     return map;
-  }, []);
+  }, [activeStoryId]);
 
   const openRandom = () => {
     const pool = filteredStories.length > 0 ? filteredStories : STORIES;

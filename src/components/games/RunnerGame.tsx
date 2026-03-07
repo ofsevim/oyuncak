@@ -1,10 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
 import { playPopSound, playSuccessSound, playErrorSound, playNewRecordSound, playComboSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════════════════════════════
    TYPES
@@ -127,6 +131,7 @@ function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
    MAIN COMPONENT
    ═══════════════════════════════════════════ */
 const RunnerGame = () => {
+  const navigate = useNavigate();
   /* ── State ── */
   const [phase, setPhase] = useState<GamePhase>('menu');
   const [character, setCharacter] = useState(CHARACTERS[0]);
@@ -170,22 +175,17 @@ const RunnerGame = () => {
   const floatIdRef = useRef(0);
   const charRef = useRef(CHARACTERS[0]);
   const maxComboRef = useRef(0);
-  const timersRef = useRef<NodeJS.Timeout[]>([]);
+  const { safeTimeout, clearAllTimeouts } = useSafeTimeouts();
 
-  /* Sync refs */
-  useEffect(() => { phaseRef.current = phase; }, [phase]);
-  useEffect(() => { diffRef.current = DIFF_CONFIG[difficulty]; }, [difficulty]);
-  useEffect(() => { shieldRef.current = showShield; }, [showShield]);
-  useEffect(() => { magnetRef.current = showMagnet; }, [showMagnet]);
-  useEffect(() => { x2Ref.current = showX2; }, [showX2]);
-  useEffect(() => { charRef.current = character; }, [character]);
-
-  /* Safe Timer Management */
-  const safeTimeout = useCallback((fn: () => void, ms: number) => {
-    const id = setTimeout(fn, ms);
-    timersRef.current.push(id);
-    return id;
-  }, []);
+  /* Sync refs - single effect for all refs */
+  useEffect(() => {
+    phaseRef.current = phase;
+    diffRef.current = DIFF_CONFIG[difficulty];
+    shieldRef.current = showShield;
+    magnetRef.current = showMagnet;
+    x2Ref.current = showX2;
+    charRef.current = character;
+  }, [phase, difficulty, showShield, showMagnet, showX2, character]);
 
   /* Helpers */
   const addFloat = useCallback((x: number, y: number, text: string, color: string) => {
@@ -833,8 +833,7 @@ const RunnerGame = () => {
     maxComboRef.current = 0;
     setShowShield(false); setShowMagnet(false); setShowX2(false);
     setIsNewRecord(false); setFloatingTexts([]);
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current = [];
+    clearAllTimeouts();
     phaseRef.current = 'playing';
     setPhase('playing');
 
@@ -895,7 +894,7 @@ const RunnerGame = () => {
       window.removeEventListener('resize', checkOrientation);
       window.removeEventListener('orientationchange', checkOrientation);
       window.visualViewport?.removeEventListener('resize', setVH);
-      timersRef.current.forEach(clearTimeout);
+      clearAllTimeouts();
       try {
         if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen().catch(() => { });
         const orientation = (window.screen as unknown as { orientation?: { unlock?: () => void } }).orientation;
@@ -986,6 +985,19 @@ const RunnerGame = () => {
   if (phase === 'menu') {
     return (
       <motion.div className="flex flex-col items-center gap-5 p-4 pb-12 md:pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <button
+          onClick={() => navigate('/games')}
+          className="self-start px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-xs transition-all"
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'hsl(var(--foreground))',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+          }}
+        >
+          <ArrowLeft className="w-4 h-4" /> Oyunlara Dön
+        </button>
         <motion.span className="text-6xl block" animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>🏃</motion.span>
         <h2 className="text-3xl md:text-4xl font-black text-gradient">Koşucu</h2>
         <p className="text-muted-foreground font-medium text-center text-sm">Engelleri atla, güçleri topla, rekoru kır!</p>
@@ -1031,6 +1043,8 @@ const RunnerGame = () => {
           ))}
         </div>
 
+        <Leaderboard gameId="runner" />
+
         <button onClick={startGame} className="btn-gaming px-10 py-4 text-lg">🚀 BAŞLA!</button>
 
         <div className="text-center text-xs text-muted-foreground space-y-0.5">
@@ -1065,6 +1079,23 @@ const RunnerGame = () => {
           paddingRight: 'env(safe-area-inset-right, 0px)',
         }}
       >
+        {/* Geri butonu — safe area altında */}
+        <button
+          onClick={() => navigate('/games')}
+          className="absolute left-2 md:left-3 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 text-[10px] md:text-xs transition-all"
+          style={{
+            top: 'calc(env(safe-area-inset-top, 8px) + 8px)',
+            zIndex: 50,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            color: '#fff',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+          }}
+        >
+          <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" /> Oyunlara Dön
+        </button>
+
         {/* Canvas container — tüm alanı doldurur */}
         <div
           ref={containerRef}
@@ -1090,7 +1121,7 @@ const RunnerGame = () => {
           />
 
           {/* ── HUD overlay ── */}
-          <div className="absolute top-[env(safe-area-inset-top,8px)] md:top-3 left-2 md:left-3 right-2 md:right-3 flex items-center justify-between pointer-events-none" style={{ zIndex: 10 }}>
+          <div className="absolute md:top-3 left-[140px] md:left-[170px] right-2 md:right-3 flex items-center justify-between pointer-events-none" style={{ top: 'calc(env(safe-area-inset-top, 8px) + 8px)', zIndex: 10 }}>
             {/* Lives */}
             <div className="flex items-center gap-0.5 md:gap-1 px-2 md:px-3 py-1 md:py-2 rounded-xl md:rounded-2xl"
               style={{

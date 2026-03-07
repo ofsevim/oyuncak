@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
-import { smartShuffle, shuffleArray } from '@/utils/shuffle';
+import { shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 import { CATEGORIES } from '@/data/categories';
 
@@ -118,15 +120,12 @@ const OddOneOutGame = () => {
   const [praiseText, setPraiseText] = useState('');
   const [showPraise, setShowPraise] = useState(false);
 
-  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const { safeTimeout, safeInterval, clearAll, clearAllIntervals } = useSafeTimeouts();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sparkleIdRef = useRef(0);
   const scoreRef = useRef(0);
 
   useEffect(() => { setHighScore(getHighScore('oddoneout')); }, []);
-
-  const clearAllTimeouts = useCallback(() => { timeoutsRef.current.forEach(clearTimeout); timeoutsRef.current = []; }, []);
-  useEffect(() => () => { clearAllTimeouts(); if (timerRef.current) clearInterval(timerRef.current); }, [clearAllTimeouts]);
 
   /* Background dots (memoized) */
   const bgDots = useMemo(() => Array.from({ length: 30 }, (_, i) => ({
@@ -144,13 +143,13 @@ const OddOneOutGame = () => {
       color: colors[Math.floor(Math.random() * colors.length)],
     }));
     setSparkles(prev => [...prev, ...newS]);
-    setTimeout(() => setSparkles(prev => prev.filter(s => !newS.find(n => n.id === s.id))), 900);
-  }, []);
+    safeTimeout(() => setSparkles(prev => prev.filter(s => !newS.find(n => n.id === s.id))), 900);
+  }, [safeTimeout]);
 
   /* ── Init game ── */
   const initGame = useCallback(() => {
-    clearAllTimeouts();
-    if (timerRef.current) clearInterval(timerRef.current);
+    clearAll();
+    clearAllIntervals();
     const rounds = generateDynamicRounds(useHardMode);
     setShuffledRounds(rounds);
     setCurrentRoundIndex(0); setSelectedId(null); setIsCorrect(false);
@@ -160,7 +159,7 @@ const OddOneOutGame = () => {
     setIsNewRecord(false); setShowPraise(false);
     if (rounds.length > 0) setRoundItems(shuffleArray(rounds[0].items));
     if (useTimer) setTimeLeft(15);
-  }, [useHardMode, useTimer, clearAllTimeouts]);
+  }, [useHardMode, useTimer, clearAll, clearAllIntervals]);
 
   const round = shuffledRounds[currentRoundIndex];
 
@@ -175,19 +174,17 @@ const OddOneOutGame = () => {
   /* ── Auto hint pulse after 8s ── */
   useEffect(() => {
     if (gameState !== 'playing' || selectedId || !round) return;
-    const t = setTimeout(() => setHintPulse(true), 8000);
-    timeoutsRef.current.push(t);
+    const t = safeTimeout(() => setHintPulse(true), 8000);
     return () => clearTimeout(t);
-  }, [currentRoundIndex, gameState, selectedId, round]);
+  }, [currentRoundIndex, gameState, selectedId, round, safeTimeout]);
 
   /* ── Timer ── */
   useEffect(() => {
     if (!useTimer || gameState !== 'playing' || !round || selectedId) {
-      if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
     setTimeLeft(15);
-    timerRef.current = setInterval(() => {
+    const intervalId = safeInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           playErrorSound(); setStreak(0);
@@ -199,8 +196,9 @@ const OddOneOutGame = () => {
         return prev - 1;
       });
     }, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [useTimer, round, currentRoundIndex, shuffledRounds.length, selectedId, gameState]);
+    timerRef.current = intervalId;
+    return () => clearInterval(intervalId);
+  }, [useTimer, round, currentRoundIndex, shuffledRounds.length, selectedId, gameState, safeInterval]);
 
   /* ── Handle selection ── */
   const handleSelect = (itemId: string, e: React.MouseEvent | React.TouchEvent) => {
@@ -228,7 +226,7 @@ const OddOneOutGame = () => {
       setShowPraise(true);
       confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a'] });
 
-      const t = setTimeout(() => {
+      safeTimeout(() => {
         if (currentRoundIndex < shuffledRounds.length - 1) {
           setCurrentRoundIndex(p => p + 1);
         } else {
@@ -240,15 +238,13 @@ const OddOneOutGame = () => {
           else playLevelUpSound();
         }
       }, 1200);
-      timeoutsRef.current.push(t);
     } else {
       /* ── WRONG ── */
       playErrorSound(); setStreak(0);
       setShakeId(itemId); setFadedId(itemId);
       // Hint: pulse the correct answer
       setHintPulse(true);
-      const t = setTimeout(() => { setShakeId(null); setFadedId(null); }, 700);
-      timeoutsRef.current.push(t);
+      safeTimeout(() => { setShakeId(null); setFadedId(null); }, 700);
     }
   };
 
@@ -283,7 +279,7 @@ const OddOneOutGame = () => {
     return (
       <>
         {Background}
-        <motion.div className="relative z-10 flex flex-col items-center gap-6 p-5 pb-32 max-w-lg mx-auto"
+        <motion.div className="relative z-10 flex flex-col items-center gap-6 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <motion.div className="text-7xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(244,114,182,0.3))' }}
             animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.05, 1] }}
@@ -312,6 +308,7 @@ const OddOneOutGame = () => {
             </motion.button>
           </div>
 
+          <Leaderboard gameId="oddoneout" />
           <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg"
             whileHover={{ y: -2 }} whileTap={{ }}>
             🚀 BAŞLA!
@@ -328,7 +325,7 @@ const OddOneOutGame = () => {
     return (
       <>
         {Background}
-        <motion.div className="relative z-10 flex flex-col items-center gap-5 p-5 pb-32 max-w-lg mx-auto"
+        <motion.div className="relative z-10 flex flex-col items-center gap-5 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
           initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}>
           <motion.div className="text-8xl"
             style={{ filter: 'drop-shadow(0 4px 20px rgba(251,191,36,0.4))' }}
@@ -380,8 +377,8 @@ const OddOneOutGame = () => {
   return (
     <>
       {Background}
-      <motion.div className="relative z-10 flex flex-col items-center gap-4 p-4 pb-32 max-w-2xl mx-auto"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <motion.div className="relative z-10 flex flex-col items-center gap-4 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-2xl mx-auto"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ touchAction: 'manipulation' }}>
 
         {/* ── HUD ── */}
         <motion.div className="flex flex-wrap justify-center gap-2"

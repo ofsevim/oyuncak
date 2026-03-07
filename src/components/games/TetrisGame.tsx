@@ -12,6 +12,8 @@ import {
 } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════════════════════════════════════════════
    SABİTLER
@@ -76,7 +78,7 @@ const TetrisGame = () => {
   const holdPieceTypeRef = useRef<TetrominoKey | null>(null);
   const canHoldRef = useRef(true);
   const gameStateRef = useRef(gameState);
-  const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { safeInterval, clearAllIntervals } = useSafeTimeouts();
   const gameTickRef = useRef<() => void>(() => { });
 
   /* ── ref + state senkron güncelleyiciler (stabil) ──────── */
@@ -340,15 +342,11 @@ const TetrisGame = () => {
   gameTickRef.current = () => movePiece(0, 1);
 
   useEffect(() => {
+    clearAllIntervals();
     if (gameState === 'playing') {
-      gameLoopRef.current = setInterval(() => gameTickRef.current(), dropTime);
-    } else {
-      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+      safeInterval(() => gameTickRef.current(), dropTime);
     }
-    return () => {
-      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
-    };
-  }, [gameState, dropTime]);
+  }, [gameState, dropTime, safeInterval, clearAllIntervals]);
 
   /* ── Klavye ────────────────────────────────────────────── */
   useEffect(() => {
@@ -454,7 +452,7 @@ const TetrisGame = () => {
      RENDER
      ═══════════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col items-center gap-3 p-4 pb-32">
+    <div className="flex flex-col items-center gap-3 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" style={{ touchAction: 'none' }}>
       {/* ── Skor paneli ──────────────────────────────────── */}
       <div
         className="flex justify-between w-full items-center glass-card p-3"
@@ -601,6 +599,7 @@ const TetrisGame = () => {
                     {highScore > 0 && (
                       <p className="text-primary font-black mb-4">🏆 Rekor: {highScore}</p>
                     )}
+                    <Leaderboard gameId="tetris" />
                     <button onClick={startGame} className="w-full py-3 btn-gaming text-lg">
                       OYUNA BAŞLA
                     </button>
@@ -670,7 +669,7 @@ const TetrisGame = () => {
                 key={btn.label}
                 onClick={btn.action}
                 aria-label={btn.ariaLabel}
-                className="p-3 glass-card active:scale-90 transition-transform flex items-center justify-center text-xl border border-white/10 hover:border-primary/30 touch-manipulation"
+                className="p-3 glass-card active:scale-90 active:border-primary/30 transition-transform flex items-center justify-center text-xl border border-white/10 hover:border-primary/30 touch-manipulation"
               >
                 {btn.label}
               </button>
@@ -681,14 +680,14 @@ const TetrisGame = () => {
             <button
               onClick={holdCurrentPiece}
               aria-label="Parça tut"
-              className="p-2.5 glass-card active:scale-90 transition-transform flex items-center justify-center text-sm font-bold border border-white/10 hover:border-primary/30 touch-manipulation"
+              className="p-2.5 glass-card active:scale-90 active:border-primary/30 transition-transform flex items-center justify-center text-sm font-bold border border-white/10 hover:border-primary/30 touch-manipulation"
             >
               📦 Tut
             </button>
             <button
               onClick={togglePause}
               aria-label="Duraklat"
-              className="p-2.5 glass-card active:scale-90 transition-transform flex items-center justify-center text-sm font-bold border border-white/10 hover:border-primary/30 touch-manipulation"
+              className="p-2.5 glass-card active:scale-90 active:border-primary/30 transition-transform flex items-center justify-center text-sm font-bold border border-white/10 hover:border-primary/30 touch-manipulation"
             >
               ⏸️ Duraklat
             </button>

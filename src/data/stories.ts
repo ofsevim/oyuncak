@@ -15,6 +15,8 @@ export type StoryPage = {
   text: string;
   illustration: string;
   choices?: StoryChoice[];
+  /** Dallanma sonrası doğrusal akışı atlatmak için hedef sayfa indeksi */
+  nextPageIndex?: number;
 };
 
 export type Story = {
@@ -55,9 +57,9 @@ export const STORIES: Story[] = [
         { label: "Sahile git 🌊", nextPageIndex: 4 },
         { label: "Tepeye tırman ⛰️", nextPageIndex: 5 },
       ]},
-      { title: "Ormanın Sesi", text: "Ormanda kuş sesleri ve yaprak hışırtıları vardı. Mina yavaş yürüdü, dinledi ve kimseyi ürkütmemeye dikkat etti.", illustration: "🌲" },
-      { title: "Sahilin Işıltısı", text: "Sahilde minik deniz kabukları parlıyordu. Mina kabukları toplamadı; sadece bakıp fotoğrafını zihnine çekti.", illustration: "🌊" },
-      { title: "Tepenin Manzarası", text: "Tepeye çıkınca her şey küçücük görünüyordu. Bazen en iyi fikirler yukarıdan bakınca gelir, dedi Mina.", illustration: "⛰️" },
+      { title: "Ormanın Sesi", text: "Ormanda kuş sesleri ve yaprak hışırtıları vardı. Mina yavaş yürüdü, dinledi ve kimseyi ürkütmemeye dikkat etti.", illustration: "🌲", nextPageIndex: 6 },
+      { title: "Sahilin Işıltısı", text: "Sahilde minik deniz kabukları parlıyordu. Mina kabukları toplamadı; sadece bakıp fotoğrafını zihnine çekti.", illustration: "🌊", nextPageIndex: 6 },
+      { title: "Tepenin Manzarası", text: "Tepeye çıkınca her şey küçücük görünüyordu. Bazen en iyi fikirler yukarıdan bakınca gelir, dedi Mina.", illustration: "⛰️", nextPageIndex: 6 },
       { title: "Haritanın Sırrı", text: "Haritanın sonunda bir hazine yoktu: Mina'nın kendi cesareti ve dikkati vardı. Bu, en değerli keşifti.", illustration: "✨" },
       { title: "Mutlu Son", text: "Mina eve döndü, çantasını yerine koydu ve yeni bir sayfa açtı: Yarın başka bir macera.", illustration: "🏡" },
     ],
@@ -73,8 +75,12 @@ export const STORIES: Story[] = [
     pages: [
       { title: "Eski Gemi", text: "Kaptan Ela, küçük ahşap gemisiyle denize açıldı. Rüzgar saçlarını savuruyordu.", illustration: "⛵" },
       { title: "Gizemli Ada", text: "Ufukta yeşil bir ada belirdi. Haritada Sır Adası yazıyordu.", illustration: "🏝️" },
-      { title: "Kumsal", text: "Kumsala ayak bastığında renkli taşlar gördü. Her biri farklı bir yöne işaret ediyordu.", illustration: "🐚" },
-      { title: "Mağara Girişi", text: "Taşları takip etti ve karanlık bir mağaraya ulaştı. İçeriden hafif bir ışık geliyordu.", illustration: "🕯️" },
+      { title: "Kumsal", text: "Kumsala ayak bastığında renkli taşlar gördü. Her biri farklı bir yöne işaret ediyordu.", illustration: "🐚", choices: [
+        { label: "Mağaraya gir 🕯️", nextPageIndex: 3 },
+        { label: "Kumsalda kal 🏖️", nextPageIndex: 4 },
+      ]},
+      { title: "Mağara Girişi", text: "Taşları takip etti ve karanlık bir mağaraya ulaştı. İçeriden hafif bir ışık geliyordu.", illustration: "🕯️", nextPageIndex: 5 },
+      { title: "Kumsal Sürprizi", text: "Kumsalda kazarken eski bir şişe buldu. İçinde bir mesaj vardı: Gerçek hazine yanındadır.", illustration: "🏖️", nextPageIndex: 5 },
       { title: "Yeni Arkadaş", text: "Mağarada küçük bir papağan vardı. Merhaba! Ben Peri. Yalnızdım... dedi.", illustration: "🦜" },
       { title: "Gerçek Hazine", text: "Ela anladı: Gerçek hazine, yeni bir arkadaş bulmaktı.", illustration: "💎" },
       { title: "Birlikte Yolculuk", text: "Peri, Ela'nın omzuna kondu. Artık birlikte macera yapacaklardı.", illustration: "🌅" },
@@ -92,8 +98,12 @@ export const STORIES: Story[] = [
     pages: [
       { title: "Roket Hazır", text: "Astronot Can, roketine bindi. 3, 2, 1... Kalkış! diye bağırdı.", illustration: "🚀" },
       { title: "Dünyaya Veda", text: "Dünya giderek küçüldü. Mavi bir bilye gibi görünüyordu.", illustration: "🌍" },
-      { title: "Ayda Mola", text: "Aya indi ve zıpladı. Yerçekimi az olunca çok yükseğe sıçradı!", illustration: "🌙" },
-      { title: "Marsa Yolculuk", text: "Kırmızı gezegen yaklaştı. Marsın yüzeyi kumluydu.", illustration: "🔴" },
+      { title: "Ayda Mola", text: "Aya indi ve zıpladı. Yerçekimi az olunca çok yükseğe sıçradı!", illustration: "🌙", choices: [
+        { label: "Marsa git 🔴", nextPageIndex: 3 },
+        { label: "Jüpitere git 🟠", nextPageIndex: 4 },
+      ]},
+      { title: "Marsa Yolculuk", text: "Kırmızı gezegen yaklaştı. Marsın yüzeyi kumluydu.", illustration: "🔴", nextPageIndex: 5 },
+      { title: "Jüpiter Macerası", text: "Jüpiter devasa bir gezegendi. Fırtınaları bile büyüktü! Can pencereden hayretle baktı.", illustration: "🪐", nextPageIndex: 5 },
       { title: "Uzaylı Dostlar", text: "Küçük yeşil varlıklar el salladı. Hoş geldin! dediler.", illustration: "👽" },
       { title: "Yıldız Toplama", text: "Can, bir yıldız tozu şişesi doldurdu. Hatıra olarak saklayacaktı.", illustration: "⭐" },
       { title: "Eve Dönüş", text: "Roket Dünyaya döndü. Can, penceresinden gökyüzüne baktı.", illustration: "🏠" },
@@ -151,9 +161,13 @@ export const STORIES: Story[] = [
       { title: "Islak Tüyler", text: "Çalıların arasında küçük turuncu bir kedi yavrusu titriyordu.", illustration: "🐈" },
       { title: "Sıcak Havlu", text: "Elif yavruyu içeri aldı ve yumuşak bir havluyla sardı.", illustration: "🧣" },
       { title: "Süt ve Sevgi", text: "Bir kase ılık süt verdi. Yavru mutlu mutlu içti.", illustration: "🥛" },
-      { title: "İsim Arayışı", text: "Sana ne isim versem diye düşündü. Pamuk olsun!", illustration: "💭" },
-      { title: "Yeni Yuva", text: "Pamuk artık Elifin en iyi arkadaşıydı.", illustration: "🏠" },
-      { title: "Mutlu Son", text: "Her gece birlikte uyudular. Pamuk mırıldanıyordu.", illustration: "😺" },
+      { title: "İsim Arayışı", text: "Sana ne isim versem diye düşündü. Hangi isim yakışır?", illustration: "💭", choices: [
+        { label: "Pamuk olsun 🤍", nextPageIndex: 5 },
+        { label: "Tarçın olsun 🧡", nextPageIndex: 6 },
+      ]},
+      { title: "Pamuk", text: "Bembeyaz patileri vardı. Pamuk, çok tatlı bir isim! Elif Pamuk'u kucakladı.", illustration: "🤍", nextPageIndex: 7 },
+      { title: "Tarçın", text: "Turuncu tüyleri tarçın gibi kokuyordu. Tarçın, çok güzel bir isim! Elif Tarçın'ı kucakladı.", illustration: "🧡", nextPageIndex: 7 },
+      { title: "Mutlu Son", text: "Her gece birlikte uyudular. Yeni arkadaş mırıldanıyordu.", illustration: "😺" },
     ],
   },
   {
@@ -403,8 +417,12 @@ export const STORIES: Story[] = [
       { title: "Oyun Zamanı", text: "Berk ve Cem her gün birlikte oynardı. En iyi arkadaştılar.", illustration: "🎮" },
       { title: "Kavga", text: "Bir gün oyuncak yüzünden kavga ettiler. İkisi de kızdı.", illustration: "😠" },
       { title: "Yalnızlık", text: "Bir hafta konuşmadılar. İkisi de üzgündü.", illustration: "😢" },
-      { title: "Özlem", text: "Berk arkadaşını özledi. Keşke kavga etmeseydik, dedi.", illustration: "💭" },
-      { title: "Özür", text: "Berk cesaret topladı: Özür dilerim. Cem gülümsedi.", illustration: "🙏" },
+      { title: "Özlem", text: "Berk arkadaşını özledi. Keşke kavga etmeseydik, dedi.", illustration: "💭", choices: [
+        { label: "Özür dile 🙏", nextPageIndex: 4 },
+        { label: "Mektup yaz ✉️", nextPageIndex: 5 },
+      ]},
+      { title: "Özür", text: "Berk cesaret topladı: Özür dilerim. Cem gülümsedi.", illustration: "🙏", nextPageIndex: 6 },
+      { title: "Mektup", text: "Berk bir mektup yazdı: Seni çok özledim, arkadaşım. Cem mektubu okudu ve gülümsedi.", illustration: "✉️", nextPageIndex: 6 },
       { title: "Barış", text: "Sarıldılar. Arkadaşlık, kavgadan güçlü çıktı.", illustration: "🤗" },
       { title: "Mutlu Son", text: "Özür dilemek zayıflık değil, güçtür, dedi ikisi birden.", illustration: "💪" },
     ],

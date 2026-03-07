@@ -6,6 +6,8 @@ import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playC
 import confetti from 'canvas-confetti';
 import { getNextRandomIndex, getNextRandom, shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════════════════════════════
    CONSTANTS
@@ -68,9 +70,7 @@ const CountingGame = () => {
   const [praiseText, setPraiseText] = useState('');
   const [showCelebration, setShowCelebration] = useState(false);
 
-  const nextRoundRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const floatTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const { safeTimeout, safeInterval, clearAll } = useSafeTimeouts();
   const lastCountRef = useRef<number | null>(null);
   const lastEmojiRef = useRef<string | null>(null);
   const floatIdRef = useRef(0);
@@ -154,35 +154,24 @@ const CountingGame = () => {
     setupRound();
   };
 
-  useEffect(() => {
-    return () => {
-      if (nextRoundRef.current) clearTimeout(nextRoundRef.current);
-      if (timerRef.current) clearInterval(timerRef.current);
-      floatTimersRef.current.forEach(clearTimeout);
-      floatTimersRef.current = [];
-    };
-  }, []);
-
   /* ── Timer ── */
   useEffect(() => {
     if (gameState !== 'playing' || config.timer === 0 || showResult) {
-      if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
-    timerRef.current = setInterval(() => {
+    const id = safeInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           playErrorSound(); setStreak(0); setTotal(p => p + 1);
           setShowResult('wrong');
-          if (nextRoundRef.current) clearTimeout(nextRoundRef.current);
-          nextRoundRef.current = setTimeout(setupRound, 1800);
+          safeTimeout(setupRound, 1800);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [gameState, config.timer, showResult, setupRound]);
+    return () => clearInterval(id);
+  }, [gameState, config.timer, showResult, setupRound, safeInterval, safeTimeout]);
 
   /* ── Click on an item to count it ── */
   const handleItemClick = (itemId: number) => {
@@ -197,7 +186,7 @@ const CountingGame = () => {
     if (pos) {
       const id = ++floatIdRef.current;
       setFloatingTexts(prev => [...prev, { id, text: String(newClicked.size), x: pos.x + 20, y: pos.y }]);
-      floatTimersRef.current.push(setTimeout(() => setFloatingTexts(prev => prev.filter(t => t.id !== id)), 1200));
+      safeTimeout(() => setFloatingTexts(prev => prev.filter(t => t.id !== id)), 1200);
     }
   };
 
@@ -212,7 +201,8 @@ const CountingGame = () => {
       const newStreak = streak + 1;
       const bonus = newStreak >= 3 ? Math.min(newStreak, 5) * 3 : 0;
       const pts = 10 + bonus;
-      setScore(prev => prev + pts);
+      const newScore = score + pts;
+      setScore(newScore);
       setStreak(newStreak);
       setShowResult('correct');
       setPraiseText(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
@@ -220,9 +210,9 @@ const CountingGame = () => {
       if (newStreak >= 3) playComboSound(newStreak);
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a'] });
       if (newStreak % 5 === 0) playLevelUpSound();
-      saveHighScoreObj('counting', score + pts);
-      if (nextRoundRef.current) clearTimeout(nextRoundRef.current);
-      nextRoundRef.current = setTimeout(setupRound, 2200);
+      saveHighScoreObj('counting', newScore);
+      clearAll();
+      safeTimeout(setupRound, 2200);
     } else {
       /* ── WRONG ── */
       playErrorSound();
@@ -230,9 +220,9 @@ const CountingGame = () => {
       setShowResult('wrong');
       setShakeBtn(guess);
       setCorrectHint(true);
-      setTimeout(() => setShakeBtn(null), 600);
-      if (nextRoundRef.current) clearTimeout(nextRoundRef.current);
-      nextRoundRef.current = setTimeout(setupRound, 2500);
+      safeTimeout(() => setShakeBtn(null), 600);
+      clearAll();
+      safeTimeout(setupRound, 2500);
     }
   };
 
@@ -241,7 +231,7 @@ const CountingGame = () => {
      ═══════════════════════════════════════════ */
   if (gameState === 'menu') {
     return (
-      <motion.div className="flex flex-col items-center gap-6 p-5 pb-32 max-w-lg mx-auto"
+      <motion.div className="flex flex-col items-center gap-6 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <motion.div className="text-7xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(167,139,250,0.3))' }}
           animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
@@ -279,6 +269,7 @@ const CountingGame = () => {
           ))}
         </div>
 
+        <Leaderboard gameId="counting" />
         <motion.button onClick={startGame} className="btn-gaming px-12 py-4 text-lg"
           whileHover={{ y: -2 }} whileTap={{ }}
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
@@ -292,7 +283,7 @@ const CountingGame = () => {
      PLAYING
      ═══════════════════════════════════════════ */
   return (
-    <motion.div className="flex flex-col items-center gap-4 p-4 pb-32 max-w-2xl mx-auto relative overflow-hidden"
+    <motion.div className="flex flex-col items-center gap-4 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-2xl mx-auto relative overflow-hidden" style={{ touchAction: 'manipulation' }}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
       {/* ── Garden background scene ── */}

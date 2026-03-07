@@ -4,6 +4,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playComboSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════════════════════════════════════════════
    SABİTLER
@@ -225,6 +227,7 @@ const PianoGame = () => {
   const isRecordingRef = useRef(false);
   const abortRef = useRef(false);
   const pointerHandledRef = useRef(false);
+  const { safeTimeout } = useSafeTimeouts();
   const noteTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -299,7 +302,7 @@ const PianoGame = () => {
       const prevT = noteTimeoutsRef.current.get(note);
       if (prevT) clearTimeout(prevT);
 
-      const t = setTimeout(() => {
+      const t = safeTimeout(() => {
         setActiveNotes((prev) => {
           const s = new Set(prev);
           s.delete(note);
@@ -359,7 +362,7 @@ const PianoGame = () => {
           if (isNew) setHighScore(scoreRef.current);
 
           if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
-          successTimeoutRef.current = setTimeout(() => {
+          successTimeoutRef.current = safeTimeout(() => {
             setShowSuccess(false);
             setCurrentMelody(null);
             currentMelodyRef.current = null;
@@ -406,12 +409,12 @@ const PianoGame = () => {
       for (const note of melody.notes) {
         if (abortRef.current) break;
         if (note === '-') {
-          await new Promise((r) => setTimeout(r, 350));
+          await new Promise((r) => safeTimeout(() => r(undefined), 350));
         } else {
           const nd = ALL_NOTES.find((n) => n.note === note);
           if (nd) {
             playNote(nd.freq, nd.note);
-            await new Promise((r) => setTimeout(r, 450));
+            await new Promise((r) => safeTimeout(() => r(undefined), 450));
           }
         }
       }
@@ -446,7 +449,7 @@ const PianoGame = () => {
       const nd = ALL_NOTES.find((n) => n.note === note);
       if (nd) {
         playNote(nd.freq, nd.note);
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => safeTimeout(() => r(undefined), 400));
       }
     }
 
@@ -506,7 +509,7 @@ const PianoGame = () => {
      ═══════════════════════════════════════════════════════════ */
   return (
     <motion.div
-      className="flex flex-col items-center gap-4 p-4 pb-32 w-full max-w-3xl mx-auto"
+      className="flex flex-col items-center gap-4 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] w-full max-w-3xl mx-auto"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
@@ -535,6 +538,8 @@ const PianoGame = () => {
       <p className="text-sm text-muted-foreground font-medium text-center">
         Tuşlara tıkla veya klavyeden çal (A-K beyaz, W-E-T-Y-U siyah)
       </p>
+
+      <Leaderboard gameId="piano" />
 
       {/* Skor çubuğu */}
       {(currentMelody || highScore > 0) && (

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
+import Leaderboard from '@/components/Leaderboard';
 
 const GRID_SIZE = 4;
 type Grid = (number | null)[][];
@@ -190,7 +191,7 @@ const Game2048 = () => {
   // Menu
   if (gameState === 'menu') {
     return (
-      <motion.div className="flex flex-col items-center gap-6 p-6 pb-32 max-w-xl mx-auto min-h-[60vh]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div className="flex flex-col items-center gap-6 p-6 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-xl mx-auto min-h-[60vh]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <motion.h2 className="text-5xl font-black text-gradient" animate={{ scale: [1, 1.02, 1] }} transition={{ repeat: Infinity, duration: 2 }}>2048</motion.h2>
         <p className="text-muted-foreground font-semibold">Kaydır, birleştir, 2048'e ulaş!</p>
         <div className="glass-card p-5 space-y-3 text-center neon-border">
@@ -199,13 +200,15 @@ const Game2048 = () => {
           <p className="text-sm text-muted-foreground">↩️ Ctrl+Z ile geri al</p>
           {bestScore > 0 && <p className="text-lg font-black text-primary">🏆 En İyi: {bestScore}</p>}
         </div>
+        <Leaderboard gameId="2048" />
+
         <button onClick={startGame} className="btn-gaming px-10 py-4 text-lg">🚀 BAŞLA</button>
       </motion.div>
     );
   }
 
   return (
-    <motion.div className="flex flex-col items-center gap-3 p-4 pb-32" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.div className="flex flex-col items-center gap-3 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ touchAction: 'pan-x pan-y' }}>
       {/* Score bar */}
       <div className="flex gap-2 items-center flex-wrap justify-center">
         <div className="glass-card px-4 py-2 neon-border">
@@ -222,8 +225,8 @@ const Game2048 = () => {
         </div>
         <div className="flex gap-1">
           <button onClick={handleUndo} disabled={undoStack.length === 0}
-            className="glass-card px-3 py-3 text-sm font-bold text-muted-foreground hover:text-primary transition-colors touch-manipulation disabled:opacity-30">↩️</button>
-          <button onClick={startGame} className="glass-card px-3 py-3 text-sm font-bold text-muted-foreground hover:text-primary transition-colors touch-manipulation">🔄</button>
+            className="glass-card px-3 py-3 text-sm font-bold text-muted-foreground hover:text-primary active:text-primary transition-colors touch-manipulation disabled:opacity-30">↩️</button>
+          <button onClick={startGame} className="glass-card px-3 py-3 text-sm font-bold text-muted-foreground hover:text-primary active:text-primary transition-colors touch-manipulation">🔄</button>
         </div>
       </div>
 
@@ -235,7 +238,7 @@ const Game2048 = () => {
       <div className="text-xs text-muted-foreground">En büyük: <span className="font-black text-primary">{getMaxTile(grid)}</span></div>
 
       {/* Grid */}
-      <div className="glass-card p-2.5 neon-border relative" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <div className="glass-card p-2.5 neon-border relative" style={{ touchAction: 'none' }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}>
           {grid.map((row, r) => row.map((cell, c) => (
             <div key={`${r}-${c}`} className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center">

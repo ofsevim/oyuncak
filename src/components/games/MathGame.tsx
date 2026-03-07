@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
+import { playSuccessSound, playErrorSound, playComboSound } from '@/utils/soundEffects';
 import confetti from 'canvas-confetti';
 import { shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 type Operation = '+' | '-' | '×' | '÷';
 type Difficulty = 'easy' | 'medium' | 'hard';
@@ -35,7 +37,7 @@ const MathGame = () => {
   const [timeLeft, setTimeLeft] = useState(15);
   const [gameStarted, setGameStarted] = useState(false);
   const [highScore, setHighScore] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { safeTimeout, safeInterval, clearAllIntervals } = useSafeTimeouts();
 
   useEffect(() => { setHighScore(getHighScore('math')); }, []);
 
@@ -102,7 +104,7 @@ const MathGame = () => {
 
   const handleAnswer = (selected: number) => {
     if (showResult || !question) return;
-    if (timerRef.current) clearInterval(timerRef.current);
+    clearAllIntervals();
     setTotalQuestions(prev => prev + 1);
 
     if (selected === question.answer) {
@@ -115,36 +117,36 @@ const MathGame = () => {
     } else {
       playErrorSound(); setStreak(0); setShowResult('wrong');
     }
-    setTimeout(generateQuestion, 1200);
+    safeTimeout(generateQuestion, 1200);
   };
 
   // Timer
   useEffect(() => {
     if (!gameStarted || showResult) return;
-    timerRef.current = setInterval(() => {
+    const id = safeInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           playErrorSound(); setStreak(0); setShowResult('wrong');
           setTotalQuestions(p => p + 1);
-          setTimeout(generateQuestion, 1200);
+          safeTimeout(generateQuestion, 1200);
           return getDiffConfig().timer;
         }
         return prev - 1;
       });
     }, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [gameStarted, showResult, generateQuestion, getDiffConfig]);
+    return () => clearInterval(id);
+  }, [gameStarted, showResult, generateQuestion, getDiffConfig, safeInterval, safeTimeout]);
 
   if (!gameStarted) {
     return (
-      <motion.div className="flex flex-col items-center gap-6 p-6 pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div className="flex flex-col items-center gap-6 p-6 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h2 className="text-3xl font-black text-gradient">➕ Matematik</h2>
         {highScore > 0 && <div className="glass-card px-4 py-2 neon-border"><span className="font-black text-primary">🏆 Rekor: {highScore}</span></div>}
         <div className="space-y-2 w-full max-w-sm">
           <p className="font-bold text-center text-sm text-muted-foreground">Zorluk Seç:</p>
           {DIFFICULTIES.map((d) => (
             <button key={d.id} onClick={() => setDifficulty(d.id)}
-              className={`w-full px-5 py-3 rounded-xl font-bold transition-all ${difficulty === d.id ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/5'}`}>
+              className={`w-full px-5 py-3 rounded-xl font-bold transition-all ${difficulty === d.id ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/5 active:bg-white/5'}`}>
               {d.label}
             </button>
           ))}
@@ -154,13 +156,14 @@ const MathGame = () => {
           <p className="text-muted-foreground">⏱️ Her soru zamanlı | 🔥 Combo bonus</p>
           {difficulty !== 'easy' && <p className="text-muted-foreground">❓ Ters sorular: ? + 3 = 7</p>}
         </div>
+        <Leaderboard gameId="math" />
         <button onClick={startGame} className="btn-gaming px-10 py-4 text-lg">🚀 Başla!</button>
       </motion.div>
     );
   }
 
   return (
-    <motion.div className="flex flex-col items-center gap-5 p-4 pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.div className="flex flex-col items-center gap-5 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <div className="flex flex-wrap justify-center gap-2">
         <div className="glass-card px-3 py-1.5 border border-primary/20 rounded-xl"><span className="text-sm font-black text-primary">⭐ {score}</span></div>
         {streak >= 3 && <motion.div key={streak} initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="glass-card px-3 py-1.5 border border-yellow-500/20 rounded-xl"><span className="text-sm font-black text-yellow-400">🔥 x{Math.min(streak, 5)}</span></motion.div>}
@@ -180,7 +183,7 @@ const MathGame = () => {
               {options.map((option, i) => (
                 <button key={i} onClick={() => handleAnswer(option)} disabled={showResult !== null}
                   className={`w-20 h-20 md:w-24 md:h-24 text-2xl md:text-3xl font-black rounded-2xl transition-all touch-manipulation active:scale-90 ${showResult ? (option === question.answer ? 'bg-green-500/20 text-green-400 ring-2 ring-green-400 scale-105' : 'glass-card text-muted-foreground/40')
-                    : 'glass-card border border-primary/20 hover:bg-primary/10 hover:border-primary/40'
+                    : 'glass-card border border-primary/20 hover:bg-primary/10 hover:border-primary/40 active:bg-primary/10 active:border-primary/40'
                     }`} style={{ touchAction: 'manipulation' }}>
                   {option}
                 </button>

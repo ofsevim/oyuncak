@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 const PRAISE = ['Mantıklı! 🧠', 'Mükemmel Kod! 💻', 'Harika Algoritma! 🚀', 'Hedefe Ulaştın! 🎯', 'Aferin! 🏆'];
 
@@ -54,14 +56,11 @@ const CodingTurtleGame = () => {
     const [showPraise, setShowPraise] = useState(false);
     const [shakeGrid, setShakeGrid] = useState(false);
 
-    const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+    const { safeTimeout, clearAll } = useSafeTimeouts();
     const sparkleIdRef = useRef(0);
     const scoreRef = useRef(0);
 
     useEffect(() => { setHighScore(getHighScore('codingturtle')); }, []);
-
-    const clearAllTimeouts = useCallback(() => { timeoutsRef.current.forEach(clearTimeout); timeoutsRef.current = []; }, []);
-    useEffect(() => () => { clearAllTimeouts(); }, [clearAllTimeouts]);
 
     const bgDots = useMemo(() => Array.from({ length: 30 }, (_, i) => ({
         id: i, x: Math.random() * 100, y: Math.random() * 100,
@@ -115,20 +114,20 @@ const CodingTurtleGame = () => {
     }, []);
 
     const initGame = useCallback(() => {
-        clearAllTimeouts();
+        clearAll();
         setGameState('playing'); setScore(0); scoreRef.current = 0;
         setLevel(1); setRoundLeft(10); setSparkles([]);
         setIsNewRecord(false); setShowPraise(false);
         generateLevel(1);
-    }, [clearAllTimeouts, generateLevel]);
+    }, [clearAll, generateLevel]);
 
-    const finishGame = () => {
+    const finishGame = useCallback(() => {
         setGameState('complete');
         confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#22c55e', '#3b82f6', '#eab308', '#ef4444'] });
         const isNew = saveHighScoreObj('codingturtle', scoreRef.current);
         if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); playNewRecordSound(); }
         else playLevelUpSound();
-    };
+    }, []);
 
     const addCommand = (dir: Direction) => {
         if (gameState !== 'playing') return;
@@ -173,7 +172,7 @@ const CodingTurtleGame = () => {
                 scoreRef.current += pts;
                 setScore(scoreRef.current);
 
-                const t = setTimeout(() => {
+                safeTimeout(() => {
                     setShowPraise(false);
                     setRoundLeft(r => {
                         if (r <= 1) { finishGame(); return 0; }
@@ -185,21 +184,19 @@ const CodingTurtleGame = () => {
                         return r - 1;
                     });
                 }, 1500);
-                timeoutsRef.current.push(t);
             } else {
                 // Fail
                 playErrorSound();
                 setShakeGrid(true);
-                const t = setTimeout(() => {
+                safeTimeout(() => {
                     setShakeGrid(false);
                     resetRun();
                 }, 800);
-                timeoutsRef.current.push(t);
             }
             return;
         }
 
-        const t = setTimeout(() => {
+        safeTimeout(() => {
             const dir = commands[executingIndex];
             const vec = DIR_VECTORS[dir];
             const nextPos = { x: currentPos.x + vec.dx, y: currentPos.y + vec.dy };
@@ -208,16 +205,14 @@ const CodingTurtleGame = () => {
             if (nextPos.x < 0 || nextPos.x >= GRID_W || nextPos.y < 0 || nextPos.y >= GRID_H) {
                 playErrorSound();
                 setShakeGrid(true);
-                const tr = setTimeout(() => { setShakeGrid(false); resetRun(); }, 800);
-                timeoutsRef.current.push(tr);
+                safeTimeout(() => { setShakeGrid(false); resetRun(); }, 800);
                 return;
             }
             // Check obstacles
             if (obstacles.some(o => o.x === nextPos.x && o.y === nextPos.y)) {
                 playErrorSound();
                 setShakeGrid(true);
-                const tr = setTimeout(() => { setShakeGrid(false); resetRun(); }, 800);
-                timeoutsRef.current.push(tr);
+                safeTimeout(() => { setShakeGrid(false); resetRun(); }, 800);
                 return;
             }
 
@@ -225,11 +220,8 @@ const CodingTurtleGame = () => {
             setCurrentPos(nextPos);
             setExecutingIndex(executingIndex + 1);
 
-        }, 400); // Speed of turtle
-
-        timeoutsRef.current.push(t);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [gameState, executingIndex, commands, currentPos]);
+        }, 400);
+    }, [gameState, executingIndex, commands, currentPos, targetPos, level, obstacles, safeTimeout, finishGame, generateLevel, resetRun]);
 
 
     const Background = (
@@ -248,7 +240,7 @@ const CodingTurtleGame = () => {
         return (
             <>
                 {Background}
-                <motion.div className="relative z-10 flex flex-col items-center gap-6 p-5 pb-32 max-w-lg mx-auto"
+                <motion.div className="relative z-10 flex flex-col items-center gap-6 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                     <motion.div className="text-7xl drop-shadow-lg"
                         animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>🐇</motion.div>
@@ -260,6 +252,8 @@ const CodingTurtleGame = () => {
                             <span className="font-black text-emerald-400">🏆 Rekor: {highScore}</span>
                         </div>
                     )}
+
+                    <Leaderboard gameId="codingturtle" />
 
                     <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg mt-4"
                         style={{ background: 'linear-gradient(135deg, #10b981, #d946ef)' }}
@@ -276,7 +270,7 @@ const CodingTurtleGame = () => {
         return (
             <>
                 {Background}
-                <motion.div className="relative z-10 flex flex-col items-center gap-5 p-5 pb-32 max-w-lg mx-auto"
+                <motion.div className="relative z-10 flex flex-col items-center gap-5 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
                     initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
                     <motion.div className="text-8xl drop-shadow-xl"
                         initial={{ scale: 0, rotate: -20 }}
@@ -320,8 +314,8 @@ const CodingTurtleGame = () => {
     return (
         <>
             {Background}
-            <motion.div className="relative z-10 flex flex-col items-center gap-2 p-4 pb-32 max-w-2xl mx-auto game-field min-h-screen"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <motion.div className="relative z-10 flex flex-col items-center gap-2 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-2xl mx-auto game-field min-h-screen"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ touchAction: 'manipulation' }}>
 
                 {/* HUD */}
                 <motion.div className="flex flex-wrap justify-center gap-2 w-full z-50 mb-2"

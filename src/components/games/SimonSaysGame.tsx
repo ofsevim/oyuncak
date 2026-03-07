@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playLevelUpSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 const BUTTONS = [
     { id: 0, color: '#ef4444', glow: 'rgba(239,68,68,0.6)', note: 'C', freq: 261.63, icon: '🍎' }, // Red
@@ -32,7 +34,7 @@ const SimonSaysGame = () => {
     const [wrongButton, setWrongButton] = useState<number | null>(null);
 
     const audioCtxRef = useRef<AudioContext | null>(null);
-    const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+    const { safeTimeout, clearAll } = useSafeTimeouts();
 
     useEffect(() => { setHighScore(getHighScore('simonsays')); }, []);
 
@@ -68,13 +70,6 @@ const SimonSaysGame = () => {
         osc2.stop(ctx.currentTime + 0.5);
     }, [getAudioContext]);
 
-    const clearAllTimeouts = useCallback(() => {
-        timeoutsRef.current.forEach(clearTimeout);
-        timeoutsRef.current = [];
-    }, []);
-
-    useEffect(() => () => { clearAllTimeouts(); }, [clearAllTimeouts]);
-
     const bgDots = useMemo(() => Array.from({ length: 30 }, (_, i) => ({
         id: i, x: Math.random() * 100, y: Math.random() * 100,
         size: 2 + Math.random() * 4, dur: 3 + Math.random() * 5, delay: Math.random() * 2,
@@ -86,7 +81,7 @@ const SimonSaysGame = () => {
         setActiveButton(null);
 
         // Wait a bit before showing
-        await new Promise(r => { const t = setTimeout(r, 800); timeoutsRef.current.push(t); });
+        await new Promise(r => { safeTimeout(() => r(undefined), 800); });
 
         for (let i = 0; i < seq.length; i++) {
             const btnId = seq[i];
@@ -95,10 +90,10 @@ const SimonSaysGame = () => {
             setActiveButton(btnId);
             playNote(btn.freq);
 
-            await new Promise(r => { const t = setTimeout(r, 400); timeoutsRef.current.push(t); });
+            await new Promise(r => { safeTimeout(() => r(undefined), 400); });
 
             setActiveButton(null);
-            await new Promise(r => { const t = setTimeout(r, 200); timeoutsRef.current.push(t); });
+            await new Promise(r => { safeTimeout(() => r(undefined), 200); });
         }
 
         setGameState('playing');
@@ -113,15 +108,14 @@ const SimonSaysGame = () => {
     }, [playSequence]);
 
     const initGame = useCallback(() => {
-        clearAllTimeouts();
+        clearAll();
         setScore(0);
         setIsNewRecord(false);
         nextRound([]);
-    }, [clearAllTimeouts, nextRound]);
+    }, [clearAll, nextRound]);
 
-    const finishGame = useCallback(() => {
+    const finishGame = useCallback((finalScore: number) => {
         setGameState('complete');
-        const finalScore = score;
         const isNew = saveHighScoreObj('simonsays', finalScore);
         if (isNew) {
             setIsNewRecord(true);
@@ -130,7 +124,7 @@ const SimonSaysGame = () => {
         } else {
             playLevelUpSound();
         }
-    }, [score]);
+    }, []);
 
     const handleButtonClick = (btnId: number) => {
         if (gameState !== 'playing') return;
@@ -139,8 +133,7 @@ const SimonSaysGame = () => {
         playNote(btn.freq);
         setActiveButton(btnId);
 
-        const t = setTimeout(() => setActiveButton(null), 200);
-        timeoutsRef.current.push(t);
+        safeTimeout(() => setActiveButton(null), 200);
 
         if (btnId === sequence[playerIndex]) {
             // Correct
@@ -151,10 +144,9 @@ const SimonSaysGame = () => {
                 playSuccessSound();
                 setGameState('showing'); // Prevent multiple clicks
 
-                const tr = setTimeout(() => {
+                safeTimeout(() => {
                     nextRound(sequence);
                 }, 1000);
-                timeoutsRef.current.push(tr);
             } else {
                 setPlayerIndex(nextIndex);
             }
@@ -164,11 +156,11 @@ const SimonSaysGame = () => {
             setWrongButton(btnId);
             setGameState('showing'); // Block input
 
-            const t = setTimeout(() => {
+            const currentScore = score;
+            safeTimeout(() => {
                 setWrongButton(null);
-                finishGame();
+                finishGame(currentScore);
             }, 600);
-            timeoutsRef.current.push(t);
         }
     };
 
@@ -188,7 +180,7 @@ const SimonSaysGame = () => {
         return (
             <>
                 {Background}
-                <motion.div className="relative z-10 flex flex-col items-center gap-6 p-5 pb-32 max-w-lg mx-auto"
+                <motion.div className="relative z-10 flex flex-col items-center gap-6 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                     <motion.div className="text-7xl drop-shadow-lg grid grid-cols-2 gap-2"
                         animate={{ rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}>
@@ -206,6 +198,8 @@ const SimonSaysGame = () => {
                         </div>
                     )}
 
+                    <Leaderboard gameId="simonsays" />
+
                     <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg mt-4"
                         style={{ background: 'linear-gradient(135deg, #3b82f6, #10b981)' }}
                         whileHover={{ y: -2 }} whileTap={{}}>
@@ -221,7 +215,7 @@ const SimonSaysGame = () => {
         return (
             <>
                 {Background}
-                <motion.div className="relative z-10 flex flex-col items-center gap-5 p-5 pb-32 max-w-lg mx-auto"
+                <motion.div className="relative z-10 flex flex-col items-center gap-5 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
                     initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
                     <motion.div className="text-8xl drop-shadow-xl"
                         initial={{ scale: 0, rotate: -20 }}
@@ -266,7 +260,7 @@ const SimonSaysGame = () => {
     return (
         <>
             {Background}
-            <motion.div className="relative z-10 flex flex-col items-center gap-6 p-4 pb-32 max-w-2xl mx-auto game-field min-h-screen"
+            <motion.div className="relative z-10 flex flex-col items-center gap-6 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-2xl mx-auto game-field min-h-screen"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
                 {/* HUD */}

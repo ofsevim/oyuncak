@@ -121,23 +121,27 @@ const GamesMenu = () => {
 
   if (activeGame !== 'menu') {
     return (
-      <div className="pb-12 md:pb-32 w-full flex flex-col items-center">
-        <motion.button
-          onClick={() => navigate('/games')}
-          className="mb-4 ml-4 mt-3 px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 self-start text-xs transition-all shadow-xl relative z-[60]"
-          style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: 'hsl(var(--foreground))',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
-          }}
-          whileHover={{ x: -2, background: 'rgba(255, 255, 255, 0.1)', scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <ArrowLeft className="w-4 h-4" /> Oyunlara Dön
-        </motion.button>
+      <div className="pb-12 md:pb-32 w-full flex flex-col items-center relative">
+        {/* Runner kendi geri butonunu yönetir, çakışma olmasın */}
+        {activeGame !== 'runner' && (
+          <motion.button
+            onClick={() => navigate('/games')}
+            className="fixed left-2 md:left-4 px-3 py-1.5 md:px-5 md:py-2.5 rounded-xl md:rounded-2xl font-bold flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs transition-all shadow-xl z-[60]"
+            style={{
+              top: 'calc(env(safe-area-inset-top, 8px) + 8px)',
+              background: 'rgba(0, 0, 0, 0.5)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              color: '#fff',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            }}
+            whileHover={{ x: -2, background: 'rgba(0, 0, 0, 0.6)', scale: 1.02 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" /> Oyunlara Dön
+          </motion.button>
+        )}
         <Suspense fallback={
           <div className="flex items-center justify-center py-20 w-full">
             <div className="flex flex-col items-center gap-3">

@@ -11,6 +11,8 @@ import {
 } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════ Sabitler ═══════════════════ */
 
@@ -150,8 +152,7 @@ const BalloonPopGame = () => {
   const isDoubleRef = useRef(false);
   const targetColorRef = useRef<ColorDef>(BALLOON_COLORS[0]);
   const poppedRef = useRef<Set<string>>(new Set());
-  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
-  const intervalsRef = useRef<Set<ReturnType<typeof setInterval>>>(new Set());
+  const { safeTimeout: hookTimeout, safeInterval: hookInterval, clearAll: hookClearAll } = useSafeTimeouts();
   const containerRef = useRef<HTMLDivElement>(null);
 
   /* ─── Ref senkronizasyonu ─── */
@@ -177,35 +178,25 @@ const BalloonPopGame = () => {
 
   const config = useMemo(() => DIFFICULTIES[difficulty], [difficulty]);
 
-  /* ═══════ Zamanlayıcı Yönetimi ═══════ */
+  /* ═══════ Zamanlayıcı Yönetimi (game-phase-aware wrappers) ═══════ */
 
   const safeTimeout = useCallback((fn: () => void, ms: number) => {
-    const id = setTimeout(() => {
-      timersRef.current.delete(id);
+    return hookTimeout(() => {
       if (gamePhaseRef.current !== 'playing') return;
       fn();
     }, ms);
-    timersRef.current.add(id);
-    return id;
-  }, []);
+  }, [hookTimeout]);
 
   const safeInterval = useCallback((fn: () => void, ms: number) => {
-    const id = setInterval(() => {
+    return hookInterval(() => {
       if (gamePhaseRef.current !== 'playing') return;
       fn();
     }, ms);
-    intervalsRef.current.add(id);
-    return id;
-  }, []);
+  }, [hookInterval]);
 
   const clearAllTimers = useCallback(() => {
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current.clear();
-    intervalsRef.current.forEach(clearInterval);
-    intervalsRef.current.clear();
-  }, []);
-
-  useEffect(() => () => clearAllTimers(), [clearAllTimers]);
+    hookClearAll();
+  }, [hookClearAll]);
 
   /* ═══════ Balon Oluşturma ═══════ */
 
@@ -524,7 +515,7 @@ const BalloonPopGame = () => {
               onClick={() => setDifficulty(key)}
               className={`px-5 py-3 rounded-xl font-bold transition-all cursor-pointer ${difficulty === key
                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
-                : 'glass-card text-muted-foreground hover:bg-white/5'
+                : 'glass-card text-muted-foreground hover:bg-white/5 active:bg-white/5'
                 }`}
             >
               {val.label} ({val.time}s)
@@ -540,6 +531,8 @@ const BalloonPopGame = () => {
             Siyah = Bomba!
           </p>
         </div>
+
+        <Leaderboard gameId="balloon-pop" />
 
         <button
           onClick={startGame}

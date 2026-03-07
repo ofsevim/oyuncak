@@ -6,7 +6,9 @@ import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playC
 import { shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import { CATEGORIES } from '@/data/categories';
+import Leaderboard from '@/components/Leaderboard';
 
 const PRAISE = ['Çok İyi! 🌟', 'Tam İsabet! 🎯', 'Mükemmel! 💫', 'Harika Gözlem! 👀', 'Aferin! 🏆'];
 
@@ -46,15 +48,12 @@ const ShapeMatchGame = () => {
     const [praiseText, setPraiseText] = useState('');
     const [showPraise, setShowPraise] = useState(false);
 
-    const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+    const { safeTimeout, safeInterval, clearAll, clearAllIntervals } = useSafeTimeouts();
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const sparkleIdRef = useRef(0);
     const scoreRef = useRef(0);
 
     useEffect(() => { setHighScore(getHighScore('shapematch')); }, []);
-
-    const clearAllTimeouts = useCallback(() => { timeoutsRef.current.forEach(clearTimeout); timeoutsRef.current = []; }, []);
-    useEffect(() => () => { clearAllTimeouts(); if (timerRef.current) clearInterval(timerRef.current); }, [clearAllTimeouts]);
 
     const bgDots = useMemo(() => Array.from({ length: 30 }, (_, i) => ({
         id: i, x: Math.random() * 100, y: Math.random() * 100,
@@ -70,8 +69,8 @@ const ShapeMatchGame = () => {
             color: colors[Math.floor(Math.random() * colors.length)],
         }));
         setSparkles(prev => [...prev, ...newS]);
-        setTimeout(() => setSparkles(prev => prev.filter(s => !newS.find(n => n.id === s.id))), 900);
-    }, []);
+        safeTimeout(() => setSparkles(prev => prev.filter(s => !newS.find(n => n.id === s.id))), 900);
+    }, [safeTimeout]);
 
     const generateNewRound = useCallback(() => {
         // Only use categories that have strong silhouettes (avoid abstract or text-heavy ones)
@@ -101,23 +100,22 @@ const ShapeMatchGame = () => {
     }, [useHardMode, useTimer]);
 
     const initGame = useCallback(() => {
-        clearAllTimeouts();
-        if (timerRef.current) clearInterval(timerRef.current);
+        clearAll();
+        clearAllIntervals();
 
         setGameState('playing'); setScore(0); scoreRef.current = 0;
         setStreak(0); setRoundLeft(15); setSparkles([]);
         setIsNewRecord(false); setShowPraise(false);
 
         generateNewRound();
-    }, [clearAllTimeouts, generateNewRound]);
+    }, [clearAll, clearAllIntervals, generateNewRound]);
 
     useEffect(() => {
         if (!useTimer || gameState !== 'playing' || !currentRound || isCorrect) {
-            if (timerRef.current) clearInterval(timerRef.current);
             return;
         }
 
-        timerRef.current = setInterval(() => {
+        const intervalId = safeInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     playErrorSound(); setStreak(0); setShakeId('target');
@@ -127,15 +125,15 @@ const ShapeMatchGame = () => {
                         return r - 1;
                     });
 
-                    const t = setTimeout(() => { generateNewRound(); }, 800);
-                    timeoutsRef.current.push(t);
+                    safeTimeout(() => { generateNewRound(); }, 800);
                     return useHardMode ? 10 : 15;
                 }
                 return prev - 1;
             });
         }, 1000);
-        return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [useTimer, useHardMode, currentRound, isCorrect, gameState, generateNewRound]);
+        timerRef.current = intervalId;
+        return () => clearInterval(intervalId);
+    }, [useTimer, useHardMode, currentRound, isCorrect, gameState, generateNewRound, safeInterval, safeTimeout]);
 
     const finishGame = () => {
         setGameState('complete');
@@ -170,20 +168,18 @@ const ShapeMatchGame = () => {
             setShowPraise(true);
             confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 }, colors: ['#38bdf8', '#facc15'] });
 
-            const t = setTimeout(() => {
+            safeTimeout(() => {
                 setRoundLeft(r => {
                     if (r <= 1) { finishGame(); return 0; }
                     generateNewRound();
                     return r - 1;
                 });
             }, 1200);
-            timeoutsRef.current.push(t);
         } else {
             // WRONG
             playErrorSound(); setStreak(0);
             setShakeId(`opt_${emoji}`);
-            const t = setTimeout(() => setShakeId(null), 500);
-            timeoutsRef.current.push(t);
+            safeTimeout(() => setShakeId(null), 500);
         }
     };
 
@@ -203,7 +199,7 @@ const ShapeMatchGame = () => {
         return (
             <>
                 {Background}
-                <motion.div className="relative z-10 flex flex-col items-center gap-6 p-5 pb-32 max-w-lg mx-auto"
+                <motion.div className="relative z-10 flex flex-col items-center gap-6 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                     <motion.div className="relative w-32 h-32 flex items-center justify-center -mt-4 mb-2">
                         {/* Silhouette and target styling */}
@@ -242,6 +238,8 @@ const ShapeMatchGame = () => {
                         </motion.button>
                     </div>
 
+                    <Leaderboard gameId="shapematch" />
+
                     <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg"
                         style={{ background: 'linear-gradient(135deg, #fb7185, #d946ef)' }}
                         whileHover={{ y: -2 }} whileTap={{ }}>
@@ -257,7 +255,7 @@ const ShapeMatchGame = () => {
         return (
             <>
                 {Background}
-                <motion.div className="relative z-10 flex flex-col items-center gap-5 p-5 pb-32 max-w-lg mx-auto"
+                <motion.div className="relative z-10 flex flex-col items-center gap-5 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
                     initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
                     <motion.div className="text-8xl drop-shadow-xl"
                         initial={{ scale: 0, rotate: -20 }}
@@ -304,8 +302,8 @@ const ShapeMatchGame = () => {
     return (
         <>
             {Background}
-            <motion.div className="relative z-10 flex flex-col items-center gap-6 p-4 pb-32 max-w-2xl mx-auto game-field"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <motion.div className="relative z-10 flex flex-col items-center gap-6 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-2xl mx-auto game-field"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ touchAction: 'manipulation' }}>
 
                 {/* HUD */}
                 <motion.div className="flex flex-wrap justify-center gap-2"

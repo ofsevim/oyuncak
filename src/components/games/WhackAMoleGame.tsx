@@ -6,6 +6,8 @@ import SuccessPopup from '@/components/SuccessPopup';
 import { getNextRandomIndex } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import { playPopSound, playErrorSound, playComboSound, playSuccessSound, playNewRecordSound } from '@/utils/soundEffects';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════════════════════════════
    TYPES & CONSTANTS
@@ -58,7 +60,7 @@ const WhackAMoleGame = () => {
 
   // Refs for stable logic & sync
   const containerRef = useRef<HTMLDivElement>(null);
-  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const { safeTimeout: hookTimeout, safeInterval: hookInterval, clearAll: hookClearAll } = useSafeTimeouts();
   const gamePhaseRef = useRef(gamePhase);
   const activeHolesRef = useRef<Map<number, ActiveMole>>(new Map());
   const spawnMoleRef = useRef<() => void>(() => { });
@@ -69,7 +71,6 @@ const WhackAMoleGame = () => {
   const comboRef = useRef(0);
   const maxComboRef = useRef(0);
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const moleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const comboTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -104,26 +105,19 @@ const WhackAMoleGame = () => {
     setHoleVersion(v => v + 1);
   }, []);
 
-  /* Central timer management */
+  /* Central timer management (game-phase-aware wrapper) */
   const safeTimeout = useCallback((fn: () => void, ms: number) => {
-    const id = setTimeout(() => {
-      timersRef.current.delete(id);
+    return hookTimeout(() => {
       if (gamePhaseRef.current !== 'playing') return;
       fn();
     }, ms);
-    timersRef.current.add(id);
-    return id;
-  }, []);
+  }, [hookTimeout]);
 
   const clearAllTimers = useCallback(() => {
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current.clear();
+    hookClearAll();
     if (moleRef.current) clearTimeout(moleRef.current);
     if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
-    if (timerRef.current) clearInterval(timerRef.current);
-  }, []);
-
-  useEffect(() => () => clearAllTimers(), [clearAllTimers]);
+  }, [hookClearAll]);
 
   /* Floating text helper */
   const addFloat = useCallback((x: number, y: number, text: string, color: string) => {
@@ -214,9 +208,8 @@ const WhackAMoleGame = () => {
   /* Multi-mole spawn loop */
   useEffect(() => {
     if (gamePhase !== 'playing' || config.multiChance === 0) return;
-    const interval = setInterval(() => {
+    hookInterval(() => {
       if (Math.random() < config.multiChance) {
-        // Find available holes excluding last spawn and current active ones
         const activeSet = new Set(activeHolesRef.current.keys());
         const available = Array.from({ length: config.holes }, (_, i) => i)
           .filter(i => !activeSet.has(i) && i !== lastHoleRef.current);
@@ -240,8 +233,7 @@ const WhackAMoleGame = () => {
         }, 900);
       }
     }, 2200);
-    return () => clearInterval(interval);
-  }, [gamePhase, config, safeTimeout, updateHoles]);
+  }, [gamePhase, config, safeTimeout, updateHoles, hookInterval]);
 
   /* Start game loop */
   /* Initial spawn delay */
@@ -256,7 +248,10 @@ const WhackAMoleGame = () => {
 
   const startGame = useCallback(() => {
     clearAllTimers();
+    activeHolesRef.current.clear();
     scoreRef.current = 0; comboRef.current = 0; maxComboRef.current = 0;
+    lastHoleRef.current = null; lastWhackRef.current = 0;
+    moleRef.current = null; comboTimerRef.current = null;
     setScore(0); setTimeLeft(config.time); setGamePhase('playing');
     setShowSuccess(false); setCombo(0); setMaxCombo(0); setIsNewRecord(false);
     setFloatingTexts([]);
@@ -264,24 +259,26 @@ const WhackAMoleGame = () => {
 
   /* Timer */
   useEffect(() => {
-    if (gamePhase === 'playing') {
-      timerRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            setGamePhase('ended'); setShowSuccess(true);
-            if (timerRef.current) clearInterval(timerRef.current);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    if (gamePhase !== 'playing') return;
+    const id = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(id);
+          setGamePhase('ended');
+          setShowSuccess(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
   }, [gamePhase]);
 
-  /* Game over — save score */
+  /* Game over — stop everything & save score */
   useEffect(() => {
     if (gamePhase !== 'ended') return;
+    clearAllTimers();
+    activeHolesRef.current.clear();
     const isNew = saveHighScoreObj('whack-a-mole', scoreRef.current);
     if (isNew) {
       setIsNewRecord(true);
@@ -290,7 +287,7 @@ const WhackAMoleGame = () => {
     } else {
       playSuccessSound();
     }
-  }, [gamePhase]);
+  }, [gamePhase, clearAllTimers]);
 
 
   /* ═══════════════════════════════════════════
@@ -356,7 +353,7 @@ const WhackAMoleGame = () => {
 
       // Reset combo timer
       if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
-      comboTimerRef.current = setTimeout(() => {
+      comboTimerRef.current = hookTimeout(() => {
         comboRef.current = 0;
         setCombo(0);
       }, 2000);
@@ -381,7 +378,7 @@ const WhackAMoleGame = () => {
      ═══════════════════════════════════════════ */
   if (gamePhase === 'start') {
     return (
-      <motion.div className="flex flex-col items-center gap-5 p-4 pb-32 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div className="flex flex-col items-center gap-5 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <motion.span className="text-6xl block" animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}>🐹</motion.span>
         <h2 className="text-3xl md:text-4xl font-black text-gradient">Köstebek Yakala!</h2>
         {highScore > 0 && <div className="glass-card px-4 py-2 neon-border"><span className="font-black text-primary">🏆 Rekor: {highScore}</span></div>}
@@ -405,6 +402,8 @@ const WhackAMoleGame = () => {
           ))}
         </div>
 
+        <Leaderboard gameId="whack-a-mole" />
+
         <button onClick={startGame} className="btn-gaming px-10 py-4 text-lg">🚀 BAŞLA!</button>
       </motion.div>
     );
@@ -417,7 +416,7 @@ const WhackAMoleGame = () => {
   return (
     <motion.div
       ref={containerRef}
-      className="flex flex-col items-center gap-4 p-4 pb-32 relative"
+      className="flex flex-col items-center gap-4 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -667,7 +666,7 @@ const WhackAMoleGame = () => {
         ))}
       </AnimatePresence>
 
-      <SuccessPopup isOpen={showSuccess} onClose={() => setGamePhase('start')} disableVoice={true}
+      <SuccessPopup isOpen={showSuccess} onClose={() => { clearAllTimers(); setGamePhase('start'); }} disableVoice={true}
         message={`${score} puan! ${isNewRecord ? '🏆 Yeni Rekor!' : `Maks Kombo: x${maxCombo}`}`} />
     </motion.div>
   );
