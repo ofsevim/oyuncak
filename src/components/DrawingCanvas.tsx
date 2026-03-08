@@ -6,7 +6,7 @@ import { Trash2, Undo, Download, Image, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
 import DrawingGallery, { saveDrawing } from './DrawingGallery';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 
 /* ═══════════════════════════════════════════
    SABİTLER
@@ -601,7 +601,7 @@ const DrawingCanvas = () => {
     const dataUrl = getMergedDataUrl();
     saveDrawing(dataUrl, `Çizim ${new Date().toLocaleDateString('tr-TR')}`);
     playSuccessSound();
-    confetti({
+    fireConfetti({
       particleCount: 80,
       spread: 60,
       origin: { y: 0.7 },

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
@@ -123,7 +123,7 @@ const CodingTurtleGame = () => {
 
     const finishGame = useCallback(() => {
         setGameState('complete');
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#22c55e', '#3b82f6', '#eab308', '#ef4444'] });
+        fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#22c55e', '#3b82f6', '#eab308', '#ef4444'] });
         const isNew = saveHighScoreObj('codingturtle', scoreRef.current);
         if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); playNewRecordSound(); }
         else playLevelUpSound();
@@ -166,7 +166,7 @@ const CodingTurtleGame = () => {
                 playSuccessSound();
                 setPraiseText(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
                 setShowPraise(true);
-                confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#22c55e', '#eab308'] });
+                fireConfetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#22c55e', '#eab308'] });
 
                 const pts = 10 + Math.max(0, 15 - commands.length); // Bonus for fewer steps
                 scoreRef.current += pts;

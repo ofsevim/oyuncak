@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playComboSound } from '@/utils/soundEffects';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
@@ -113,7 +113,7 @@ const MathGame = () => {
       if (newStreak >= 3) playComboSound(newStreak); else playSuccessSound();
       setScore(prev => { const n = prev + 10 + bonus; saveHighScoreObj('math', n); return n; });
       setStreak(newStreak); setCorrectCount(p => p + 1); setShowResult('correct');
-      if (newStreak >= 5) confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
+      if (newStreak >= 5) fireConfetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
     } else {
       playErrorSound(); setStreak(0); setShowResult('wrong');
     }

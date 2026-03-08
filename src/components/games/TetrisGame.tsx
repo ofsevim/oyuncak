@@ -11,7 +11,7 @@ import {
   playNewRecordSound,
 } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
@@ -248,7 +248,7 @@ const TetrisGame = () => {
 
       if (clearedLines >= 3) playComboSound(clearedLines);
       else playSuccessSound();
-      if (clearedLines === 4) confetti({ particleCount: 80, spread: 70, origin: { y: 0.7 } });
+      if (clearedLines === 4) fireConfetti({ particleCount: 80, spread: 70, origin: { y: 0.7 } });
     } else {
       playPopSound();
       linesComboRef.current = 0;

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { Star, Heart, Sparkles } from 'lucide-react';
 import { speakSuccess } from '@/utils/voiceFeedback';
 
@@ -30,7 +30,7 @@ const SuccessPopup = ({ isOpen, onClose, message = 'Harikasın!', level, disable
           return;
         }
 
-        confetti({
+        fireConfetti({
           particleCount: 4,
           angle: randomInRange(55, 125),
           spread: randomInRange(50, 70),

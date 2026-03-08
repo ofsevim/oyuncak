@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
@@ -161,12 +161,18 @@ const SnakeGame = () => {
     setParticles(prev => [...prev, ...newP]);
   }, []);
 
-  /* ── Particle animation loop ── */
+  /* ── Particle animation loop (delta-time ile FPS bağımsız) ── */
   useEffect(() => {
     if (particles.length === 0) return;
-    const tick = () => {
+    let lastTime = 0;
+    const tick = (timestamp: number) => {
+      if (!lastTime) lastTime = timestamp - 16;
+      const dt = Math.min((timestamp - lastTime) * 60 / 1000, 3);
+      lastTime = timestamp;
       setParticles(prev => {
-        const next = prev.map(p => ({ ...p, x: p.x + p.vx, y: p.y + p.vy, vy: p.vy + 0.08, life: p.life - 0.03 })).filter(p => p.life > 0);
+        const next = prev
+          .map(p => ({ ...p, x: p.x + p.vx * dt, y: p.y + p.vy * dt, vy: p.vy + 0.08 * dt, life: p.life - 0.03 * dt }))
+          .filter(p => p.life > 0);
         return next;
       });
       animRef.current = requestAnimationFrame(tick);
@@ -264,7 +270,7 @@ const SnakeGame = () => {
           setSpeed(p => Math.max(40, p - 1.5));
         }
         if (eatenType === 'shrink' && ns.length > 4) { ns.pop(); ns.pop(); }
-        if (eatenType === 'golden') confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+        if (eatenType === 'golden') fireConfetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
       } else {
         ns.pop();
         setCombo(0);

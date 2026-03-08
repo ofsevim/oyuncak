@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AVATARS, useProfile } from '@/contexts/ProfileContext';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 
 export default function ProfileSetup() {
   const { setProfile } = useProfile();
@@ -28,7 +28,7 @@ export default function ProfileSetup() {
     if (!name.trim()) return;
     
     playSuccessSound();
-    confetti({
+    fireConfetti({
       particleCount: 150,
       spread: 100,
       origin: { y: 0.6 },

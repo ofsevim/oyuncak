@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playComboSound } from '@/utils/soundEffects';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { getNextRandomIndex, getNextRandom, shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
@@ -208,7 +208,7 @@ const CountingGame = () => {
       setPraiseText(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
       setShowCelebration(true);
       if (newStreak >= 3) playComboSound(newStreak);
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a'] });
+      fireConfetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a'] });
       if (newStreak % 5 === 0) playLevelUpSound();
       saveHighScoreObj('counting', newScore);
       clearAll();

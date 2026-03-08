@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { playPopSound, playSuccessSound, playErrorSound, playNewRecordSound, playComboSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import { useLandscape } from '@/hooks/useLandscape';
 import Leaderboard from '@/components/Leaderboard';
@@ -871,7 +871,7 @@ const RunnerGame = () => {
     if (isNew) {
       setIsNewRecord(true); setHighScore(scoreRef.current);
       playNewRecordSound();
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+      fireConfetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
     }
   }, [phase]);
 

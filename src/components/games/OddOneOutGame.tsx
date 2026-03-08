@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
 import { shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
@@ -224,7 +224,7 @@ const OddOneOutGame = () => {
 
       setPraiseText(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
       setShowPraise(true);
-      confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a'] });
+      fireConfetti({ particleCount: 60, spread: 60, origin: { y: 0.6 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a'] });
 
       safeTimeout(() => {
         if (currentRoundIndex < shuffledRounds.length - 1) {
@@ -232,7 +232,7 @@ const OddOneOutGame = () => {
         } else {
           // Game complete
           setGameState('complete');
-          confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a', '#bfdbfe'] });
+          fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a', '#bfdbfe'] });
           const isNew = saveHighScoreObj('oddoneout', scoreRef.current);
           if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); playNewRecordSound(); }
           else playLevelUpSound();

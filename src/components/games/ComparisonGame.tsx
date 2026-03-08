@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
 import { shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
@@ -155,7 +155,7 @@ const ComparisonGame = () => {
 
     const finishGame = useCallback(() => {
         setGameState('complete');
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#fb923c', '#38bdf8', '#a78bfa', '#34d399'] });
+        fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#fb923c', '#38bdf8', '#a78bfa', '#34d399'] });
         const isNew = saveHighScoreObj('comparison', scoreRef.current);
         if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); playNewRecordSound(); }
         else playLevelUpSound();
@@ -214,7 +214,7 @@ const ComparisonGame = () => {
 
             setPraiseText(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
             setShowPraise(true);
-            confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 }, colors: ['#38bdf8', '#fb923c'] });
+            fireConfetti({ particleCount: 40, spread: 60, origin: { y: 0.7 }, colors: ['#38bdf8', '#fb923c'] });
 
             safeTimeout(() => {
                 setRoundLeft(r => {

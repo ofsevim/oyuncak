@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import Leaderboard from '@/components/Leaderboard';
 
 const GRID_SIZE = 4;
@@ -152,7 +152,7 @@ const Game2048 = () => {
 
     if (!hasWon && withNew.some(row => row.some(cell => cell === 2048))) {
       playSuccessSound();
-      confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+      fireConfetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
       playNewRecordSound();
       setHasWon(true);
       setGameState('won');

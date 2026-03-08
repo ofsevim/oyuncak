@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound, playSwishSound, playLevelUpSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
@@ -426,7 +426,7 @@ const BasketballGame = () => {
                     }
                 }, 150);
 
-                if (nc >= 3) confetti({ particleCount: 70, spread: 65, origin: { x: 0.18, y: 0.4 } });
+                if (nc >= 3) fireConfetti({ particleCount: 70, spread: 65, origin: { x: 0.18, y: 0.4 } });
 
                 // Trigger effects
                 flashRef.current = 0.55;
@@ -728,7 +728,7 @@ const BasketballGame = () => {
                     setLevel(nextLevel);
                     setShowLevelUp(true);
                     playLevelUpSound();
-                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    fireConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
                     safeTimeout(() => {
                         setShowLevelUp(false);
@@ -747,7 +747,7 @@ const BasketballGame = () => {
                         setHighScore(finalTotal);
                         setIsNewRecord(true);
                         playNewRecordSound();
-                        confetti({ particleCount: 150, spread: 90 });
+                        fireConfetti({ particleCount: 150, spread: 90 });
                     } else {
                         playErrorSound();
                     }

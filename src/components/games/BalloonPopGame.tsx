@@ -10,7 +10,7 @@ import {
   playNewRecordSound,
 } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
@@ -316,7 +316,7 @@ const BalloonPopGame = () => {
   useEffect(() => {
     if (gamePhase !== 'ended') return;
     clearAllTimers();
-    confetti({ particleCount: 150, spread: 100 });
+    fireConfetti({ particleCount: 150, spread: 100 });
 
     const finalScore = scoreRef.current;
     const isNew = saveHighScoreObj('balloon-pop', finalScore);
@@ -456,7 +456,7 @@ const BalloonPopGame = () => {
 
         if (roundPopsRef.current >= config.popsPerRound) {
           playSuccessSound();
-          confetti({
+          fireConfetti({
             particleCount: 50,
             spread: 60,
             origin: { y: 0.7 },

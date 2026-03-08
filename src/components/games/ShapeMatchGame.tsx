@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
 import { shuffleArray } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import { CATEGORIES } from '@/data/categories';
 import Leaderboard from '@/components/Leaderboard';
@@ -137,7 +137,7 @@ const ShapeMatchGame = () => {
 
     const finishGame = () => {
         setGameState('complete');
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#fb7185', '#38bdf8', '#facc15', '#a3e635'] });
+        fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#fb7185', '#38bdf8', '#facc15', '#a3e635'] });
         const isNew = saveHighScoreObj('shapematch', scoreRef.current);
         if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); playNewRecordSound(); }
         else playLevelUpSound();
@@ -166,7 +166,7 @@ const ShapeMatchGame = () => {
 
             setPraiseText(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
             setShowPraise(true);
-            confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 }, colors: ['#38bdf8', '#facc15'] });
+            fireConfetti({ particleCount: 40, spread: 60, origin: { y: 0.7 }, colors: ['#38bdf8', '#facc15'] });
 
             safeTimeout(() => {
                 setRoundLeft(r => {
