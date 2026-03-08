@@ -335,6 +335,7 @@ const BasketballGame = () => {
     const comboRef = useRef(0);
     const levelRef = useRef(1);
     const tickRef = useRef(0);
+    const lastTimeRef = useRef<number>(0);
 
     const dragging = useRef(false);
     const dragStart = useRef({ x: 0, y: 0 });
@@ -444,12 +445,17 @@ const BasketballGame = () => {
 
 
     /* ── GAME LOOP ── */
-    const loop = useCallback(() => {
+    const loop = useCallback((timestamp: number) => {
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
         if (!ctx || !canvas) return;
 
-        tickRef.current++;
+        /* ── Delta-time: 60fps = dt 1.0, 120fps = dt 0.5 ── */
+        if (!lastTimeRef.current) lastTimeRef.current = timestamp - 16;
+        const dt = Math.min((timestamp - lastTimeRef.current) * 60 / 1000, 3);
+        lastTimeRef.current = timestamp;
+
+        tickRef.current += dt;
         const tick = tickRef.current;
         const ph = phaseRef.current;
 
@@ -466,10 +472,10 @@ const BasketballGame = () => {
             }
 
             prevBallY.current = ballY.current;
-            ballVY.current += GRAVITY;
-            ballX.current += ballVX.current;
-            ballY.current += ballVY.current;
-            spinRef.current += ballVX.current * 0.045;
+            ballVY.current += GRAVITY * dt;
+            ballX.current += ballVX.current * dt;
+            ballY.current += ballVY.current * dt;
+            spinRef.current += ballVX.current * 0.045 * dt;
 
             // ── Perspektif-farkında zemin sekme fiziği ──
             if (ph === 'fly' || ph === 'scored') {
@@ -537,7 +543,7 @@ const BasketballGame = () => {
 
             // After scoring: animate net stretch + sway + drop
             if (ph === 'scored') {
-                scoredFramesRef.current++;
+                scoredFramesRef.current += dt;
                 const sf = scoredFramesRef.current;
 
                 // Net physics: dynamic elastic behavior
@@ -545,31 +551,28 @@ const BasketballGame = () => {
                     // Elastic snap
                     netStretchRef.current = Math.sin((sf / 30) * Math.PI) * 1.3;
                     // Damped oscillation for sway
-                    netSwayRef.current *= 0.93;
+                    netSwayRef.current *= Math.pow(0.93, dt);
                 } else {
-                    netStretchRef.current *= 0.88;
-                    netSwayRef.current *= 0.88;
+                    netStretchRef.current *= Math.pow(0.88, dt);
+                    netSwayRef.current *= Math.pow(0.88, dt);
                 }
 
                 // Flash fades
-                flashRef.current = Math.max(0, flashRef.current - 0.04);
+                flashRef.current = Math.max(0, flashRef.current - 0.04 * dt);
 
                 // Realistic ball trajectory inside net
                 if (sf < 10) {
-                    // Friction phase
-                    ballVY.current *= 1.05; // gravity still pulls but friction is high
+                    ballVY.current *= Math.pow(1.05, dt);
                 } else if (sf < 20) {
-                    // Mid phase
-                    ballVY.current += 0.15;
+                    ballVY.current += 0.15 * dt;
                 } else {
-                    // Acceleration as it pops out
-                    ballVY.current += 0.5;
+                    ballVY.current += 0.5 * dt;
                 }
             }
 
 
         } else if (ph === 'aim') {
-            ballY.current = currentPosRef.current.y + Math.sin(tick * 0.05) * 2.5;
+            ballY.current = currentPosRef.current.y + Math.sin(tick * 0.05) * 2.5; // tick += dt, frekans normalize
             prevBallY.current = ballY.current;
         }
 

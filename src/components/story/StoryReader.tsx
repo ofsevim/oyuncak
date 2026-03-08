@@ -14,8 +14,8 @@ type Props = {
 
 /**
  * Tek bir hikayeyi sayfa sayfa okutan ekran.
- * - Klavye: \u2190 \u2192 / ESC
- * - localStorage: ilerleme kayd\u0131
+ * - Klavye: ← → / ESC
+ * - localStorage: ilerleme kaydı
  */
 export default function StoryReader({ story, initialPageIndex = 0, onExit }: Props) {
   const maxIndex = story.pages.length - 1;
@@ -83,7 +83,7 @@ export default function StoryReader({ story, initialPageIndex = 0, onExit }: Pro
             <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">{story.title}</h2>
             <p className="text-sm md:text-base text-muted-foreground font-semibold">{story.tagline}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Sayfa {pageIndex + 1}/{story.pages.length} {"\u2022"} {progressPct}%
+              Sayfa {pageIndex + 1}/{story.pages.length} • {progressPct}%
             </p>
           </div>
         </div>
@@ -92,16 +92,16 @@ export default function StoryReader({ story, initialPageIndex = 0, onExit }: Pro
           <button
             onClick={onExit}
             className="inline-flex items-center gap-2 rounded-full bg-muted px-5 py-3 font-bold text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Hikaye k\u00FCt\u00FCphanesine d\u00F6n"
+            aria-label="Hikaye kütüphanesine dön"
           >
-            <Home className="h-5 w-5" /> K\u00FCt\u00FCphane
+            <Home className="h-5 w-5" /> Kütüphane
           </button>
           <button
             onClick={restart}
             className="inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-3 font-bold text-secondary-foreground shadow-sm hover:opacity-90 transition-opacity"
-            aria-label="Hikayeyi ba\u015Ftan ba\u015Flat"
+            aria-label="Hikayeyi baştan başlat"
           >
-            <RefreshCw className="h-5 w-5" /> Ba\u015Ftan
+            <RefreshCw className="h-5 w-5" /> Baştan
           </button>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function StoryReader({ story, initialPageIndex = 0, onExit }: Pro
                     onClick={goPrev}
                     disabled={pageIndex === 0}
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-muted px-8 py-4 font-black text-muted-foreground disabled:opacity-50"
-                    aria-label="\u00D6nceki sayfa"
+                    aria-label="Önceki sayfa"
                   >
                     <ArrowLeft className="h-5 w-5" /> Geri
                   </button>
@@ -175,7 +175,7 @@ export default function StoryReader({ story, initialPageIndex = 0, onExit }: Pro
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
                 <div className="flex items-center gap-1" aria-hidden="true">
-                  {["\uD83C\uDF89", "\u2B50", "\uD83E\uDD73", "\u2B50", "\uD83C\uDF89"].map((emoji, i) => (
+                  {["🎉", "⭐", "🥳", "⭐", "🎉"].map((emoji, i) => (
                     <motion.span
                       key={i}
                       className="text-2xl"
@@ -188,7 +188,7 @@ export default function StoryReader({ story, initialPageIndex = 0, onExit }: Pro
                   ))}
                 </div>
                 <p className="text-sm font-bold text-muted-foreground">
-                  Tebrikler, hikaye bitti! {"\u201C"}Ba\u015Ftan{"\u201D"} deyip tekrar okuyabilirsin.
+                  Tebrikler, hikaye bitti! "Baştan" deyip tekrar okuyabilirsin.
                 </p>
               </motion.div>
             )}

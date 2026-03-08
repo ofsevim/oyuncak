@@ -8,6 +8,7 @@ import { playPopSound, playSuccessSound, playErrorSound, playNewRecordSound, pla
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import confetti from 'canvas-confetti';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import { useLandscape } from '@/hooks/useLandscape';
 import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════════════════════════════
@@ -132,6 +133,7 @@ function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
    ═══════════════════════════════════════════ */
 const RunnerGame = () => {
   const navigate = useNavigate();
+  useLandscape();
   /* ── State ── */
   const [phase, setPhase] = useState<GamePhase>('menu');
   const [character, setCharacter] = useState(CHARACTERS[0]);
@@ -170,6 +172,7 @@ const RunnerGame = () => {
   const invincibleRef = useRef(false);
   const groundOffRef = useRef(0);
   const idRef = useRef(0);
+  const lastTimeRef = useRef<number>(0);
   const phaseRef = useRef<GamePhase>('menu');
   const diffRef = useRef(DIFF_CONFIG['normal']);
   const floatIdRef = useRef(0);
@@ -650,27 +653,32 @@ const RunnerGame = () => {
   /* ═══════════════════════════════════════════
      GAME LOOP
      ═══════════════════════════════════════════ */
-  const gameLoop = useCallback(() => {
+  const gameLoop = useCallback((timestamp: number) => {
     if (phaseRef.current !== 'playing') return;
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
 
-    frameRef.current++;
+    /* ── Delta-time: 60fps = dt 1.0, 120fps = dt 0.5 ── */
+    if (!lastTimeRef.current) lastTimeRef.current = timestamp - 16;
+    const dt = Math.min((timestamp - lastTimeRef.current) * 60 / 1000, 3);
+    lastTimeRef.current = timestamp;
+
+    frameRef.current += dt;
     const f = frameRef.current;
     const spd = speedRef.current * diffRef.current.speedMul;
-    groundOffRef.current += spd;
+    groundOffRef.current += spd * dt;
 
     const p = playerRef.current;
     if (!p.grounded) {
-      p.vy += GRAVITY;
-      p.y += p.vy;
+      p.vy += GRAVITY * dt;
+      p.y += p.vy * dt;
       if (p.y >= GROUND_Y) {
         p.y = GROUND_Y; p.vy = 0; p.grounded = true; p.jumps = 0;
         p.landTimer = 8;
         spawnP(p.x + p.w / 2, GROUND_Y, 5, '#a3a3a3', 'dust');
       }
     }
-    if (p.landTimer > 0) p.landTimer -= 1;
+    if (p.landTimer > 0) p.landTimer -= dt;
     speedRef.current = Math.min(5 + scoreRef.current * 0.003, 14);
 
     const minGap = Math.max(160, 300 - speedRef.current * 10);
@@ -697,7 +705,7 @@ const RunnerGame = () => {
     let oWrite = 0;
     for (let i = 0; i < obstaclesRef.current.length; i++) {
       const o = obstaclesRef.current[i];
-      o.x -= spd;
+      o.x -= spd * dt;
       if (o.x > -70) obstaclesRef.current[oWrite++] = o;
     }
     obstaclesRef.current.length = oWrite;
@@ -706,11 +714,11 @@ const RunnerGame = () => {
     for (let i = 0; i < collectiblesRef.current.length; i++) {
       const c = collectiblesRef.current[i];
       if (!c.collected) {
-        c.x -= spd;
+        c.x -= spd * dt;
         if (magnetRef.current) {
           const dx = p.x - c.x, dy = (p.y - p.h / 2) - c.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 130 && dist > 5) { c.x += (dx / dist) * 5; c.y += (dy / dist) * 5; }
+          if (dist < 130 && dist > 5) { c.x += (dx / dist) * 5 * dt; c.y += (dy / dist) * 5 * dt; }
         }
       }
       if (c.x > -40) collectiblesRef.current[cWrite++] = c;
@@ -720,12 +728,13 @@ const RunnerGame = () => {
     let pWrite = 0;
     for (let i = 0; i < particlesRef.current.length; i++) {
       const pt = particlesRef.current[i];
-      pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.12; pt.life -= 1;
+      pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.vy += 0.12 * dt; pt.life -= dt;
       if (pt.life > 0) particlesRef.current[pWrite++] = pt;
     }
     particlesRef.current.length = pWrite;
 
-    if (p.grounded && f % 4 === 0) {
+    /* Zemin tozu: her 4 frame'de bir (dt ile normalize) */
+    if (p.grounded && Math.floor(f) % 4 < dt) {
       spawnP(p.x + p.w / 2 - 5 + Math.random() * 10, GROUND_Y - 2, 1, 'rgba(180,160,140,0.6)', 'dust');
     }
 
@@ -826,7 +835,7 @@ const RunnerGame = () => {
     diffRef.current = DIFF_CONFIG[difficulty];
     playerRef.current = { x: 90, y: GROUND_Y, vy: 0, w: 46, h: 54, grounded: true, jumps: 0, squash: 1, stretch: 1, landTimer: 0 };
     obstaclesRef.current = []; collectiblesRef.current = []; particlesRef.current = [];
-    speedRef.current = 5; frameRef.current = 0; groundOffRef.current = 0;
+    speedRef.current = 5; frameRef.current = 0; groundOffRef.current = 0; lastTimeRef.current = 0;
     scoreRef.current = 0; comboRef.current = 0; livesRef.current = 3;
     invincibleRef.current = false; shieldRef.current = false; magnetRef.current = false; x2Ref.current = false;
     setScore(0); setDistance(0); setLives(3); setCombo(0); setMaxCombo(0);

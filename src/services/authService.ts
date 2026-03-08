@@ -8,15 +8,26 @@ onAuthStateChanged(auth, (user) => {
   currentUser = user;
 });
 
+/** 8 saniyelik timeout ile promise yarışı */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('auth-timeout')), ms)
+    ),
+  ]);
+}
+
 /**
  * Anonim oturum aç (veya mevcut oturumu kullan).
  * Aynı anda birden fazla çağrılırsa tek promise paylaşır.
+ * Yavaş ağda 8 saniye sonra timeout atar, uygulama yine de çalışır.
  */
 export function ensureAuth(): Promise<User> {
   if (currentUser) return Promise.resolve(currentUser);
 
   if (!authPromise) {
-    authPromise = signInAnonymously(auth)
+    authPromise = withTimeout(signInAnonymously(auth), 8000)
       .then((cred) => {
         currentUser = cred.user;
         authPromise = null;
@@ -24,7 +35,9 @@ export function ensureAuth(): Promise<User> {
       })
       .catch((err) => {
         authPromise = null;
-        console.warn('[Oyuncak] Anonim giriş hatası:', err);
+        if (err?.message !== 'auth-timeout') {
+          console.warn('[Oyuncak] Anonim giriş hatası:', err);
+        }
         throw err;
       });
   }
