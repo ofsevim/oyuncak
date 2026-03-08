@@ -74,6 +74,7 @@ const SnakeGame = () => {
 
   // Refs for tracking rapidly changing state to avoid interval resets
   const comboRef = useRef(0);
+  const comboTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const foodRef = useRef(food);
   const obstaclesRef = useRef(obstacles);
 
@@ -192,6 +193,7 @@ const SnakeGame = () => {
     setFood(initialFood); foodRef.current = initialFood;
     setDir('RIGHT'); dirRef.current = 'RIGHT';
     inputQueueRef.current = [];
+    if (comboTimerRef.current) { clearTimeout(comboTimerRef.current); comboTimerRef.current = null; }
     scoreRef.current = 0;
     setScore(0); setSpeed(cfg.speed); setCombo(0); comboRef.current = 0; setEaten(0); setIsNewRecord(false);
     setParticles([]);
@@ -255,6 +257,14 @@ const SnakeGame = () => {
 
         if (nc > 2) playComboSound(nc); else playSuccessSound();
 
+        // Reset combo after 3 seconds of not eating anything
+        if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+        comboTimerRef.current = setTimeout(() => {
+          comboRef.current = 0;
+          setCombo(0);
+          comboTimerRef.current = null;
+        }, 3000);
+
         // Particle burst at food position
         burst(currentFood.x * CELL + CELL / 2, currentFood.y * CELL + CELL / 2, FOOD_STYLES[currentFood.type].colors);
 
@@ -273,8 +283,6 @@ const SnakeGame = () => {
         if (eatenType === 'golden') fireConfetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
       } else {
         ns.pop();
-        setCombo(0);
-        comboRef.current = 0;
       }
 
       setSnake(ns); snakeRef.current = ns;

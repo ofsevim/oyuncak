@@ -52,8 +52,13 @@ const ShapeMatchGame = () => {
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const sparkleIdRef = useRef(0);
     const scoreRef = useRef(0);
+    // Synchronous mirrors to avoid stale closures and functional-updater side-effects
+    const timeLeftRef = useRef<number>(15);
+    const roundLeftRef = useRef<number>(15);
 
     useEffect(() => { setHighScore(getHighScore('shapematch')); }, []);
+    useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
+    useEffect(() => { roundLeftRef.current = roundLeft; }, [roundLeft]);
 
     const bgDots = useMemo(() => Array.from({ length: 30 }, (_, i) => ({
         id: i, x: Math.random() * 100, y: Math.random() * 100,
@@ -96,52 +101,69 @@ const ShapeMatchGame = () => {
         setShakeId(null);
         setShowPraise(false);
 
-        if (useTimer) setTimeLeft(useHardMode ? 10 : 15);
+        if (useTimer) {
+            const t = useHardMode ? 10 : 15;
+            timeLeftRef.current = t;
+            setTimeLeft(t);
+        }
     }, [useHardMode, useTimer]);
+
+    // Stable identity (deps are all state setters + scoreRef) — safe to use in effects
+    const finishGame = useCallback(() => {
+        setGameState('complete');
+        fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#fb7185', '#38bdf8', '#facc15', '#a3e635'] });
+        const isNew = saveHighScoreObj('shapematch', scoreRef.current);
+        if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); playNewRecordSound(); }
+        else playLevelUpSound();
+    }, []);
 
     const initGame = useCallback(() => {
         clearAll();
         clearAllIntervals();
 
         setGameState('playing'); setScore(0); scoreRef.current = 0;
-        setStreak(0); setRoundLeft(15); setSparkles([]);
+        setStreak(0);
+        roundLeftRef.current = 15; setRoundLeft(15);
+        setSparkles([]);
         setIsNewRecord(false); setShowPraise(false);
 
         generateNewRound();
     }, [clearAll, clearAllIntervals, generateNewRound]);
 
+    /* Timer — all side effects live outside the functional updater (React 18 Strict Mode safe) */
     useEffect(() => {
         if (!useTimer || gameState !== 'playing' || !currentRound || isCorrect) {
             return;
         }
 
         const intervalId = safeInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    playErrorSound(); setStreak(0); setShakeId('target');
+            const tl = timeLeftRef.current;
+            if (tl <= 1) {
+                playErrorSound();
+                setStreak(0);
+                setShakeId('target');
+                const resetTime = useHardMode ? 10 : 15;
+                timeLeftRef.current = resetTime;
+                setTimeLeft(resetTime);
 
-                    setRoundLeft(r => {
-                        if (r <= 1) { finishGame(); return 0; }
-                        return r - 1;
-                    });
-
+                const rl = roundLeftRef.current;
+                if (rl <= 1) {
+                    roundLeftRef.current = 0;
+                    setRoundLeft(0);
+                    finishGame();
+                } else {
+                    roundLeftRef.current = rl - 1;
+                    setRoundLeft(rl - 1);
                     safeTimeout(() => { generateNewRound(); }, 800);
-                    return useHardMode ? 10 : 15;
                 }
-                return prev - 1;
-            });
+            } else {
+                timeLeftRef.current = tl - 1;
+                setTimeLeft(tl - 1);
+            }
         }, 1000);
         timerRef.current = intervalId;
         return () => clearInterval(intervalId);
-    }, [useTimer, useHardMode, currentRound, isCorrect, gameState, generateNewRound, safeInterval, safeTimeout]);
-
-    const finishGame = () => {
-        setGameState('complete');
-        fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#fb7185', '#38bdf8', '#facc15', '#a3e635'] });
-        const isNew = saveHighScoreObj('shapematch', scoreRef.current);
-        if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); playNewRecordSound(); }
-        else playLevelUpSound();
-    };
+    }, [useTimer, useHardMode, currentRound, isCorrect, gameState, finishGame, generateNewRound, safeInterval, safeTimeout]);
 
     const handleOptionSelect = (emoji: string, e: React.MouseEvent | React.TouchEvent) => {
         if (isCorrect || gameState !== 'playing' || !currentRound) return;
@@ -169,11 +191,16 @@ const ShapeMatchGame = () => {
             fireConfetti({ particleCount: 40, spread: 60, origin: { y: 0.7 }, colors: ['#38bdf8', '#facc15'] });
 
             safeTimeout(() => {
-                setRoundLeft(r => {
-                    if (r <= 1) { finishGame(); return 0; }
+                const rl = roundLeftRef.current;
+                if (rl <= 1) {
+                    roundLeftRef.current = 0;
+                    setRoundLeft(0);
+                    finishGame();
+                } else {
+                    roundLeftRef.current = rl - 1;
+                    setRoundLeft(rl - 1);
                     generateNewRound();
-                    return r - 1;
-                });
+                }
             }, 1200);
         } else {
             // WRONG

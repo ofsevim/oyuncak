@@ -8,14 +8,13 @@ onAuthStateChanged(auth, (user) => {
   currentUser = user;
 });
 
-/** 8 saniyelik timeout ile promise yarışı */
+/** 8 saniyelik timeout ile promise yarışı; timer sızıntısını önlemek için finally'de temizlenir */
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    p,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error('auth-timeout')), ms)
-    ),
-  ]);
+  let timeoutId: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('auth-timeout')), ms);
+  });
+  return Promise.race([p, timeoutPromise]).finally(() => clearTimeout(timeoutId));
 }
 
 /**

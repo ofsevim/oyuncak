@@ -124,8 +124,11 @@ const OddOneOutGame = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sparkleIdRef = useRef(0);
   const scoreRef = useRef(0);
+  // Synchronous mirror of timeLeft so the interval callback reads the latest value
+  const timeLeftRef = useRef<number>(15);
 
   useEffect(() => { setHighScore(getHighScore('oddoneout')); }, []);
+  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
   /* Background dots (memoized) */
   const bgDots = useMemo(() => Array.from({ length: 30 }, (_, i) => ({
@@ -178,23 +181,34 @@ const OddOneOutGame = () => {
     return () => clearTimeout(t);
   }, [currentRoundIndex, gameState, selectedId, round, safeTimeout]);
 
-  /* ── Timer ── */
+  /* ── Timer — side effects stay outside the functional updater (React 18 Strict Mode safe) ── */
   useEffect(() => {
     if (!useTimer || gameState !== 'playing' || !round || selectedId) {
       return;
     }
+    timeLeftRef.current = 15;
     setTimeLeft(15);
     const intervalId = safeInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          playErrorSound(); setStreak(0);
-          if (currentRoundIndex < shuffledRounds.length - 1) {
-            setCurrentRoundIndex(p => p + 1);
-          }
-          return 15;
+      const tl = timeLeftRef.current;
+      if (tl <= 1) {
+        playErrorSound();
+        setStreak(0);
+        timeLeftRef.current = 15;
+        setTimeLeft(15);
+        if (currentRoundIndex >= shuffledRounds.length - 1) {
+          // Last round expired — finish the game
+          setGameState('complete');
+          fireConfetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a', '#bfdbfe'] });
+          const isNew = saveHighScoreObj('oddoneout', scoreRef.current);
+          if (isNew) { setIsNewRecord(true); setHighScore(scoreRef.current); playNewRecordSound(); }
+          else playLevelUpSound();
+        } else {
+          setCurrentRoundIndex(p => p + 1);
         }
-        return prev - 1;
-      });
+      } else {
+        timeLeftRef.current = tl - 1;
+        setTimeLeft(tl - 1);
+      }
     }, 1000);
     timerRef.current = intervalId;
     return () => clearInterval(intervalId);

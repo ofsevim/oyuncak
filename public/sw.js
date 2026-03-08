@@ -41,6 +41,9 @@ self.addEventListener('activate', (event) => {
 
 // Fetch: Smart strategies
 self.addEventListener('fetch', (event) => {
+    if (event.request.method !== 'GET') return;
+    if (!event.request.url.startsWith('http')) return;
+
     const url = new URL(event.request.url);
 
     // Strategy 1: Network-First for index.html and manifest.json

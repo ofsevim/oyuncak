@@ -246,6 +246,7 @@ const PianoGame = () => {
       noteTimeoutsRef.current.forEach(clearTimeout);
       noteTimeoutsRef.current.clear();
       if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
+      audioCtxRef.current?.close().catch(() => {});
     };
   }, []);
 

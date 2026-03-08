@@ -34,9 +34,17 @@ const SimonSaysGame = () => {
     const [wrongButton, setWrongButton] = useState<number | null>(null);
 
     const audioCtxRef = useRef<AudioContext | null>(null);
+    const abortRef = useRef(false);
     const { safeTimeout, clearAll } = useSafeTimeouts();
 
     useEffect(() => { setHighScore(getHighScore('simonsays')); }, []);
+
+    useEffect(() => {
+        return () => {
+            abortRef.current = true;
+            audioCtxRef.current?.close().catch(() => {});
+        };
+    }, []);
 
     const getAudioContext = useCallback(() => {
         if (!audioCtxRef.current) {
@@ -77,13 +85,16 @@ const SimonSaysGame = () => {
     })), []);
 
     const playSequence = useCallback(async (seq: number[]) => {
+        abortRef.current = false;
         setGameState('showing');
         setActiveButton(null);
 
         // Wait a bit before showing
+        if (abortRef.current) return;
         await new Promise(r => { safeTimeout(() => r(undefined), 800); });
 
         for (let i = 0; i < seq.length; i++) {
+            if (abortRef.current) return;
             const btnId = seq[i];
             const btn = BUTTONS[btnId];
 
@@ -91,9 +102,11 @@ const SimonSaysGame = () => {
             playNote(btn.freq);
 
             await new Promise(r => { safeTimeout(() => r(undefined), 400); });
+            if (abortRef.current) return;
 
             setActiveButton(null);
             await new Promise(r => { safeTimeout(() => r(undefined), 200); });
+            if (abortRef.current) return;
         }
 
         setGameState('playing');
@@ -108,6 +121,7 @@ const SimonSaysGame = () => {
     }, [playSequence]);
 
     const initGame = useCallback(() => {
+        abortRef.current = true;
         clearAll();
         setScore(0);
         setIsNewRecord(false);

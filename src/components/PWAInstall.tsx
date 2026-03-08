@@ -34,7 +34,10 @@ const PWAInstall = () => {
         // iOS için manuel gösterim (Engagement sonrası veya süre bazlı)
         if (isIPhone && !isApp) {
             const timer = setTimeout(() => setShowBanner(true), 3000);
-            return () => clearTimeout(timer);
+            return () => {
+                clearTimeout(timer);
+                window.removeEventListener('beforeinstallprompt', handler);
+            };
         }
 
         return () => window.removeEventListener('beforeinstallprompt', handler);

@@ -254,7 +254,7 @@ const GamesMenu = () => {
                   <div className="flex items-center gap-3">
                     {/* Icon container */}
                     <div
-                      className="w-12 h-12 md:w-13 md:h-13 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                      className="w-12 h-12 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
                       style={{ background: game.colorSoft, border: `1px solid ${game.color}30` }}
                     >
                       {game.emoji}

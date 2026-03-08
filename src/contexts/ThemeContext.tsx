@@ -13,16 +13,18 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
-
-  useEffect(() => {
-    // localStorage'dan tema oku
-    const stored = localStorage.getItem('oyuncak-theme') as Theme | null;
-    if (stored) {
-      setThemeState(stored);
-      document.documentElement.classList.toggle('dark', stored === 'dark');
+  const [theme, setThemeState] = useState<Theme>(() => {
+    try {
+      return (localStorage.getItem('oyuncak-theme') as Theme) ?? 'light';
+    } catch {
+      return 'light';
     }
-  }, []);
+  });
+
+  // DOM sınıfını tema değiştiğinde senkronize et
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);

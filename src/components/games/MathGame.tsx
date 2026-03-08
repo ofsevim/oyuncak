@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playComboSound } from '@/utils/soundEffects';
 import { fireConfetti } from '@/utils/confettiUtil';
@@ -38,6 +38,10 @@ const MathGame = () => {
   const [gameStarted, setGameStarted] = useState(false);
   const [highScore, setHighScore] = useState(0);
   const { safeTimeout, safeInterval, clearAllIntervals } = useSafeTimeouts();
+
+  // Keeps a synchronous copy of timeLeft so the interval callback avoids stale closures
+  const timeLeftRef = useRef<number>(15);
+  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
   useEffect(() => { setHighScore(getHighScore('math')); }, []);
 
@@ -111,7 +115,9 @@ const MathGame = () => {
       const newStreak = streak + 1;
       const bonus = Math.ceil(timeLeft / 3) + (newStreak >= 3 ? Math.min(newStreak, 5) * 2 : 0);
       if (newStreak >= 3) playComboSound(newStreak); else playSuccessSound();
-      setScore(prev => { const n = prev + 10 + bonus; saveHighScoreObj('math', n); return n; });
+      const newScore = score + 10 + bonus;
+      setScore(newScore);
+      saveHighScoreObj('math', newScore);
       setStreak(newStreak); setCorrectCount(p => p + 1); setShowResult('correct');
       if (newStreak >= 5) fireConfetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
     } else {
@@ -120,19 +126,24 @@ const MathGame = () => {
     safeTimeout(generateQuestion, 1200);
   };
 
-  // Timer
+  // Timer — side effects are kept outside the functional updater to avoid double-firing in React 18 Strict Mode
   useEffect(() => {
     if (!gameStarted || showResult) return;
     const id = safeInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          playErrorSound(); setStreak(0); setShowResult('wrong');
-          setTotalQuestions(p => p + 1);
-          safeTimeout(generateQuestion, 1200);
-          return getDiffConfig().timer;
-        }
-        return prev - 1;
-      });
+      const tl = timeLeftRef.current;
+      if (tl <= 1) {
+        playErrorSound();
+        setStreak(0);
+        setShowResult('wrong');
+        setTotalQuestions(p => p + 1);
+        const resetTime = getDiffConfig().timer;
+        timeLeftRef.current = resetTime;
+        setTimeLeft(resetTime);
+        safeTimeout(generateQuestion, 1200);
+      } else {
+        timeLeftRef.current = tl - 1;
+        setTimeLeft(tl - 1);
+      }
     }, 1000);
     return () => clearInterval(id);
   }, [gameStarted, showResult, generateQuestion, getDiffConfig, safeInterval, safeTimeout]);

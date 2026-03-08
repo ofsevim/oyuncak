@@ -115,13 +115,13 @@ const Game2048 = () => {
     setGameState('playing');
   }, []);
 
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
     if (undoStack.length === 0) return;
     const last = undoStack[undoStack.length - 1];
     setGrid(last.grid); setScore(last.score);
     setUndoStack(prev => prev.slice(0, -1));
     playPopSound();
-  };
+  }, [undoStack]);
 
   const handleMove = useCallback((direction: 'left' | 'right' | 'up' | 'down') => {
     if (gameState !== 'playing') return;
@@ -143,12 +143,11 @@ const Game2048 = () => {
 
     const withNew = addRandomTile(newGrid);
     setGrid(withNew);
-    setScore(prev => {
-      const newScore = prev + gained;
-      const isNew = saveHighScoreObj('2048', newScore);
-      if (isNew) { setBestScore(newScore); setIsNewRecord(true); }
-      return newScore;
-    });
+    // Use scoreRef (kept in sync via useEffect) to avoid setState side-effects in the updater
+    const newScore = scoreRef.current + gained;
+    setScore(newScore);
+    const isNew = saveHighScoreObj('2048', newScore);
+    if (isNew) { setBestScore(newScore); setIsNewRecord(true); }
 
     if (!hasWon && withNew.some(row => row.some(cell => cell === 2048))) {
       playSuccessSound();
@@ -175,7 +174,7 @@ const Game2048 = () => {
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [handleMove, gameState]);
+  }, [handleMove, handleUndo, gameState]);
 
   const handleTouchStart = (e: React.TouchEvent) => { setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY }); };
   const handleTouchEnd = (e: React.TouchEvent) => {
