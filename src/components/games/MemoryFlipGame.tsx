@@ -169,7 +169,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
     <motion.div className="flex flex-col items-center gap-4 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ touchAction: 'manipulation' }}>
       <h2 className="text-2xl md:text-3xl font-black text-gradient">🃏 Hafıza Oyunu</h2>
 
-      <Leaderboard gameId="memory" />
+      <Leaderboard gameId={`memory-${gridSize}x${gridSize}`} />
 
       {/* Grid size selector */}
       <div className="flex gap-1.5 p-1 rounded-xl glass-card border border-white/10">

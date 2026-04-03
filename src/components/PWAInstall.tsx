@@ -1,10 +1,17 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, X, Share, PlusSquare } from 'lucide-react';
 
+interface BeforeInstallPromptEvent extends Event {
+    prompt: () => Promise<void>;
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
+type NavigatorWithStandalone = Navigator & { standalone?: boolean };
+
 const PWAInstall = () => {
-    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [showBanner, setShowBanner] = useState(false);
     const [isIOS, setIsIOS] = useState(false);
     const [isStandalone, setIsStandalone] = useState(false);
@@ -12,17 +19,18 @@ const PWAInstall = () => {
     useEffect(() => {
         // Standalone kontrolü
         const isApp = window.matchMedia('(display-mode: standalone)').matches ||
-            (window.navigator as any).standalone === true;
+            (window.navigator as NavigatorWithStandalone).standalone === true;
         setIsStandalone(isApp);
 
         // iOS Kontrolü
-        const isIPhone = /iPhone|iPad|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+        const isIPhone = /iPhone|iPad|iPod/.test(navigator.userAgent) && !('MSStream' in window);
         setIsIOS(isIPhone);
 
         // beforeinstallprompt olayını yakala (Android/Chrome)
-        const handler = (e: Event) => {
-            e.preventDefault();
-            setDeferredPrompt(e);
+        const handler = (event: Event) => {
+            const installEvent = event as BeforeInstallPromptEvent;
+            installEvent.preventDefault();
+            setDeferredPrompt(installEvent);
             // Uygulama yüklü değilse ve standalone değilse göster
             if (!isApp) {
                 setShowBanner(true);
@@ -41,7 +49,7 @@ const PWAInstall = () => {
         }
 
         return () => window.removeEventListener('beforeinstallprompt', handler);
-    }, [isStandalone]);
+    }, []);
 
     const handleInstallClick = async () => {
         if (!deferredPrompt) return;

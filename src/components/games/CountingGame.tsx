@@ -210,7 +210,9 @@ const CountingGame = () => {
       if (newStreak >= 3) playComboSound(newStreak);
       fireConfetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a'] });
       if (newStreak % 5 === 0) playLevelUpSound();
-      saveHighScoreObj('counting', newScore);
+      if (saveHighScoreObj('counting', newScore)) {
+        setHighScore(newScore);
+      }
       clearAll();
       safeTimeout(setupRound, 2200);
     } else {

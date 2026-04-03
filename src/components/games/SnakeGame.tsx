@@ -20,7 +20,7 @@ type Pos = { x: number; y: number };
 type FoodKind = 'normal' | 'golden' | 'speed' | 'shrink';
 type Diff = 'easy' | 'medium' | 'hard';
 
-interface Particle { id: number; x: number; y: number; vx: number; vy: number; color: string; life: number; }
+interface Particle { id: number; x: number; y: number; dx: number; dy: number; color: string; duration: number; size: number; }
 
 const DIFFS: Record<Diff, { label: string; emoji: string; speed: number; wrap: boolean; obstacles: boolean; desc: string }> = {
   easy: { label: 'Kolay', emoji: '🌟', speed: 160, wrap: true, obstacles: false, desc: 'Yavaş hız, engelsiz' },
@@ -35,11 +35,11 @@ const FOOD_STYLES: Record<FoodKind, { colors: string[]; glow: string; emoji: str
   shrink: { colors: ['#d8b4fe', '#c084fc', '#a855f7'], glow: 'rgba(168,85,247,0.5)', emoji: '✂️', points: 15 },
 };
 
+const SNAKE_PARTICLE_MS = 520;
+
 /* Glassmorphism pill style */
 const pill: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.25)',
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
+  background: 'rgba(8,15,15,0.72)',
   border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: 16,
   boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
@@ -78,7 +78,6 @@ const SnakeGame = () => {
   const foodRef = useRef(food);
   const obstaclesRef = useRef(obstacles);
 
-  const animRef = useRef<number>(0);
   const [boardScale, setBoardScale] = useState(1);
 
   /* Viewport'a göre oyun alanını oluştur */
@@ -149,38 +148,26 @@ const SnakeGame = () => {
   const burst = useCallback((cx: number, cy: number, colors: string[]) => {
     const newP: Particle[] = Array.from({ length: 10 }, () => {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 1.5 + Math.random() * 3;
+      const distance = 16 + Math.random() * 24;
       return {
         id: ++particleId.current,
         x: cx, y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
+        dx: Math.cos(angle) * distance,
+        dy: Math.sin(angle) * distance - (8 + Math.random() * 18),
         color: colors[Math.floor(Math.random() * colors.length)],
-        life: 1,
+        duration: SNAKE_PARTICLE_MS + Math.random() * 120,
+        size: 4 + Math.random() * 3,
       };
     });
-    setParticles(prev => [...prev, ...newP]);
-  }, []);
+    setParticles(prev => [...prev.slice(-18), ...newP]);
+    newP.forEach((particle) => {
+      safeTimeout(() => {
+        setParticles(prev => prev.filter(p => p.id !== particle.id));
+      }, particle.duration);
+    });
+  }, [safeTimeout]);
 
   /* ── Particle animation loop (delta-time ile FPS bağımsız) ── */
-  useEffect(() => {
-    if (particles.length === 0) return;
-    let lastTime = 0;
-    const tick = (timestamp: number) => {
-      if (!lastTime) lastTime = timestamp - 16;
-      const dt = Math.min((timestamp - lastTime) * 60 / 1000, 3);
-      lastTime = timestamp;
-      setParticles(prev => {
-        const next = prev
-          .map(p => ({ ...p, x: p.x + p.vx * dt, y: p.y + p.vy * dt, vy: p.vy + 0.08 * dt, life: p.life - 0.03 * dt }))
-          .filter(p => p.life > 0);
-        return next;
-      });
-      animRef.current = requestAnimationFrame(tick);
-    };
-    animRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [particles.length]);
 
   /* ── Start game ── */
   const startGame = useCallback(() => {
@@ -209,7 +196,7 @@ const SnakeGame = () => {
     const s = scoreRef.current;
     const isNew = saveHighScoreObj('snake', s);
     if (isNew) { setIsNewRecord(true); setHighScore(s); playNewRecordSound(); }
-  }, []);
+  }, [safeTimeout]);
 
   /* ── Game loop ── */
   useEffect(() => {
@@ -287,7 +274,7 @@ const SnakeGame = () => {
 
       setSnake(ns); snakeRef.current = ns;
     }, speed);
-  }, [gameState, speed, cfg.wrap, spawnFood, endGame, burst, safeInterval, clearAllIntervals]);
+  }, [gameState, speed, cfg.speed, cfg.wrap, spawnFood, endGame, burst, safeInterval, clearAllIntervals]);
 
   /* ── Keyboard ── */
   useEffect(() => {
@@ -553,22 +540,24 @@ const SnakeGame = () => {
 
           {/* Particles */}
           {particles.map(p => (
-            <div key={p.id} className="absolute z-30 rounded-full pointer-events-none"
+            <motion.div key={p.id} className="absolute z-30 rounded-full pointer-events-none"
               style={{
-                width: 5, height: 5,
+                width: p.size, height: p.size,
                 left: p.x + 4, top: p.y + 4,
                 background: p.color,
-                opacity: p.life,
                 boxShadow: `0 0 6px ${p.color}`,
-                transition: 'opacity 0.05s',
-              }} />
+              }}
+              initial={{ opacity: 1, x: 0, y: 0, scale: 0.9 }}
+              animate={{ opacity: 0, x: p.dx, y: p.dy, scale: 0.2 }}
+              transition={{ duration: p.duration / 1000, ease: 'easeOut' }}
+            />
           ))}
 
           {/* ── GAME OVER OVERLAY ── */}
           <AnimatePresence>
             {gameState === 'gameover' && (
               <motion.div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3"
-                style={{ borderRadius: 20, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)' }}
+                style={{ borderRadius: 20, background: 'rgba(0,0,0,0.82)' }}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
                 <motion.p className="text-3xl font-black text-gradient"
                   initial={{ scale: 0, y: 30 }} animate={{ scale: [0, 1.3, 1], y: 0 }}

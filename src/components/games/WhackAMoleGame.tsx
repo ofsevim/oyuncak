@@ -41,6 +41,8 @@ interface Butterfly {
   id: number; x: number; y: number; speed: number; phase: number;
 }
 
+type AnimatedDurationStyle = React.CSSProperties & Record<'--duration', string>;
+
 
 /* ═══════════════════════════════════════════
    MAIN COMPONENT
@@ -450,12 +452,12 @@ const WhackAMoleGame = () => {
       `}</style>
 
       {/* ── HUD — Glassmorphism ── */}
-      <div className="flex gap-2 items-center flex-wrap justify-center">
-        <div className="px-4 py-2 rounded-2xl flex items-center gap-1.5"
+      <div className="grid w-full max-w-md grid-cols-3 gap-2 items-stretch">
+        <div className="px-4 py-2 rounded-2xl flex min-w-0 items-center justify-center gap-1.5"
           style={{ background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
           <span className="text-lg font-black text-primary" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>⚡ {score}</span>
         </div>
-        <div className="px-4 py-2 rounded-2xl"
+        <div className="px-4 py-2 rounded-2xl flex min-w-0 items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(12px)', border: `1px solid ${timeLeft <= 10 ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}` }}>
           <span className={`text-lg font-black ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-orange-400'}`}
             style={{ textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>⏱️ {timeLeft}s</span>
@@ -514,7 +516,7 @@ const WhackAMoleGame = () => {
               top: `${b.y}%`,
               '--duration': `${8 / b.speed}s`,
               animationDelay: `${b.phase}s`
-            } as any}>
+            } as AnimatedDurationStyle}>
             🦋
           </div>
         ))}
@@ -532,7 +534,7 @@ const WhackAMoleGame = () => {
                 transformOrigin: 'bottom center',
                 '--duration': `${gb.duration}s`,
                 animationDelay: `${gb.delay}s`
-              } as any}
+              } as AnimatedDurationStyle}
             />
           ))}
         </div>

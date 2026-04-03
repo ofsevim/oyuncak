@@ -98,13 +98,13 @@ const ComparisonGame = () => {
     }, [safeTimeout]);
 
     const generateNewRound = useCallback(() => {
-        let prop: PropertyType = Math.random() > 0.5 ? 'weight' : 'size';
+        const prop: PropertyType = Math.random() > 0.5 ? 'weight' : 'size';
 
         let a: typeof ITEMS[0], b: typeof ITEMS[0];
         let attempts = 0;
         do {
             // Pick two different levels to ensure a huge difference, no ambiguity
-            let levelA = Math.floor(Math.random() * 3) + 1;
+            const levelA = Math.floor(Math.random() * 3) + 1;
             let levelB = Math.floor(Math.random() * 3) + 1;
             while (levelA === levelB) {
                 levelB = Math.floor(Math.random() * 3) + 1;

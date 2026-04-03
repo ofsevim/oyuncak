@@ -34,6 +34,8 @@ const SHOT_POSITIONS: ShotPos[] = [
 
 const MAX_DRAG = 150;      // pixels of drag = full power
 const MAX_SPEED = 22;      // max launch speed
+const TARGET_FRAME_MS = 1000 / 60;
+const CANVAS_DPR_CAP = 2;
 
 const TARGETS = [0, 15, 35, 60, 90, 165];
 const getTargetScore = (lvl: number) => lvl <= 5 ? TARGETS[lvl] : 165 + (lvl - 5) * 80;
@@ -79,7 +81,11 @@ function drawBg(ctx: CanvasRenderingContext2D, tick: number) {
         const wy = CH * 0.50 + i * 8;
         for (let x = 0; x <= CW; x += 4) {
             const y = wy + Math.sin((x + tick * (0.6 + i * 0.2)) * 0.03) * 3;
-            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            if (x === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
         }
         ctx.stroke();
     }
@@ -390,6 +396,7 @@ const BasketballGame = () => {
     const startNewRound = useCallback(() => {
         ballsLeftRef.current = BALLS_PER_ROUND; scoreRef.current = 0; comboRef.current = 0;
         levelRef.current = 1;
+        lastTimeRef.current = 0;
         setScore(0); setBallsLeft(BALLS_PER_ROUND); setCombo(0); setLevel(1); setIsNewRecord(false);
         resetBall(); phaseRef.current = 'aim'; setPhase('aim');
     }, [resetBall]);
@@ -441,7 +448,7 @@ const BasketballGame = () => {
             }
         }
         return false;
-    }, [addFloat]);
+    }, [addFloat, safeTimeout]);
 
 
     /* ── GAME LOOP ── */
@@ -450,9 +457,14 @@ const BasketballGame = () => {
         const ctx = canvas?.getContext('2d');
         if (!ctx || !canvas) return;
 
-        /* ── Delta-time: 60fps = dt 1.0, 120fps = dt 0.5 ── */
-        if (!lastTimeRef.current) lastTimeRef.current = timestamp - 16;
-        const dt = Math.min((timestamp - lastTimeRef.current) * 60 / 1000, 3);
+        /* Simülasyonu 60 FPS tabanında tut: 120 Hz ekranda oyun akışı hızlanmasın */
+        if (!lastTimeRef.current) lastTimeRef.current = timestamp - TARGET_FRAME_MS;
+        const elapsed = timestamp - lastTimeRef.current;
+        if (elapsed < TARGET_FRAME_MS) {
+            rafRef.current = requestAnimationFrame(loop);
+            return;
+        }
+        const dt = Math.min(elapsed / TARGET_FRAME_MS, 3);
         lastTimeRef.current = timestamp;
 
         tickRef.current += dt;
@@ -468,7 +480,7 @@ const BasketballGame = () => {
         if (ph === 'fly' || ph === 'scored') {
             if (ph === 'fly') {
                 trailRef.current.push({ x: ballX.current, y: ballY.current });
-                if (trailRef.current.length > 16) trailRef.current.shift();
+                if (trailRef.current.length > 12) trailRef.current.shift();
             }
 
             prevBallY.current = ballY.current;
@@ -770,13 +782,13 @@ const BasketballGame = () => {
             if (!el || !canvas) return;
             const s = Math.min(el.clientWidth / CW, 1);
             scaleRef.current = s;
-            const dpr = window.devicePixelRatio || 1;
+            const dpr = Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP);
             canvas.width = CW * dpr;
             canvas.height = CH * dpr;
             canvas.style.width = `${CW * s}px`;
             canvas.style.height = `${CH * s}px`;
             const ctx = canvas.getContext('2d');
-            ctx?.scale(dpr, dpr);
+            ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
         };
         resize(); window.addEventListener('resize', resize);
         return () => window.removeEventListener('resize', resize);
@@ -888,7 +900,7 @@ const BasketballGame = () => {
                         <motion.div key="sc" className="absolute inset-0 flex items-center justify-center pointer-events-none"
                             initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
                             <div className="px-6 py-3 text-xl font-black text-white rounded-2xl"
-                                style={{ background: 'hsl(158 65% 38% / 0.92)', backdropFilter: 'blur(8px)' }}>
+                                style={{ background: 'hsl(158 65% 38% / 0.92)' }}>
                                 {combo >= 3 ? `🔥 COMBO ×${combo}!` : combo === 2 ? '✨ Double!' : '🏀 Süper!'}
                             </div>
                         </motion.div>
@@ -897,7 +909,7 @@ const BasketballGame = () => {
                         <motion.div key="ms" className="absolute inset-0 flex items-center justify-center pointer-events-none"
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             <div className="px-5 py-2 text-lg font-black text-white rounded-2xl"
-                                style={{ background: 'hsl(4 82% 48% / 0.88)', backdropFilter: 'blur(8px)' }}>
+                                style={{ background: 'hsl(4 82% 48% / 0.88)' }}>
                                 😅 Kaçtı!
                             </div>
                         </motion.div>
@@ -909,7 +921,7 @@ const BasketballGame = () => {
                         <motion.div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none"
                             initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ opacity: 0 }}>
                             <div className="px-8 py-4 text-2xl font-black text-white rounded-2xl shadow-xl"
-                                style={{ background: 'hsl(280 80% 50% / 0.9)', backdropFilter: 'blur(4px)' }}>
+                                style={{ background: 'hsl(280 80% 50% / 0.9)' }}>
                                 🎉 Seviye {level}!
                             </div>
                         </motion.div>
@@ -937,7 +949,7 @@ const BasketballGame = () => {
             <AnimatePresence>
                 {phase === 'gameover' && (
                     <motion.div className="fixed inset-0 z-40 flex items-center justify-center"
-                        style={{ background: 'hsl(224 28% 5% / 0.88)', backdropFilter: 'blur(14px)' }}
+                        style={{ background: 'hsl(224 28% 5% / 0.92)' }}
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <motion.div className="flex flex-col items-center gap-5 p-8 rounded-3xl text-center"
                             style={{ background: 'hsl(224 24% 10%)', border: '1px solid hsl(220 20% 100% / 0.08)', maxWidth: 320 }}

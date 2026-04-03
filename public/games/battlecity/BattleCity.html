@@ -96,9 +96,6 @@
   <script type="text/javascript" src="src/Water.js"></script>
   <script type="text/javascript" src="src/LoadingScene.js"></script>
   
-  <script type="text/javascript" src="lib/Stats.js"></script>
-  <script type="text/javascript" src="src/FPSCounter.js"></script>
-  
   <script type="text/javascript" src="src/ImageManager.js"></script>
   <script type="text/javascript" src="src/Construction.js"></script>
   <script type="text/javascript" src="src/SpriteSerializerController.js"></script>
@@ -108,6 +105,9 @@
   <script type="text/javascript">
     $(function () {
       var FPS = 50;
+      var FRAME_MS = 1000 / FPS;
+      var lastFrameTime = 0;
+      var accumulator = 0;
       
       var CANVAS_ID = 'canvas';
       var ctx = createCanvasContext();
@@ -117,9 +117,26 @@
       var keyboard = new Keyboard(eventManager);
       var sceneManager = new SceneManager(eventManager);
       sceneManager.toLoadingScene();
-      
-      setInterval(gameLoop, 1000 / FPS);
-      
+
+      requestAnimationFrame(frameLoop);
+
+      function frameLoop(timestamp) {
+        if (!lastFrameTime) {
+          lastFrameTime = timestamp;
+        }
+
+        var elapsed = timestamp - lastFrameTime;
+        lastFrameTime = timestamp;
+        accumulator = Math.min(accumulator + elapsed, FRAME_MS * 4);
+
+        while (accumulator >= FRAME_MS) {
+          gameLoop();
+          accumulator -= FRAME_MS;
+        }
+
+        requestAnimationFrame(frameLoop);
+      }
+
       function gameLoop() {
         keyboard.fireEvents();
         sceneManager.update();

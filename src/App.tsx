@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,10 +6,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProfileProvider } from "@/contexts/ProfileContext";
-import NicknameModal from "@/components/NicknameModal";
 import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
+const NicknameModal = lazy(() => import("@/components/NicknameModal"));
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -17,7 +18,9 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <NicknameModal />
+          <Suspense fallback={null}>
+            <NicknameModal />
+          </Suspense>
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />

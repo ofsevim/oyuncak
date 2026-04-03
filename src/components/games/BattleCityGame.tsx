@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 
 interface BattleCityGameProps {
@@ -10,6 +10,15 @@ interface BattleCityGameProps {
 /* Oyunun native canvas boyutu: UNIT_SIZE(32) × 16 = 512w, × 14 = 448h */
 const NATIVE_W = 512;
 const NATIVE_H = 448;
+type TouchSafeStyle = CSSProperties & { WebkitTouchCallout?: 'none' };
+
+const touchSafeStyle = {
+    WebkitTapHighlightColor: 'transparent',
+    touchAction: 'none',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
+} satisfies TouchSafeStyle;
 
 const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -66,38 +75,52 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
     }, []);
 
     const pressKey = useCallback((key: string) => {
+        focusIframe();
         sendKey(key, 'keydown');
         setTimeout(() => sendKey(key, 'keyup'), 100);
-    }, [sendKey]);
+    }, [focusIframe, sendKey]);
 
     const holdTimers = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
     const startHold = useCallback((key: string) => {
+        focusIframe();
+        if (holdTimers.current[key]) {
+            clearInterval(holdTimers.current[key]);
+        }
         sendKey(key, 'keydown');
         holdTimers.current[key] = setInterval(() => sendKey(key, 'keydown'), 80);
-    }, [sendKey]);
+    }, [focusIframe, sendKey]);
 
     const stopHold = useCallback((key: string) => {
-        clearInterval(holdTimers.current[key]);
-        delete holdTimers.current[key];
+        const timer = holdTimers.current[key];
+        if (timer) {
+            clearInterval(timer);
+            delete holdTimers.current[key];
+        }
         sendKey(key, 'keyup');
     }, [sendKey]);
 
     useEffect(() => {
-        return () => { Object.values(holdTimers.current).forEach(clearInterval); };
+        const timers = holdTimers.current;
+        return () => { Object.values(timers).forEach(clearInterval); };
+    }, []);
+
+    const preventDefault = useCallback((event: { preventDefault: () => void }) => {
+        event.preventDefault();
     }, []);
 
     /* D-pad button */
     const DpadBtn = ({ arrow, label, keyName }: { arrow: string; label: string; keyName: string }) => (
         <motion.button
             aria-label={label}
-            onTouchStart={(e) => { e.preventDefault(); startHold(keyName); }}
-            onTouchEnd={(e) => { e.preventDefault(); stopHold(keyName); }}
-            onTouchCancel={() => stopHold(keyName)}
+            draggable={false}
+            onPointerDown={(e) => { e.preventDefault(); startHold(keyName); }}
+            onPointerUp={(e) => { e.preventDefault(); stopHold(keyName); }}
+            onPointerCancel={() => stopHold(keyName)}
+            onPointerLeave={() => stopHold(keyName)}
             onContextMenu={(e) => e.preventDefault()}
-            onMouseDown={() => startHold(keyName)}
-            onMouseUp={() => stopHold(keyName)}
-            onMouseLeave={() => stopHold(keyName)}
+            onDragStart={preventDefault}
+            onSelectStart={preventDefault}
             whileTap={{ scale: 0.85 }}
             className="flex items-center justify-center select-none active:opacity-70 transition-opacity"
             style={{
@@ -108,12 +131,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 border: '1px solid hsl(220 20% 100% / 0.14)',
                 boxShadow: '0 4px 12px hsl(224 28% 3% / 0.5), inset 0 1px 0 hsl(220 20% 100% / 0.06)',
                 fontSize: 'clamp(18px, 5vw, 26px)',
-                WebkitTapHighlightColor: 'transparent',
-                touchAction: 'none',
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-                /* @ts-ignore */
-                WebkitTouchCallout: 'none',
+                ...touchSafeStyle,
             }}
         >
             {arrow}
@@ -194,7 +212,10 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 <motion.button
                     onTouchStart={(e) => { e.preventDefault(); pressKey('Enter'); }}
                     onContextMenu={(e) => e.preventDefault()}
+                    onDragStart={preventDefault}
+                    onSelectStart={preventDefault}
                     onClick={() => pressKey('Enter')}
+                    draggable={false}
                     whileTap={{ scale: 0.95 }}
                     className="w-full py-3 rounded-2xl font-bold text-sm select-none touch-manipulation"
                     style={{
@@ -202,7 +223,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                         border: '1px solid hsl(158 65% 48% / 0.35)',
                         color: 'hsl(158 65% 55%)',
                         letterSpacing: '0.04em',
-                        WebkitTapHighlightColor: 'transparent',
+                        ...touchSafeStyle,
                     }}
                 >
                     ▶ BAŞLAT / PAUSE
@@ -235,13 +256,14 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
 
                     {/* Fire button */}
                     <motion.button
-                        onTouchStart={(e) => { e.preventDefault(); startHold(' '); }}
-                        onTouchEnd={(e) => { e.preventDefault(); stopHold(' '); }}
-                        onTouchCancel={() => stopHold(' ')}
+                        draggable={false}
+                        onPointerDown={(e) => { e.preventDefault(); startHold(' '); }}
+                        onPointerUp={(e) => { e.preventDefault(); stopHold(' '); }}
+                        onPointerCancel={() => stopHold(' ')}
+                        onPointerLeave={() => stopHold(' ')}
                         onContextMenu={(e) => e.preventDefault()}
-                        onMouseDown={() => startHold(' ')}
-                        onMouseUp={() => stopHold(' ')}
-                        onMouseLeave={() => stopHold(' ')}
+                        onDragStart={preventDefault}
+                        onSelectStart={preventDefault}
                         whileTap={{ scale: 0.88 }}
                         className="flex items-center justify-center select-none flex-shrink-0"
                         style={{
@@ -252,12 +274,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                             border: '2px solid hsl(4 82% 58% / 0.5)',
                             boxShadow: '0 0 24px hsl(4 82% 58% / 0.3)',
                             fontSize: 'clamp(24px, 7vw, 36px)',
-                            WebkitTapHighlightColor: 'transparent',
-                            touchAction: 'none',
-                            userSelect: 'none',
-                            WebkitUserSelect: 'none',
-                            /* @ts-ignore */
-                            WebkitTouchCallout: 'none',
+                            ...touchSafeStyle,
                         }}
                     >
                         💥

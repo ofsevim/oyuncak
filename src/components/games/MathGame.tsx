@@ -117,7 +117,9 @@ const MathGame = () => {
       if (newStreak >= 3) playComboSound(newStreak); else playSuccessSound();
       const newScore = score + 10 + bonus;
       setScore(newScore);
-      saveHighScoreObj('math', newScore);
+      if (saveHighScoreObj('math', newScore)) {
+        setHighScore(newScore);
+      }
       setStreak(newStreak); setCorrectCount(p => p + 1); setShowResult('correct');
       if (newStreak >= 5) fireConfetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
     } else {

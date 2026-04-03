@@ -11,10 +11,57 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   build: {
-    // Eski cihazlar için ES2015 hedefi
-    target: "es2015",
-    // CSS uyumluluğu
     cssTarget: "chrome61",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+
+          if (id.includes("firebase/auth") || id.includes("@firebase/auth")) {
+            return "firebase-auth";
+          }
+
+          if (id.includes("firebase/firestore") || id.includes("@firebase/firestore")) {
+            return "firebase-firestore";
+          }
+
+          if (id.includes("firebase/app") || id.includes("@firebase/app")) {
+            return "firebase-app";
+          }
+
+          if (
+            id.includes("react") ||
+            id.includes("react-dom") ||
+            id.includes("scheduler")
+          ) {
+            return "react-vendor";
+          }
+
+          if (id.includes("firebase")) {
+            return "firebase-vendor";
+          }
+
+          if (id.includes("fabric")) {
+            return "drawing-vendor";
+          }
+
+          if (id.includes("phaser") || id.includes("matter-js")) {
+            return "game-engines";
+          }
+
+          if (
+            id.includes("@radix-ui") ||
+            id.includes("framer-motion") ||
+            id.includes("lucide-react") ||
+            id.includes("recharts")
+          ) {
+            return "ui-vendor";
+          }
+
+          return "vendor";
+        },
+      },
+    },
   },
   plugins: [
     react(),
@@ -33,9 +80,7 @@ export default defineConfig(({ mode }) => ({
         "UCAndroid >= 12.12",
         "OperaMini all",
       ],
-      // Core-js polyfill'leri otomatik ekle
       modernPolyfills: true,
-      // Eski tarayıcılar için ek polyfill'ler
       additionalLegacyPolyfills: [
         "regenerator-runtime/runtime",
       ],

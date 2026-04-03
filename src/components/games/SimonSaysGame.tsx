@@ -111,7 +111,7 @@ const SimonSaysGame = () => {
 
         setGameState('playing');
         setPlayerIndex(0);
-    }, [playNote]);
+    }, [playNote, safeTimeout]);
 
     const nextRound = useCallback((currentSeq: number[]) => {
         const nextBtn = Math.floor(Math.random() * 4);

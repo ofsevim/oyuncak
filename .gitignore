@@ -26,6 +26,8 @@ dist-ssr
 # Android / Capacitor build outputs
 android/app/build/
 android/.gradle/
+android/.gradle-user/
+android/.android-user/
 android/build/
 android/app/src/main/assets/public/
 android/app/src/main/assets/capacitor.config.json

@@ -52,7 +52,7 @@ const SuccessPopup = ({ isOpen, onClose, message = 'Harikasın!', level, disable
         clearTimeout(timeout);
       };
     }
-  }, [isOpen, onClose]);
+  }, [disableVoice, isOpen, onClose]);
 
   return (
     <AnimatePresence>

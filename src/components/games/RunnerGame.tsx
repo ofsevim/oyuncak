@@ -45,6 +45,9 @@ const GRAVITY = 0.62;
 const JUMP_FORCE = -13.5;
 const DOUBLE_JUMP_FORCE = -11;
 const MAX_LIVES = 5;
+const TARGET_FRAME_MS = 1000 / 60;
+const HUD_UPDATE_MS = 120;
+const CANVAS_DPR_CAP = 2;
 
 const CHARACTERS = [
   { id: 'bunny', name: 'Tavşan', emoji: '🐰', color: '#f9a8d4', accent: '#ec4899', bodyH: '#fce7f3' },
@@ -164,6 +167,7 @@ const RunnerGame = () => {
   const speedRef = useRef(5);
   const frameRef = useRef(0);
   const scoreRef = useRef(0);
+  const distanceRef = useRef(0);
   const comboRef = useRef(0);
   const livesRef = useRef(3);
   const shieldRef = useRef(false);
@@ -178,6 +182,8 @@ const RunnerGame = () => {
   const floatIdRef = useRef(0);
   const charRef = useRef(CHARACTERS[0]);
   const maxComboRef = useRef(0);
+  const lastHudDistanceUpdateRef = useRef(0);
+  const emittedDistanceRef = useRef(0);
   const { safeTimeout, clearAllTimeouts } = useSafeTimeouts();
 
   /* Sync refs - single effect for all refs */
@@ -658,9 +664,14 @@ const RunnerGame = () => {
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
 
-    /* ── Delta-time: 60fps = dt 1.0, 120fps = dt 0.5 ── */
-    if (!lastTimeRef.current) lastTimeRef.current = timestamp - 16;
-    const dt = Math.min((timestamp - lastTimeRef.current) * 60 / 1000, 3);
+    /* Simülasyonu 60 FPS tabanında tut: 120 Hz cihazlarda gameplay hızlanmasın */
+    if (!lastTimeRef.current) lastTimeRef.current = timestamp - TARGET_FRAME_MS;
+    const elapsed = timestamp - lastTimeRef.current;
+    if (elapsed < TARGET_FRAME_MS) {
+      rafRef.current = requestAnimationFrame(gameLoop);
+      return;
+    }
+    const dt = Math.min(elapsed / TARGET_FRAME_MS, 3);
     lastTimeRef.current = timestamp;
 
     frameRef.current += dt;
@@ -807,7 +818,16 @@ const RunnerGame = () => {
       }
     }
 
-    setDistance(Math.floor(groundOffRef.current / 10));
+    const nextDistance = Math.floor(groundOffRef.current / 10);
+    distanceRef.current = nextDistance;
+    if (
+      nextDistance !== emittedDistanceRef.current &&
+      (timestamp - lastHudDistanceUpdateRef.current >= HUD_UPDATE_MS || nextDistance === 0)
+    ) {
+      emittedDistanceRef.current = nextDistance;
+      lastHudDistanceUpdateRef.current = timestamp;
+      setDistance(nextDistance);
+    }
     draw(ctx);
     rafRef.current = requestAnimationFrame(gameLoop);
   }, [draw, spawnP, addFloat, safeTimeout]);
@@ -836,8 +856,10 @@ const RunnerGame = () => {
     playerRef.current = { x: 90, y: GROUND_Y, vy: 0, w: 46, h: 54, grounded: true, jumps: 0, squash: 1, stretch: 1, landTimer: 0 };
     obstaclesRef.current = []; collectiblesRef.current = []; particlesRef.current = [];
     speedRef.current = 5; frameRef.current = 0; groundOffRef.current = 0; lastTimeRef.current = 0;
-    scoreRef.current = 0; comboRef.current = 0; livesRef.current = 3;
+    scoreRef.current = 0; distanceRef.current = 0; comboRef.current = 0; livesRef.current = 3;
     invincibleRef.current = false; shieldRef.current = false; magnetRef.current = false; x2Ref.current = false;
+    emittedDistanceRef.current = 0;
+    lastHudDistanceUpdateRef.current = 0;
     setScore(0); setDistance(0); setLives(3); setCombo(0); setMaxCombo(0);
     maxComboRef.current = 0;
     setShowShield(false); setShowMagnet(false); setShowX2(false);
@@ -858,7 +880,7 @@ const RunnerGame = () => {
         orientation?.lock?.('landscape').catch(() => { });
       }
     } catch { /* ignore */ }
-  }, [character, difficulty]);
+  }, [character, clearAllTimeouts, difficulty]);
 
   useEffect(() => {
     if (phase === 'playing') rafRef.current = requestAnimationFrame(gameLoop);
@@ -867,6 +889,8 @@ const RunnerGame = () => {
 
   useEffect(() => {
     if (phase !== 'gameover') return;
+    emittedDistanceRef.current = distanceRef.current;
+    setDistance(distanceRef.current);
     const isNew = saveHighScoreObj('runner', scoreRef.current);
     if (isNew) {
       setIsNewRecord(true); setHighScore(scoreRef.current);
@@ -910,7 +934,7 @@ const RunnerGame = () => {
         orientation?.unlock?.();
       } catch { /* ignore */ }
     };
-  }, []);
+  }, [clearAllTimeouts]);
 
   /* ★ Canvas resize — container artık tam ekran, boşluk yok */
   useEffect(() => {
@@ -927,14 +951,14 @@ const RunnerGame = () => {
       const s = Math.min(sx, sy, 2.5); // Yüksek cap — mobilde kısıtlama yok
       scaleRef.current = s;
 
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP);
       canvas.width = CW * dpr;
       canvas.height = CH * dpr;
       canvas.style.width = `${CW * s}px`;
       canvas.style.height = `${CH * s}px`;
 
       const ctx = canvas.getContext('2d');
-      ctx?.scale(dpr, dpr);
+      ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -1120,7 +1144,6 @@ const RunnerGame = () => {
             height={CH}
             className="block"
             style={{
-              filter: 'saturate(1.25) brightness(1.1) contrast(1.05)',
               willChange: 'transform',
               touchAction: 'none',
               userSelect: 'none',
@@ -1134,11 +1157,9 @@ const RunnerGame = () => {
             {/* Lives */}
             <div className="flex items-center gap-0.5 md:gap-1 px-2 md:px-3 py-1 md:py-2 rounded-xl md:rounded-2xl"
               style={{
-                background: 'rgba(0,0,0,0.3)',
-                backdropFilter: 'blur(16px)',
+                background: 'rgba(9, 14, 22, 0.78)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
                 border: '1px solid rgba(255,255,255,0.15)',
-                filter: 'drop-shadow(0 0 12px rgba(239,68,68,0.4))'
               }}>
               {Array.from({ length: MAX_LIVES }).map((_, i) => (
                 <motion.span key={i} className={`text-xs md:text-sm drop-shadow-lg ${i < lives ? '' : 'opacity-20'}`}
@@ -1151,23 +1172,18 @@ const RunnerGame = () => {
             {/* Score */}
             <div className="flex items-center gap-1.5 md:gap-2.5 px-3 md:px-5 py-1.5 md:py-2.5 rounded-2xl md:rounded-3xl"
               style={{
-                background: 'rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(12px) saturate(1.5)',
-                WebkitBackdropFilter: 'blur(12px) saturate(1.5)',
+                background: 'rgba(15,21,31,0.82)',
                 boxShadow: '0 10px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
                 border: '1px solid rgba(255,255,255,0.2)',
-                filter: 'drop-shadow(0 0 15px rgba(251,191,36,0.35))'
               }}>
               <span className="text-sm md:text-lg font-black text-amber-300" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.6), 0 0 15px rgba(251,191,36,0.5)' }}>⭐ {score}</span>
             </div>
             {/* Distance */}
             <div className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-2 rounded-xl md:rounded-2xl"
               style={{
-                background: 'rgba(0,0,0,0.3)',
-                backdropFilter: 'blur(16px)',
+                background: 'rgba(9, 14, 22, 0.78)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
                 border: '1px solid rgba(255,255,255,0.15)',
-                filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.2))'
               }}>
               <span className="text-xs md:text-sm font-bold text-white/90" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.5)' }}>📏 {distance}m</span>
             </div>
@@ -1180,7 +1196,7 @@ const RunnerGame = () => {
                 <motion.div key={combo} initial={{ scale: 0.5 }} animate={{ scale: 1 }}
                   className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black text-yellow-300"
                   style={{
-                    background: 'rgba(251,191,36,0.15)', backdropFilter: 'blur(12px)',
+                    background: 'rgba(61, 47, 8, 0.85)',
                     border: '1px solid rgba(251,191,36,0.3)', textShadow: '0 2px 8px rgba(0,0,0,0.5)',
                     boxShadow: '0 4px 12px rgba(251,191,36,0.2)'
                   }}>
@@ -1189,19 +1205,19 @@ const RunnerGame = () => {
               )}
               {showShield && (
                 <div className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-blue-300"
-                  style={{ background: 'rgba(59,130,246,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(59,130,246,0.4)', boxShadow: '0 4px 12px rgba(59,130,246,0.2)' }}>
+                  style={{ background: 'rgba(14, 38, 69, 0.85)', border: '1px solid rgba(59,130,246,0.4)', boxShadow: '0 4px 12px rgba(59,130,246,0.2)' }}>
                   🛡️
                 </div>
               )}
               {showMagnet && (
                 <div className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-red-300"
-                  style={{ background: 'rgba(239,68,68,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(239,68,68,0.4)', boxShadow: '0 4px 12px rgba(239,68,68,0.2)' }}>
+                  style={{ background: 'rgba(71, 20, 20, 0.85)', border: '1px solid rgba(239,68,68,0.4)', boxShadow: '0 4px 12px rgba(239,68,68,0.2)' }}>
                   🧲
                 </div>
               )}
               {showX2 && (
                 <div className="px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-purple-300"
-                  style={{ background: 'rgba(168,85,247,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(168,85,247,0.4)', boxShadow: '0 4px 12px rgba(168,85,247,0.2)' }}>
+                  style={{ background: 'rgba(46, 20, 69, 0.85)', border: '1px solid rgba(168,85,247,0.4)', boxShadow: '0 4px 12px rgba(168,85,247,0.2)' }}>
                   ×2
                 </div>
               )}
@@ -1305,15 +1321,6 @@ const RunnerGame = () => {
               boxShadow: '0 8px 32px rgba(239,68,68,0.6), 0 0 0 4px rgba(255,255,255,0.2)',
             }}
             whileTap={{ scale: 0.85 }}
-            animate={{
-              scale: [1, 1.1, 1],
-              boxShadow: [
-                '0 8px 32px rgba(239,68,68,0.6), 0 0 0 4px rgba(255,255,255,0.2)',
-                '0 8px 40px rgba(239,68,68,0.8), 0 0 0 6px rgba(255,255,255,0.3)',
-                '0 8px 32px rgba(239,68,68,0.6), 0 0 0 4px rgba(255,255,255,0.2)',
-              ]
-            }}
-            transition={{ repeat: Infinity, duration: 1.2 }}
             initial={{ opacity: 0, scale: 0 }}
             exit={{ opacity: 0, scale: 0 }}>
             <span className="drop-shadow-lg">⬆️</span>

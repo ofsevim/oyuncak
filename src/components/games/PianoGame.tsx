@@ -241,10 +241,11 @@ const PianoGame = () => {
   useEffect(() => { setHighScore(getHighScore('piano')); }, []);
 
   useEffect(() => {
+    const noteTimeouts = noteTimeoutsRef.current;
     return () => {
       abortRef.current = true;
-      noteTimeoutsRef.current.forEach(clearTimeout);
-      noteTimeoutsRef.current.clear();
+      noteTimeouts.forEach(clearTimeout);
+      noteTimeouts.clear();
       if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
       audioCtxRef.current?.close().catch(() => {});
     };
@@ -313,7 +314,7 @@ const PianoGame = () => {
       }, 200);
       noteTimeoutsRef.current.set(note, t);
     },
-    [getAudioContext],
+    [getAudioContext, safeTimeout],
   );
 
   /* ── Tuş tıklama / basma mantığı ──────────────────────── */
@@ -379,7 +380,7 @@ const PianoGame = () => {
         setCombo(0);
       }
     },
-    [playNote],
+    [playNote, safeTimeout],
   );
 
   /* Klavye listener'ı için güncel ref */
@@ -423,7 +424,7 @@ const PianoGame = () => {
       setIsPlaying(false);
       isPlayingRef.current = false;
     },
-    [playNote],
+    [playNote, safeTimeout],
   );
 
   /* ── Melodi modunu başlat ──────────────────────────────── */
@@ -456,7 +457,7 @@ const PianoGame = () => {
 
     setIsPlaying(false);
     isPlayingRef.current = false;
-  }, [playNote, recordedNotes]);
+  }, [playNote, recordedNotes, safeTimeout]);
 
   /* ── Çalmayı durdur ────────────────────────────────────── */
   const stopPlayback = useCallback(() => {

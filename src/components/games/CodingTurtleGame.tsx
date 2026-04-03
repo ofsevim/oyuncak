@@ -81,8 +81,8 @@ const CodingTurtleGame = () => {
 
     const generateLevel = useCallback((lvl: number) => {
         // Trivial start pos
-        let sx = Math.floor(Math.random() * 2);
-        let sy = Math.floor(Math.random() * 2);
+        const sx = Math.floor(Math.random() * 2);
+        const sy = Math.floor(Math.random() * 2);
 
         let tx = GRID_W - 1 - Math.floor(Math.random() * 2);
         let ty = GRID_H - 1 - Math.floor(Math.random() * 2);

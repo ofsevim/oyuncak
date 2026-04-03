@@ -88,7 +88,7 @@ const ShapeMatchGame = () => {
 
         // Gather wrong options (to make it tricky, we can pick some from the same category, some from others)
         const allValidItems = validKeys.flatMap(k => CATEGORIES[k].items);
-        let potentialWrongOptions = allValidItems.filter(e => e !== targetEmoji);
+        const potentialWrongOptions = allValidItems.filter(e => e !== targetEmoji);
 
         const optionCount = useHardMode ? 4 : 3;
         const wrongOptions = shuffleArray(potentialWrongOptions).slice(0, optionCount - 1);
