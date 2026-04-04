@@ -29,14 +29,6 @@ export default defineConfig(({ mode }) => ({
             return "firebase-app";
           }
 
-          if (
-            id.includes("react") ||
-            id.includes("react-dom") ||
-            id.includes("scheduler")
-          ) {
-            return "react-vendor";
-          }
-
           if (id.includes("firebase")) {
             return "firebase-vendor";
           }
@@ -48,17 +40,6 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("phaser") || id.includes("matter-js")) {
             return "game-engines";
           }
-
-          if (
-            id.includes("@radix-ui") ||
-            id.includes("framer-motion") ||
-            id.includes("lucide-react") ||
-            id.includes("recharts")
-          ) {
-            return "ui-vendor";
-          }
-
-          return "vendor";
         },
       },
     },
