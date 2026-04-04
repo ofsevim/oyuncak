@@ -1,0 +1,5 @@
+/draw   /index.html   200
+/games  /index.html   200
+/games/*  /index.html   200
+/story  /index.html   200
+/*      /index.html   200
