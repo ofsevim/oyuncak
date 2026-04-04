@@ -453,29 +453,45 @@ const WhackAMoleGame = () => {
 
       {/* ── HUD — Glassmorphism ── */}
       <div className="grid w-full max-w-md grid-cols-3 gap-2 items-stretch">
-        <div className="px-4 py-2 rounded-2xl flex min-w-0 items-center justify-center gap-1.5"
+        <div className="px-4 py-2 rounded-2xl flex min-h-[52px] min-w-0 items-center justify-center gap-1.5"
           style={{ background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
           <span className="text-lg font-black text-primary" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>⚡ {score}</span>
         </div>
-        <div className="px-4 py-2 rounded-2xl flex min-w-0 items-center justify-center"
+        <div className="px-4 py-2 rounded-2xl flex min-h-[52px] min-w-0 items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(12px)', border: `1px solid ${timeLeft <= 10 ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}` }}>
           <span className={`text-lg font-black ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-orange-400'}`}
             style={{ textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>⏱️ {timeLeft}s</span>
         </div>
-        <AnimatePresence>
-          {combo >= 3 && (
-            <motion.div key={`combo-${combo}`} initial={{ scale: 0, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }}
-              className="px-3 py-2 rounded-2xl"
-              style={{
-                background: combo >= 10 ? 'rgba(251,191,36,0.25)' : combo >= 5 ? 'rgba(168,85,247,0.2)' : 'rgba(249,115,22,0.2)',
-                backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)'
-              }}>
-              <span className={`text-sm font-black ${combo >= 10 ? 'text-yellow-400' : combo >= 5 ? 'text-purple-400' : 'text-orange-400'}`}>
-                🔥 x{combo >= 10 ? 5 : combo >= 5 ? 2 : combo}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="min-w-0">
+          <AnimatePresence mode="wait">
+            {combo >= 3 ? (
+              <motion.div
+                key={`combo-${combo}`}
+                initial={{ scale: 0, rotate: -10 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0 }}
+                className="px-3 py-2 rounded-2xl flex min-h-[52px] items-center justify-center"
+                style={{
+                  background: combo >= 10 ? 'rgba(251,191,36,0.25)' : combo >= 5 ? 'rgba(168,85,247,0.2)' : 'rgba(249,115,22,0.2)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                }}
+              >
+                <span className={`text-sm font-black ${combo >= 10 ? 'text-yellow-400' : combo >= 5 ? 'text-purple-400' : 'text-orange-400'}`}>
+                  🔥 x{combo >= 10 ? 5 : combo >= 5 ? 2 : combo}
+                </span>
+              </motion.div>
+            ) : (
+              <div
+                key="combo-placeholder"
+                className="px-3 py-2 rounded-2xl min-h-[52px]"
+                style={{ visibility: 'hidden' }}
+                aria-hidden="true"
+              />
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* ── Dynamic Garden Background + Game Grid ── */}
