@@ -20,6 +20,8 @@ const touchSafeStyle = {
     WebkitTouchCallout: 'none',
 } satisfies TouchSafeStyle;
 
+const battleCitySrc = `${import.meta.env.BASE_URL}games/battlecity/BattleCity.html`;
+
 const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -176,7 +178,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 {/* iframe: GPU hızlandırmalı — transform doğrudan DOM'a yazılır */}
                 <iframe
                     ref={iframeRef}
-                    src="/games/battlecity/BattleCity.html"
+                    src={battleCitySrc}
                     title="Battle City"
                     sandbox="allow-scripts allow-same-origin"
                     scrolling="no"

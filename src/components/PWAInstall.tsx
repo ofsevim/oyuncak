@@ -9,6 +9,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 type NavigatorWithStandalone = Navigator & { standalone?: boolean };
+const appIconSrc = `${import.meta.env.BASE_URL}favicon.png`;
 
 const PWAInstall = () => {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -75,7 +76,7 @@ const PWAInstall = () => {
             >
                 <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0 border border-primary/30">
-                        <img src="/favicon.png" alt="App Icon" className="w-8 h-8 rounded-lg" />
+                        <img src={appIconSrc} alt="App Icon" className="w-8 h-8 rounded-lg" />
                     </div>
 
                     <div className="flex-1 min-w-0">

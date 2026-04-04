@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProfileProvider } from "@/contexts/ProfileContext";
 import Index from "./pages/Index";
@@ -21,7 +21,7 @@ const App = () => (
           <Suspense fallback={null}>
             <NicknameModal />
           </Suspense>
-          <BrowserRouter>
+          <HashRouter basename={import.meta.env.BASE_URL}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/draw" element={<Index />} />
@@ -30,7 +30,7 @@ const App = () => (
               <Route path="/story" element={<Index />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </BrowserRouter>
+          </HashRouter>
         </TooltipProvider>
       </ProfileProvider>
     </ThemeProvider>
