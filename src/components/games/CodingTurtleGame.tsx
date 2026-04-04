@@ -22,6 +22,8 @@ const DIR_VECTORS: Record<Direction, { dx: number, dy: number }> = {
 
 const GRID_W = 5;
 const GRID_H = 5;
+const MAX_COMMANDS = 15;
+const LEVEL_GENERATION_ATTEMPTS = 120;
 
 interface Point { x: number; y: number; }
 interface Sparkle { id: number; x: number; y: number; angle: number; color: string; }
@@ -33,6 +35,65 @@ const pill: React.CSSProperties = {
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 16,
     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+};
+
+const pointKey = ({ x, y }: Point) => `${x},${y}`;
+
+const buildObstacleSet = (points: Point[]) => new Set(points.map(pointKey));
+
+const getShortestPathLength = (start: Point, target: Point, blocked: Set<string>) => {
+    const startKey = pointKey(start);
+    const targetKey = pointKey(target);
+
+    if (blocked.has(startKey) || blocked.has(targetKey)) {
+        return null;
+    }
+
+    const visited = new Set([startKey]);
+    const queue: Array<{ point: Point; distance: number }> = [{ point: start, distance: 0 }];
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+        if (!current) break;
+
+        if (current.point.x === target.x && current.point.y === target.y) {
+            return current.distance;
+        }
+
+        for (const vector of Object.values(DIR_VECTORS)) {
+            const next = { x: current.point.x + vector.dx, y: current.point.y + vector.dy };
+            if (next.x < 0 || next.x >= GRID_W || next.y < 0 || next.y >= GRID_H) continue;
+
+            const key = pointKey(next);
+            if (blocked.has(key) || visited.has(key)) continue;
+
+            visited.add(key);
+            queue.push({ point: next, distance: current.distance + 1 });
+        }
+    }
+
+    return null;
+};
+
+const sampleUniqueObstacles = (count: number, forbidden: Set<string>) => {
+    const candidates: Point[] = [];
+    for (let y = 0; y < GRID_H; y++) {
+        for (let x = 0; x < GRID_W; x++) {
+            const point = { x, y };
+            if (!forbidden.has(pointKey(point))) {
+                candidates.push(point);
+            }
+        }
+    }
+
+    for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = candidates[i];
+        candidates[i] = candidates[j];
+        candidates[j] = temp;
+    }
+
+    return candidates.slice(0, count);
 };
 
 const CodingTurtleGame = () => {
@@ -80,37 +141,56 @@ const CodingTurtleGame = () => {
     }, []);
 
     const generateLevel = useCallback((lvl: number) => {
-        // Trivial start pos
-        const sx = Math.floor(Math.random() * 2);
-        const sy = Math.floor(Math.random() * 2);
+        const obsCount = Math.min(lvl, 6);
 
-        let tx = GRID_W - 1 - Math.floor(Math.random() * 2);
-        let ty = GRID_H - 1 - Math.floor(Math.random() * 2);
+        for (let attempt = 0; attempt < LEVEL_GENERATION_ATTEMPTS; attempt++) {
+            const sx = Math.floor(Math.random() * 2);
+            const sy = Math.floor(Math.random() * 2);
 
-        // Make sure they are not the same
-        if (sx === tx && sy === ty) { tx = GRID_W - 1; ty = GRID_H - 1; }
+            let tx = GRID_W - 1 - Math.floor(Math.random() * 2);
+            let ty = GRID_H - 1 - Math.floor(Math.random() * 2);
 
-        const obsCount = Math.min(lvl, 6); // Max 6 obstacles
-        const obsList: Point[] = [];
-
-        // Naively place obstacles, avoid start and target
-        for (let i = 0; i < obsCount; i++) {
-            let ox = Math.floor(Math.random() * GRID_W);
-            let oy = Math.floor(Math.random() * GRID_H);
-            while ((ox === sx && oy === sy) || (ox === tx && oy === ty) || obsList.some(o => o.x === ox && o.y === oy)) {
-                ox = Math.floor(Math.random() * GRID_W);
-                oy = Math.floor(Math.random() * GRID_H);
+            if (sx === tx && sy === ty) {
+                tx = GRID_W - 1;
+                ty = GRID_H - 1;
             }
-            obsList.push({ x: ox, y: oy });
+
+            const start = { x: sx, y: sy };
+            const target = { x: tx, y: ty };
+            const forbidden = new Set([pointKey(start), pointKey(target)]);
+            const obsList = sampleUniqueObstacles(obsCount, forbidden);
+            const pathLength = getShortestPathLength(start, target, buildObstacleSet(obsList));
+
+            if (pathLength !== null && pathLength <= MAX_COMMANDS) {
+                setStartPos(start);
+                setCurrentPos(start);
+                setTargetPos(target);
+                setObstacles(obsList);
+                setCommands([]);
+                setExecutingIndex(-1);
+                return;
+            }
         }
 
-        setStartPos({ x: sx, y: sy });
-        setCurrentPos({ x: sx, y: sy });
-        setTargetPos({ x: tx, y: ty });
-        setObstacles(obsList);
+        const start = { x: 0, y: 0 };
+        const target = { x: GRID_W - 1, y: GRID_H - 1 };
+        const safePath = new Set<string>();
+
+        for (let x = start.x; x <= target.x; x++) {
+            safePath.add(pointKey({ x, y: start.y }));
+        }
+        for (let y = start.y; y <= target.y; y++) {
+            safePath.add(pointKey({ x: target.x, y }));
+        }
+
+        const fallbackObstacles = sampleUniqueObstacles(obsCount, safePath);
+
+        setStartPos(start);
+        setCurrentPos(start);
+        setTargetPos(target);
+        setObstacles(fallbackObstacles);
         setCommands([]);
         setExecutingIndex(-1);
-
     }, []);
 
     const initGame = useCallback(() => {
@@ -131,7 +211,7 @@ const CodingTurtleGame = () => {
 
     const addCommand = (dir: Direction) => {
         if (gameState !== 'playing') return;
-        if (commands.length >= 15) return; // Limit moves
+        if (commands.length >= MAX_COMMANDS) return; // Limit moves
         playPopSound();
         setCommands(prev => [...prev, dir]);
     };
