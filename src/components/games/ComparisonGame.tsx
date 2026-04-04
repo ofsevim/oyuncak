@@ -17,23 +17,23 @@ import Leaderboard from '@/components/Leaderboard';
 
 const TOTAL_ROUNDS = 15;
 const TIMER_SECONDS = 10;
-const PRAISE = ['Mant\u0131kl\u0131!', 'Do\u011fru se\u00e7im!', 'S\u00fcper!', 'Kusursuz!', 'Harika!'];
+const PRAISE = ['Mantıklı!', 'Doğru seçim!', 'Süper!', 'Kusursuz!', 'Harika!'];
 const BACKGROUND_STYLE =
   'radial-gradient(circle at top, rgba(56,189,248,0.12), transparent 36%), linear-gradient(180deg, #091120 0%, #0f172a 45%, #111827 100%)';
 
 const ITEMS = [
   { emoji: '🐘', label: 'Fil', weight: 5000, size: 5000, level: 3 },
   { emoji: '🐳', label: 'Balina', weight: 150000, size: 100000, level: 3 },
-  { emoji: '☀️', label: 'G\u00fcne\u015f', weight: 9999999, size: 9999999, level: 3 },
+  { emoji: '☀️', label: 'Güneş', weight: 9999999, size: 9999999, level: 3 },
   { emoji: '🏠', label: 'Ev', weight: 500000, size: 800000, level: 3 },
-  { emoji: '🌍', label: 'D\u00fcnya', weight: 99999999, size: 99999999, level: 3 },
+  { emoji: '🌍', label: 'Dünya', weight: 99999999, size: 99999999, level: 3 },
   { emoji: '🚗', label: 'Araba', weight: 1500, size: 300, level: 2 },
   { emoji: '🐎', label: 'At', weight: 700, size: 200, level: 2 },
   { emoji: '📺', label: 'TV', weight: 30, size: 50, level: 2 },
-  { emoji: '🐻', label: 'Ay\u0131', weight: 400, size: 180, level: 2 },
-  { emoji: '🐜', label: 'Kar\u0131nca', weight: 0.1, size: 0.1, level: 1 },
+  { emoji: '🐻', label: 'Ayı', weight: 400, size: 180, level: 2 },
+  { emoji: '🐜', label: 'Karınca', weight: 0.1, size: 0.1, level: 1 },
   { emoji: '🐁', label: 'Fare', weight: 1, size: 1, level: 1 },
-  { emoji: '🍓', label: '\u00c7ilek', weight: 0.5, size: 2, level: 1 },
+  { emoji: '🍓', label: 'Çilek', weight: 0.5, size: 2, level: 1 },
   { emoji: '✏️', label: 'Kalem', weight: 0.5, size: 4, level: 1 },
   { emoji: '⚽', label: 'Top', weight: 0.4, size: 3, level: 1 },
 ] as const;
@@ -43,16 +43,16 @@ type ItemData = (typeof ITEMS)[number];
 
 const PROPERTY_META: Record<PropertyType, { question: string; badge: string; hint: string; accent: string; glow: string }> = {
   weight: {
-    question: 'Hangisi daha A\u011eIR?',
-    badge: 'A\u011eIRLIK',
-    hint: 'Daha a\u011f\u0131r olan\u0131 se\u00e7 ve seri bonusu topla.',
+    question: 'Hangisi daha AĞIR?',
+    badge: 'AĞIRLIK',
+    hint: 'Daha ağır olanı seç ve seri bonusu topla.',
     accent: '#fb923c',
     glow: 'linear-gradient(135deg, rgba(251,146,60,0.22), rgba(239,68,68,0.12))',
   },
   size: {
-    question: 'Hangisi daha B\u00dcY\u00dcK?',
+    question: 'Hangisi daha BÜYÜK?',
     badge: 'BOYUT',
-    hint: '\u0130ki nesneyi h\u0131zla k\u0131yasla ve b\u00fcy\u00fck olan\u0131 bul.',
+    hint: 'İki nesneyi hızla kıyasla ve büyük olanı bul.',
     accent: '#38bdf8',
     glow: 'linear-gradient(135deg, rgba(56,189,248,0.22), rgba(168,85,247,0.12))',
   },
@@ -61,16 +61,16 @@ const PROPERTY_META: Record<PropertyType, { question: string; badge: string; hin
 const ITEM_STYLES: Record<string, { accent: string; glow: string; badge: string }> = {
   Fil: { accent: '#f59e0b', glow: 'radial-gradient(circle at 50% 30%, rgba(245,158,11,0.28), transparent 66%)', badge: 'Guclu' },
   Balina: { accent: '#3b82f6', glow: 'radial-gradient(circle at 50% 30%, rgba(59,130,246,0.28), transparent 66%)', badge: 'Dev' },
-  'G\u00fcne\u015f': { accent: '#facc15', glow: 'radial-gradient(circle at 50% 30%, rgba(250,204,21,0.32), transparent 68%)', badge: 'Parlak' },
+  Güneş: { accent: '#facc15', glow: 'radial-gradient(circle at 50% 30%, rgba(250,204,21,0.32), transparent 68%)', badge: 'Parlak' },
   Ev: { accent: '#fb7185', glow: 'radial-gradient(circle at 50% 30%, rgba(251,113,133,0.28), transparent 66%)', badge: 'Genis' },
-  'D\u00fcnya': { accent: '#22c55e', glow: 'radial-gradient(circle at 50% 30%, rgba(34,197,94,0.28), transparent 66%)', badge: 'Dev' },
+  Dünya: { accent: '#22c55e', glow: 'radial-gradient(circle at 50% 30%, rgba(34,197,94,0.28), transparent 66%)', badge: 'Dev' },
   Araba: { accent: '#f97316', glow: 'radial-gradient(circle at 50% 30%, rgba(249,115,22,0.28), transparent 66%)', badge: 'Hizli' },
   At: { accent: '#eab308', glow: 'radial-gradient(circle at 50% 30%, rgba(234,179,8,0.28), transparent 66%)', badge: 'Cevik' },
   TV: { accent: '#a855f7', glow: 'radial-gradient(circle at 50% 30%, rgba(168,85,247,0.28), transparent 66%)', badge: 'Parlak' },
-  'Ay\u0131': { accent: '#b45309', glow: 'radial-gradient(circle at 50% 30%, rgba(180,83,9,0.3), transparent 66%)', badge: '\u0130ri' },
-  'Kar\u0131nca': { accent: '#10b981', glow: 'radial-gradient(circle at 50% 30%, rgba(16,185,129,0.24), transparent 66%)', badge: 'Minik' },
+  Ayı: { accent: '#b45309', glow: 'radial-gradient(circle at 50% 30%, rgba(180,83,9,0.3), transparent 66%)', badge: 'İri' },
+  Karınca: { accent: '#10b981', glow: 'radial-gradient(circle at 50% 30%, rgba(16,185,129,0.24), transparent 66%)', badge: 'Minik' },
   Fare: { accent: '#9ca3af', glow: 'radial-gradient(circle at 50% 30%, rgba(156,163,175,0.26), transparent 66%)', badge: 'Hafif' },
-  '\u00c7ilek': { accent: '#f43f5e', glow: 'radial-gradient(circle at 50% 30%, rgba(244,63,94,0.26), transparent 66%)', badge: 'Tatl\u0131' },
+  Çilek: { accent: '#f43f5e', glow: 'radial-gradient(circle at 50% 30%, rgba(244,63,94,0.26), transparent 66%)', badge: 'Tatlı' },
   Kalem: { accent: '#0ea5e9', glow: 'radial-gradient(circle at 50% 30%, rgba(14,165,233,0.26), transparent 66%)', badge: 'Ince' },
   Top: { accent: '#ec4899', glow: 'radial-gradient(circle at 50% 30%, rgba(236,72,153,0.26), transparent 66%)', badge: 'Yuvarlak' },
 };
@@ -289,19 +289,19 @@ const ComparisonGame = () => {
           <div className="w-full rounded-[32px] border px-5 py-6 text-center" style={{ ...glassCard, background: 'linear-gradient(180deg, rgba(15,23,42,0.82), rgba(15,23,42,0.58))' }}>
             <div className="mx-auto mb-4 flex w-fit items-center gap-3 rounded-full border px-4 py-2 text-sm font-black text-white/90" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }}>
               <span className="text-3xl">⚖️</span>
-              <span>H\u0131zl\u0131 K\u0131yaslama Arenas\u0131</span>
+              <span>Hızlı Kıyaslama Arenası</span>
             </div>
             <h2 className="text-4xl font-black md:text-5xl" style={{ backgroundImage: 'linear-gradient(135deg, #fb923c, #38bdf8 45%, #a855f7)', WebkitBackgroundClip: 'text', color: 'transparent' }}>
-              Kar\u015f\u0131la\u015ft\u0131rma
+              Karşılaştırma
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-white/72 md:text-base">
-              Bu oyunu daha sahneli kartlar, daha belirgin soru paneli ve daha g\u00fc\u00e7l\u00fc bir karar an\u0131 hissiyle yeniledik.
+              Bu oyunu daha sahneli kartlar, daha belirgin soru paneli ve daha güçlü bir karar anı hissiyle yeniledik.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               {[
-                { title: 'B\u00fcy\u00fck Fark', text: 'Se\u00e7enekler farkl\u0131 seviyelerden gelir.', accent: '#fb923c' },
-                { title: 'Seri Bonusu', text: 'Arka arkaya do\u011frular daha \u00e7ok puan verir.', accent: '#facc15' },
-                { title: 'Zaman Modu', text: '\u0130stersen ekstra tempo ekle.', accent: '#38bdf8' },
+                { title: 'Büyük Fark', text: 'Seçenekler farklı seviyelerden gelir.', accent: '#fb923c' },
+                { title: 'Seri Bonusu', text: 'Arka arkaya doğrular daha çok puan verir.', accent: '#facc15' },
+                { title: 'Zaman Modu', text: 'İstersen ekstra tempo ekle.', accent: '#38bdf8' },
               ].map((feature) => (
                 <div key={feature.title} className="rounded-[24px] border px-4 py-4 text-left" style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)', boxShadow: `0 12px 30px ${feature.accent}22` }}>
                   <div className="mb-2 h-1.5 w-12 rounded-full" style={{ background: feature.accent }} />
@@ -318,8 +318,8 @@ const ComparisonGame = () => {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.18em] text-white/45">Mod</p>
-                <p className="mt-1 text-xl font-black text-white">⏱️ Zamanl\u0131 Oyun</p>
-                <p className="mt-1 text-sm leading-5 text-white/65">Her tur i\u00e7in {TIMER_SECONDS} saniye ver.</p>
+                <p className="mt-1 text-xl font-black text-white">⏱️ Zamanlı Oyun</p>
+                <p className="mt-1 text-sm leading-5 text-white/65">Her tur için {TIMER_SECONDS} saniye ver.</p>
               </div>
               <div className="flex h-12 w-20 items-center rounded-full p-1" style={{ background: useTimer ? 'rgba(56,189,248,0.25)' : 'rgba(255,255,255,0.08)' }}>
                 <motion.div className="h-10 w-10 rounded-full" animate={{ x: useTimer ? 32 : 0 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }} style={{ background: useTimer ? 'linear-gradient(135deg, #38bdf8, #0ea5e9)' : 'linear-gradient(135deg, #e5e7eb, #9ca3af)' }} />
@@ -330,7 +330,7 @@ const ComparisonGame = () => {
           <Leaderboard gameId="comparison" />
 
           <motion.button onClick={initGame} className="rounded-full px-12 py-4 text-lg font-black text-white" style={{ background: 'linear-gradient(135deg, #fb923c, #a855f7)', boxShadow: '0 20px 44px rgba(168,85,247,0.24)' }} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
-            🚀 BA\u015eLA
+            🚀 BAŞLA
           </motion.button>
         </motion.div>
       </>
@@ -342,14 +342,14 @@ const ComparisonGame = () => {
       <>
         {background}
         <motion.div className="relative z-10 mx-auto flex w-full max-w-2xl flex-col items-center gap-5 px-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] pt-8 text-center" initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}>
-          <div className="rounded-full border px-5 py-3 text-white" style={{ ...glassCard, background: 'linear-gradient(135deg, rgba(251,146,60,0.22), rgba(168,85,247,0.18))' }}>⚖️ Tur Tamamland\u0131</div>
-          <h2 className="text-4xl font-black md:text-5xl" style={{ backgroundImage: 'linear-gradient(135deg, #fb923c, #facc15 45%, #38bdf8)', WebkitBackgroundClip: 'text', color: 'transparent' }}>Harika K\u0131yaslama!</h2>
+          <div className="rounded-full border px-5 py-3 text-white" style={{ ...glassCard, background: 'linear-gradient(135deg, rgba(251,146,60,0.22), rgba(168,85,247,0.18))' }}>⚖️ Tur Tamamlandı</div>
+          <h2 className="text-4xl font-black md:text-5xl" style={{ backgroundImage: 'linear-gradient(135deg, #fb923c, #facc15 45%, #38bdf8)', WebkitBackgroundClip: 'text', color: 'transparent' }}>Harika Kıyaslama!</h2>
           {isNewRecord && <div className="rounded-full px-6 py-2 font-black text-white" style={{ background: 'linear-gradient(135deg, #facc15, #f97316)', boxShadow: '0 18px 36px rgba(250,204,21,0.25)' }}>🏆 Yeni Rekor</div>}
           <div className="grid w-full max-w-xl gap-3 sm:grid-cols-3">
             {[
               { label: 'Puan', value: `${score}`, accent: '#fb923c' },
-              { label: 'En \u0130yi Seri', value: `x${bestStreak}`, accent: '#facc15' },
-              { label: 'Mod', value: useTimer ? 'Zamanl\u0131' : 'Serbest', accent: '#38bdf8' },
+              { label: 'En İyi Seri', value: `x${bestStreak}`, accent: '#facc15' },
+              { label: 'Mod', value: useTimer ? 'Zamanlı' : 'Serbest', accent: '#38bdf8' },
             ].map((stat) => (
               <div key={stat.label} className="rounded-[26px] border px-4 py-5" style={{ ...glassCard, boxShadow: `0 16px 36px ${stat.accent}22` }}>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-white/45">{stat.label}</p>
@@ -361,7 +361,7 @@ const ComparisonGame = () => {
             <motion.button onClick={initGame} className="rounded-full px-8 py-3 font-black text-white" style={{ background: 'linear-gradient(135deg, #fb923c, #a855f7)', boxShadow: '0 18px 36px rgba(168,85,247,0.22)' }} whileTap={{ scale: 0.98 }}>
               🔄 Tekrar Oyna
             </motion.button>
-            <button onClick={() => setGameState('menu')} className="rounded-full px-6 py-3 font-bold text-white/80" style={glassCard}>← Men\u00fc</button>
+            <button onClick={() => setGameState('menu')} className="rounded-full px-6 py-3 font-bold text-white/80" style={glassCard}>← Menü</button>
           </div>
         </motion.div>
       </>
@@ -379,7 +379,7 @@ const ComparisonGame = () => {
             { label: 'Puan', value: `${score}`, tone: 'text-orange-300' },
             { label: 'Tur', value: `${roundNumber}/${TOTAL_ROUNDS}`, tone: 'text-white' },
             { label: 'Seri', value: `x${Math.max(streak, 0)}`, tone: streak >= 3 ? 'text-yellow-300' : 'text-white' },
-            { label: 'S\u00fcre', value: useTimer ? `${timeLeft}s` : '--', tone: timeLeft <= 3 && useTimer ? 'text-red-400' : 'text-cyan-300' },
+            { label: 'Süre', value: useTimer ? `${timeLeft}s` : '--', tone: timeLeft <= 3 && useTimer ? 'text-red-400' : 'text-cyan-300' },
           ].map((stat) => (
             <div key={stat.label} className="rounded-[22px] px-4 py-3" style={glassCard}>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-white/45">{stat.label}</p>
