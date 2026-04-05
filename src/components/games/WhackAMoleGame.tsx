@@ -81,7 +81,6 @@ const WhackAMoleGame = () => {
 
   useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
-  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
   useEffect(() => { setHighScore(getHighScore('whack-a-mole')); }, []);
 
   // Stabilize decorative elements
@@ -140,8 +139,8 @@ const WhackAMoleGame = () => {
     const el = containerRef.current;
     if (!el) return;
     el.classList.add('shake-anim');
-    setTimeout(() => el.classList.remove('shake-anim'), 200);
-  }, []);
+    safeTimeout(() => el.classList.remove('shake-anim'), 200);
+  }, [safeTimeout]);
 
   /* Spawn mole */
   const spawnMole = useCallback(() => {

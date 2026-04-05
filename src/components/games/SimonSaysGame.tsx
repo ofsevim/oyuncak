@@ -35,9 +35,15 @@ const SimonSaysGame = () => {
 
     const audioCtxRef = useRef<AudioContext | null>(null);
     const abortRef = useRef(false);
+    const sequenceIdRef = useRef(0);
+    const scoreRef = useRef(0);
     const { safeTimeout, clearAll } = useSafeTimeouts();
 
     useEffect(() => { setHighScore(getHighScore('simonsays')); }, []);
+
+    useEffect(() => { scoreRef.current = score; }, [score]);
+
+    useEffect(() => { scoreRef.current = score; }, [score]);
 
     useEffect(() => {
         return () => {
@@ -86,15 +92,18 @@ const SimonSaysGame = () => {
 
     const playSequence = useCallback(async (seq: number[]) => {
         abortRef.current = false;
+        sequenceIdRef.current++;
+        const mySeqId = sequenceIdRef.current;
         setGameState('showing');
         setActiveButton(null);
 
         // Wait a bit before showing
         if (abortRef.current) return;
         await new Promise(r => { safeTimeout(() => r(undefined), 800); });
+        if (sequenceIdRef.current !== mySeqId) return;
 
         for (let i = 0; i < seq.length; i++) {
-            if (abortRef.current) return;
+            if (abortRef.current || sequenceIdRef.current !== mySeqId) return;
             const btnId = seq[i];
             const btn = BUTTONS[btnId];
 
@@ -102,13 +111,14 @@ const SimonSaysGame = () => {
             playNote(btn.freq);
 
             await new Promise(r => { safeTimeout(() => r(undefined), 400); });
-            if (abortRef.current) return;
+            if (abortRef.current || sequenceIdRef.current !== mySeqId) return;
 
             setActiveButton(null);
             await new Promise(r => { safeTimeout(() => r(undefined), 200); });
-            if (abortRef.current) return;
+            if (abortRef.current || sequenceIdRef.current !== mySeqId) return;
         }
 
+        if (sequenceIdRef.current !== mySeqId) return;
         setGameState('playing');
         setPlayerIndex(0);
     }, [playNote, safeTimeout]);
@@ -170,7 +180,7 @@ const SimonSaysGame = () => {
             setWrongButton(btnId);
             setGameState('showing'); // Block input
 
-            const currentScore = score;
+            const currentScore = scoreRef.current;
             safeTimeout(() => {
                 setWrongButton(null);
                 finishGame(currentScore);

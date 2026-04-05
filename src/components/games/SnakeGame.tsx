@@ -246,7 +246,7 @@ const SnakeGame = () => {
 
         // Reset combo after 3 seconds of not eating anything
         if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
-        comboTimerRef.current = setTimeout(() => {
+        comboTimerRef.current = safeTimeout(() => {
           comboRef.current = 0;
           setCombo(0);
           comboTimerRef.current = null;
@@ -274,7 +274,7 @@ const SnakeGame = () => {
 
       setSnake(ns); snakeRef.current = ns;
     }, speed);
-  }, [gameState, speed, cfg.speed, cfg.wrap, spawnFood, endGame, burst, safeInterval, clearAllIntervals]);
+  }, [gameState, speed, cfg.speed, cfg.wrap, spawnFood, endGame, burst, safeInterval, clearAllIntervals, safeTimeout]);
 
   /* ── Keyboard ── */
   useEffect(() => {

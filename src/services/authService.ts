@@ -4,9 +4,11 @@ import { auth } from '@/lib/firebase';
 let currentUser: User | null = null;
 let authPromise: Promise<User> | null = null;
 
-onAuthStateChanged(auth, (user) => {
+const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
   currentUser = user;
 });
+
+export { unsubscribeAuth };
 
 /** 8 saniyelik timeout ile promise yarışı; timer sızıntısını önlemek için finally'de temizlenir */
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
