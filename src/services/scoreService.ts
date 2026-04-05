@@ -25,15 +25,14 @@ export interface LeaderboardEntry {
 /**
  * Firestore'a skor kaydet.
  * Sadece mevcut skordan yüksekse günceller.
- * Fire-and-forget — hata sessizce yutulur.
  */
-export async function syncScore(gameId: string, score: number): Promise<void> {
+export async function syncScore(gameId: string, score: number): Promise<boolean> {
   try {
     const user = await ensureAuth();
     const docRef = doc(db, 'scores', gameId, 'leaderboard', user.uid);
 
     const existing = await getDoc(docRef);
-    if (existing.exists() && existing.data().score >= score) return;
+    if (existing.exists() && existing.data().score >= score) return false;
 
     await setDoc(docRef, {
       uid: user.uid,
@@ -42,8 +41,10 @@ export async function syncScore(gameId: string, score: number): Promise<void> {
       date: new Date().toISOString(),
       updatedAt: serverTimestamp(),
     });
+    return true;
   } catch (err) {
     console.warn('[Oyuncak] Firebase skor yazma hatası:', err);
+    return false;
   }
 }
 

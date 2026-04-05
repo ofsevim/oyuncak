@@ -120,6 +120,7 @@ const CodingTurtleGame = () => {
     const { safeTimeout, clearAll } = useSafeTimeouts();
     const sparkleIdRef = useRef(0);
     const scoreRef = useRef(0);
+    const currentPosRef = useRef<Point>({ x: 0, y: 0 });
 
     useEffect(() => { setHighScore(getHighScore('codingturtle')); }, []);
 
@@ -225,6 +226,7 @@ const CodingTurtleGame = () => {
     const resetRun = useCallback(() => {
         setGameState('playing');
         setCurrentPos(startPos);
+        currentPosRef.current = startPos;
         setExecutingIndex(-1);
     }, [startPos]);
 
@@ -232,7 +234,8 @@ const CodingTurtleGame = () => {
         if (commands.length === 0 || gameState !== 'playing') return;
         setGameState('animating');
         setExecutingIndex(0);
-        setCurrentPos(startPos); // Always reset to start when running
+        setCurrentPos(startPos);
+        currentPosRef.current = startPos;
     }, [commands, gameState, startPos]);
 
     // Command Execution Loop
@@ -241,7 +244,7 @@ const CodingTurtleGame = () => {
 
         if (executingIndex >= commands.length) {
             // Finished execution, check win or lose
-            if (currentPos.x === targetPos.x && currentPos.y === targetPos.y) {
+            if (currentPosRef.current.x === targetPos.x && currentPosRef.current.y === targetPos.y) {
                 // Win!
                 playSuccessSound();
                 setPraiseText(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
@@ -279,7 +282,7 @@ const CodingTurtleGame = () => {
         safeTimeout(() => {
             const dir = commands[executingIndex];
             const vec = DIR_VECTORS[dir];
-            const nextPos = { x: currentPos.x + vec.dx, y: currentPos.y + vec.dy };
+            const nextPos = { x: currentPosRef.current.x + vec.dx, y: currentPosRef.current.y + vec.dy };
 
             // Check bounds
             if (nextPos.x < 0 || nextPos.x >= GRID_W || nextPos.y < 0 || nextPos.y >= GRID_H) {
@@ -298,10 +301,11 @@ const CodingTurtleGame = () => {
 
             playPopSound();
             setCurrentPos(nextPos);
+            currentPosRef.current = nextPos;
             setExecutingIndex(executingIndex + 1);
 
         }, 400);
-    }, [gameState, executingIndex, commands, currentPos, targetPos, level, obstacles, safeTimeout, finishGame, generateLevel, resetRun]);
+    }, [gameState, executingIndex, commands, targetPos, level, obstacles, safeTimeout, finishGame, generateLevel, resetRun]);
 
 
     const Background = (

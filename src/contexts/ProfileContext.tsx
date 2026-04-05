@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 
 // Avatar seçenekleri
 export const AVATARS = [
@@ -49,20 +49,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const setProfile = (newProfile: Profile) => {
+  const setProfile = useCallback((newProfile: Profile) => {
     setProfileState(newProfile);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
-  };
+  }, []);
 
-  const clearProfile = () => {
+  const clearProfile = useCallback(() => {
     setProfileState(null);
     localStorage.removeItem(STORAGE_KEY);
-  };
+  }, []);
 
-  const getAvatar = () => {
+  const getAvatar = useCallback(() => {
     if (!profile) return undefined;
     return AVATARS.find(a => a.id === profile.avatarId);
-  };
+  }, [profile]);
 
   return (
     <ProfileContext.Provider value={{ profile, setProfile, clearProfile, getAvatar }}>

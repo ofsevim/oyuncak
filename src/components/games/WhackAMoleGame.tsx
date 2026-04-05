@@ -72,6 +72,7 @@ const WhackAMoleGame = () => {
   const scoreRef = useRef(0);
   const comboRef = useRef(0);
   const maxComboRef = useRef(0);
+  const timeLeftRef = useRef(30);
 
   const moleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const comboTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -79,6 +80,8 @@ const WhackAMoleGame = () => {
   const config = useMemo(() => DIFFS[difficulty], [difficulty]);
 
   useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
+  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
+  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
   useEffect(() => { setHighScore(getHighScore('whack-a-mole')); }, []);
 
   // Stabilize decorative elements
@@ -178,7 +181,7 @@ const WhackAMoleGame = () => {
     }, 200);
 
     // Dynamic duration based on time and score
-    const elapsed = config.time - timeLeft;
+    const elapsed = config.time - timeLeftRef.current;
     const timeFactor = Math.min(elapsed / config.time, 1);
     const scoreFactor = Math.min(scoreRef.current / 120, 1);
     const difficultyFactor = Math.max(timeFactor, scoreFactor);
@@ -202,7 +205,7 @@ const WhackAMoleGame = () => {
       const nextDelay = Math.random() * 250 + 100;
       moleRef.current = safeTimeout(() => spawnMoleRef.current(), nextDelay);
     }, duration);
-  }, [config, timeLeft, safeTimeout, updateHoles]);
+  }, [config, safeTimeout, updateHoles]);
 
   useEffect(() => { spawnMoleRef.current = spawnMole; }, [spawnMole]);
 

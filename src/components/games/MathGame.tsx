@@ -9,7 +9,7 @@ import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
-type Operation = '+' | '-' | '×' | '÷';
+type Operation = '+' | '-' | '×';
 type Difficulty = 'easy' | 'medium' | 'hard';
 type QuestionType = 'normal' | 'reverse' | 'compare';
 

@@ -18,10 +18,10 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <Suspense fallback={null}>
-            <NicknameModal />
-          </Suspense>
           <BrowserRouter basename={import.meta.env.BASE_URL}>
+            <Suspense fallback={null}>
+              <NicknameModal />
+            </Suspense>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/draw" element={<Index />} />

@@ -298,12 +298,8 @@ const SimonSaysGame = () => {
                             <motion.button
                                 key={btn.id}
                                 disabled={gameState !== 'playing'}
-                                onMouseDown={() => handleButtonClick(btn.id)}
-                                onTouchStart={() => handleButtonClick(btn.id)}
-                                onTouchEnd={(e) => { e.preventDefault(); }}
-                                animate={isWrong ? { x: [-10, 10, -10, 10, 0] } : {}}
-                                transition={{ duration: 0.4 }}
-                                className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl sm:rounded-3xl border-4 transition-colors flex items-center justify-center text-4xl sm:text-5xl"
+                                onPointerDown={(e) => { e.preventDefault(); handleButtonClick(btn.id); }}
+                                className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl sm:rounded-3xl border-4 transition-colors flex items-center justify-center text-4xl sm:text-5xl touch-manipulation"
                                 style={{
                                     backgroundColor: isActive ? btn.color : isWrong ? '#ef4444' : `${btn.color}40`,
                                     borderColor: isActive ? '#fff' : isWrong ? '#ef4444' : btn.color,

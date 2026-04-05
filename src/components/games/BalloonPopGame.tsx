@@ -316,6 +316,8 @@ const BalloonPopGame = () => {
   useEffect(() => {
     if (gamePhase !== 'ended') return;
     clearAllTimers();
+    setBalloons([]);
+    setPopEffects([]);
     fireConfetti({ particleCount: 150, spread: 100 });
 
     const finalScore = scoreRef.current;

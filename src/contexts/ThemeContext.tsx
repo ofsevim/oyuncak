@@ -15,7 +15,9 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     try {
-      return (localStorage.getItem('oyuncak-theme') as Theme) ?? 'light';
+      const stored = localStorage.getItem('oyuncak-theme');
+      if (stored === 'dark' || stored === 'light') return stored;
+      return 'light';
     } catch {
       return 'light';
     }
@@ -27,9 +29,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
     localStorage.setItem('oyuncak-theme', newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    setThemeState(newTheme);
   };
 
   const toggleTheme = () => {

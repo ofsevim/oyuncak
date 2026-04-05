@@ -139,7 +139,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
     }
   };
 
-  const totalPairs = Math.floor(gridSize * gridSize / 2) + (gridSize * gridSize % 2 !== 0 ? 1 : 0);
+  const totalPairs = Math.floor(gridSize * gridSize / 2);
   const allMatched = cards.length > 0 && cards.every(c => c.isMatched);
 
   useEffect(() => {

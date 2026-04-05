@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, useCallback } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Search, Brain, Hash, Palette, Wind, Piano, Calculator, Gamepad2, Rat, ArrowLeft, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -76,16 +76,6 @@ const GamesMenu = () => {
 
   const [activeCategory, setActiveCategory] = useState<GameCategory>('all');
   const [muted, setMutedState] = useState(isMuted());
-  const gridRef = useRef<HTMLDivElement>(null);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const cards = gridRef.current?.querySelectorAll<HTMLElement>('.game-card');
-    cards?.forEach((card) => {
-      const rect = card.getBoundingClientRect();
-      card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-      card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-    });
-  }, []);
 
   const filteredGames = activeCategory === 'all' ? games : games.filter(g => g.category.includes(activeCategory));
 
@@ -222,9 +212,7 @@ const GamesMenu = () => {
 
       {/* Games grid */}
       <div
-        ref={gridRef}
         className="grid grid-cols-2 lg:grid-cols-3 gap-3 w-full max-w-5xl"
-        onMouseMove={handleMouseMove}
       >
         <AnimatePresence mode="popLayout">
           {filteredGames.map((game, i) => {
