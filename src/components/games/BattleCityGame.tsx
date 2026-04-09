@@ -18,6 +18,8 @@ const touchSafeStyle = {
     userSelect: 'none',
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
+    WebkitUserDrag: 'none',
+    caretColor: 'transparent',
 } satisfies TouchSafeStyle;
 
 const battleCitySrc = `${import.meta.env.BASE_URL}games/battlecity/BattleCity.html`;
@@ -111,6 +113,11 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
         event.preventDefault();
     }, []);
 
+    const preventTouchDefault = useCallback((event: { preventDefault: () => void; stopPropagation?: () => void }) => {
+        event.preventDefault();
+        event.stopPropagation?.();
+    }, []);
+
     /* D-pad button */
     const DpadBtn = ({ arrow, label, keyName }: { arrow: string; label: string; keyName: string }) => (
         <motion.button
@@ -120,6 +127,10 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
             onPointerUp={(e) => { e.preventDefault(); stopHold(keyName); }}
             onPointerCancel={() => stopHold(keyName)}
             onPointerLeave={() => stopHold(keyName)}
+            onTouchStart={preventTouchDefault}
+            onTouchMove={preventTouchDefault}
+            onTouchEnd={preventTouchDefault}
+            onTouchCancel={preventTouchDefault}
             onContextMenu={(e) => e.preventDefault()}
             onDragStart={preventDefault}
             onSelectStart={preventDefault}
@@ -209,10 +220,17 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
+                onTouchStart={preventTouchDefault}
+                onTouchMove={preventTouchDefault}
+                onTouchEnd={preventTouchDefault}
+                style={touchSafeStyle}
             >
                 {/* BAŞLAT / PAUSE */}
                 <motion.button
                     onTouchStart={(e) => { e.preventDefault(); pressKey('Enter'); }}
+                    onTouchMove={preventTouchDefault}
+                    onTouchEnd={preventTouchDefault}
+                    onTouchCancel={preventTouchDefault}
                     onContextMenu={(e) => e.preventDefault()}
                     onDragStart={preventDefault}
                     onSelectStart={preventDefault}
@@ -263,6 +281,10 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                         onPointerUp={(e) => { e.preventDefault(); stopHold(' '); }}
                         onPointerCancel={() => stopHold(' ')}
                         onPointerLeave={() => stopHold(' ')}
+                        onTouchStart={preventTouchDefault}
+                        onTouchMove={preventTouchDefault}
+                        onTouchEnd={preventTouchDefault}
+                        onTouchCancel={preventTouchDefault}
                         onContextMenu={(e) => e.preventDefault()}
                         onDragStart={preventDefault}
                         onSelectStart={preventDefault}
