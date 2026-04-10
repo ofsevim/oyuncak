@@ -373,32 +373,32 @@ const ComparisonGame = () => {
   return (
     <>
       {background}
-      <motion.div className="game-field relative z-10 mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center gap-5 px-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] pt-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ touchAction: 'manipulation' }}>
-        <div className="grid w-full gap-3 sm:grid-cols-4">
+      <motion.div className="game-field relative z-10 mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center gap-3 px-3 pb-[calc(1.5rem+env(safe-area-inset-bottom,8rem))] pt-3 sm:gap-5 sm:px-4 sm:pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] sm:pt-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ touchAction: 'manipulation' }}>
+        <div className="grid w-full grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
           {[
             { label: 'Puan', value: `${score}`, tone: 'text-orange-300' },
             { label: 'Tur', value: `${roundNumber}/${TOTAL_ROUNDS}`, tone: 'text-white' },
             { label: 'Seri', value: `x${Math.max(streak, 0)}`, tone: streak >= 3 ? 'text-yellow-300' : 'text-white' },
             { label: 'Süre', value: useTimer ? `${timeLeft}s` : '--', tone: timeLeft <= 3 && useTimer ? 'text-red-400' : 'text-cyan-300' },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-[22px] px-4 py-3" style={glassCard}>
+            <div key={stat.label} className="rounded-[18px] px-3 py-2.5 sm:rounded-[22px] sm:px-4 sm:py-3" style={glassCard}>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-white/45">{stat.label}</p>
-              <p className={`mt-1 text-2xl font-black ${stat.tone}`}>{stat.value}</p>
+              <p className={`mt-1 text-xl font-black sm:text-2xl ${stat.tone}`}>{stat.value}</p>
             </div>
           ))}
         </div>
 
-        <motion.div className="w-full rounded-[30px] border px-5 py-5 text-center" initial={{ opacity: 0, y: 18, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} style={{ ...glassCard, background: propertyMeta.glow, borderColor: `${propertyMeta.accent}55` }}>
-          <div className="mx-auto mb-3 flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-white/85" style={{ background: 'rgba(255,255,255,0.06)', borderColor: `${propertyMeta.accent}55` }}>
+        <motion.div className="w-full rounded-[24px] border px-4 py-4 text-center sm:rounded-[30px] sm:px-5 sm:py-5" initial={{ opacity: 0, y: 18, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} style={{ ...glassCard, background: propertyMeta.glow, borderColor: `${propertyMeta.accent}55` }}>
+          <div className="mx-auto mb-2 flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-white/85 sm:mb-3 sm:px-4 sm:py-2 sm:text-xs sm:tracking-[0.2em]" style={{ background: 'rgba(255,255,255,0.06)', borderColor: `${propertyMeta.accent}55` }}>
             <span>⚖️</span>
             <span>{propertyMeta.badge}</span>
           </div>
-          <h3 className="text-3xl font-black text-white md:text-4xl">{propertyMeta.question}</h3>
-          <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-white/68 md:text-base">{propertyMeta.hint}</p>
+          <h3 className="text-[2rem] font-black leading-tight text-white sm:text-3xl md:text-4xl">{propertyMeta.question}</h3>
+          <p className="mx-auto mt-1.5 max-w-2xl text-xs leading-5 text-white/68 sm:mt-2 sm:text-sm sm:leading-6 md:text-base">{propertyMeta.hint}</p>
         </motion.div>
 
         <div className="relative flex w-full justify-center">
-          <div className="grid w-full max-w-3xl grid-cols-2 gap-4 sm:gap-8">
+          <div className="grid w-full max-w-3xl grid-cols-2 gap-3 sm:gap-8">
             {[currentRound.itemA, currentRound.itemB].map((item, index) => {
               const style = getItemStyle(item);
               const isTarget = isCorrect && selectedIndex === index;
@@ -411,7 +411,7 @@ const ComparisonGame = () => {
                   type="button"
                   disabled={isCorrect}
                   onClick={(event) => handleSelect(index, event)}
-                  className="relative aspect-[0.86] w-full overflow-hidden rounded-[30px] border text-left disabled:cursor-default"
+                  className="relative aspect-[0.72] w-full overflow-hidden rounded-[24px] border text-left disabled:cursor-default sm:aspect-[0.86] sm:rounded-[30px]"
                   initial={{ opacity: 0, y: 16, scale: 0.96 }}
                   animate={{ opacity: isDimmed ? 0.42 : 1, y: 0, scale: isTarget ? 1.04 : isDimmed ? 0.95 : 1, x: isShaking ? [-10, 10, -8, 8, 0] : 0 }}
                   transition={{ delay: index * 0.06, type: 'spring', stiffness: isShaking ? 650 : 320, damping: 24 }}
@@ -425,21 +425,21 @@ const ComparisonGame = () => {
                   }}
                 >
                   <div className="absolute inset-0 opacity-90" style={{ background: style.glow }} />
-                  <div className="absolute inset-x-5 top-5 flex items-center justify-between gap-2">
-                    <span className="rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.15em] text-white/85" style={{ background: `${style.accent}22`, borderColor: `${style.accent}66` }}>{style.badge}</span>
-                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-[0.15em] text-white/60">{index === 0 ? 'Sol' : 'Sag'}</span>
+                  <div className="absolute inset-x-3 top-3 flex items-center justify-between gap-2 sm:inset-x-5 sm:top-5">
+                    <span className="rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/85 sm:px-3 sm:text-[11px] sm:tracking-[0.15em]" style={{ background: `${style.accent}22`, borderColor: `${style.accent}66` }}>{style.badge}</span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/60 sm:px-3 sm:text-[11px] sm:tracking-[0.15em]">{index === 0 ? 'Sol' : 'Sag'}</span>
                   </div>
                   {isTarget && <motion.div layoutId="comparison-correct-glow" className="absolute inset-0 bg-emerald-400/12" initial={{ opacity: 0 }} animate={{ opacity: 1 }} />}
-                  <div className="relative z-10 flex h-full flex-col justify-between px-4 pb-4 pt-16 sm:px-5 sm:pb-5">
+                  <div className="relative z-10 flex h-full flex-col justify-between px-3 pb-3 pt-11 sm:px-5 sm:pb-5 sm:pt-16">
                     <div className="relative flex flex-1 items-center justify-center">
-                      <div className="absolute h-32 w-32 rounded-full blur-3xl sm:h-40 sm:w-40" style={{ background: `${style.accent}22` }} />
-                      <motion.span className="relative text-[66px] drop-shadow-[0_12px_30px_rgba(15,23,42,0.35)] sm:text-[96px]" animate={isTarget ? { scale: [1, 1.12, 1] } : undefined} transition={{ duration: 0.45 }}>
+                      <div className="absolute h-24 w-24 rounded-full blur-3xl sm:h-40 sm:w-40" style={{ background: `${style.accent}22` }} />
+                      <motion.span className="relative text-[52px] drop-shadow-[0_12px_30px_rgba(15,23,42,0.35)] sm:text-[96px]" animate={isTarget ? { scale: [1, 1.12, 1] } : undefined} transition={{ duration: 0.45 }}>
                         {item.emoji}
                       </motion.span>
                     </div>
-                    <div className="rounded-[24px] border px-4 py-4" style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.08)' }}>
-                      <p className="text-xl font-black text-white sm:text-2xl">{item.label}</p>
-                      <p className="mt-1 text-sm leading-5 text-white/62">{currentRound.prop === 'weight' ? 'Daha agir olabilir mi?' : 'Daha buyuk olabilir mi?'}</p>
+                    <div className="rounded-[20px] border px-3 py-3 sm:rounded-[24px] sm:px-4 sm:py-4" style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.08)' }}>
+                      <p className="text-lg font-black text-white sm:text-2xl">{item.label}</p>
+                      <p className="mt-1 text-xs leading-4 text-white/62 sm:text-sm sm:leading-5">{currentRound.prop === 'weight' ? 'Daha agir olabilir mi?' : 'Daha buyuk olabilir mi?'}</p>
                     </div>
                   </div>
                 </motion.button>
@@ -461,7 +461,7 @@ const ComparisonGame = () => {
           )}
         </AnimatePresence>
 
-        <div className="mt-2 flex flex-wrap justify-center gap-3">
+        <div className="mt-1 flex flex-wrap justify-center gap-3 sm:mt-2">
           <button onClick={initGame} className="rounded-full px-6 py-3 font-black text-white" style={glassCard}>🔄 Yeniden</button>
           <button onClick={() => setGameState('menu')} className="rounded-full px-6 py-3 font-bold text-white/78" style={glassCard}>← Cikis</button>
         </div>
