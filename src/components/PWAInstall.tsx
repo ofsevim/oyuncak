@@ -117,7 +117,7 @@ const PWAInstall = () => {
                         className="mt-2 bg-slate-800/90 border border-white/5 rounded-xl p-3 text-[10px] text-muted-foreground flex items-center gap-2"
                     >
                         <PlusSquare className="w-4 h-4 text-white" />
-                        <span>Alttaki <span className="text-white font-bold">Paylaş</span> butonuna tıkla ve <span className="text-white font-bold">Ana Ekrona Ekle</span> de.</span>
+                        <span>Alttaki <span className="text-white font-bold">Paylaş</span> butonuna tıkla ve <span className="text-white font-bold">Ana Ekrana Ekle</span> de.</span>
                     </motion.div>
                 )}
             </motion.div>
