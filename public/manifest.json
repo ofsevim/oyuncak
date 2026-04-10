@@ -46,7 +46,7 @@
   "shortcuts": [
     {
       "name": "Oyunları Aç",
-      "url": "/?tab=games",
+      "url": "/games",
       "icons": [
         {
           "src": "/favicon.png",
@@ -56,7 +56,7 @@
     },
     {
       "name": "Çizim Dünyası",
-      "url": "/?tab=draw",
+      "url": "/draw",
       "icons": [
         {
           "src": "/favicon.png",

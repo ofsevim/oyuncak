@@ -10,7 +10,7 @@ export type FeaturedItem = {
   gradient: string;
   cta: string;
   tab: "games" | "draw" | "story";
-  gameId?: "balloons" | "shapes" | "oddone" | "memory" | "whack" | "counting" | "coloring";
+  gameId?: "balloon" | "shapes" | "oddone" | "memory" | "whack" | "counting" | "coloring" | "tetris";
   badges: string[];
 };
 
@@ -23,7 +23,7 @@ export const FEATURED: FeaturedItem[] = [
     gradient: "from-cyan-500/20 via-blue-500/10 to-purple-500/15",
     cta: "Hemen Oyna",
     tab: "games",
-    gameId: "balloons",
+    gameId: "balloon",
     badges: ["Aksiyon", "Refleks", "Eğlenceli"],
   },
   {
@@ -34,6 +34,7 @@ export const FEATURED: FeaturedItem[] = [
     gradient: "from-violet-500/20 via-indigo-500/10 to-blue-500/15",
     cta: "Başla",
     tab: "games",
+    gameId: "tetris",
     badges: ["Klasik", "Strateji", "Zeka"],
   },
   {

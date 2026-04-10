@@ -17,9 +17,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try {
       const stored = localStorage.getItem('oyuncak-theme');
       if (stored === 'dark' || stored === 'light') return stored;
-      return 'light';
+      return 'dark';
     } catch {
-      return 'light';
+      return 'dark';
     }
   });
 

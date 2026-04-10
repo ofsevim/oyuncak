@@ -7,7 +7,7 @@ type Props = {
   onGoDraw: () => void;
   onGoGames: () => void;
   onGoStories: () => void;
-  onGoFeaturedGame?: (gameId: "balloons" | "shapes" | "oddone" | "memory" | "whack" | "counting" | "coloring") => void;
+  onGoFeaturedGame?: (gameId: "balloon" | "shapes" | "oddone" | "memory" | "whack" | "counting" | "coloring" | "tetris") => void;
 };
 
 const stagger = {
@@ -24,7 +24,7 @@ const QUICK = [
     action: "games" as const,
     emoji: "🎮",
     title: "Oyunlar",
-    sub: "13 oyun",
+    sub: "18 oyun",
     color: "hsl(258 88% 66% / 0.12)",
     border: "hsl(258 88% 66% / 0.2)",
     glow: "hsl(258 88% 66%)",
@@ -141,7 +141,7 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
                 </span>
               </h1>
               <p className="text-base md:text-lg text-muted-foreground font-medium max-w-md leading-relaxed">
-                13+ eğlenceli oyun, serbest çizim ve interaktif hikayeler — reklamsız, ücretsiz.
+                18+ eğlenceli oyun, serbest çizim ve interaktif hikayeler — reklamsız, ücretsiz.
               </p>
             </div>
 
