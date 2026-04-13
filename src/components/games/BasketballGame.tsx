@@ -36,6 +36,7 @@ const MAX_DRAG = 150;      // pixels of drag = full power
 const MAX_SPEED = 22;      // max launch speed
 const TARGET_FRAME_MS = 1000 / 60;
 const CANVAS_DPR_CAP = 2;
+const isMobileDev = /iPhone|iPad|iPod|Android/i.test(navigator?.userAgent ?? '');
 
 const TARGETS = [0, 15, 35, 60, 90, 165];
 const getTargetScore = (lvl: number) => lvl <= 5 ? TARGETS[lvl] : 165 + (lvl - 5) * 80;
@@ -343,6 +344,8 @@ const BasketballGame = () => {
     const tickRef = useRef(0);
     const lastTimeRef = useRef<number>(0);
 
+    const bgCacheRef = useRef<OffscreenCanvas | HTMLCanvasElement | null>(null);
+    const bgCacheTickRef = useRef(-1);
     const dragging = useRef(false);
     const dragStart = useRef({ x: 0, y: 0 });
     const dragCur = useRef({ x: 0, y: 0 });
@@ -472,7 +475,23 @@ const BasketballGame = () => {
         const ph = phaseRef.current;
 
         ctx.clearRect(0, 0, CW, CH);
-        drawBg(ctx, tick);
+
+        const bgUpdateInterval = isMobileDev ? 6 : 2;
+        const roundedTick = Math.floor(tick / bgUpdateInterval) * bgUpdateInterval;
+        if (!bgCacheRef.current || bgCacheTickRef.current !== roundedTick) {
+          try {
+            if (!bgCacheRef.current) {
+              bgCacheRef.current = typeof OffscreenCanvas !== 'undefined'
+                ? new OffscreenCanvas(CW, CH)
+                : document.createElement('canvas');
+              if ('width' in bgCacheRef.current) { bgCacheRef.current.width = CW; bgCacheRef.current.height = CH; }
+            }
+            const bgCtx = bgCacheRef.current.getContext('2d') as CanvasRenderingContext2D | null;
+            if (bgCtx) { bgCtx.clearRect(0, 0, CW, CH); drawBg(bgCtx, roundedTick); }
+            bgCacheTickRef.current = roundedTick;
+          } catch { drawBg(ctx, tick); }
+        }
+        if (bgCacheRef.current) ctx.drawImage(bgCacheRef.current as HTMLCanvasElement, 0, 0);
         drawHoop(ctx, netStretchRef.current, netSwayRef.current);
 
 

@@ -1,12 +1,22 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 /**
  * Premium ambient background
  * - Animated gradient orbs
  * - Floating micro-particles with glow
  * - Subtle noise texture overlay
+ * - Respects prefers-reduced-motion
  */
 const FloatingBubbles = () => {
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   const particles = useMemo(() => {
     const colors = [
       'hsl(185 100% 55%)',   // cyan
@@ -28,6 +38,17 @@ const FloatingBubbles = () => {
       opacity: 0.15 + Math.random() * 0.2,
     }));
   }, []);
+
+  if (reducedMotion) {
+    return (
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+        <div
+          className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-[0.07]"
+          style={{ background: 'radial-gradient(circle, hsl(185 100% 55%), transparent 70%)' }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">

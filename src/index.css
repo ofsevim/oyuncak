@@ -389,14 +389,16 @@
 /* ── Balloon Animations ── */
 .balloon-animate {
   top: 105%;
-  /* Hide at bottom before animation starts */
   animation: balloon-rise var(--rise-duration) var(--rise-delay) linear both;
   animation-play-state: var(--play-state);
+  will-change: top;
+  contain: layout style;
 }
 
 .balloon-sway-animate {
   animation: balloon-sway var(--sway-duration) ease-in-out infinite;
   animation-play-state: var(--play-state);
+  will-change: transform;
 }
 
 

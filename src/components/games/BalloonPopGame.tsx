@@ -118,6 +118,8 @@ const GAME_STYLES = `
   .balloon-sway-animate {
     animation: balloon-sway var(--sway-duration) ease-in-out infinite;
     animation-play-state: var(--play-state, running);
+    will-change: transform;
+    contain: layout style;
   }
 `;
 

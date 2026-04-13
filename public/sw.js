@@ -1,16 +1,18 @@
 /* 
-  Oyuncak - Service Worker (v2)
+  Oyuncak - Service Worker (v3)
   - Network-First for index.html and manifest (prevents stale loading hangs)
   - Stale-While-Revalidate for other assets
   - Automatic cache pruning on activation
+  - Skips Firebase/API requests
 */
 
-const CACHE_NAME = 'oyuncak-v2';
+const CACHE_NAME = 'oyuncak-v3';
+const BASE = self.registration?.scope ?? '/';
 const ASSETS_TO_CACHE = [
-    '/',
-    '/index.html',
-    '/manifest.json',
-    '/favicon.png'
+    BASE,
+    new URL('index.html', BASE).pathname,
+    new URL('manifest.json', BASE).pathname,
+    new URL('favicon.png', BASE).pathname,
 ];
 
 // Install: Cache critical assets
@@ -44,11 +46,20 @@ self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
     if (!event.request.url.startsWith('http')) return;
 
+    // Firebase ve harici API isteklerini cache'leme
+    if (url.hostname.includes('googleapis.com') ||
+        url.hostname.includes('firebaseio.com') ||
+        url.hostname.includes('firestore.googleapis.com') ||
+        url.hostname.includes('identitytoolkit.googleapis.com')) {
+        return;
+    }
+
     const url = new URL(event.request.url);
 
     // Strategy 1: Network-First for index.html and manifest.json
     // This prevents the app from being stuck on an old HTML version that points to deleted JS/CSS hashes.
-    if (url.pathname === '/' || url.pathname.endsWith('index.html') || url.pathname.endsWith('manifest.json')) {
+    const basePath = new URL(BASE).pathname;
+    if (url.pathname === basePath || url.pathname.endsWith('index.html') || url.pathname.endsWith('manifest.json')) {
         event.respondWith(
             fetch(event.request)
                 .then((response) => {

@@ -72,7 +72,8 @@ const PWAInstall = () => {
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 100, opacity: 0 }}
-                className="fixed bottom-24 left-4 right-4 z-[9999] md:left-auto md:right-8 md:bottom-8 md:w-80"
+                className="fixed left-4 right-4 z-[9999] md:left-auto md:right-8 md:bottom-8 md:w-80"
+                style={{ bottom: 'max(6rem, calc(env(safe-area-inset-bottom, 0px) + 5rem))' }}
             >
                 <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0 border border-primary/30">

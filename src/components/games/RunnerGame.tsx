@@ -48,6 +48,8 @@ const MAX_LIVES = 5;
 const TARGET_FRAME_MS = 1000 / 60;
 const HUD_UPDATE_MS = 120;
 const CANVAS_DPR_CAP = 2;
+const MAX_PARTICLES = 60;
+const isMobileDev = /iPhone|iPad|iPod|Android/i.test(navigator?.userAgent ?? '');
 
 const CHARACTERS = [
   { id: 'bunny', name: 'Tavşan', emoji: '🐰', color: '#f9a8d4', accent: '#ec4899', bodyH: '#fce7f3' },
@@ -204,7 +206,11 @@ const RunnerGame = () => {
   }, [safeTimeout]);
 
   const spawnP = useCallback((x: number, y: number, n: number, color: string, type: Particle['type'] = 'sparkle') => {
-    for (let i = 0; i < n; i++) {
+    const count = isMobileDev ? Math.ceil(n * 0.5) : n;
+    for (let i = 0; i < count; i++) {
+      if (particlesRef.current.length >= MAX_PARTICLES) {
+        particlesRef.current.shift();
+      }
       particlesRef.current.push({
         id: idRef.current++, x, y,
         vx: (Math.random() - 0.5) * (type === 'collect' ? 8 : 5),
@@ -251,35 +257,37 @@ const RunnerGame = () => {
     ctx.fillStyle = sunCore;
     ctx.beginPath(); ctx.arc(sunX, sunY, 20, 0, Math.PI * 2); ctx.fill();
 
-    ctx.save();
-    ctx.globalCompositeOperation = 'screen';
-    const flareAngle = f * 0.003;
-    for (let i = 0; i < 6; i++) {
-      const a = flareAngle + (i * Math.PI) / 3;
-      const len = 40 + Math.sin(f * 0.02 + i) * 15;
-      const fg = ctx.createLinearGradient(
-        sunX + Math.cos(a) * 5, sunY + Math.sin(a) * 5,
-        sunX + Math.cos(a) * len, sunY + Math.sin(a) * len
-      );
-      fg.addColorStop(0, 'rgba(255,251,235,0.6)');
-      fg.addColorStop(1, 'rgba(255,251,235,0)');
-      ctx.strokeStyle = fg;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(sunX + Math.cos(a) * 22, sunY + Math.sin(a) * 22);
-      ctx.lineTo(sunX + Math.cos(a) * len, sunY + Math.sin(a) * len);
-      ctx.stroke();
+    if (!isMobileDev) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const flareAngle = f * 0.003;
+      for (let i = 0; i < 6; i++) {
+        const a = flareAngle + (i * Math.PI) / 3;
+        const len = 40 + Math.sin(f * 0.02 + i) * 15;
+        const fg = ctx.createLinearGradient(
+          sunX + Math.cos(a) * 5, sunY + Math.sin(a) * 5,
+          sunX + Math.cos(a) * len, sunY + Math.sin(a) * len
+        );
+        fg.addColorStop(0, 'rgba(255,251,235,0.6)');
+        fg.addColorStop(1, 'rgba(255,251,235,0)');
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(sunX + Math.cos(a) * 22, sunY + Math.sin(a) * 22);
+        ctx.lineTo(sunX + Math.cos(a) * len, sunY + Math.sin(a) * len);
+        ctx.stroke();
+      }
+      const flareDist = 120 + Math.sin(f * 0.01) * 20;
+      const flDir = Math.atan2(H / 2 - sunY, W / 2 - sunX);
+      for (let i = 1; i <= 3; i++) {
+        const fx = sunX + Math.cos(flDir) * flareDist * i * 0.4;
+        const fy = sunY + Math.sin(flDir) * flareDist * i * 0.4;
+        const fr = 8 - i * 2;
+        ctx.fillStyle = `rgba(255,251,235,${0.12 - i * 0.03})`;
+        ctx.beginPath(); ctx.arc(fx, fy, fr, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
     }
-    const flareDist = 120 + Math.sin(f * 0.01) * 20;
-    const flDir = Math.atan2(H / 2 - sunY, W / 2 - sunX);
-    for (let i = 1; i <= 3; i++) {
-      const fx = sunX + Math.cos(flDir) * flareDist * i * 0.4;
-      const fy = sunY + Math.sin(flDir) * flareDist * i * 0.4;
-      const fr = 8 - i * 2;
-      ctx.fillStyle = `rgba(255,251,235,${0.12 - i * 0.03})`;
-      ctx.beginPath(); ctx.arc(fx, fy, fr, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.restore();
 
     /* ── 3. CLOUDS ── */
     const drawCloud = (bx: number, by: number, sc: number, alpha: number) => {
@@ -331,9 +339,10 @@ const RunnerGame = () => {
     ctx.fillStyle = gGrad;
     ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
 
-    const dOff = gOff % 24;
+    const groundStep = isMobileDev ? 48 : 24;
+    const dOff = gOff % groundStep;
     ctx.fillStyle = 'rgba(255,255,255,0.03)';
-    for (let x = -dOff; x < W; x += 24) {
+    for (let x = -dOff; x < W; x += groundStep) {
       for (let y = GROUND_Y + 15; y < H; y += 20) {
         const jx = x + Math.cos(y * 0.4) * 8;
         const jy = y + Math.sin(x * 0.3) * 5;
@@ -342,8 +351,9 @@ const RunnerGame = () => {
       }
     }
 
-    const grassOff = gOff % 10;
-    for (let x = -grassOff; x < W; x += 7) {
+    const grassStep = isMobileDev ? 14 : 7;
+    const grassOff = gOff % grassStep;
+    for (let x = -grassOff; x < W; x += grassStep) {
       const sway = Math.sin(f * 0.04 + x * 0.15) * 3;
       const h = 7 + Math.sin(x * 0.4) * 4 + Math.cos(x * 0.7) * 2;
       const hue = 120 + Math.sin(x * 0.2) * 15;
@@ -470,7 +480,7 @@ const RunnerGame = () => {
           ctx.fillStyle = 'rgba(168,85,247,0.95)';
           ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3; ctx.stroke();
-          ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 20;
+          if (!isMobileDev) { ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 20; }
           ctx.fillStyle = 'rgba(168,85,247,0.4)';
           ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
@@ -480,7 +490,7 @@ const RunnerGame = () => {
           ctx.fillStyle = 'rgba(239,68,68,0.9)';
           ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2.5; ctx.stroke();
-          ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 18;
+          if (!isMobileDev) { ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 18; }
           ctx.fillStyle = 'rgba(239,68,68,0.35)';
           ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
@@ -489,7 +499,7 @@ const RunnerGame = () => {
           ctx.fillStyle = 'rgba(59,130,246,0.9)';
           ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2.5; ctx.stroke();
-          ctx.shadowColor = '#3b82f6'; ctx.shadowBlur = 18;
+          if (!isMobileDev) { ctx.shadowColor = '#3b82f6'; ctx.shadowBlur = 18; }
           ctx.fillStyle = 'rgba(59,130,246,0.35)';
           ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
@@ -498,7 +508,7 @@ const RunnerGame = () => {
           ctx.fillStyle = 'rgba(239,68,68,0.9)';
           ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2.5; ctx.stroke();
-          ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 18;
+          if (!isMobileDev) { ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 18; }
           ctx.fillStyle = 'rgba(239,68,68,0.35)';
           ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
@@ -648,11 +658,13 @@ const RunnerGame = () => {
       }
     }
 
-    /* ── 11. VIGNETTE ── */
-    const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, W * 0.7);
-    vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,0.15)');
-    ctx.fillStyle = vig;
-    ctx.fillRect(0, 0, W, H);
+    /* ── 11. VIGNETTE (skip on mobile for perf) ── */
+    if (!isMobileDev) {
+      const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, W * 0.7);
+      vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,0.15)');
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, W, H);
+    }
   }, []);
 
 

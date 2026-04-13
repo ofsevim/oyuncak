@@ -928,7 +928,7 @@ const DrawingCanvas = () => {
                 <AnimatePresence>
                   {showStickers && (
                     <motion.div
-                      className="absolute bottom-full right-0 mb-4 bg-[#1a1c22] p-3 rounded-2xl border border-white/10 shadow-2xl z-50 w-[240px]"
+                      className="absolute bottom-full right-0 mb-4 bg-[#1a1c22] p-3 rounded-2xl border border-white/10 shadow-2xl z-50 w-[200px] sm:w-[240px] max-w-[calc(100vw-2rem)]"
                       initial={{ opacity: 0, y: 10, scale: 0.9 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.9 }}
