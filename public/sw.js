@@ -46,6 +46,8 @@ self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
     if (!event.request.url.startsWith('http')) return;
 
+    const url = new URL(event.request.url);
+
     // Firebase ve harici API isteklerini cache'leme
     if (url.hostname.includes('googleapis.com') ||
         url.hostname.includes('firebaseio.com') ||
@@ -54,7 +56,6 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    const url = new URL(event.request.url);
 
     // Strategy 1: Network-First for index.html and manifest.json
     // This prevents the app from being stuck on an old HTML version that points to deleted JS/CSS hashes.
