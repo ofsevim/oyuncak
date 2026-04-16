@@ -43,12 +43,10 @@ const SimonSaysGame = () => {
 
     useEffect(() => { scoreRef.current = score; }, [score]);
 
-    useEffect(() => { scoreRef.current = score; }, [score]);
-
     useEffect(() => {
         return () => {
             abortRef.current = true;
-            audioCtxRef.current?.close().catch(() => {});
+            audioCtxRef.current?.close().catch(() => { });
         };
     }, []);
 
