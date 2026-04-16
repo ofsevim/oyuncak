@@ -116,20 +116,18 @@ const ColoringBookGame = () => {
   // 1. Canvas size calculation logic
   useEffect(() => {
     const updateSize = () => {
-      if (!containerRef.current) return;
       const w = window.innerWidth;
       const isDesktop = w >= 1024;
       const isMedium = w >= 768;
 
-      const containerW = containerRef.current.clientWidth;
-      const paperMargin = isDesktop ? 80 : isMedium ? 16 : 8;
-      const borderAndPadding = 4;
-      const availableW = containerW - paperMargin - borderAndPadding;
+      const containerW = isDesktop ? Math.min(w * 0.55, 600) : isMedium ? w * 0.7 : w - 32;
+      const paperMargin = isDesktop ? 80 : isMedium ? 32 : 16;
+      const availableW = containerW - paperMargin;
 
-      const maxH = window.innerHeight * (isDesktop ? 0.75 : 0.55);
+      const maxH = window.innerHeight * (isDesktop ? 0.7 : 0.5);
       const size = Math.min(
-        Math.max(availableW, 180),
-        isDesktop ? 850 : 560,
+        Math.max(availableW, 200),
+        isDesktop ? 600 : 400,
         maxH
       );
 
@@ -613,12 +611,12 @@ const ColoringBookGame = () => {
      ═══════════════════════════════════════════ */
   return (
     <motion.div
-      className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-3 lg:gap-10 p-2 md:p-4 pb-6 md:pb-16 max-w-[1400px] mx-auto relative"
+      className="flex flex-col items-center justify-center gap-3 p-2 md:p-4 pb-6 md:pb-16 max-w-[1400px] mx-auto relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
       {/* ── Desktop Sidebar — Hidden on mobile ── */}
-      <aside className="hidden lg:flex w-80 flex-col gap-6 sticky top-8 z-20">
+      <aside className="hidden lg:flex w-72 flex-col gap-4 sticky top-4 z-20 flex-shrink-0">
         {/* Title */}
         <div className="flex items-center gap-3 lg:justify-start justify-center">
           <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} transition={{ repeat: Infinity, repeatType: 'reverse', duration: 3, ease: 'easeInOut' }}
@@ -781,7 +779,7 @@ const ColoringBookGame = () => {
         </div>
         <div ref={containerRef} data-game-area className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl"
           style={{
-            maxWidth: 1000,
+            maxWidth: 700,
             touchAction: 'none',
             overscrollBehavior: 'none',
             background: `
@@ -845,7 +843,7 @@ const ColoringBookGame = () => {
         </div>
 
         {/* ── Compact Consolidated Control Bar ── */}
-        <div className="hidden lg:flex flex-wrap lg:flex-nowrap items-center justify-center gap-2.5 w-full max-w-[1050px] px-2 mb-4">
+        <div className="hidden lg:flex flex-wrap lg:flex-nowrap items-center justify-center gap-2.5 w-full max-w-[700px] px-2 mb-4">
           {/* Zoom & Patterns Group */}
           <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-2xl border border-white/5">
             <div className="flex items-center gap-1 bg-white/5 rounded-xl px-1">
