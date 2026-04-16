@@ -24,8 +24,10 @@ const SimonSaysGame = lazy(() => import('./SimonSaysGame'));
 const CodingTurtleGame = lazy(() => import('./CodingTurtleGame'));
 const ComparisonGame = lazy(() => import('./ComparisonGame'));
 const SpaceShooterGame = lazy(() => import('./SpaceShooterGame'));
+const WordSearchGame = lazy(() => import('./WordSearchGame'));
+const ColorMatchGame = lazy(() => import('./ColorMatchGame'));
 
-type GameType = 'menu' | 'odd-one-out' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloon' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battle-city' | 'basketball' | 'shapematch' | 'simonsays' | 'codingturtle' | 'comparison' | 'spaceshooter';
+type GameType = 'menu' | 'odd-one-out' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloon' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battle-city' | 'basketball' | 'shapematch' | 'simonsays' | 'codingturtle' | 'comparison' | 'spaceshooter' | 'wordsearch' | 'colormatch';
 type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
 
 interface GameDef {
@@ -61,6 +63,8 @@ const games: GameDef[] = [
   { id: 'codingturtle', title: 'Tavşan Kodlama', emoji: '🐇', icon: Brain, color: 'hsl(140 70% 50%)', colorSoft: 'hsl(140 70% 50% / 0.1)', description: 'Tavşanı komutlarla havuca ulaştır!', category: ['learn'] },
   { id: 'comparison', title: 'Karşılaştırma', emoji: '⚖️', icon: Calculator, color: 'hsl(30 80% 60%)', colorSoft: 'hsl(30 80% 60% / 0.1)', description: 'Hangisi daha büyük veya daha ağır?', category: ['learn'] },
   { id: 'spaceshooter', title: 'Uzay Savaşçısı', emoji: '🚀', icon: Zap, color: 'hsl(195 100% 50%)', colorSoft: 'hsl(195 100% 50% / 0.1)', description: 'Düşman uzaylıları yok et, galaksiyi koru!', category: ['action'], badge: 'Yeni', badgeColor: 'hsl(195 100% 50%)' },
+  { id: 'wordsearch', title: 'Kelime Avı', emoji: '🔍', icon: Search, color: 'hsl(200 85% 50%)', colorSoft: 'hsl(200 85% 50% / 0.1)', description: 'Gizli kelimeleri bul ve işaretle!', category: ['brain'], badge: 'Yeni', badgeColor: 'hsl(200 85% 50%)' },
+  { id: 'colormatch', title: 'Renk Eşleştirme', emoji: '🎨', icon: Palette, color: 'hsl(0 85% 55%)', colorSoft: 'hsl(0 85% 55% / 0.1)', description: 'Yazılan rengi bul, doğru renge tıkla!', category: ['brain', 'learn'], badge: 'Yeni', badgeColor: 'hsl(0 85% 55%)' },
 ];
 
 const CATEGORIES: { id: GameCategory; label: string; icon: typeof Flame }[] = [
@@ -108,6 +112,8 @@ const GamesMenu = () => {
       case 'codingturtle': return <CodingTurtleGame />;
       case 'comparison': return <ComparisonGame />;
       case 'spaceshooter': return <SpaceShooterGame />;
+      case 'wordsearch': return <WordSearchGame />;
+      case 'colormatch': return <ColorMatchGame />;
       default: return null;
     }
   };
@@ -119,20 +125,21 @@ const GamesMenu = () => {
         {activeGame !== 'runner' && (
           <motion.button
             onClick={() => navigate('/games')}
-            className="fixed left-2 md:left-4 px-3 py-1.5 md:px-5 md:py-2.5 rounded-xl md:rounded-2xl font-bold flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs transition-all shadow-xl z-[60]"
+            className="fixed left-3 md:left-4 px-4 py-2 md:px-5 md:py-2.5 rounded-xl md:rounded-2xl font-bold flex items-center gap-2 md:gap-2 text-xs md:text-xs transition-all shadow-xl z-[60]"
             style={{
-              top: 'calc(env(safe-area-inset-top, 8px) + 8px)',
-              background: 'rgba(0, 0, 0, 0.5)',
+              top: 'max(env(safe-area-inset-top, 0px), 12px)',
+              background: 'rgba(0, 0, 0, 0.6)',
               backdropFilter: 'blur(12px)',
               WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               color: '#fff',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+              minHeight: '40px',
             }}
-            whileHover={{ x: -2, background: 'rgba(0, 0, 0, 0.6)', scale: 1.02 }}
+            whileHover={{ x: -2, background: 'rgba(0, 0, 0, 0.7)', scale: 1.02 }}
             whileTap={{ scale: 0.95 }}
           >
-            <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" /> Oyunlara Dön
+            <ArrowLeft className="w-4 h-4 md:w-4 md:h-4" /> Oyunlara Dön
           </motion.button>
         )}
         <Suspense fallback={
