@@ -23,8 +23,9 @@ const ShapeMatchGame = lazy(() => import('./ShapeMatchGame'));
 const SimonSaysGame = lazy(() => import('./SimonSaysGame'));
 const CodingTurtleGame = lazy(() => import('./CodingTurtleGame'));
 const ComparisonGame = lazy(() => import('./ComparisonGame'));
+const SpaceShooterGame = lazy(() => import('./SpaceShooterGame'));
 
-type GameType = 'menu' | 'odd-one-out' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloon' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battle-city' | 'basketball' | 'shapematch' | 'simonsays' | 'codingturtle' | 'comparison';
+type GameType = 'menu' | 'odd-one-out' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloon' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battle-city' | 'basketball' | 'shapematch' | 'simonsays' | 'codingturtle' | 'comparison' | 'spaceshooter';
 type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
 
 interface GameDef {
@@ -59,6 +60,7 @@ const games: GameDef[] = [
   { id: 'math', title: 'Matematik', emoji: '➕', icon: Calculator, color: 'hsl(200 80% 52%)', colorSoft: 'hsl(200 80% 52% / 0.1)', description: 'Toplama ve çıkarma işlemleri!', category: ['learn'] },
   { id: 'codingturtle', title: 'Tavşan Kodlama', emoji: '🐇', icon: Brain, color: 'hsl(140 70% 50%)', colorSoft: 'hsl(140 70% 50% / 0.1)', description: 'Tavşanı komutlarla havuca ulaştır!', category: ['learn'] },
   { id: 'comparison', title: 'Karşılaştırma', emoji: '⚖️', icon: Calculator, color: 'hsl(30 80% 60%)', colorSoft: 'hsl(30 80% 60% / 0.1)', description: 'Hangisi daha büyük veya daha ağır?', category: ['learn'] },
+  { id: 'spaceshooter', title: 'Uzay Savaşçısı', emoji: '🚀', icon: Zap, color: 'hsl(195 100% 50%)', colorSoft: 'hsl(195 100% 50% / 0.1)', description: 'Düşman uzaylıları yok et, galaksiyi koru!', category: ['action'], badge: 'Yeni', badgeColor: 'hsl(195 100% 50%)' },
 ];
 
 const CATEGORIES: { id: GameCategory; label: string; icon: typeof Flame }[] = [
@@ -105,6 +107,7 @@ const GamesMenu = () => {
       case 'simonsays': return <SimonSaysGame />;
       case 'codingturtle': return <CodingTurtleGame />;
       case 'comparison': return <ComparisonGame />;
+      case 'spaceshooter': return <SpaceShooterGame />;
       default: return null;
     }
   };
