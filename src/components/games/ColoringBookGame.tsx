@@ -117,17 +117,20 @@ const ColoringBookGame = () => {
   useEffect(() => {
     const updateSize = () => {
       const w = window.innerWidth;
+      const h = window.innerHeight;
       const isDesktop = w >= 1024;
       const isMedium = w >= 768;
 
-      const containerW = isDesktop ? Math.min(w * 0.55, 600) : isMedium ? w * 0.7 : w - 32;
-      const paperMargin = isDesktop ? 80 : isMedium ? 32 : 16;
+      // Mobilde viewport genişliğine göre hesapla
+      const containerW = isDesktop ? Math.min(w * 0.4, 450) : isMedium ? w * 0.55 : w - 16;
+      const paperMargin = isDesktop ? 48 : isMedium ? 16 : 8;
       const availableW = containerW - paperMargin;
 
-      const maxH = window.innerHeight * (isDesktop ? 0.7 : 0.5);
+      // Yüksekliğe göre de sınırla - mobilde çok daha küçük
+      const maxH = h * (isDesktop ? 0.55 : 0.25);
       const size = Math.min(
-        Math.max(availableW, 200),
-        isDesktop ? 600 : 400,
+        Math.max(availableW, 120),
+        isDesktop ? 450 : 280,
         maxH
       );
 
@@ -779,7 +782,7 @@ const ColoringBookGame = () => {
         </div>
         <div ref={containerRef} data-game-area className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl"
           style={{
-            maxWidth: 700,
+            maxWidth: 480,
             touchAction: 'none',
             overscrollBehavior: 'none',
             background: `
@@ -789,7 +792,7 @@ const ColoringBookGame = () => {
             `
           }}>
           {/* Paper area */}
-          <div data-paper className="relative m-2 md:m-8 lg:m-10 rounded-xl md:rounded-2xl overflow-hidden bg-white shadow-xl"
+          <div data-paper className="relative m-1.5 md:m-4 lg:m-6 rounded-xl md:rounded-2xl overflow-hidden bg-white shadow-xl"
             style={{
               boxShadow: '0 20px 50px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(0,0,0,0.05)',
               transform: `scale(${zoom})`,
@@ -843,7 +846,7 @@ const ColoringBookGame = () => {
         </div>
 
         {/* ── Compact Consolidated Control Bar ── */}
-        <div className="hidden lg:flex flex-wrap lg:flex-nowrap items-center justify-center gap-2.5 w-full max-w-[700px] px-2 mb-4">
+        <div className="hidden lg:flex flex-wrap lg:flex-nowrap items-center justify-center gap-2.5 w-full max-w-[480px] px-2 mb-4">
           {/* Zoom & Patterns Group */}
           <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-2xl border border-white/5">
             <div className="flex items-center gap-1 bg-white/5 rounded-xl px-1">
