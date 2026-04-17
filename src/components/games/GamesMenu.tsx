@@ -10,7 +10,6 @@ const MemoryFlipGame = lazy(() => import('./MemoryFlipGame'));
 const WhackAMoleGame = lazy(() => import('./WhackAMoleGame'));
 const BattleCityGame = lazy(() => import('./BattleCityGame'));
 const CountingGame = lazy(() => import('./CountingGame'));
-const ColoringBookGame = lazy(() => import('./ColoringBookGame'));
 const BalloonPopGame = lazy(() => import('./BalloonPopGame'));
 const PianoGame = lazy(() => import('./PianoGame'));
 const MathGame = lazy(() => import('./MathGame'));
@@ -24,13 +23,8 @@ const SimonSaysGame = lazy(() => import('./SimonSaysGame'));
 const CodingTurtleGame = lazy(() => import('./CodingTurtleGame'));
 const ComparisonGame = lazy(() => import('./ComparisonGame'));
 const SpaceShooterGame = lazy(() => import('./SpaceShooterGame'));
-const WordSearchGame = lazy(() => import('./WordSearchGame'));
-const ColorMatchGame = lazy(() => import('./ColorMatchGame'));
-const CarRacingGame = lazy(() => import('./CarRacingGame'));
-const FlappyBirdGame = lazy(() => import('./FlappyBirdGame'));
-const FruitNinjaGame = lazy(() => import('./FruitNinjaGame'));
 
-type GameType = 'menu' | 'odd-one-out' | 'memory' | 'whack' | 'counting' | 'coloring' | 'balloon' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battle-city' | 'basketball' | 'shapematch' | 'simonsays' | 'codingturtle' | 'comparison' | 'spaceshooter' | 'wordsearch' | 'colormatch' | 'carracing' | 'flappybird' | 'fruitninja';
+type GameType = 'menu' | 'odd-one-out' | 'memory' | 'whack' | 'counting' | 'balloon' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battle-city' | 'basketball' | 'shapematch' | 'simonsays' | 'codingturtle' | 'comparison' | 'spaceshooter';
 type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
 
 interface GameDef {
@@ -59,18 +53,12 @@ const games: GameDef[] = [
   { id: 'simonsays', title: 'Müzikal Hafıza', emoji: '🧠', icon: Brain, color: 'hsl(220 70% 60%)', colorSoft: 'hsl(220 70% 60% / 0.1)', description: 'Renk ve ses kalıplarını ezberle!', category: ['brain'] },
   { id: 'memory', title: 'Hafıza Oyunu', emoji: '🃏', icon: Brain, color: 'hsl(258 88% 62%)', colorSoft: 'hsl(258 88% 62% / 0.1)', description: 'Kartları çevir, eşleri bul!', category: ['brain'], badge: 'Beyin', badgeColor: 'hsl(258 88% 62%)' },
   { id: '2048', title: '2048', emoji: '🔢', icon: Brain, color: 'hsl(38 90% 55%)', colorSoft: 'hsl(38 90% 55% / 0.1)', description: "Kaydır, birleştir, 2048'e ulaş!", category: ['brain'], badge: 'Popüler', badgeColor: 'hsl(38 90% 55%)' },
-  { id: 'coloring', title: 'Boyama Kitabı', emoji: '🎨', icon: Palette, color: 'hsl(318 75% 58%)', colorSoft: 'hsl(318 75% 58% / 0.1)', description: 'Resimleri dilediğince boya!', category: ['creative'] },
   { id: 'piano', title: 'Piyano', emoji: '🎹', icon: Piano, color: 'hsl(255 75% 62%)', colorSoft: 'hsl(255 75% 62% / 0.1)', description: 'Melodiler çal, müzik yap!', category: ['creative'] },
   { id: 'counting', title: 'Sayma Oyunu', emoji: '🔢', icon: Hash, color: 'hsl(278 75% 60%)', colorSoft: 'hsl(278 75% 60% / 0.1)', description: 'Nesneleri say, rakamı bul!', category: ['learn'] },
   { id: 'math', title: 'Matematik', emoji: '➕', icon: Calculator, color: 'hsl(200 80% 52%)', colorSoft: 'hsl(200 80% 52% / 0.1)', description: 'Toplama ve çıkarma işlemleri!', category: ['learn'] },
   { id: 'codingturtle', title: 'Tavşan Kodlama', emoji: '🐇', icon: Brain, color: 'hsl(140 70% 50%)', colorSoft: 'hsl(140 70% 50% / 0.1)', description: 'Tavşanı komutlarla havuca ulaştır!', category: ['learn'] },
   { id: 'comparison', title: 'Karşılaştırma', emoji: '⚖️', icon: Calculator, color: 'hsl(30 80% 60%)', colorSoft: 'hsl(30 80% 60% / 0.1)', description: 'Hangisi daha büyük veya daha ağır?', category: ['learn'] },
   { id: 'spaceshooter', title: 'Uzay Savaşçısı', emoji: '🚀', icon: Zap, color: 'hsl(195 100% 50%)', colorSoft: 'hsl(195 100% 50% / 0.1)', description: 'Düşman uzaylıları yok et, galaksiyi koru!', category: ['action'], badge: 'Yeni', badgeColor: 'hsl(195 100% 50%)' },
-  { id: 'wordsearch', title: 'Kelime Avı', emoji: '🔍', icon: Search, color: 'hsl(200 85% 50%)', colorSoft: 'hsl(200 85% 50% / 0.1)', description: 'Gizli kelimeleri bul ve işaretle!', category: ['brain'], badge: 'Yeni', badgeColor: 'hsl(200 85% 50%)' },
-  { id: 'colormatch', title: 'Renk Eşleştirme', emoji: '🎨', icon: Palette, color: 'hsl(0 85% 55%)', colorSoft: 'hsl(0 85% 55% / 0.1)', description: 'Yazılan rengi bul, doğru renge tıkla!', category: ['brain', 'learn'], badge: 'Yeni', badgeColor: 'hsl(0 85% 55%)' },
-  { id: 'carracing', title: 'Araba Yarışı', emoji: '🏎️', icon: Zap, color: 'hsl(280 85% 55%)', colorSoft: 'hsl(280 85% 55% / 0.1)', description: 'Şerit değiştir, engellerden kaç!', category: ['action'], badge: 'Yeni', badgeColor: 'hsl(280 85% 55%)' },
-  { id: 'flappybird', title: 'Flappy Bird', emoji: '🐦', icon: Zap, color: 'hsl(45 90% 55%)', colorSoft: 'hsl(45 90% 55% / 0.1)', description: 'Engellerden geç, yüksek skor yap!', category: ['action'], badge: 'Yeni', badgeColor: 'hsl(45 90% 55%)' },
-  { id: 'fruitninja', title: 'Meyve Ninja', emoji: '🍉', icon: Zap, color: 'hsl(120 85% 45%)', colorSoft: 'hsl(120 85% 45% / 0.1)', description: 'Meyveleri kes, kombo yap!', category: ['action'], badge: 'Yeni', badgeColor: 'hsl(120 85% 45%)' },
 ];
 
 const CATEGORIES: { id: GameCategory; label: string; icon: typeof Flame }[] = [
@@ -105,7 +93,6 @@ const GamesMenu = () => {
       case 'whack': return <WhackAMoleGame />;
       case 'battle-city': return <BattleCityGame onActiveGameChange={onActiveGameChange} />;
       case 'counting': return <CountingGame />;
-      case 'coloring': return <ColoringBookGame />;
       case 'balloon': return <BalloonPopGame />;
       case 'piano': return <PianoGame />;
       case 'math': return <MathGame />;
@@ -118,11 +105,6 @@ const GamesMenu = () => {
       case 'codingturtle': return <CodingTurtleGame />;
       case 'comparison': return <ComparisonGame />;
       case 'spaceshooter': return <SpaceShooterGame />;
-      case 'wordsearch': return <WordSearchGame />;
-      case 'colormatch': return <ColorMatchGame />;
-      case 'carracing': return <CarRacingGame />;
-      case 'flappybird': return <FlappyBirdGame />;
-      case 'fruitninja': return <FruitNinjaGame />;
       default: return null;
     }
   };
