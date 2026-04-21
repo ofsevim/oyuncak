@@ -1,15 +1,22 @@
-import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast } from "sonner";
+import { useTheme } from "@/contexts/ThemeContext";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
+/**
+ * Uygulama genelinde tek toast katmanı. Tema, kendi ThemeContext'imizden gelir
+ * (next-themes yerine) — böylece uygulama teması ile her zaman senkron.
+ */
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={theme}
       className="toaster group"
+      position="top-center"
+      closeButton
+      richColors
       toastOptions={{
         classNames: {
           toast:

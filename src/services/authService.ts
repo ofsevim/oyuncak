@@ -1,5 +1,6 @@
 import { signInAnonymously, onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { logger } from '@/lib/logger';
 
 let currentUser: User | null = null;
 let authPromise: Promise<User> | null = null;
@@ -37,7 +38,7 @@ export function ensureAuth(): Promise<User> {
       .catch((err) => {
         authPromise = null;
         if (err?.message !== 'auth-timeout') {
-          console.warn('[Oyuncak] Anonim giriş hatası:', err);
+          logger.warn('Anonim giriş hatası', { err: String(err) });
         }
         throw err;
       });

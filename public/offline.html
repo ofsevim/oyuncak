@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Çevrimdışı - Oyuncak</title>
+  <meta name="theme-color" content="#0f1219" />
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0f1219;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    main {
+      padding: 2rem;
+      max-width: 480px;
+    }
+
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin: 0 0 0.75rem 0;
+      color: #fff;
+    }
+
+    p {
+      color: #94a3b8;
+      line-height: 1.6;
+      margin: 0 0 1.5rem 0;
+    }
+
+    button {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <div class="icon" aria-hidden="true">📡</div>
+    <h1>Çevrimdışısın</h1>
+    <p>İnternet bağlantın şu anda yok. Bağlantı sağlanınca Oyuncak tekrar hazır olacak.</p>
+    <button type="button" onclick="location.reload()">Tekrar Dene</button>
+  </main>
+</body>
+
+</html>

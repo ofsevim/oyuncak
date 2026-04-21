@@ -16,10 +16,41 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
+    // Release imzalama: gradle.properties veya ortam değişkenleri üzerinden gelen
+    // keystore bilgilerini kullanır. Mağaza yayını için aşağıdaki anahtarlar gerekli:
+    // OYUNCAK_KEYSTORE_FILE, OYUNCAK_KEYSTORE_PASSWORD, OYUNCAK_KEY_ALIAS, OYUNCAK_KEY_PASSWORD
+    signingConfigs {
+        release {
+            def keystoreFile = project.findProperty('OYUNCAK_KEYSTORE_FILE') ?: System.getenv('OYUNCAK_KEYSTORE_FILE')
+            def keystorePassword = project.findProperty('OYUNCAK_KEYSTORE_PASSWORD') ?: System.getenv('OYUNCAK_KEYSTORE_PASSWORD')
+            def keyAlias = project.findProperty('OYUNCAK_KEY_ALIAS') ?: System.getenv('OYUNCAK_KEY_ALIAS')
+            def keyPassword = project.findProperty('OYUNCAK_KEY_PASSWORD') ?: System.getenv('OYUNCAK_KEY_PASSWORD')
+
+            if (keystoreFile) {
+                storeFile file(keystoreFile)
+                storePassword keystorePassword
+                keyAlias keyAlias
+                keyPassword keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // R8 ile kod küçültme + kaynak optimizasyonu
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            // Release imzalama yalnızca keystore mevcutsa uygulanır
+            def hasKeystore = (project.findProperty('OYUNCAK_KEYSTORE_FILE') ?: System.getenv('OYUNCAK_KEYSTORE_FILE')) != null
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            }
+        }
+        debug {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }

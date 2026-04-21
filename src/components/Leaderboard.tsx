@@ -59,8 +59,12 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
   return (
     <div className="w-full max-w-sm mx-auto">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="w-full px-4 py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+        aria-expanded={open}
+        aria-controls={`leaderboard-panel-${gameId}`}
+        aria-label="Liderlik tablosunu aç/kapat"
+        className="w-full px-4 py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
         style={{
           background: open ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.05)',
           border: `1px solid ${open ? 'rgba(168,85,247,0.3)' : 'rgba(255,255,255,0.1)'}`,
@@ -69,6 +73,7 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
       >
         🏆 Liderlik Tablosu
         <motion.span
+          aria-hidden="true"
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2 }}
           className="text-xs"
@@ -80,6 +85,9 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
       <AnimatePresence>
         {open && (
           <motion.div
+            id={`leaderboard-panel-${gameId}`}
+            role="region"
+            aria-label="Liderlik tablosu"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}

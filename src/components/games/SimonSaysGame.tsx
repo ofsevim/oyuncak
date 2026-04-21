@@ -305,8 +305,12 @@ const SimonSaysGame = () => {
                         return (
                             <motion.button
                                 key={btn.id}
+                                type="button"
                                 disabled={gameState !== 'playing'}
+                                aria-label={`${btn.icon} ${['Kırmızı', 'Mavi', 'Sarı', 'Yeşil'][index]} düğme`}
+                                aria-pressed={isActive}
                                 onPointerDown={(e) => { e.preventDefault(); handleButtonClick(btn.id); }}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleButtonClick(btn.id); } }}
                                 className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl sm:rounded-3xl border-4 transition-colors flex items-center justify-center text-4xl sm:text-5xl touch-manipulation"
                                 style={{
                                     backgroundColor: isActive ? btn.color : isWrong ? '#ef4444' : `${btn.color}40`,

@@ -3,13 +3,29 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <!-- Erişilebilirlik: kullanıcı yakınlaştırma kısıtlanmaz -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Oyuncak - Oyun Dünyası</title>
-  <meta name="description" content="18+ oyun, serbest çizim ve interaktif hikayeler. Reklamsız, güvenli, hızlı." />
+  <meta name="description"
+    content="18+ oyun, serbest çizim ve interaktif hikayeler. Reklamsız, güvenli, hızlı çocuk oyunları platformu." />
+
   <link rel="icon" type="image/png" href="%BASE_URL%favicon.png" />
   <link rel="apple-touch-icon" href="%BASE_URL%favicon.png" />
   <link rel="manifest" href="%BASE_URL%manifest.json" />
+  <link rel="canonical" href="https://oyuncak.app/" />
+
+  <!-- Font preconnect + preload (render-blocking @import yerine) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style"
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Sora:wght@600;700;800&display=swap" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Sora:wght@600;700;800&display=swap"
+    media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Sora:wght@600;700;800&display=swap" />
+  </noscript>
 
   <!-- PWA & Mobile App Meta -->
   <meta name="theme-color" content="#0f1219" />
@@ -22,17 +38,40 @@
   <meta name="msapplication-tap-highlight" content="no" />
 
   <!-- Open Graph -->
+  <meta property="og:site_name" content="Oyuncak" />
   <meta property="og:title" content="Oyuncak - Oyun Dünyası" />
   <meta property="og:description" content="18+ oyun, serbest çizim ve interaktif hikayeler!" />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="%BASE_URL%favicon.png" />
+  <meta property="og:url" content="https://oyuncak.app/" />
+  <meta property="og:image" content="https://oyuncak.app/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta property="og:locale" content="tr_TR" />
 
   <!-- Twitter -->
-  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Oyuncak - Oyun Dünyası" />
   <meta name="twitter:description" content="18+ oyun, serbest çizim ve interaktif hikayeler!" />
-  <meta name="twitter:image" content="%BASE_URL%favicon.png" />
+  <meta name="twitter:image" content="https://oyuncak.app/og-image.png" />
+
+  <!-- Yapılandırılmış veri: WebApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Oyuncak",
+    "description": "Reklamsız, güvenli ve hızlı çocuk oyunları platformu. 18+ interaktif oyun, çizim ve hikayeler.",
+    "url": "https://oyuncak.app/",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Any",
+    "inLanguage": "tr-TR",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "TRY"
+    }
+  }
+  </script>
 
   <!-- Splash screen color while loading + old device fallbacks -->
   <style>
@@ -42,7 +81,6 @@
       margin: 0;
       padding: 0;
       background: #0f1219;
-      /* dvh fallback for old browsers */
       min-height: 100vh;
       min-height: 100dvh;
       overscroll-behavior: none;
@@ -54,7 +92,13 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Loading spinner for slow/old devices */
+    /* Erişilebilir odak: klavye kullanıcıları için görünür halka */
+    :focus-visible {
+      outline: 2px solid #00d4ff;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
     #app-loader {
       position: fixed;
       inset: 0;
@@ -100,15 +144,13 @@
 </head>
 
 <body>
-  <!-- Loading screen (eski cihazlarda JS yüklenene kadar görünür) -->
-  <div id="app-loader">
-    <div class="spinner"></div>
+  <div id="app-loader" role="status" aria-live="polite" aria-label="Uygulama yükleniyor">
+    <div class="spinner" aria-hidden="true"></div>
     <p>Yükleniyor...</p>
   </div>
 
   <div id="root"></div>
 
-  <!-- Yükleme zaman aşımı: JS 12 saniyede yüklenemezse yenile butonu göster -->
   <script>
     window.__appLoadTimer = setTimeout(function () {
       var loader = document.getElementById('app-loader');
@@ -125,7 +167,6 @@
 
   <script type="module" src="%BASE_URL%src/main.tsx"></script>
 
-  <!-- Eski tarayıcılar için uyarı (ES modules desteklemeyenler) -->
   <noscript>
     <div
       style="padding:2rem;text-align:center;color:#fff;background:#0f1219;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;">

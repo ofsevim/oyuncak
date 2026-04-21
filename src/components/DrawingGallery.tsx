@@ -87,10 +87,12 @@ export default function DrawingGallery({ onClose }: DrawingGalleryProps) {
             Çizim Galerim
           </h2>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
+            aria-label="Galeriyi kapat"
+            className="p-2 rounded-full hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6" aria-hidden="true" />
           </button>
         </div>
 
@@ -114,31 +116,38 @@ export default function DrawingGallery({ onClose }: DrawingGalleryProps) {
                   className="relative group transition-transform hover:scale-105"
                 >
                   <button
+                    type="button"
                     onClick={() => setSelectedDrawing(drawing)}
-                    className="w-full aspect-square rounded-2xl overflow-hidden bg-white border-4 border-transparent hover:border-primary transition-colors"
+                    aria-label={`${drawing.name} çizimini aç`}
+                    className="w-full aspect-square rounded-2xl overflow-hidden bg-white border-4 border-transparent hover:border-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <img
                       src={drawing.dataUrl}
                       alt={drawing.name}
+                      loading="lazy"
                       className="w-full h-full object-contain"
                     />
                   </button>
-                  <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <span className="text-xs font-bold bg-black/50 text-white px-2 py-1 rounded-full truncate max-w-[60%]">
                       {drawing.name}
                     </span>
                     <div className="flex gap-1">
                       <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); handleDownload(drawing); }}
-                        className="p-2 bg-primary text-white rounded-full hover:scale-110 transition-transform"
+                        aria-label={`${drawing.name} çizimini indir`}
+                        className="p-2 bg-primary text-white rounded-full hover:scale-110 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-4 h-4" aria-hidden="true" />
                       </button>
                       <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); handleDelete(drawing.id); }}
-                        className="p-2 bg-destructive text-white rounded-full hover:scale-110 transition-transform"
+                        aria-label={`${drawing.name} çizimini sil`}
+                        className="p-2 bg-destructive text-white rounded-full hover:scale-110 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </div>
                   </div>

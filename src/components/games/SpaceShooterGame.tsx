@@ -366,7 +366,7 @@ const SpaceShooterGame = () => {
                     const angle = (Math.PI / 3) * i - Math.PI / 2;
                     const px = e.x + Math.cos(angle) * style.w / 2;
                     const py = e.y + Math.sin(angle) * style.h / 2;
-                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
                 }
             } else if (e.type === 'tank') {
                 // Tank - square

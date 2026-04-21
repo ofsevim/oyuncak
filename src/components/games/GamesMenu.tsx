@@ -172,12 +172,15 @@ const GamesMenu = () => {
             Oyun <span className="text-gradient">Merkezi</span>
           </h2>
           <button
+            type="button"
             onClick={() => { toggleMute(); setMutedState(isMuted()); }}
-            className="p-2 rounded-xl transition-all hover:scale-110"
+            className="p-2 rounded-xl transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             style={{ background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))' }}
+            aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}
+            aria-pressed={muted}
             title={muted ? 'Sesi Aç' : 'Sesi Kapat'}
           >
-            {muted ? <VolumeX className="w-5 h-5 text-muted-foreground" /> : <Volume2 className="w-5 h-5 text-primary" />}
+            {muted ? <VolumeX className="w-5 h-5 text-muted-foreground" aria-hidden="true" /> : <Volume2 className="w-5 h-5 text-primary" aria-hidden="true" />}
           </button>
         </div>
         <p className="text-sm text-muted-foreground">

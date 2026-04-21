@@ -36,10 +36,6 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("fabric")) {
             return "drawing-vendor";
           }
-
-          if (id.includes("phaser") || id.includes("matter-js")) {
-            return "game-engines";
-          }
         },
       },
     },

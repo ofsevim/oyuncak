@@ -6,6 +6,7 @@ import {
 import { db } from '@/lib/firebase';
 import { ensureAuth, getUid } from './authService';
 import { ALL_GAME_IDS } from '@/constants/gameIds';
+import { logger } from '@/lib/logger';
 
 const NICKNAME_KEY = 'oyuncak.nickname';
 
@@ -43,7 +44,7 @@ export async function syncScore(gameId: string, score: number): Promise<boolean>
     });
     return true;
   } catch (err) {
-    console.warn('[Oyuncak] Firebase skor yazma hatası:', err);
+    logger.warn('Firebase skor yazma hatası', { gameId, err: String(err) });
     return false;
   }
 }
@@ -70,7 +71,7 @@ export async function getLeaderboard(gameId: string, max = 10): Promise<Leaderbo
       };
     });
   } catch (err) {
-    console.warn('[Oyuncak] Firebase leaderboard okuma hatası:', err);
+    logger.warn('Firebase leaderboard okuma hatası', { gameId, err: String(err) });
     return [];
   }
 }
