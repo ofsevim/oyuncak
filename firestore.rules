@@ -11,11 +11,15 @@ service cloud.firestore {
       // Giriş yapmış kullanıcı sadece kendi belgesini oluşturabilir/güncelleyebilir
       allow create, update: if request.auth != null
                    && userId == request.auth.uid
+                   && request.resource.data.uid == request.auth.uid
+                   && request.resource.data.gameId == gameId
                    && request.resource.data.score is number
                    && request.resource.data.score >= 0
                    && request.resource.data.score <= 9999999
-                   && request.resource.data.keys().hasAll(['score', 'name', 'uid', 'gameId', 'updatedAt'])
-                   && request.resource.data.keys().hasOnly(['score', 'name', 'uid', 'gameId', 'updatedAt']);
+                   && request.resource.data.name is string
+                   && request.resource.data.date is string
+                   && request.resource.data.keys().hasAll(['score', 'name', 'uid', 'gameId', 'date', 'updatedAt'])
+                   && request.resource.data.keys().hasOnly(['score', 'name', 'uid', 'gameId', 'date', 'updatedAt']);
     }
   }
 }

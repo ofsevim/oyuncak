@@ -26,7 +26,6 @@ const MAX_COMMANDS = 15;
 const LEVEL_GENERATION_ATTEMPTS = 120;
 
 interface Point { x: number; y: number; }
-interface Sparkle { id: number; x: number; y: number; angle: number; color: string; }
 
 const pill: React.CSSProperties = {
     background: 'rgba(0,0,0,0.2)',
@@ -112,13 +111,11 @@ const CodingTurtleGame = () => {
 
     const [highScore, setHighScore] = useState(0);
     const [isNewRecord, setIsNewRecord] = useState(false);
-    const [sparkles, setSparkles] = useState<Sparkle[]>([]);
     const [praiseText, setPraiseText] = useState('');
     const [showPraise, setShowPraise] = useState(false);
     const [shakeGrid, setShakeGrid] = useState(false);
 
     const { safeTimeout, clearAll } = useSafeTimeouts();
-    const sparkleIdRef = useRef(0);
     const scoreRef = useRef(0);
     const currentPosRef = useRef<Point>({ x: 0, y: 0 });
 
@@ -129,17 +126,6 @@ const CodingTurtleGame = () => {
         size: 2 + Math.random() * 4, dur: 3 + Math.random() * 5, delay: Math.random() * 2,
         color: ['rgba(34,197,94,0.15)', 'rgba(59,130,246,0.15)', 'rgba(234,179,8,0.15)', 'rgba(239,68,68,0.15)'][i % 4],
     })), []);
-
-    const addSparkles = useCallback((cx: number, cy: number) => {
-        const colors = ['#22c55e', '#3b82f6', '#eab308', '#ef4444'];
-        const newS: Sparkle[] = Array.from({ length: 15 }, (_, i) => ({
-            id: ++sparkleIdRef.current, x: cx, y: cy,
-            angle: (Math.PI * 2 / 15) * i + (Math.random() - 0.5) * 0.4,
-            color: colors[Math.floor(Math.random() * colors.length)],
-        }));
-        setSparkles(prev => [...prev, ...newS]);
-        setTimeout(() => setSparkles(prev => prev.filter(s => !newS.find(n => n.id === s.id))), 900);
-    }, []);
 
     const generateLevel = useCallback((lvl: number) => {
         const obsCount = Math.min(lvl, 6);
@@ -197,7 +183,7 @@ const CodingTurtleGame = () => {
     const initGame = useCallback(() => {
         clearAll();
         setGameState('playing'); setScore(0); scoreRef.current = 0;
-        setLevel(1); setRoundLeft(10); setSparkles([]);
+        setLevel(1); setRoundLeft(10);
         setIsNewRecord(false); setShowPraise(false);
         generateLevel(1);
     }, [clearAll, generateLevel]);
@@ -533,19 +519,6 @@ const CodingTurtleGame = () => {
                     </div>
                 </div>
 
-                {/* Sparkles */}
-                <AnimatePresence>
-                    {sparkles.map(sp => (
-                        <motion.div key={sp.id} className="absolute pointer-events-none z-40"
-                            style={{ left: sp.x, top: sp.y }}
-                            initial={{ opacity: 1, scale: 0, x: 0, y: 0 }}
-                            animate={{ opacity: [1, 1, 0], scale: [0, 1.2, 0.3], x: Math.cos(sp.angle) * 70, y: Math.sin(sp.angle) * 70 - 15 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.8, ease: 'easeOut' }}>
-                            <div style={{ width: 8, height: 8, background: sp.color, borderRadius: '50%', boxShadow: `0 0 10px ${sp.color}` }} />
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
             </motion.div>
         </>
     );

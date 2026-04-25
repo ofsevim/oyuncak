@@ -37,6 +37,7 @@ export async function syncScore(gameId: string, score: number): Promise<boolean>
 
     await setDoc(docRef, {
       uid: user.uid,
+      gameId,
       name: getNickname(),
       score,
       date: new Date().toISOString(),
@@ -45,7 +46,7 @@ export async function syncScore(gameId: string, score: number): Promise<boolean>
     return true;
   } catch (err) {
     logger.warn('Firebase skor yazma hatası', { gameId, err: String(err) });
-    return false;
+    throw err;
   }
 }
 
@@ -102,7 +103,18 @@ export async function updateNicknameInScores(newName: string): Promise<void> {
       const docRef = doc(db, 'scores', gid, 'leaderboard', user.uid);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
-        await setDoc(docRef, { name: newName }, { merge: true });
+        const data = snap.data();
+        const score = typeof data.score === 'number' ? data.score : null;
+        if (score === null) return;
+
+        await setDoc(docRef, {
+          uid: user.uid,
+          gameId: gid,
+          name: newName,
+          score,
+          date: typeof data.date === 'string' ? data.date : new Date().toISOString(),
+          updatedAt: serverTimestamp(),
+        });
       }
     });
 

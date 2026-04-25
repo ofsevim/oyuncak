@@ -1,9 +1,10 @@
 import { syncScore } from '@/services/scoreService';
 import { ALL_GAME_IDS } from '@/constants/gameIds';
+import { logger } from '@/lib/logger';
 
 /** localStorage + Firebase tabanlı highscore sistemi */
 const PREFIX = 'oyuncak.hs.';
-const SYNC_KEY = 'oyuncak.firebase.synced';
+const SYNC_KEY = 'oyuncak.firebase.synced.v2';
 
 /**
  * localStorage'daki mevcut rekorları Firebase'e aktar.
@@ -15,8 +16,24 @@ export async function syncExistingScores(): Promise<void> {
     const tasks = ALL_GAME_IDS
       .map((id) => ({ id, score: getHighScore(id) }))
       .filter((x) => x.score > 0)
-      .map((x) => syncScore(x.id, x.score).catch(() => {}));
-    await Promise.allSettled(tasks);
+      .map((x) => syncScore(x.id, x.score));
+
+    if (tasks.length === 0) {
+      localStorage.setItem(SYNC_KEY, '1');
+      return;
+    }
+
+    const results = await Promise.allSettled(tasks);
+    const failures = results.filter((result) => result.status === 'rejected');
+
+    if (failures.length > 0) {
+      logger.warn('Skor senkronizasyonu tamamlanamadı', {
+        attempted: tasks.length,
+        failed: failures.length,
+      });
+      return;
+    }
+
     localStorage.setItem(SYNC_KEY, '1');
   } catch { /* sessiz */ }
 }

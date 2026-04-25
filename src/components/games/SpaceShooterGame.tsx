@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
-import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════════════════════════════
@@ -26,7 +25,6 @@ const CH = 600;
 const SHIP_W = 40;
 const SHIP_H = 40;
 const BULLET_SPEED = 8;
-const TARGET_FRAME_MS = 1000 / 60;
 
 const DIFFS: Record<Difficulty, { label: string; enemySpeed: number; spawnRate: number; enemyHP: number }> = {
     easy: { label: '🌟 Kolay', enemySpeed: 1.5, spawnRate: 0.015, enemyHP: 1 },
@@ -73,7 +71,6 @@ const SpaceShooterGame = () => {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const rafRef = useRef<number>(0);
-    const { safeTimeout } = useSafeTimeouts();
 
     // Game state refs
     const shipX = useRef(CW / 2);
@@ -317,7 +314,7 @@ const SpaceShooterGame = () => {
         ctx.fillRect(0, 0, CW, CH);
 
         // Stars
-        STARS.forEach((s, i) => {
+        STARS.forEach((s) => {
             const y = (s.y + frameCount.current * s.speed) % CH;
             ctx.globalAlpha = s.opacity;
             ctx.fillStyle = '#fff';

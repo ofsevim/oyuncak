@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
-import { getNextRandomIndex } from '@/utils/shuffle';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import { playPopSound, playErrorSound, playComboSound, playSuccessSound, playNewRecordSound } from '@/utils/soundEffects';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
@@ -35,10 +34,6 @@ interface ActiveMole {
 
 interface FloatingText {
   id: number; x: number; y: number; text: string; color: string;
-}
-
-interface Butterfly {
-  id: number; x: number; y: number; speed: number; phase: number;
 }
 
 type AnimatedDurationStyle = React.CSSProperties & Record<'--duration', string>;

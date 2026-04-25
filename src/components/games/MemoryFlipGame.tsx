@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound } from '@/utils/soundEffects';
 import { shuffleArray } from '@/utils/shuffle';
-import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
+import { saveHighScoreObj } from '@/utils/highScores';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
@@ -39,15 +39,8 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
   const [hintsLeft, setHintsLeft] = useState(1);
   const [showHint, setShowHint] = useState(false);
   const [matchedCount, setMatchedCount] = useState(0);
-  const [bestMoves, setBestMoves] = useState<Record<GridSize, number>>({ 3: 0, 4: 0, 5: 0, 6: 0 });
-  const [autoAdvance, setAutoAdvance] = useState(true);
   const { safeTimeout, safeInterval, clearAll, clearAllIntervals } = useSafeTimeouts();
-
-  useEffect(() => {
-    const bests: Record<GridSize, number> = { 3: 0, 4: 0, 5: 0, 6: 0 };
-    ([3, 4, 5, 6] as GridSize[]).forEach(s => { bests[s] = getHighScore(`memory-${s}x${s}`); });
-    setBestMoves(bests);
-  }, []);
+  const autoAdvance = true;
 
   const initializeGame = useCallback((size?: GridSize) => {
     clearAll();

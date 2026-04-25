@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Search, Brain, Hash, Palette, Wind, Piano, Calculator, Gamepad2, Rat, ArrowLeft, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
+import { Search, Brain, Hash, Wind, Piano, Calculator, Gamepad2, Rat, ArrowLeft, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isMuted, toggleMute } from '@/utils/soundEffects';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -82,7 +82,7 @@ const GamesMenu = () => {
   const renderActiveGame = () => {
     // Provide a generic callback for games that want to handle active state
     // but we use routing now, so they can navigate away if needed.
-    const onActiveGameChange = (active: boolean) => {
+    const onActiveGameChange = (_active: boolean) => {
       // noop
     };
 

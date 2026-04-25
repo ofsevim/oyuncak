@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { BookOpen, Shuffle } from "lucide-react";
-import type { Story } from "@/data/stories";
 import { STORIES, STORY_CATEGORIES } from "@/data/stories";
 import { loadStoryProgress } from "./storyProgress";
 import StoryReader from "./StoryReader";
