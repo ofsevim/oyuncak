@@ -280,11 +280,11 @@ const SimonSaysGame = () => {
     return (
         <>
             {Background}
-            <motion.div className="relative z-10 flex flex-col items-center gap-6 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-2xl mx-auto game-field min-h-screen"
+            <motion.div className="relative z-10 flex flex-col items-center gap-4 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] w-full max-w-md mx-auto game-field"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
                 {/* HUD */}
-                <motion.div className="flex flex-wrap justify-center gap-2 w-full z-50 mb-2"
+                <motion.div className="flex flex-wrap justify-center gap-2 w-full z-50"
                     initial={{ y: -15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
                     <div className="px-4 py-2" style={pill}><span className="text-sm font-black text-blue-400">⭐ {score}</span></div>
                     <div className="px-4 py-2" style={pill}>
@@ -296,7 +296,11 @@ const SimonSaysGame = () => {
                 </motion.div>
 
                 {/* Game Buttons */}
-                <div className="grid grid-cols-2 gap-4 sm:gap-6 mt-10 p-6 rounded-full" style={{ background: 'rgba(255,255,255,0.02)', border: '2px solid rgba(255,255,255,0.05)', boxShadow: 'inset 0 0 50px rgba(0,0,0,0.2)' }}>
+                <div
+                    className="w-full flex flex-col items-center gap-4 rounded-[2rem] px-4 py-5 sm:px-6 sm:py-6"
+                    style={{ background: 'rgba(255,255,255,0.02)', border: '2px solid rgba(255,255,255,0.05)', boxShadow: 'inset 0 0 50px rgba(0,0,0,0.2)' }}
+                >
+                    <div className="grid grid-cols-2 gap-4 sm:gap-6">
                     {BUTTONS.map((btn, index) => {
                         const isActive = activeButton === index;
                         const isWrong = wrongButton === index;
@@ -329,20 +333,35 @@ const SimonSaysGame = () => {
                             </motion.button>
                         );
                     })}
-                </div>
+                    </div>
 
-                {/* Bottom controls */}
-                <motion.div className="flex gap-3 absolute bottom-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto"
-                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-                    <motion.button whileHover={{}} whileTap={{}}
-                        onClick={initGame} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}>
-                        🔄 Yeniden
-                    </motion.button>
-                    <motion.button whileHover={{}} whileTap={{}}
-                        onClick={() => setGameState('menu')} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}>
-                        ← Çıkış
-                    </motion.button>
-                </motion.div>
+                    {/* Bottom controls */}
+                    <motion.div
+                        className="flex w-full gap-3 justify-center pointer-events-auto"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                    >
+                        <motion.button
+                            whileHover={{}}
+                            whileTap={{}}
+                            onClick={initGame}
+                            className="min-w-[8.5rem] px-5 py-3 font-bold text-muted-foreground touch-manipulation"
+                            style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}
+                        >
+                            🔄 Yeniden
+                        </motion.button>
+                        <motion.button
+                            whileHover={{}}
+                            whileTap={{}}
+                            onClick={() => setGameState('menu')}
+                            className="min-w-[8.5rem] px-5 py-3 font-bold text-muted-foreground touch-manipulation"
+                            style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}
+                        >
+                            ← Çıkış
+                        </motion.button>
+                    </motion.div>
+                </div>
             </motion.div>
         </>
     );

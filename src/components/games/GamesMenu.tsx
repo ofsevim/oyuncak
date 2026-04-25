@@ -114,40 +114,42 @@ const GamesMenu = () => {
       <div className="pb-12 md:pb-32 w-full flex flex-col items-center relative">
         {/* Runner kendi geri butonunu yönetir, çakışma olmasın */}
         {activeGame !== 'runner' && (
-          <motion.button
-            onClick={() => navigate('/games')}
-            className="fixed left-3 md:left-4 px-4 py-2 md:px-5 md:py-2.5 rounded-xl md:rounded-2xl font-bold flex items-center gap-2 md:gap-2 text-xs md:text-xs transition-all shadow-xl z-[60]"
-            style={{
-              top: '16px',
-              left: '16px',
-              background: 'rgba(0, 0, 0, 0.6)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              color: '#fff',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-              minHeight: '40px',
-              position: 'fixed',
-              zIndex: 60,
-            }}
-            whileHover={{ x: -2, background: 'rgba(0, 0, 0, 0.7)', scale: 1.02 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <ArrowLeft className="w-4 h-4 md:w-4 md:h-4" /> Oyunlara Dön
-          </motion.button>
-        )}
-        <Suspense fallback={
-          <div className="flex items-center justify-center py-20 w-full">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin" />
-              <p className="text-sm text-muted-foreground font-medium">Yükleniyor…</p>
+          <div className="w-full px-4 pt-4 pb-3 md:pt-5 md:pb-4">
+            <div className="mx-auto flex w-full max-w-2xl justify-start">
+            <motion.button
+              onClick={() => navigate('/games')}
+              className="px-4 py-2.5 md:px-5 md:py-2.5 rounded-xl md:rounded-2xl font-bold flex items-center gap-2 text-xs transition-all shadow-xl"
+              style={{
+                background: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.16)',
+                color: '#fff',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+                minHeight: '42px',
+              }}
+              whileHover={{ x: -2, background: 'rgba(0, 0, 0, 0.72)', scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+            >
+              <ArrowLeft className="w-4 h-4" /> Oyunlara Dön
+            </motion.button>
             </div>
           </div>
-        }>
-          <ErrorBoundary>
-            {renderActiveGame()}
-          </ErrorBoundary>
-        </Suspense>
+        )}
+        <div className="w-full">
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-20 w-full">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin" />
+                <p className="text-sm text-muted-foreground font-medium">Yükleniyor…</p>
+              </div>
+            </div>
+          }>
+            <ErrorBoundary>
+              {renderActiveGame()}
+            </ErrorBoundary>
+          </Suspense>
+        </div>
       </div>
     );
   }

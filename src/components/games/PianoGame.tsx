@@ -190,6 +190,8 @@ const COLORS: Record<string, string> = {
   'A#': '#5C0BA5',
 };
 
+const MOBILE_PIANO_MIN_WIDTH = 336;
+
 /* ═══════════════════════════════════════════════════════════
    YARDIMCI: melodyIndex → ilk gerçek nota indexini bul
    ═══════════════════════════════════════════════════════════ */
@@ -620,14 +622,17 @@ const PianoGame = () => {
       )}
 
       {/* ── PİYANO ───────────────────────────────────────── */}
-      <div className="w-full">
-        <div className="glass-card p-2 md:p-5 rounded-2xl neon-border">
+      <div className="w-full overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+        <div
+          className="glass-card p-2 md:p-5 rounded-2xl neon-border min-w-[336px]"
+          style={{ minWidth: `${MOBILE_PIANO_MIN_WIDTH}px` }}
+        >
           <div
             className="relative"
-            style={{ height: 'clamp(180px, 25vw, 280px)', touchAction: 'none' }}
+            style={{ height: 'clamp(170px, 40vw, 280px)', touchAction: 'none' }}
           >
             {/* Beyaz tuşlar */}
-            <div className="flex gap-0.5 md:gap-1 h-full">
+            <div className="flex gap-px md:gap-1 h-full">
               {WHITE_NOTES.map((note) => {
                 const isActive = activeNotes.has(note.note);
                 return (
@@ -652,7 +657,7 @@ const PianoGame = () => {
                     whileTap={{ scale: 0.97 }}
                   >
                     <div className="absolute bottom-2 md:bottom-3 left-0 right-0 flex flex-col items-center pointer-events-none">
-                      <span className="font-black text-xs md:text-sm drop-shadow-lg text-white">
+                      <span className="font-black text-[10px] md:text-sm drop-shadow-lg text-white">
                         {note.label}
                       </span>
                       <span className="text-[7px] hidden sm:block text-white/70">
@@ -695,10 +700,10 @@ const PianoGame = () => {
                     }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <span className="absolute bottom-1 md:bottom-2 left-0 right-0 text-center text-[8px] md:text-[9px] font-bold text-white drop-shadow-lg pointer-events-none">
-                      {note.label}
-                    </span>
-                  </motion.button>
+                      <span className="absolute bottom-1 md:bottom-2 left-0 right-0 text-center text-[8px] md:text-[9px] font-bold text-white drop-shadow-lg pointer-events-none hidden sm:block">
+                        {note.label}
+                      </span>
+                    </motion.button>
                 );
               })}
             </div>
