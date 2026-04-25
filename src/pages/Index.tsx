@@ -1,5 +1,3 @@
-'use client';
-
 import { Suspense, lazy } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import FloatingBubbles from '@/components/ui/FloatingBubbles';

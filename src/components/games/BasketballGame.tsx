@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound, playSwishSound, playLevelUpSound } from '@/utils/soundEffects';

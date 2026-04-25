@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Canvas as FabricCanvas, FabricText } from 'fabric';
 import { Trash2, Undo, Download, Image, Sparkles } from 'lucide-react';

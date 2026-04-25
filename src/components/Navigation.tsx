@@ -1,5 +1,3 @@
-'use client';
-
 import { motion } from 'framer-motion';
 import { Pencil, Gamepad2, Home, BookOpen } from 'lucide-react';
 import { playNavSound } from '@/utils/soundEffects';
