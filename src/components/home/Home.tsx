@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Gamepad2, Pencil, ArrowRight, ChevronRight } from "lucide-react";
 import { FEATURED } from "@/data/featured";
+import type { FeaturedGameRouteId } from "@/constants/gameIds";
 
 type Props = {
   onGoDraw: () => void;
   onGoGames: () => void;
   onGoStories: () => void;
-  onGoFeaturedGame?: (gameId: "balloon" | "shapes" | "oddone" | "memory" | "whack" | "counting" | "coloring" | "tetris") => void;
+  onGoFeaturedGame?: (gameId: FeaturedGameRouteId) => void;
 };
 
 const stagger = {

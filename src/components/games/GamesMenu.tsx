@@ -4,6 +4,7 @@ import { Search, Brain, Hash, Wind, Piano, Calculator, Gamepad2, Rat, ArrowLeft,
 import { motion, AnimatePresence } from 'framer-motion';
 import { isMuted, toggleMute } from '@/utils/soundEffects';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { isGameRouteId, type GameRouteId } from '@/constants/gameIds';
 
 const OddOneOutGame = lazy(() => import('./OddOneOutGame'));
 const MemoryFlipGame = lazy(() => import('./MemoryFlipGame'));
@@ -24,7 +25,7 @@ const CodingTurtleGame = lazy(() => import('./CodingTurtleGame'));
 const ComparisonGame = lazy(() => import('./ComparisonGame'));
 const SpaceShooterGame = lazy(() => import('./SpaceShooterGame'));
 
-type GameType = 'menu' | 'odd-one-out' | 'memory' | 'whack' | 'counting' | 'balloon' | 'piano' | 'math' | 'runner' | 'tetris' | 'snake' | '2048' | 'battle-city' | 'basketball' | 'shapematch' | 'simonsays' | 'codingturtle' | 'comparison' | 'spaceshooter';
+type GameType = 'menu' | GameRouteId;
 type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
 
 interface GameDef {
@@ -72,7 +73,7 @@ const CATEGORIES: { id: GameCategory; label: string; icon: typeof Flame }[] = [
 const GamesMenu = () => {
   const navigate = useNavigate();
   const { gameId } = useParams();
-  const activeGame = gameId || 'menu';
+  const activeGame: GameType = gameId && isGameRouteId(gameId) ? gameId : 'menu';
 
   const [activeCategory, setActiveCategory] = useState<GameCategory>('all');
   const [muted, setMutedState] = useState(isMuted());

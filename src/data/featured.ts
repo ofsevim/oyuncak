@@ -2,6 +2,8 @@
  * Öne çıkan içerikler — modern gaming teması
  */
 
+import type { FeaturedGameRouteId } from "@/constants/gameIds";
+
 export type FeaturedItem = {
   id: string;
   title: string;
@@ -10,7 +12,7 @@ export type FeaturedItem = {
   gradient: string;
   cta: string;
   tab: "games" | "draw" | "story";
-  gameId?: "balloon" | "shapes" | "oddone" | "memory" | "whack" | "counting" | "coloring" | "tetris";
+  gameId?: FeaturedGameRouteId;
   badges: string[];
 };
 
@@ -39,13 +41,12 @@ export const FEATURED: FeaturedItem[] = [
   },
   {
     id: "f3-coloring",
-    title: "Boyama Kitabı",
-    subtitle: "Tıkla doldur, sanatını yarat",
+    title: "Çizim Atölyesi",
+    subtitle: "Serbest çiz, sticker ekle, galeri oluştur",
     emoji: "🎨",
     gradient: "from-pink-500/20 via-rose-500/10 to-amber-500/15",
-    cta: "Boyamaya Git",
-    tab: "games",
-    gameId: "coloring",
+    cta: "Atölyeye Git",
+    tab: "draw",
     badges: ["Yaratıcılık", "Sanat", "Rahatlatıcı"],
   },
   {

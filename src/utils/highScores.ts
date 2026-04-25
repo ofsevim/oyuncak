@@ -1,5 +1,5 @@
 import { syncScore } from '@/services/scoreService';
-import { ALL_GAME_IDS } from '@/constants/gameIds';
+import { SCORE_GAME_IDS } from '@/constants/gameIds';
 import { logger } from '@/lib/logger';
 
 /** localStorage + Firebase tabanlı highscore sistemi */
@@ -13,7 +13,7 @@ const SYNC_KEY = 'oyuncak.firebase.synced.v2';
 export async function syncExistingScores(): Promise<void> {
   try {
     if (localStorage.getItem(SYNC_KEY)) return;
-    const tasks = ALL_GAME_IDS
+    const tasks = SCORE_GAME_IDS
       .map((id) => ({ id, score: getHighScore(id) }))
       .filter((x) => x.score > 0)
       .map((x) => syncScore(x.id, x.score));

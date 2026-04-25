@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ensureAuth, getUid } from './authService';
-import { ALL_GAME_IDS } from '@/constants/gameIds';
+import { SCORE_GAME_IDS } from '@/constants/gameIds';
 import { logger } from '@/lib/logger';
 
 const NICKNAME_KEY = 'oyuncak.nickname';
@@ -99,7 +99,7 @@ export async function updateNicknameInScores(newName: string): Promise<void> {
   try {
     const user = await ensureAuth();
 
-    const updates = ALL_GAME_IDS.map(async (gid) => {
+    const updates = SCORE_GAME_IDS.map(async (gid) => {
       const docRef = doc(db, 'scores', gid, 'leaderboard', user.uid);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
