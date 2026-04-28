@@ -114,7 +114,7 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
                 }}
               >
                 <span>{greetEmoji}</span>
-                <span>{greeting}! Bugün ne oynayalım?</span>
+                <span>{greeting}! Eğlenceye hazır mısın?</span>
               </span>
             </div>
 
@@ -142,7 +142,7 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
                 </span>
               </h1>
               <p className="text-base md:text-lg text-muted-foreground font-medium max-w-md leading-relaxed">
-                18+ eğlenceli oyun, serbest çizim ve interaktif hikayeler — reklamsız, ücretsiz.
+                Eğlenceli oyunlar oyna, kendi resimlerini çiz ve harika masallara dal! Hepsi senin için ve tamamen ücretsiz.
               </p>
             </div>
 
@@ -160,7 +160,7 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
                 }}
               >
                 <Gamepad2 className="w-4 h-4" />
-                Oyunlara Başla
+                Hemen Oyna
                 <ArrowRight className="w-4 h-4" />
               </motion.button>
               <motion.button
@@ -175,7 +175,7 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
                 }}
               >
                 <Pencil className="w-4 h-4" />
-                Çiz
+                Resim Çiz
               </motion.button>
               <motion.button
                 onClick={onGoStories}
@@ -189,7 +189,7 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
                 }}
               >
                 <BookOpen className="w-4 h-4" />
-                Hikaye Oku
+                Masal Oku
               </motion.button>
             </div>
           </div>
