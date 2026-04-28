@@ -308,6 +308,9 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
         <p className="text-xs text-muted-foreground/40 font-medium tracking-wide">
           🛡️ Reklamsız · Güvenli · Tamamen Ücretsiz
         </p>
+        <p className="text-xs text-muted-foreground/40 font-medium tracking-wide mt-2">
+          Geliştirici <a href="https://omersevim.com.tr" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Osoft</a>
+        </p>
       </motion.div>
     </motion.div>
   );
