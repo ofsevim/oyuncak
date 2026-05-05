@@ -21,6 +21,23 @@ export function useSafeTimeouts() {
     return id;
   }, []);
 
+  // Hem zamanlayıcıyı durdurur hem de tracking listesinden çıkarır.
+  // Effect cleanup'larında "clearInterval(id)" yerine bunu kullanın ki
+  // hook bellekte ölü id'leri biriktirmesin.
+  const clearSafeTimeout = useCallback((id: ReturnType<typeof setTimeout>) => {
+    clearTimeout(id);
+    const arr = timeoutsRef.current;
+    const idx = arr.indexOf(id);
+    if (idx !== -1) arr.splice(idx, 1);
+  }, []);
+
+  const clearSafeInterval = useCallback((id: ReturnType<typeof setInterval>) => {
+    clearInterval(id);
+    const arr = intervalsRef.current;
+    const idx = arr.indexOf(id);
+    if (idx !== -1) arr.splice(idx, 1);
+  }, []);
+
   const clearAllTimeouts = useCallback(() => {
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
@@ -46,6 +63,8 @@ export function useSafeTimeouts() {
   return {
     safeTimeout,
     safeInterval,
+    clearSafeTimeout,
+    clearSafeInterval,
     clearAllTimeouts,
     clearAllIntervals,
     clearAll,

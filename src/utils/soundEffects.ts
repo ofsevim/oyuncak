@@ -1,6 +1,7 @@
 // Gelişmiş prosedürel ses efektleri - Web Audio API
 // Daha 'juicy' ve profesyonel bir his için katmanlı osilatörler ve yumuşak zarflar (envelopes) kullanılmıştır.
 let audioCtx: AudioContext | null = null;
+let resumeListenersInstalled = false;
 
 // Global ses kontrolü — localStorage ile kalıcı
 let _muted = false;
@@ -18,6 +19,33 @@ export const toggleMute = (): boolean => {
 
 type WebkitAudioContextWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
 
+/**
+ * iOS Safari'de AudioContext kullanıcı etkileşimi olmadan açılırsa
+ * `suspended` durumunda kalır ve sesler sessiz çalar. İlk pointerdown/
+ * touchstart/keydown anında resume etmek için tek seferlik global dinleyici.
+ */
+const installResumeListenersOnce = () => {
+  if (resumeListenersInstalled || typeof window === 'undefined') return;
+  resumeListenersInstalled = true;
+
+  const tryResume = () => {
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => { /* ignore */ });
+    }
+  };
+
+  // İlk kullanıcı etkileşiminde resume — { once: true } sayesinde otomatik kaldırılır.
+  const opts: AddEventListenerOptions = { once: true, capture: true, passive: true };
+  window.addEventListener('pointerdown', tryResume, opts);
+  window.addEventListener('touchstart', tryResume, opts);
+  window.addEventListener('keydown', tryResume, opts);
+
+  // Sayfa görünür olunca da resume (iOS arka planda suspend edebilir).
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') tryResume();
+  });
+};
+
 const getAudioCtx = (): AudioContext | null => {
   if (typeof window === 'undefined') return null;
   if (_muted) return null;
@@ -25,6 +53,11 @@ const getAudioCtx = (): AudioContext | null => {
     const Ctx = window.AudioContext || (window as WebkitAudioContextWindow).webkitAudioContext;
     if (!Ctx) return null;
     audioCtx = new Ctx();
+    installResumeListenersOnce();
+  }
+  // Çağrı bir user gesture içinden gelmiş olabilir — fırsat bulunca resume et.
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => { /* ignore */ });
   }
   return audioCtx;
 };

@@ -4,6 +4,7 @@ import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNew
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import { IS_MOBILE } from '@/utils/platform';
 import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════ CONSTANTS ═══════════════ */
@@ -34,7 +35,7 @@ const MAX_DRAG = 150;      // pixels of drag = full power
 const MAX_SPEED = 22;      // max launch speed
 const TARGET_FRAME_MS = 1000 / 60;
 const CANVAS_DPR_CAP = 2;
-const isMobileDev = /iPhone|iPad|iPod|Android/i.test(navigator?.userAgent ?? '');
+const isMobileDev = IS_MOBILE;
 
 const TARGETS = [0, 15, 35, 60, 90, 165];
 const getTargetScore = (lvl: number) => lvl <= 5 ? TARGETS[lvl] : 165 + (lvl - 5) * 80;
@@ -458,10 +459,13 @@ const BasketballGame = () => {
         const ctx = canvas?.getContext('2d');
         if (!ctx || !canvas) return;
 
-        /* Simülasyonu 60 FPS tabanında tut: 120 Hz ekranda oyun akışı hızlanmasın */
-        if (!lastTimeRef.current) lastTimeRef.current = timestamp - TARGET_FRAME_MS;
+        /* Simülasyonu 60 FPS tabanında tut: 120 Hz ekranda oyun akışı hızlanmasın.
+           Aim fazında sürükleme yokken 30 FPS'e in (pil tasarrufu). */
+        const isIdleAim = phaseRef.current === 'aim' && !dragging.current;
+        const frameMs = isIdleAim ? TARGET_FRAME_MS * 2 : TARGET_FRAME_MS;
+        if (!lastTimeRef.current) lastTimeRef.current = timestamp - frameMs;
         const elapsed = timestamp - lastTimeRef.current;
-        if (elapsed < TARGET_FRAME_MS) {
+        if (elapsed < frameMs) {
             rafRef.current = requestAnimationFrame(loop);
             return;
         }

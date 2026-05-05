@@ -116,7 +116,7 @@ const ComparisonGame = () => {
   const [praiseText, setPraiseText] = useState('');
   const [showPraise, setShowPraise] = useState(false);
 
-  const { safeTimeout, safeInterval, clearAll, clearAllIntervals } = useSafeTimeouts();
+  const { safeTimeout, safeInterval, clearSafeInterval, clearAll, clearAllIntervals } = useSafeTimeouts();
   const scoreRef = useRef(0);
   const sparkleIdRef = useRef(0);
 
@@ -219,8 +219,8 @@ const ComparisonGame = () => {
         return prev - 1;
       });
     }, 1000);
-    return () => clearInterval(intervalId);
-  }, [currentRound, finishGame, gameState, generateNewRound, isCorrect, safeInterval, safeTimeout, useTimer]);
+    return () => clearSafeInterval(intervalId);
+  }, [currentRound, finishGame, gameState, generateNewRound, isCorrect, safeInterval, safeTimeout, useTimer, clearSafeInterval]);
 
   const handleSelect = useCallback((index: number, event: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
     if (isCorrect || gameState !== 'playing' || !currentRound) return;

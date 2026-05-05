@@ -1,11 +1,10 @@
 /**
  * Merkezi, yapılandırılmış logger.
  * - Development: zengin console çıktısı
- * - Production: sadece warn/error seviyesi; Sentry DSN varsa uzak gönderim
+ * - Production: sadece warn/error seviyesi
  *
- * Sentry SDK opsiyoneldir; yoksa logger şeffaf biçimde console fallback'ine düşer.
- * Gerçek Sentry entegrasyonu için `npm i @sentry/react` kurun ve aşağıdaki
- * `initErrorTracking` fonksiyonunda import'u aktif edin.
+ * Harici hata izleme için `setExternalCapture()` ile bir yakalayıcı kaydedilebilir
+ * (örn. Sentry: `setExternalCapture(Sentry.captureException)`).
  */
 
 import { env } from "./env";
@@ -16,8 +15,13 @@ interface LogContext {
   [key: string]: unknown;
 }
 
-// Harici error tracker için opsiyonel hook
-let externalCapture: ((error: Error, context?: LogContext) => void) | null = null;
+type ExternalCapture = (error: Error, context?: LogContext) => void;
+
+let externalCapture: ExternalCapture | null = null;
+
+export function setExternalCapture(fn: ExternalCapture | null) {
+  externalCapture = fn;
+}
 
 function shouldLog(level: LogLevel): boolean {
   if (!env.isProd) return true;
@@ -59,39 +63,21 @@ export const logger = {
 
 /**
  * Uygulama açılışında çağrılır.
- * Sentry DSN sağlanmışsa harici yakalayıcıyı kurar.
- * @sentry/react kuruluysa gerçek entegrasyon; değilse basit bir fetch fallback'i.
+ * Şu an sadece global hata yakalayıcılarını bağlar ve konsola yazar.
+ *
+ * Gerçek hata izleme istenirse:
+ *   1) `npm i @sentry/react`
+ *   2) Buradan `Sentry.init({ dsn: env.sentryDsn })` çağırın
+ *   3) `externalCapture = Sentry.captureException` olarak ayarlayın
  */
 export function initErrorTracking() {
   if (!env.sentryDsn) {
     logger.info("Sentry DSN yok, yalnızca konsol loglaması aktif.");
-    return;
+  } else {
+    logger.info("Sentry DSN tanımlı; gerçek entegrasyon için @sentry/react kurulmalı.");
   }
 
-  // Sentry paketi kurulu değilse, basit bir beacon fallback'i kur.
-  // İsteğe bağlı: `npm i @sentry/react` sonrası aşağıyı değiştirin.
-  externalCapture = (error, context) => {
-    try {
-      const payload = JSON.stringify({
-        message: error.message,
-        stack: error.stack,
-        context,
-        ua: navigator.userAgent,
-        url: window.location.href,
-        timestamp: Date.now(),
-      });
-      // Sentry envelope formatı değildir; sadece placeholder bir POST.
-      // Gerçek Sentry yerine kendi toplayıcınızı kullanabilirsiniz.
-      if (typeof navigator.sendBeacon === "function") {
-        const blob = new Blob([payload], { type: "application/json" });
-        navigator.sendBeacon("/__error_beacon__", blob);
-      }
-    } catch {
-      // yut
-    }
-  };
-
-  // Global yakalayıcılar
+  // Global yakalayıcılar — DSN olsun olmasın hataları konsola yansıt.
   window.addEventListener("error", (ev) => {
     logger.error("window.error", ev.error, { message: ev.message });
   });

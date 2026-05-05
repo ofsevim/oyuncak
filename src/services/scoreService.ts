@@ -1,7 +1,7 @@
 import {
   doc, setDoc, getDoc,
   collection, query, orderBy, limit, getDocs,
-  serverTimestamp,
+  runTransaction, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ensureAuth, getUid } from './authService';
@@ -25,25 +25,28 @@ export interface LeaderboardEntry {
 
 /**
  * Firestore'a skor kaydet.
- * Sadece mevcut skordan yüksekse günceller.
+ * Atomik transaction: paralel yazımlarda en yüksek skor korunur.
+ * Yalnızca mevcut skordan yüksekse günceller; aksi hâlde false döner.
  */
 export async function syncScore(gameId: string, score: number): Promise<boolean> {
   try {
     const user = await ensureAuth();
     const docRef = doc(db, 'scores', gameId, 'leaderboard', user.uid);
 
-    const existing = await getDoc(docRef);
-    if (existing.exists() && existing.data().score >= score) return false;
+    return await runTransaction(db, async (tx) => {
+      const existing = await tx.get(docRef);
+      if (existing.exists() && existing.data().score >= score) return false;
 
-    await setDoc(docRef, {
-      uid: user.uid,
-      gameId,
-      name: getNickname(),
-      score,
-      date: new Date().toISOString(),
-      updatedAt: serverTimestamp(),
+      tx.set(docRef, {
+        uid: user.uid,
+        gameId,
+        name: getNickname(),
+        score,
+        date: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      });
+      return true;
     });
-    return true;
   } catch (err) {
     logger.warn('Firebase skor yazma hatası', { gameId, err: String(err) });
     throw err;

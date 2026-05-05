@@ -186,9 +186,8 @@ const SpaceShooterGame = () => {
         if (touchX.current !== null) {
             shipX.current = Math.max(SHIP_W / 2, Math.min(CW - SHIP_W / 2, touchX.current));
         }
-        if (keys.has(' ') || keys.has('ArrowUp')) shoot();
 
-        // ── Auto-shoot ──
+        // ── Auto-shoot (her frame; cooldown shoot() içinde) ──
         shoot();
 
         // ── Spawn ──

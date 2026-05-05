@@ -152,7 +152,7 @@ const BalloonPopGame = () => {
   const isDoubleRef = useRef(false);
   const targetColorRef = useRef<ColorDef>(BALLOON_COLORS[0]);
   const poppedRef = useRef<Set<string>>(new Set());
-  const { safeTimeout: hookTimeout, safeInterval: hookInterval, clearAll: hookClearAll } = useSafeTimeouts();
+  const { safeTimeout: hookTimeout, safeInterval: hookInterval, clearSafeInterval: hookClearInterval, clearAll: hookClearAll } = useSafeTimeouts();
   const containerRef = useRef<HTMLDivElement>(null);
 
   /* ─── Ref senkronizasyonu ─── */
@@ -309,8 +309,8 @@ const BalloonPopGame = () => {
         return prev - 1;
       });
     }, 1000);
-    return () => clearInterval(id);
-  }, [gamePhase, safeInterval]);
+    return () => hookClearInterval(id);
+  }, [gamePhase, safeInterval, hookClearInterval]);
 
   /* Oyun sonu */
   useEffect(() => {
@@ -352,8 +352,8 @@ const BalloonPopGame = () => {
         return [...prev, ...newOnes];
       });
     }, config.spawnRate);
-    return () => clearInterval(id);
-  }, [gamePhase, config.spawnRate, config.maxBalloons, createBalloon, safeInterval]);
+    return () => hookClearInterval(id);
+  }, [gamePhase, config.spawnRate, config.maxBalloons, createBalloon, safeInterval, hookClearInterval]);
 
   /* Bellek temizliği */
   useEffect(() => {
@@ -365,8 +365,8 @@ const BalloonPopGame = () => {
           : prev,
       );
     }, 5000);
-    return () => clearInterval(id);
-  }, [gamePhase, config.maxBalloons, safeInterval]);
+    return () => hookClearInterval(id);
+  }, [gamePhase, config.maxBalloons, safeInterval, hookClearInterval]);
 
   /* ═══════ Patlatma ═══════ */
 

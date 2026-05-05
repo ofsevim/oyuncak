@@ -56,6 +56,17 @@ const rotateGrid = (grid: Grid): Grid => {
   return Array.from({ length: n }, (_, r) => Array.from({ length: n }, (_, c) => grid[n - 1 - c][r]));
 };
 
+const gridsEqual = (a: Grid, b: Grid): boolean => {
+  for (let r = 0; r < GRID_SIZE; r++) {
+    const rowA = a[r];
+    const rowB = b[r];
+    for (let c = 0; c < GRID_SIZE; c++) {
+      if (rowA[c] !== rowB[c]) return false;
+    }
+  }
+  return true;
+};
+
 const move = (grid: Grid, direction: 'left' | 'right' | 'up' | 'down') => {
   let rotated = grid.map(r => [...r]);
   const rotations = { left: 0, down: 1, right: 2, up: 3 };
@@ -64,7 +75,7 @@ const move = (grid: Grid, direction: 'left' | 'right' | 'up' | 'down') => {
   const slid = rotated.map(row => { const { newRow, score, merges } = slideRow(row); totalScore += score; totalMerges += merges; return newRow; });
   let result = slid;
   for (let i = 0; i < (4 - rotations[direction]) % 4; i++) result = rotateGrid(result);
-  const moved = JSON.stringify(grid) !== JSON.stringify(result);
+  const moved = !gridsEqual(grid, result);
   return { newGrid: result, score: totalScore, moved, merges: totalMerges };
 };
 

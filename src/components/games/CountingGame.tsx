@@ -68,7 +68,7 @@ const CountingGame = () => {
   const [praiseText, setPraiseText] = useState('');
   const [showCelebration, setShowCelebration] = useState(false);
 
-  const { safeTimeout, safeInterval, clearAll } = useSafeTimeouts();
+  const { safeTimeout, safeInterval, clearSafeInterval, clearAll } = useSafeTimeouts();
   const lastCountRef = useRef<number | null>(null);
   const lastEmojiRef = useRef<string | null>(null);
   const floatIdRef = useRef(0);
@@ -168,8 +168,8 @@ const CountingGame = () => {
         return prev - 1;
       });
     }, 1000);
-    return () => clearInterval(id);
-  }, [gameState, config.timer, showResult, setupRound, safeInterval, safeTimeout]);
+    return () => clearSafeInterval(id);
+  }, [gameState, config.timer, showResult, setupRound, safeInterval, safeTimeout, clearSafeInterval]);
 
   /* ── Click on an item to count it ── */
   const handleItemClick = (itemId: number) => {

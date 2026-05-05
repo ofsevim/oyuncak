@@ -37,7 +37,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
   const [hintsLeft, setHintsLeft] = useState(1);
   const [showHint, setShowHint] = useState(false);
   const [matchedCount, setMatchedCount] = useState(0);
-  const { safeTimeout, safeInterval, clearAll, clearAllIntervals } = useSafeTimeouts();
+  const { safeTimeout, safeInterval, clearSafeInterval, clearAll, clearAllIntervals } = useSafeTimeouts();
   const autoAdvance = true;
 
   const initializeGame = useCallback((size?: GridSize) => {
@@ -68,9 +68,9 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
   useEffect(() => {
     if (isTimerRunning) {
       const id = safeInterval(() => setTimer(p => p + 1), 1000);
-      return () => clearInterval(id);
+      return () => clearSafeInterval(id);
     }
-  }, [isTimerRunning, safeInterval]);
+  }, [isTimerRunning, safeInterval, clearSafeInterval]);
 
   const useHint = () => {
     if (hintsLeft <= 0 || showHint) return;

@@ -1,7 +1,7 @@
 {
   "name": "Oyuncak - Premium Oyun Dünyası",
   "short_name": "Oyuncak",
-  "description": "Reklamsız, güvenli ve hızlı çocuk oyunları platformu. 14+ interaktif oyun, çizim ve hikayeler.",
+  "description": "Reklamsız, güvenli ve hızlı çocuk oyunları platformu. 18+ interaktif oyun, çizim ve hikayeler.",
   "start_url": "/",
   "display": "standalone",
   "display_override": [
@@ -22,15 +22,21 @@
   "icons": [
     {
       "src": "/favicon.png",
-      "sizes": "192x192",
+      "sizes": "192x192 512x512 1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon.png",
+      "src": "/maskable-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/maskable-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [

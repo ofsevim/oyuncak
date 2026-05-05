@@ -35,7 +35,7 @@ const MathGame = () => {
   const [timeLeft, setTimeLeft] = useState(15);
   const [gameStarted, setGameStarted] = useState(false);
   const [highScore, setHighScore] = useState(0);
-  const { safeTimeout, safeInterval, clearAllIntervals } = useSafeTimeouts();
+  const { safeTimeout, safeInterval, clearSafeInterval, clearAllIntervals } = useSafeTimeouts();
 
   // Keeps a synchronous copy of timeLeft so the interval callback avoids stale closures
   const timeLeftRef = useRef<number>(15);
@@ -145,8 +145,8 @@ const MathGame = () => {
         setTimeLeft(tl - 1);
       }
     }, 1000);
-    return () => clearInterval(id);
-  }, [gameStarted, showResult, generateQuestion, getDiffConfig, safeInterval, safeTimeout]);
+    return () => clearSafeInterval(id);
+  }, [gameStarted, showResult, generateQuestion, getDiffConfig, safeInterval, safeTimeout, clearSafeInterval]);
 
   if (!gameStarted) {
     return (

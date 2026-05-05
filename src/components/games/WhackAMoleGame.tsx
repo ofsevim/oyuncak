@@ -55,7 +55,7 @@ const WhackAMoleGame = () => {
 
   // Refs for stable logic & sync
   const containerRef = useRef<HTMLDivElement>(null);
-  const { safeTimeout: hookTimeout, safeInterval: hookInterval, clearAll: hookClearAll } = useSafeTimeouts();
+  const { safeTimeout: hookTimeout, safeInterval: hookInterval, clearSafeTimeout, clearAll: hookClearAll } = useSafeTimeouts();
   const gamePhaseRef = useRef(gamePhase);
   const activeHolesRef = useRef<Map<number, ActiveMole>>(new Map());
   const spawnMoleRef = useRef<() => void>(() => { });
@@ -112,8 +112,8 @@ const WhackAMoleGame = () => {
 
   const clearAllTimers = useCallback(() => {
     hookClearAll();
-    if (moleRef.current) clearTimeout(moleRef.current);
-    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+    moleRef.current = null;
+    comboTimerRef.current = null;
   }, [hookClearAll]);
 
   /* Floating text helper */
@@ -189,7 +189,10 @@ const WhackAMoleGame = () => {
         }
       });
       // Combo break on miss
-      if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+      if (comboTimerRef.current) {
+        clearSafeTimeout(comboTimerRef.current);
+        comboTimerRef.current = null;
+      }
       comboRef.current = 0;
       setCombo(0);
 
@@ -197,7 +200,7 @@ const WhackAMoleGame = () => {
       const nextDelay = Math.random() * 250 + 100;
       moleRef.current = safeTimeout(() => spawnMoleRef.current(), nextDelay);
     }, duration);
-  }, [config, safeTimeout, updateHoles]);
+  }, [config, safeTimeout, updateHoles, clearSafeTimeout]);
 
   useEffect(() => { spawnMoleRef.current = spawnMole; }, [spawnMole]);
 
@@ -349,10 +352,11 @@ const WhackAMoleGame = () => {
       triggerShake();
 
       // Reset combo timer
-      if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+      if (comboTimerRef.current) clearSafeTimeout(comboTimerRef.current);
       comboTimerRef.current = hookTimeout(() => {
         comboRef.current = 0;
         setCombo(0);
+        comboTimerRef.current = null;
       }, 2000);
     }
 
@@ -364,7 +368,7 @@ const WhackAMoleGame = () => {
     // Remove after hit animation
     safeTimeout(() => {
       updateHoles(m => m.delete(index));
-      if (moleRef.current) clearTimeout(moleRef.current);
+      if (moleRef.current) clearSafeTimeout(moleRef.current);
       moleRef.current = safeTimeout(() => spawnMoleRef.current(), Math.random() * 120 + 60);
     }, 500);
   };

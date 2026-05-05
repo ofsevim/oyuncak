@@ -7,6 +7,7 @@ import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import { useLandscape } from '@/hooks/useLandscape';
+import { IS_MOBILE } from '@/utils/platform';
 import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════════════════════════════
@@ -47,7 +48,7 @@ const TARGET_FRAME_MS = 1000 / 60;
 const HUD_UPDATE_MS = 120;
 const CANVAS_DPR_CAP = 2;
 const MAX_PARTICLES = 60;
-const isMobileDev = /iPhone|iPad|iPod|Android/i.test(navigator?.userAgent ?? '');
+const isMobileDev = IS_MOBILE;
 
 const CHARACTERS = [
   { id: 'bunny', name: 'Tavşan', emoji: '🐰', color: '#f9a8d4', accent: '#ec4899', bodyH: '#fce7f3' },
@@ -879,8 +880,7 @@ const RunnerGame = () => {
     setPhase('playing');
 
     try {
-      const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      if (isMob) {
+      if (IS_MOBILE) {
         if (document.documentElement.requestFullscreen) {
           document.documentElement.requestFullscreen().catch(() => { });
         }
@@ -925,8 +925,7 @@ const RunnerGame = () => {
       document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
     const checkOrientation = () => {
-      const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      setIsPortrait(isMob && window.innerHeight > window.innerWidth);
+      setIsPortrait(IS_MOBILE && window.innerHeight > window.innerWidth);
       setVH();
     };
     checkOrientation();

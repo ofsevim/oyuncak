@@ -1,5 +1,5 @@
 /*
-  Oyuncak - Service Worker (v4)
+  Oyuncak - Service Worker (v5)
   - Network-First for index.html and manifest (prevents stale loading hangs)
   - Stale-While-Revalidate for other assets
   - Automatic cache pruning on activation
@@ -7,7 +7,7 @@
   - Offline fallback page
 */
 
-const CACHE_NAME = 'oyuncak-v4';
+const CACHE_NAME = 'oyuncak-v5';
 const BASE = self.registration?.scope ?? '/';
 const OFFLINE_URL = new URL('offline.html', BASE).pathname;
 const ASSETS_TO_CACHE = [
@@ -15,6 +15,8 @@ const ASSETS_TO_CACHE = [
     new URL('index.html', BASE).pathname,
     new URL('manifest.json', BASE).pathname,
     new URL('favicon.png', BASE).pathname,
+    new URL('maskable-icon-192.png', BASE).pathname,
+    new URL('maskable-icon-512.png', BASE).pathname,
     OFFLINE_URL,
 ];
 
