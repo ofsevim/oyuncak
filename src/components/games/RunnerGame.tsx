@@ -342,6 +342,7 @@ const RunnerGame = () => {
   /* ── Refs ── */
   const rafRef = useRef(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef(1);
 
@@ -367,8 +368,11 @@ const RunnerGame = () => {
   const floatIdRef = useRef(0);
   const charRef = useRef(CHARACTERS[0]);
   const maxComboRef = useRef(0);
-  const lastHudDistanceUpdateRef = useRef(0);
+  const lastHudUpdateRef = useRef(0);
   const emittedDistanceRef = useRef(0);
+  const emittedScoreRef = useRef(0);
+  const emittedComboRef = useRef(0);
+  const emittedLivesRef = useRef(3);
   const renderCacheRef = useRef<RenderCache | null>(null);
   const { safeTimeout, clearAllTimeouts } = useSafeTimeouts();
 
@@ -435,17 +439,12 @@ const RunnerGame = () => {
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
       const flareAngle = f * 0.003;
+      /* Re-use a single pre-created style instead of 6 createLinearGradient per frame */
+      ctx.strokeStyle = 'rgba(255,251,235,0.35)';
+      ctx.lineWidth = 1.5;
       for (let i = 0; i < 6; i++) {
         const a = flareAngle + (i * Math.PI) / 3;
         const len = 40 + Math.sin(f * 0.02 + i) * 15;
-        const fg = ctx.createLinearGradient(
-          sunX + Math.cos(a) * 5, sunY + Math.sin(a) * 5,
-          sunX + Math.cos(a) * len, sunY + Math.sin(a) * len
-        );
-        fg.addColorStop(0, 'rgba(255,251,235,0.6)');
-        fg.addColorStop(1, 'rgba(255,251,235,0)');
-        ctx.strokeStyle = fg;
-        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(sunX + Math.cos(a) * 22, sunY + Math.sin(a) * 22);
         ctx.lineTo(sunX + Math.cos(a) * len, sunY + Math.sin(a) * len);
@@ -809,7 +808,7 @@ const RunnerGame = () => {
      ═══════════════════════════════════════════ */
   const gameLoop = useCallback((timestamp: number) => {
     if (phaseRef.current !== 'playing') return;
-    const ctx = canvasRef.current?.getContext('2d');
+    const ctx = ctxRef.current;
     if (!ctx) return;
 
     /* Simülasyonu 60 FPS tabanında tut: 120 Hz cihazlarda gameplay hızlanmasın */
@@ -842,8 +841,10 @@ const RunnerGame = () => {
 
     const minGap = Math.max(160, 300 - speedRef.current * 10);
     if (f > 60 && Math.random() < diffRef.current.spawnRate) {
-      const lastX = obstaclesRef.current.length > 0
-        ? Math.max(...obstaclesRef.current.map(o => o.x)) : 0;
+      let lastX = 0;
+      for (let i = 0; i < obstaclesRef.current.length; i++) {
+        if (obstaclesRef.current[i].x > lastX) lastX = obstaclesRef.current[i].x;
+      }
       if (lastX < CW - minGap) {
         const types: Obstacle['type'][] = ['rock', 'cactus', 'bird'];
         if (speedRef.current > 8) types.push('double');
@@ -905,15 +906,19 @@ const RunnerGame = () => {
         if (shieldRef.current) {
           setShowShield(false); shieldRef.current = false;
           spawnP(o.x + o.w / 2, oy + o.h / 2, 10, '#3b82f6', 'collect');
-          obstaclesRef.current.splice(i, 1);
+          /* swap-and-pop: O(1) instead of splice O(n) */
+          obstaclesRef.current[i] = obstaclesRef.current[obstaclesRef.current.length - 1];
+          obstaclesRef.current.length--;
           addFloat(o.x, oy, '🛡️ Blok!', '#3b82f6');
           playPopSound();
         } else if (!invincibleRef.current) {
-          livesRef.current--; setLives(livesRef.current);
-          comboRef.current = 0; setCombo(0);
+          livesRef.current--;
+          comboRef.current = 0;
           spawnP(p.x + p.w / 2, py2 + ph / 2, 15, '#ef4444', 'impact');
           playErrorSound();
-          obstaclesRef.current.splice(i, 1);
+          /* swap-and-pop: O(1) instead of splice O(n) */
+          obstaclesRef.current[i] = obstaclesRef.current[obstaclesRef.current.length - 1];
+          obstaclesRef.current.length--;
           if (livesRef.current <= 0) {
             phaseRef.current = 'gameover';
             setPhase('gameover');
@@ -932,21 +937,23 @@ const RunnerGame = () => {
       if (boxHit(px, py2, pw, ph, c.x - 4, c.y - 14, 30, 30, 0)) {
         const def = COLLECT_DEFS[c.type];
         spawnP(c.x + 12, c.y, 10, c.type === 'coin' ? '#fbbf24' : c.type === 'star' ? '#fde68a' : '#60a5fa', 'collect');
-        collectiblesRef.current.splice(i, 1);
+        /* swap-and-pop: O(1) instead of splice O(n) */
+        collectiblesRef.current[i] = collectiblesRef.current[collectiblesRef.current.length - 1];
+        collectiblesRef.current.length--;
         if (def.points > 0) {
           const mul = x2Ref.current ? 2 : 1;
           const pts = def.points * mul;
-          comboRef.current++; setCombo(comboRef.current);
-          if (comboRef.current > maxComboRef.current) { maxComboRef.current = comboRef.current; setMaxCombo(comboRef.current); }
+          comboRef.current++;
+          if (comboRef.current > maxComboRef.current) { maxComboRef.current = comboRef.current; }
           const comboBonus = comboRef.current >= 5 ? Math.min(comboRef.current, 10) * 5 : 0;
           const total = pts + comboBonus;
-          scoreRef.current += total; setScore(scoreRef.current);
+          scoreRef.current += total;
           addFloat(c.x, c.y - 15, `+${total}`, c.type === 'star' ? '#fbbf24' : '#22c55e');
           if (comboRef.current >= 5) playComboSound(comboRef.current); else playPopSound();
         } else {
           switch (c.type) {
             case 'heart':
-              if (livesRef.current < MAX_LIVES) { livesRef.current++; setLives(livesRef.current); }
+              if (livesRef.current < MAX_LIVES) { livesRef.current++; }
               addFloat(c.x, c.y - 15, '❤️ +1', '#ef4444'); playSuccessSound(); break;
             case 'magnet':
               setShowMagnet(true); magnetRef.current = true;
@@ -968,17 +975,33 @@ const RunnerGame = () => {
 
     const nextDistance = Math.floor(groundOffRef.current / 10);
     distanceRef.current = nextDistance;
-    if (
-      nextDistance !== emittedDistanceRef.current &&
-      (timestamp - lastHudDistanceUpdateRef.current >= HUD_UPDATE_MS || nextDistance === 0)
-    ) {
-      emittedDistanceRef.current = nextDistance;
-      lastHudDistanceUpdateRef.current = timestamp;
-      setDistance(nextDistance);
+
+    /* Batch all HUD React state updates behind a single throttle gate */
+    if (timestamp - lastHudUpdateRef.current >= HUD_UPDATE_MS) {
+      lastHudUpdateRef.current = timestamp;
+      if (nextDistance !== emittedDistanceRef.current) {
+        emittedDistanceRef.current = nextDistance;
+        setDistance(nextDistance);
+      }
+      if (scoreRef.current !== emittedScoreRef.current) {
+        emittedScoreRef.current = scoreRef.current;
+        setScore(scoreRef.current);
+      }
+      if (comboRef.current !== emittedComboRef.current) {
+        emittedComboRef.current = comboRef.current;
+        setCombo(comboRef.current);
+      }
+      if (maxComboRef.current !== maxCombo) {
+        setMaxCombo(maxComboRef.current);
+      }
+      if (livesRef.current !== emittedLivesRef.current) {
+        emittedLivesRef.current = livesRef.current;
+        setLives(livesRef.current);
+      }
     }
     draw(ctx);
     rafRef.current = requestAnimationFrame(gameLoop);
-  }, [draw, spawnP, addFloat, safeTimeout]);
+  }, [draw, spawnP, addFloat, safeTimeout, maxCombo]);
 
 
   /* ═══════════════════════════════════════════
@@ -1007,7 +1030,10 @@ const RunnerGame = () => {
     scoreRef.current = 0; distanceRef.current = 0; comboRef.current = 0; livesRef.current = 3;
     invincibleRef.current = false; shieldRef.current = false; magnetRef.current = false; x2Ref.current = false;
     emittedDistanceRef.current = 0;
-    lastHudDistanceUpdateRef.current = 0;
+    emittedScoreRef.current = 0;
+    emittedComboRef.current = 0;
+    emittedLivesRef.current = 3;
+    lastHudUpdateRef.current = 0;
     setScore(0); setDistance(0); setLives(3); setCombo(0); setMaxCombo(0);
     maxComboRef.current = 0;
     setShowShield(false); setShowMagnet(false); setShowX2(false);
@@ -1036,8 +1062,13 @@ const RunnerGame = () => {
 
   useEffect(() => {
     if (phase !== 'gameover') return;
+    /* Flush all pending ref-based values to React state for the end screen */
     emittedDistanceRef.current = distanceRef.current;
     setDistance(distanceRef.current);
+    setScore(scoreRef.current);
+    setCombo(comboRef.current);
+    setMaxCombo(maxComboRef.current);
+    setLives(livesRef.current);
     const isNew = saveHighScoreObj('runner', scoreRef.current);
     if (isNew) {
       setIsNewRecord(true); setHighScore(scoreRef.current);
@@ -1104,7 +1135,12 @@ const RunnerGame = () => {
       canvas.style.height = `${CH * s}px`;
 
       const ctx = canvas.getContext('2d');
-      ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (ctx) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctxRef.current = ctx;
+        /* Invalidate render cache — gradients are bound to the context */
+        renderCacheRef.current = null;
+      }
     };
     resize();
     const ro = new ResizeObserver(resize);
