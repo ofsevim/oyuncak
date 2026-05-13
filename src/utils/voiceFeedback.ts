@@ -5,7 +5,7 @@ const loadVoices = () => {
   voices = window.speechSynthesis.getVoices();
 };
 
-if ('speechSynthesis' in window) {
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
   window.speechSynthesis.onvoiceschanged = loadVoices;
   loadVoices();
 }

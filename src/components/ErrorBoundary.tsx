@@ -41,10 +41,10 @@ class ErrorBoundary extends Component<Props, State> {
                     minHeight: '200px', padding: '2rem', textAlign: 'center', gap: '1rem',
                 }}>
                     <div style={{ fontSize: '3rem' }}>😵</div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'hsl(var(--foreground))' }}>
                         Bir şeyler yanlış gitti
                     </h2>
-                    <p style={{ fontSize: '0.875rem', color: '#64748b', maxWidth: '320px' }}>
+                    <p style={{ fontSize: '0.875rem', color: 'hsl(var(--muted-foreground))', maxWidth: '320px' }}>
                         Endişelenme, diğer bölümler çalışmaya devam ediyor.
                     </p>
                     <button
