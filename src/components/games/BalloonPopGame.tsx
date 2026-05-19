@@ -108,6 +108,20 @@ const getGradId = (b: Balloon) =>
 /* ═══════════════════ CSS Animasyonları ═══════════════════ */
 
 const GAME_STYLES = `
+  @keyframes balloon-rise {
+    0% { transform: translateY(800px); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-100px); opacity: 0; }
+  }
+
+  .balloon-rise-animate {
+    animation: balloon-rise var(--rise-duration) var(--rise-delay) linear forwards;
+    animation-play-state: var(--play-state, running);
+    will-change: transform, opacity;
+    contain: layout style;
+  }
+
   @keyframes balloon-sway {
     0%, 100% { transform: translateX(calc(var(--sway) * -1)); }
     50%      { transform: translateX(var(--sway)); }
@@ -158,16 +172,10 @@ const BalloonPopGame = () => {
   /* ─── Ref senkronizasyonu ─── */
   useEffect(() => {
     gamePhaseRef.current = gamePhase;
-  }, [gamePhase]);
-  useEffect(() => {
     isFrozenRef.current = isFrozen;
-  }, [isFrozen]);
-  useEffect(() => {
     isDoubleRef.current = isDouble;
-  }, [isDouble]);
-  useEffect(() => {
     targetColorRef.current = targetColor;
-  }, [targetColor]);
+  }, [gamePhase, isFrozen, isDouble, targetColor]);
 
   /* ─── İlk yükleme: rekor ─── */
   useEffect(() => {
@@ -226,21 +234,6 @@ const BalloonPopGame = () => {
     [config.speed],
   );
 
-  const generateBalloons = useCallback(
-    (color: ColorDef) => {
-      const total = 6;
-      const result: Balloon[] = [];
-      for (let i = 0; i < total; i++) {
-        const isTarget = i < 3;
-        const c = isTarget ? color : BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
-        // İlk balonlar anında (0 delay) çıksın!
-        result.push(createBalloon(c, 0));
-      }
-      return result;
-    },
-    [createBalloon],
-  );
-
   /* ═══════ Oyun Akışı ═══════ */
 
   const startNewRound = useCallback(() => {
@@ -290,9 +283,15 @@ const BalloonPopGame = () => {
     const nextColor =
       BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
     setTargetColor(nextColor);
-    setBalloons(generateBalloons(nextColor));
+    
+    const initialBalloons = Array.from({ length: 6 }, (_, i) => {
+      const isTarget = i < 3;
+      const c = isTarget ? nextColor : BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
+      return createBalloon(c, 0);
+    });
+    setBalloons(initialBalloons);
     setGamePhase('playing');
-  }, [generateBalloons, difficulty, clearAllTimers]);
+  }, [createBalloon, difficulty, clearAllTimers]);
 
   /* ═══════ Effect'ler ═══════ */
 
@@ -398,8 +397,10 @@ const BalloonPopGame = () => {
         );
       };
 
-      const removeBalloon = () =>
+      const removeBalloon = () => {
+        poppedRef.current.delete(balloon.id);
         setBalloons((prev) => prev.filter((b) => b.id !== balloon.id));
+      };
 
       /* ── Özel balonlar ── */
       if (balloon.special === 'freeze') {
@@ -748,50 +749,45 @@ const BalloonPopGame = () => {
         </motion.div>
       </div>
 
-      <AnimatePresence>
-        {balloons.map((balloon) => (
-          <motion.div
-            key={balloon.id}
-            initial={{ y: 800, opacity: 0 }}
-            animate={isFrozen ? {} : {
-              y: -100,
-              opacity: [0, 1, 1, 0],
-            }}
-            transition={{
-              y: { duration: balloon.duration, delay: balloon.delay, ease: 'linear' },
-              opacity: { times: [0, 0.1, 0.9, 1], duration: balloon.duration, delay: balloon.delay }
-            }}
-            onAnimationComplete={() => {
-              setBalloons(prev => prev.filter(b => b.id !== balloon.id));
-            }}
-            className="absolute z-10"
-            style={{
-              pointerEvents: 'auto',
-              left: `${balloon.x}%`,
-            }}
+      {balloons.map((balloon) => (
+        <div
+          key={balloon.id}
+          onAnimationEnd={(e) => {
+            if (e.animationName === 'balloon-rise') {
+              poppedRef.current.delete(balloon.id);
+              setBalloons((prev) => prev.filter((b) => b.id !== balloon.id));
+            }
+          }}
+          className="absolute z-10 balloon-rise-animate"
+          style={{
+            pointerEvents: 'auto',
+            left: `${balloon.x}%`,
+            '--rise-duration': `${balloon.duration}s`,
+            '--rise-delay': `${balloon.delay}s`,
+            '--play-state': isFrozen ? 'paused' : 'running',
+          } as React.CSSProperties}
+        >
+          <div
+            className="balloon-sway-animate"
+            style={
+              {
+                '--sway': `${balloon.swayAmount}px`,
+                '--sway-duration': `${balloon.swayDuration}s`,
+              } as React.CSSProperties
+            }
           >
-            <div
-              className="balloon-sway-animate"
-              style={
-                {
-                  '--sway': `${balloon.swayAmount}px`,
-                  '--sway-duration': `${balloon.swayDuration}s`,
-                  '--play-state': isFrozen ? 'paused' : 'running',
-                } as React.CSSProperties
-              }
+            <button
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handlePop(balloon, e);
+              }}
+              className="relative active:scale-95 transition-transform cursor-pointer block p-0 bg-transparent border-none outline-none"
+              style={{
+                transform: `scale(${balloon.size})`,
+                touchAction: 'none',
+              }}
+              aria-label={`${balloon.special ?? balloon.color.name} balon`}
             >
-              <button
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  handlePop(balloon, e);
-                }}
-                className="relative active:scale-95 transition-transform cursor-pointer block p-0 bg-transparent border-none outline-none"
-                style={{
-                  transform: `scale(${balloon.size})`,
-                  touchAction: 'none',
-                }}
-                aria-label={`${balloon.special ?? balloon.color.name} balon`}
-              >
                 <svg
                   width="48"
                   height="64"
@@ -823,9 +819,8 @@ const BalloonPopGame = () => {
                 </svg>
               </button>
             </div>
-          </motion.div>
+          </div>
         ))}
-      </AnimatePresence>
     </div>
   );
 };
