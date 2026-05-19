@@ -37,8 +37,8 @@ const TARGET_FRAME_MS = 1000 / 60;
 const CANVAS_DPR_CAP = 2;
 const isMobileDev = IS_MOBILE;
 
-const TARGETS = [0, 15, 35, 60, 90, 165];
-const getTargetScore = (lvl: number) => lvl <= 5 ? TARGETS[lvl] : 165 + (lvl - 5) * 80;
+const TARGETS = [15, 35, 60, 90, 165];
+const getTargetScore = (lvl: number) => lvl <= 5 ? TARGETS[lvl - 1] : 165 + (lvl - 5) * 80;
 
 
 
@@ -55,7 +55,7 @@ const BALL_TYPES = [
 
 type Phase = 'aim' | 'fly' | 'scored' | 'missed' | 'gameover';
 interface TrailPt { x: number; y: number }
-interface FloatMsg { id: number; x: number; y: number; text: string; color: string }
+interface FloatMsg { x: number; y: number; text: string; color: string; life: number }
 
 /* ═══════════════ BACKGROUND HELPERS ═══════════════ */
 const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number | number[]) => {
@@ -63,16 +63,24 @@ const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: n
     else ctx.rect(x, y, w, h);
 };
 
+let skyGradCache: CanvasGradient | null = null;
+let seaGradCache: CanvasGradient | null = null;
+let floorGradCache: CanvasGradient | null = null;
+
 function drawBg(ctx: CanvasRenderingContext2D, tick: number) {
     // Sky
-    const sky = ctx.createLinearGradient(0, 0, 0, CH * 0.62);
-    sky.addColorStop(0, '#5BA8D0'); sky.addColorStop(0.6, '#9AD4F0'); sky.addColorStop(1, '#C8EBF8');
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, CW, CH * 0.62);
+    if (!skyGradCache) {
+        skyGradCache = ctx.createLinearGradient(0, 0, 0, CH * 0.62);
+        skyGradCache.addColorStop(0, '#5BA8D0'); skyGradCache.addColorStop(0.6, '#9AD4F0'); skyGradCache.addColorStop(1, '#C8EBF8');
+    }
+    ctx.fillStyle = skyGradCache; ctx.fillRect(0, 0, CW, CH * 0.62);
 
     // Sea
-    const sea = ctx.createLinearGradient(0, CH * 0.46, 0, CH * 0.62);
-    sea.addColorStop(0, '#2E9BBF'); sea.addColorStop(1, '#1A7A9C');
-    ctx.fillStyle = sea; ctx.fillRect(0, CH * 0.46, CW, CH * 0.16);
+    if (!seaGradCache) {
+        seaGradCache = ctx.createLinearGradient(0, CH * 0.46, 0, CH * 0.62);
+        seaGradCache.addColorStop(0, '#2E9BBF'); seaGradCache.addColorStop(1, '#1A7A9C');
+    }
+    ctx.fillStyle = seaGradCache; ctx.fillRect(0, CH * 0.46, CW, CH * 0.16);
 
     // Waves
     for (let i = 0; i < 3; i++) {
@@ -108,9 +116,11 @@ function drawBg(ctx: CanvasRenderingContext2D, tick: number) {
     drawPalm(670, CH * 0.62, 80, 1); drawPalm(720, CH * 0.62, 65, -1);
 
     // Court floor
-    const floor = ctx.createLinearGradient(0, CH * 0.62, 0, CH);
-    floor.addColorStop(0, '#C8935A'); floor.addColorStop(0.3, '#AE7038'); floor.addColorStop(1, '#8A5428');
-    ctx.fillStyle = floor; ctx.fillRect(0, CH * 0.62, CW, CH * 0.38);
+    if (!floorGradCache) {
+        floorGradCache = ctx.createLinearGradient(0, CH * 0.62, 0, CH);
+        floorGradCache.addColorStop(0, '#C8935A'); floorGradCache.addColorStop(0.3, '#AE7038'); floorGradCache.addColorStop(1, '#8A5428');
+    }
+    ctx.fillStyle = floorGradCache; ctx.fillRect(0, CH * 0.62, CW, CH * 0.38);
 
     // ── Court markings (2D side-view) ──
     const FLOOR_Y = CH * 0.62;  // top of court floor
@@ -305,13 +315,13 @@ function drawBall(ctx: CanvasRenderingContext2D, x: number, y: number, spin: num
             ctx.restore();
         }
     } else if (type === 'beach') {
-
         for (let i = 0; i < 6; i++) {
             ctx.fillStyle = i % 2 === 0 ? '#FFFFFF' : ['#FFD700', '#FF4500', '#1E90FF'][Math.floor(i / 2)];
             ctx.beginPath(); ctx.moveTo(0, 0);
             ctx.arc(0, 0, r, (i / 6) * Math.PI * 2, ((i + 1) / 6) * Math.PI * 2); ctx.fill();
         }
-        ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.stroke();
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
     }
 
     // Shine (universal)
@@ -348,8 +358,7 @@ const BasketballGame = () => {
     const dragging = useRef(false);
     const dragStart = useRef({ x: 0, y: 0 });
     const dragCur = useRef({ x: 0, y: 0 });
-    const floatIdRef = useRef(0);
-    const { safeTimeout } = useSafeTimeouts();
+    const { safeTimeout, clearSafeTimeout } = useSafeTimeouts();
     const rafRef = useRef(0);
 
     // Basket feel refs
@@ -370,16 +379,13 @@ const BasketballGame = () => {
     const [showLevelUp, setShowLevelUp] = useState(false);
     const [selectedBall, setSelectedBall] = useState('basketball');
     const [highScore, setHighScore] = useState(() => getHighScore('basketball'));
-    const [floatMsgs, setFloatMsgs] = useState<FloatMsg[]>([]);
     const [isNewRecord, setIsNewRecord] = useState(false);
 
+    const floatMsgsRef = useRef<FloatMsg[]>([]);
+
     const addFloat = useCallback((x: number, y: number, text: string, color: string) => {
-        const id = floatIdRef.current++;
-        setFloatMsgs(p => [...p, { id, x, y, text, color }]);
-        safeTimeout(() => {
-            setFloatMsgs(p => p.filter(m => m.id !== id));
-        }, 950);
-    }, [safeTimeout]);
+        floatMsgsRef.current.push({ x, y, text, color, life: 1.0 });
+    }, []);
 
     const resetBall = useCallback(() => {
         const pos = SHOT_POSITIONS[Math.floor(Math.random() * SHOT_POSITIONS.length)];
@@ -418,9 +424,7 @@ const BasketballGame = () => {
                 scoreRef.current += pts;
                 setScore(scoreRef.current);
                 setCombo(nc);
-                const sx = (HOOP_X / CW) * (canvasRef.current?.offsetWidth ?? CW);
-                const sy = ((HOOP_Y - 50) / CH) * (canvasRef.current?.offsetHeight ?? CH);
-                addFloat(sx, sy, nc > 1 ? `🔥 COMBO ×${nc} +${pts}` : `+${pts}`, nc > 1 ? '#FFE234' : '#4CD964');
+                addFloat(HOOP_X, HOOP_Y - 50, nc > 1 ? `🔥 COMBO ×${nc} +${pts}` : `+${pts}`, nc > 1 ? '#FFE234' : '#4CD964');
 
 
                 // Daima file sesini çal (her zaman potadan geçiyor)
@@ -480,127 +484,127 @@ const BasketballGame = () => {
 
         const bgUpdateInterval = isMobileDev ? 6 : 2;
         const roundedTick = Math.floor(tick / bgUpdateInterval) * bgUpdateInterval;
-        if (!bgCacheRef.current || bgCacheTickRef.current !== roundedTick) {
+        if (!bgCacheRef.current) {
           try {
-            if (!bgCacheRef.current) {
-              bgCacheRef.current = typeof OffscreenCanvas !== 'undefined'
-                ? new OffscreenCanvas(CW, CH)
-                : document.createElement('canvas');
-              if ('width' in bgCacheRef.current) { bgCacheRef.current.width = CW; bgCacheRef.current.height = CH; }
-            }
-            const bgCtx = bgCacheRef.current.getContext('2d') as CanvasRenderingContext2D | null;
-            if (bgCtx) { bgCtx.clearRect(0, 0, CW, CH); drawBg(bgCtx, roundedTick); }
-            bgCacheTickRef.current = roundedTick;
-          } catch { drawBg(ctx, tick); }
+            bgCacheRef.current = typeof OffscreenCanvas !== 'undefined'
+              ? new OffscreenCanvas(CW, CH)
+              : document.createElement('canvas');
+            if ('width' in bgCacheRef.current) { bgCacheRef.current.width = CW; bgCacheRef.current.height = CH; }
+          } catch {
+            bgCacheRef.current = document.createElement('canvas');
+            bgCacheRef.current.width = CW; bgCacheRef.current.height = CH;
+          }
         }
-        if (bgCacheRef.current) ctx.drawImage(bgCacheRef.current as HTMLCanvasElement, 0, 0);
+        if (bgCacheTickRef.current !== roundedTick) {
+          const bgCtx = bgCacheRef.current.getContext('2d');
+          if (bgCtx) { bgCtx.clearRect(0, 0, CW, CH); drawBg(bgCtx, roundedTick); }
+          bgCacheTickRef.current = roundedTick;
+        }
+        ctx.drawImage(bgCacheRef.current as HTMLCanvasElement, 0, 0);
         drawHoop(ctx, netStretchRef.current, netSwayRef.current);
 
 
-        /* Physics */
+        /* Physics Sub-stepping (Matches Preview Trajectory Perfectly!) */
         if (ph === 'fly' || ph === 'scored') {
-            if (ph === 'fly') {
-                trailRef.current.push({ x: ballX.current, y: ballY.current });
-                if (trailRef.current.length > 12) trailRef.current.shift();
-            }
+            let timeAcc = dt;
+            const step = 1.0;
+            while (timeAcc >= step) {
+                if (ph === 'fly') {
+                    trailRef.current.push({ x: ballX.current, y: ballY.current });
+                    if (trailRef.current.length > 12) trailRef.current.shift();
+                }
 
-            prevBallY.current = ballY.current;
-            ballVY.current += GRAVITY * dt;
-            ballX.current += ballVX.current * dt;
-            ballY.current += ballVY.current * dt;
-            spinRef.current += ballVX.current * 0.045 * dt;
+                prevBallY.current = ballY.current;
+                ballVY.current += GRAVITY * step;
+                ballX.current += ballVX.current * step;
+                ballY.current += ballVY.current * step;
+                spinRef.current += ballVX.current * 0.045 * step;
 
-            // ── Perspektif-farkında zemin sekme fiziği ──
-            if (ph === 'fly' || ph === 'scored') {
+                // ── Zemin Sekme ──
                 const FLOOR_Y = perspFloorY(ballX.current);
                 if (ballY.current + BALL_R >= FLOOR_Y && ballVY.current > 0) {
                     const impactSpeed = Math.abs(ballVY.current);
                     ballY.current = FLOOR_Y - BALL_R;
-                    ballVY.current = -ballVY.current * 0.58;  // güçlü sıçrama
-                    ballVX.current *= 0.78;                    // zemin sürtünmesi
+                    ballVY.current = -ballVY.current * 0.58;
+                    ballVX.current *= 0.78;
                     spinRef.current *= 0.65;
-                    if (Math.abs(ballVY.current) < 2.0) { ballVY.current = 0; ballVX.current *= 0.5; }
-                    if (impactSpeed > 3) playPopSound();
+                    if (Math.abs(ballVY.current) < 2.0 * step) { ballVY.current = 0; ballVX.current *= 0.5; }
+                    if (impactSpeed > 3 * step) playPopSound();
                 }
-            }
 
-            // Backboard collision
-            const hitBoardX = HOOP_X - 50;
-            const boardTop = HOOP_Y - 110;
-            const boardBot = HOOP_Y + 30;
+                // Backboard collision
+                const hitBoardX = HOOP_X - 50;
+                const boardTop = HOOP_Y - 110;
+                const boardBot = HOOP_Y + 30;
 
-            if (ballX.current - BALL_R <= hitBoardX && ballX.current > hitBoardX - 25) {
-                if (ballY.current > boardTop && ballY.current < boardBot) {
-                    if (ballVX.current < 0) {
-                        ballX.current = hitBoardX + BALL_R;
-                        ballVX.current = -ballVX.current * 0.55;
-                        playPopSound();
-                    }
-                }
-            }
-
-            if (ph === 'fly') {
-                // Rim collision
-                const bounceRim = (px: number, py: number) => {
-                    const dx = ballX.current - px, dy = ballY.current - py;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist <= BALL_R + 3) {
-                        const nx = dx / dist, ny = dy / dist;
-                        const dot = ballVX.current * nx + ballVY.current * ny;
-                        if (dot < 0) {
-                            ballVX.current -= (1 + 0.5) * dot * nx;
-                            ballVY.current -= (1 + 0.5) * dot * ny;
-                            ballX.current = px + nx * (BALL_R + 3);
-                            ballY.current = py + ny * (BALL_R + 3);
+                if (ballX.current - BALL_R <= hitBoardX && ballX.current > hitBoardX - 25) {
+                    if (ballY.current > boardTop && ballY.current < boardBot) {
+                        if (ballVX.current < 0) {
+                            ballX.current = hitBoardX + BALL_R;
+                            ballVX.current = -ballVX.current * 0.55;
                             playPopSound();
                         }
                     }
-                };
-                bounceRim(HOOP_X - RIM_W, HOOP_Y);
-                bounceRim(HOOP_X + RIM_W, HOOP_Y);
-
-                const hit = checkHoop();
-                // Miss: ekran dışı VEYA zeminde durdu (artık sekmiyor)
-                const stoppedOnFloor = ballVY.current === 0 && Math.abs(ballVX.current) < 0.5;
-                if (!hit && (
-                    ballX.current < -BALL_R * 2 ||
-                    ballX.current > CW + BALL_R * 2 ||
-                    ballY.current > CH + 40 ||
-                    stoppedOnFloor
-                )) {
-                    comboRef.current = 0; setCombo(0);
-                    playErrorSound();
-                    phaseRef.current = 'missed'; setPhase('missed');
-                }
-            }
-
-            // After scoring: animate net stretch + sway + drop
-            if (ph === 'scored') {
-                scoredFramesRef.current += dt;
-                const sf = scoredFramesRef.current;
-
-                // Net physics: dynamic elastic behavior
-                if (sf < 30) {
-                    // Elastic snap
-                    netStretchRef.current = Math.sin((sf / 30) * Math.PI) * 1.3;
-                    // Damped oscillation for sway
-                    netSwayRef.current *= Math.pow(0.93, dt);
-                } else {
-                    netStretchRef.current *= Math.pow(0.88, dt);
-                    netSwayRef.current *= Math.pow(0.88, dt);
                 }
 
-                // Flash fades
-                flashRef.current = Math.max(0, flashRef.current - 0.04 * dt);
+                if (ph === 'fly') {
+                    const bounceRim = (px: number, py: number) => {
+                        const dx = ballX.current - px, dy = ballY.current - py;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist <= BALL_R + 3) {
+                            const nx = dx / dist, ny = dy / dist;
+                            const dot = ballVX.current * nx + ballVY.current * ny;
+                            if (dot < 0) {
+                                ballVX.current -= (1 + 0.5) * dot * nx;
+                                ballVY.current -= (1 + 0.5) * dot * ny;
+                                ballX.current = px + nx * (BALL_R + 3);
+                                ballY.current = py + ny * (BALL_R + 3);
+                                playPopSound();
+                            }
+                        }
+                    };
+                    bounceRim(HOOP_X - RIM_W, HOOP_Y);
+                    bounceRim(HOOP_X + RIM_W, HOOP_Y);
 
-                // Realistic ball trajectory inside net
-                if (sf < 10) {
-                    ballVY.current *= Math.pow(1.05, dt);
-                } else if (sf < 20) {
-                    ballVY.current += 0.15 * dt;
-                } else {
-                    ballVY.current += 0.5 * dt;
+                    const hit = checkHoop();
+                    const stoppedOnFloor = ballVY.current === 0 && Math.abs(ballVX.current) < 0.5;
+                    if (!hit && (
+                        ballX.current < -BALL_R * 2 ||
+                        ballX.current > CW + BALL_R * 2 ||
+                        ballY.current > CH + 40 ||
+                        stoppedOnFloor
+                    )) {
+                        comboRef.current = 0; setCombo(0);
+                        playErrorSound();
+                        phaseRef.current = 'missed'; setPhase('missed');
+                        break;
+                    }
                 }
+
+                if (ph === 'scored') {
+                    scoredFramesRef.current += step;
+                    const sf = scoredFramesRef.current;
+
+                    if (sf < 30) {
+                        netStretchRef.current = Math.sin((sf / 30) * Math.PI) * 1.3;
+                        netSwayRef.current *= Math.pow(0.93, step);
+                    } else {
+                        netStretchRef.current *= Math.pow(0.88, step);
+                        netSwayRef.current *= Math.pow(0.88, step);
+                    }
+
+                    flashRef.current = Math.max(0, flashRef.current - 0.04 * step);
+
+                    if (sf < 10) {
+                        ballVY.current *= Math.pow(1.05, step);
+                    } else if (sf < 20) {
+                        ballVY.current += 0.15 * step;
+                    } else {
+                        ballVY.current += 0.5 * step;
+                    }
+                }
+
+                timeAcc -= step;
             }
 
 
@@ -733,6 +737,26 @@ const BasketballGame = () => {
             ctx.restore();
         }
 
+        /* Draw Floating Messages */
+        const messages = floatMsgsRef.current;
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const m = messages[i];
+            m.life -= 0.018 * dt;
+            if (m.life <= 0) {
+                messages.splice(i, 1);
+                continue;
+            }
+            ctx.save();
+            ctx.globalAlpha = m.life;
+            ctx.font = 'bold 20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillText(m.text, m.x, m.y - (1 - m.life) * 40 + 1);
+            ctx.fillStyle = m.color;
+            ctx.fillText(m.text, m.x, m.y - (1 - m.life) * 40);
+            ctx.restore();
+        }
+
         rafRef.current = requestAnimationFrame(loop);
     }, [checkHoop]);
 
@@ -791,8 +815,8 @@ const BasketballGame = () => {
                 resetBall(); phaseRef.current = 'aim'; setPhase('aim');
             }
         }, phase === 'scored' ? 650 : 450);
-        return () => clearTimeout(t);
-    }, [phase, resetBall, safeTimeout]);
+        return () => clearSafeTimeout(t);
+    }, [phase, resetBall, safeTimeout, clearSafeTimeout]);
 
 
 
@@ -947,16 +971,6 @@ const BasketballGame = () => {
                             </div>
                         </motion.div>
                     )}
-                </AnimatePresence>
-
-                <AnimatePresence>
-                    {floatMsgs.map(m => (
-                        <motion.div key={m.id} className="absolute font-black text-sm pointer-events-none"
-                            style={{ left: m.x, top: m.y, color: m.color, textShadow: '0 2px 6px rgba(0,0,0,0.6)' }}
-                            initial={{ opacity: 1, y: 0 }} animate={{ opacity: 0, y: -45 }} transition={{ duration: 0.9 }}>
-                            {m.text}
-                        </motion.div>
-                    ))}
                 </AnimatePresence>
             </div>
 
