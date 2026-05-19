@@ -109,14 +109,14 @@ const getGradId = (b: Balloon) =>
 
 const GAME_STYLES = `
   @keyframes balloon-rise {
-    0% { transform: translateY(800px); opacity: 0; }
+    0% { transform: translateY(clamp(400px, 65vh + 80px, 830px)); opacity: 0; }
     10% { opacity: 1; }
     90% { opacity: 1; }
     100% { transform: translateY(-100px); opacity: 0; }
   }
 
   .balloon-rise-animate {
-    animation: balloon-rise var(--rise-duration) var(--rise-delay) linear forwards;
+    animation: balloon-rise var(--rise-duration) var(--rise-delay) linear both;
     animation-play-state: var(--play-state, running);
     will-change: transform, opacity;
     contain: layout style;
@@ -773,6 +773,7 @@ const BalloonPopGame = () => {
               {
                 '--sway': `${balloon.swayAmount}px`,
                 '--sway-duration': `${balloon.swayDuration}s`,
+                '--play-state': isFrozen ? 'paused' : 'running',
               } as React.CSSProperties
             }
           >
