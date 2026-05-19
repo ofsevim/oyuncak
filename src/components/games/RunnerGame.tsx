@@ -29,7 +29,7 @@ interface Particle {
   type?: 'dust' | 'sparkle' | 'collect' | 'impact';
 }
 interface FloatingText {
-  id: number; x: number; y: number; text: string; color: string;
+  id: number; x: number; y: number; text: string; color: string; vy: number; alpha: number; life: number;
 }
 type GamePhase = 'menu' | 'playing' | 'gameover';
 type Difficulty = 'easy' | 'normal' | 'hard';
@@ -48,7 +48,6 @@ const TARGET_FRAME_MS = 1000 / 60;
 const HUD_UPDATE_MS = 120;
 const CANVAS_DPR_CAP = 2;
 const MAX_PARTICLES = 60;
-const isMobileDev = IS_MOBILE;
 
 const CHARACTERS = [
   { id: 'bunny', name: 'Tavşan', emoji: '🐰', color: '#f9a8d4', accent: '#ec4899', bodyH: '#fce7f3' },
@@ -64,10 +63,10 @@ const DIFF_CONFIG: Record<Difficulty, { label: string; speedMul: number; spawnRa
 };
 
 const OBS_DEFS = {
-  rock: { w: 44, h: 38, lane: 'ground' as const },
-  cactus: { w: 32, h: 56, lane: 'ground' as const },
-  bird: { w: 38, h: 30, lane: 'air' as const },
-  double: { w: 56, h: 62, lane: 'ground' as const },
+  rock: { w: 44, h: 38, lane: 'ground' as const, weight: 35 },
+  cactus: { w: 32, h: 56, lane: 'ground' as const, weight: 35 },
+  bird: { w: 38, h: 30, lane: 'air' as const, weight: 20 },
+  double: { w: 56, h: 62, lane: 'ground' as const, weight: 10 },
 };
 
 const COLLECT_DEFS = {
@@ -78,6 +77,8 @@ const COLLECT_DEFS = {
   shield: { points: 0, weight: 5 },
   x2: { points: 0, weight: 4 },
 };
+
+const COLLECTIBLE_EMOJIS: Record<string, string> = { heart: '❤️', magnet: '🧲', shield: '🛡️', x2: '×2' };
 
 /* ═══════════════════════════════════════════
    HELPERS
@@ -291,8 +292,8 @@ function buildRenderCache(ctx: CanvasRenderingContext2D): RenderCache {
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
   vignette.addColorStop(1, 'rgba(0,0,0,0.15)');
 
-  const groundStep = isMobileDev ? 48 : 24;
-  const grassStep = isMobileDev ? 14 : 7;
+  const groundStep = IS_MOBILE ? 48 : 24;
+  const grassStep = IS_MOBILE ? 14 : 7;
 
   const body = new Map<string, CanvasGradient>();
   for (const ch of CHARACTERS) {
@@ -336,7 +337,6 @@ const RunnerGame = () => {
   const [showShield, setShowShield] = useState(false);
   const [showMagnet, setShowMagnet] = useState(false);
   const [showX2, setShowX2] = useState(false);
-  const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
   const [isPortrait, setIsPortrait] = useState(false);
 
   /* ── Refs ── */
@@ -373,6 +373,8 @@ const RunnerGame = () => {
   const emittedScoreRef = useRef(0);
   const emittedComboRef = useRef(0);
   const emittedLivesRef = useRef(3);
+  const emittedMaxComboRef = useRef(0);
+  const floatingTextsRef = useRef<FloatingText[]>([]);
   const renderCacheRef = useRef<RenderCache | null>(null);
   const { safeTimeout, clearAllTimeouts } = useSafeTimeouts();
 
@@ -388,13 +390,20 @@ const RunnerGame = () => {
 
   /* Helpers */
   const addFloat = useCallback((x: number, y: number, text: string, color: string) => {
-    const id = floatIdRef.current++;
-    setFloatingTexts(prev => [...prev, { id, x, y, text, color }]);
-    safeTimeout(() => setFloatingTexts(prev => prev.filter(f => f.id !== id)), 900);
-  }, [safeTimeout]);
+    floatingTextsRef.current.push({
+      id: floatIdRef.current++,
+      x,
+      y,
+      text,
+      color,
+      vy: -1.2,
+      alpha: 1.0,
+      life: 50,
+    });
+  }, []);
 
   const spawnP = useCallback((x: number, y: number, n: number, color: string, type: Particle['type'] = 'sparkle') => {
-    const count = isMobileDev ? Math.ceil(n * 0.5) : n;
+    const count = IS_MOBILE ? Math.ceil(n * 0.5) : n;
     for (let i = 0; i < count; i++) {
       if (particlesRef.current.length >= MAX_PARTICLES) {
         particlesRef.current.shift();
@@ -435,7 +444,7 @@ const RunnerGame = () => {
     const SUN_TILE = 220;
     ctx.drawImage(cache.sun as CanvasImageSource, sunX - SUN_TILE / 2, sunY - SUN_TILE / 2);
 
-    if (!isMobileDev) {
+    if (!IS_MOBILE) {
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
       const flareAngle = f * 0.003;
@@ -613,12 +622,11 @@ const RunnerGame = () => {
         ctx.fillStyle = 'rgba(255,255,255,0.5)';
         ctx.beginPath(); ctx.arc(-2, -3, 3, 0, Math.PI * 2); ctx.fill();
       } else {
-        const emojis: Record<string, string> = { heart: '❤️', magnet: '🧲', shield: '🛡️', x2: '×2' };
         if (c.type === 'x2') {
           ctx.fillStyle = 'rgba(168,85,247,0.95)';
           ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3; ctx.stroke();
-          if (!isMobileDev) { ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 20; }
+          if (!IS_MOBILE) { ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 20; }
           ctx.fillStyle = 'rgba(168,85,247,0.4)';
           ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
@@ -628,7 +636,7 @@ const RunnerGame = () => {
           ctx.fillStyle = 'rgba(239,68,68,0.9)';
           ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2.5; ctx.stroke();
-          if (!isMobileDev) { ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 18; }
+          if (!IS_MOBILE) { ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 18; }
           ctx.fillStyle = 'rgba(239,68,68,0.35)';
           ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
@@ -637,7 +645,7 @@ const RunnerGame = () => {
           ctx.fillStyle = 'rgba(59,130,246,0.9)';
           ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2.5; ctx.stroke();
-          if (!isMobileDev) { ctx.shadowColor = '#3b82f6'; ctx.shadowBlur = 18; }
+          if (!IS_MOBILE) { ctx.shadowColor = '#3b82f6'; ctx.shadowBlur = 18; }
           ctx.fillStyle = 'rgba(59,130,246,0.35)';
           ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
@@ -646,12 +654,12 @@ const RunnerGame = () => {
           ctx.fillStyle = 'rgba(239,68,68,0.9)';
           ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2.5; ctx.stroke();
-          if (!isMobileDev) { ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 18; }
+          if (!IS_MOBILE) { ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 18; }
           ctx.fillStyle = 'rgba(239,68,68,0.35)';
           ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
           ctx.font = '28px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText(emojis[c.type] || '?', 0, 0);
+          ctx.fillText(COLLECTIBLE_EMOJIS[c.type] || '?', 0, 0);
         }
       }
       ctx.restore();
@@ -770,15 +778,18 @@ const RunnerGame = () => {
     for (const pt of particlesRef.current) {
       const alpha = pt.life / pt.maxLife;
       ctx.globalAlpha = alpha;
+      const sz = pt.size * alpha;
       if (pt.type === 'collect') {
         ctx.fillStyle = pt.color;
-        const sparkSize = pt.size * alpha;
         ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(pt.life * 0.2);
-        ctx.fillRect(-sparkSize / 2, -sparkSize / 2, sparkSize, sparkSize);
+        ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
         ctx.restore();
+      } else if (pt.type === 'dust') {
+        ctx.fillStyle = pt.color;
+        ctx.fillRect(pt.x - sz / 2, pt.y - sz / 2, sz, sz);
       } else {
         ctx.fillStyle = pt.color;
-        ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size * alpha, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, sz, 0, Math.PI * 2); ctx.fill();
       }
     }
     ctx.globalAlpha = 1;
@@ -796,10 +807,25 @@ const RunnerGame = () => {
     }
 
     /* ── 11. VIGNETTE (skip on mobile for perf, cached on desktop) ── */
-    if (!isMobileDev) {
+    if (!IS_MOBILE) {
       ctx.fillStyle = cache.vignette;
       ctx.fillRect(0, 0, W, H);
     }
+
+    /* ── 12. FLOATING TEXTS ── (High performance Canvas rendering) */
+    ctx.save();
+    ctx.font = '900 13px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'center';
+    for (const ft of floatingTextsRef.current) {
+      ctx.fillStyle = ft.color;
+      ctx.globalAlpha = ft.alpha;
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 1.5;
+      ctx.fillText(ft.text, ft.x, ft.y);
+    }
+    ctx.restore();
   }, []);
 
 
@@ -846,9 +872,13 @@ const RunnerGame = () => {
         if (obstaclesRef.current[i].x > lastX) lastX = obstaclesRef.current[i].x;
       }
       if (lastX < CW - minGap) {
-        const types: Obstacle['type'][] = ['rock', 'cactus', 'bird'];
-        if (speedRef.current > 8) types.push('double');
-        const type = types[Math.floor(Math.random() * types.length)];
+        let type: Obstacle['type'];
+        if (speedRef.current > 8) {
+          type = weightedRandom(OBS_DEFS);
+        } else {
+          const { double, ...otherObs } = OBS_DEFS;
+          type = weightedRandom(otherObs);
+        }
         const def = OBS_DEFS[type];
         obstaclesRef.current.push({
           id: idRef.current++, x: CW + 20, w: def.w, h: def.h, type, lane: def.lane,
@@ -934,6 +964,9 @@ const RunnerGame = () => {
     for (let i = collectiblesRef.current.length - 1; i >= 0; i--) {
       const c = collectiblesRef.current[i];
       if (c.collected) continue;
+      /* Collectible toplamalarında s = 0 (slack/padding yok) kullanıyoruz; 
+         böylece oyuncu nesneleri çok daha kolay ve hassas bir şekilde toplayabiliyor. 
+         Engellerde ise s = 8 (default) kullanarak oyuncuya kurtarma payı (forgiving hitbox) tanıyoruz. */
       if (boxHit(px, py2, pw, ph, c.x - 4, c.y - 14, 30, 30, 0)) {
         const def = COLLECT_DEFS[c.type];
         spawnP(c.x + 12, c.y, 10, c.type === 'coin' ? '#fbbf24' : c.type === 'star' ? '#fde68a' : '#60a5fa', 'collect');
@@ -991,7 +1024,8 @@ const RunnerGame = () => {
         emittedComboRef.current = comboRef.current;
         setCombo(comboRef.current);
       }
-      if (maxComboRef.current !== maxCombo) {
+      if (maxComboRef.current !== emittedMaxComboRef.current) {
+        emittedMaxComboRef.current = maxComboRef.current;
         setMaxCombo(maxComboRef.current);
       }
       if (livesRef.current !== emittedLivesRef.current) {
@@ -999,9 +1033,21 @@ const RunnerGame = () => {
         setLives(livesRef.current);
       }
     }
+
+    /* ── Update active floating texts positions ── */
+    let fWrite = 0;
+    for (let i = 0; i < floatingTextsRef.current.length; i++) {
+      const ft = floatingTextsRef.current[i];
+      ft.y += ft.vy * dt;
+      ft.life -= dt;
+      ft.alpha = Math.max(0, ft.life / 50);
+      if (ft.life > 0) floatingTextsRef.current[fWrite++] = ft;
+    }
+    floatingTextsRef.current.length = fWrite;
+
     draw(ctx);
     rafRef.current = requestAnimationFrame(gameLoop);
-  }, [draw, spawnP, addFloat, safeTimeout, maxCombo]);
+  }, [draw, spawnP, addFloat, safeTimeout]);
 
 
   /* ═══════════════════════════════════════════
@@ -1033,11 +1079,13 @@ const RunnerGame = () => {
     emittedScoreRef.current = 0;
     emittedComboRef.current = 0;
     emittedLivesRef.current = 3;
+    emittedMaxComboRef.current = 0;
     lastHudUpdateRef.current = 0;
     setScore(0); setDistance(0); setLives(3); setCombo(0); setMaxCombo(0);
     maxComboRef.current = 0;
     setShowShield(false); setShowMagnet(false); setShowX2(false);
-    setIsNewRecord(false); setFloatingTexts([]);
+    setIsNewRecord(false);
+    floatingTextsRef.current = [];
     clearAllTimeouts();
     phaseRef.current = 'playing';
     setPhase('playing');
@@ -1406,20 +1454,7 @@ const RunnerGame = () => {
             </div>
           )}
 
-          {/* Floating texts */}
-          <AnimatePresence>
-            {floatingTexts.map((ft) => (
-              <motion.div key={ft.id}
-                className="absolute pointer-events-none font-black text-sm"
-                style={{ left: ft.x * scaleRef.current, top: ft.y * scaleRef.current, color: ft.color, textShadow: '0 2px 6px rgba(0,0,0,0.4)' }}
-                initial={{ opacity: 1, y: 0, scale: 0.5 }}
-                animate={{ opacity: 0, y: -45, scale: 1.3 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.85 }}>
-                {ft.text}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+
         </div>
 
         {/* ★ Game Over — overlay olarak canvas üzerinde */}

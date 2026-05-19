@@ -167,6 +167,8 @@
   /* ── Game card — spotlight hover ── */
   .game-card {
     @apply card-elevated overflow-hidden transition-all duration-300 cursor-pointer relative rounded-2xl;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 120px;
   }
 
   .game-card::after {

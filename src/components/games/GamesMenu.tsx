@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, memo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Search, Brain, Hash, Wind, Piano, Calculator, Gamepad2, Rat, ArrowLeft, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -69,6 +69,66 @@ const CATEGORIES: { id: GameCategory; label: string; icon: typeof Flame }[] = [
   { id: 'creative', label: 'Yaratıcı', icon: Star },
   { id: 'learn', label: 'Öğren', icon: Zap },
 ];
+
+interface GameCardProps {
+  game: GameDef;
+  index: number;
+  onClick: () => void;
+}
+
+const GameCard = memo(({ game, index, onClick }: GameCardProps) => {
+  const Icon = game.icon;
+  return (
+    <motion.button
+      layout
+      initial={{ opacity: 0, scale: 0.92, y: 16 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ delay: index * 0.035, duration: 0.3, type: 'spring', stiffness: 220, damping: 26 }}
+      onClick={onClick}
+      className="game-card group text-left p-4 md:p-5 relative w-full"
+    >
+      {/* Badge */}
+      {game.badge && (
+        <span
+          className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white"
+          style={{ background: game.badgeColor ?? game.color, opacity: 0.9 }}
+        >
+          {game.badge}
+        </span>
+      )}
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          {/* Icon container */}
+          <div
+            className="w-12 h-12 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+            style={{ background: game.colorSoft, border: `1px solid ${game.color}30` }}
+          >
+            {game.emoji}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm md:text-base font-bold text-foreground truncate">
+              {game.title}
+            </h3>
+            <p className="text-[11px] md:text-xs text-muted-foreground font-medium mt-0.5 hidden sm:block leading-relaxed">
+              {game.description}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <Icon className="w-3 h-3" style={{ color: game.color }} />
+          <span className="text-xs font-semibold" style={{ color: game.color }}>
+            Oyna →
+          </span>
+        </div>
+      </div>
+    </motion.button>
+  );
+});
+
+GameCard.displayName = 'GameCard';
 
 const GamesMenu = () => {
   const navigate = useNavigate();
@@ -225,58 +285,14 @@ const GamesMenu = () => {
         className="grid grid-cols-2 lg:grid-cols-3 gap-3 w-full max-w-5xl"
       >
         <AnimatePresence mode="popLayout">
-          {filteredGames.map((game, i) => {
-            const Icon = game.icon;
-            return (
-              <motion.button
-                key={game.id}
-                layout
-                initial={{ opacity: 0, scale: 0.92, y: 16 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: i * 0.035, duration: 0.3, type: 'spring', stiffness: 220, damping: 26 }}
-                onClick={() => navigate(`/games/${game.id}`)}
-                className="game-card group text-left p-4 md:p-5"
-              >
-                {/* Badge */}
-                {game.badge && (
-                  <span
-                    className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white"
-                    style={{ background: game.badgeColor ?? game.color, opacity: 0.9 }}
-                  >
-                    {game.badge}
-                  </span>
-                )}
-
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-3">
-                    {/* Icon container */}
-                    <div
-                      className="w-12 h-12 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-                      style={{ background: game.colorSoft, border: `1px solid ${game.color}30` }}
-                    >
-                      {game.emoji}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm md:text-base font-bold text-foreground truncate">
-                        {game.title}
-                      </h3>
-                      <p className="text-[11px] md:text-xs text-muted-foreground font-medium mt-0.5 hidden sm:block leading-relaxed">
-                        {game.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <Icon className="w-3 h-3" style={{ color: game.color }} />
-                    <span className="text-xs font-semibold" style={{ color: game.color }}>
-                      Oyna →
-                    </span>
-                  </div>
-                </div>
-              </motion.button>
-            );
-          })}
+          {filteredGames.map((game, i) => (
+            <GameCard
+              key={game.id}
+              game={game}
+              index={i}
+              onClick={() => navigate(`/games/${game.id}`)}
+            />
+          ))}
         </AnimatePresence>
       </div>
     </div>

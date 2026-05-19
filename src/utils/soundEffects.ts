@@ -29,6 +29,13 @@ const installResumeListenersOnce = () => {
   resumeListenersInstalled = true;
 
   const tryResume = () => {
+    if (_muted) return;
+    if (!audioCtx) {
+      const Ctx = window.AudioContext || (window as WebkitAudioContextWindow).webkitAudioContext;
+      if (Ctx) {
+        audioCtx = new Ctx();
+      }
+    }
     if (audioCtx && audioCtx.state === 'suspended') {
       audioCtx.resume().catch(() => { /* ignore */ });
     }
@@ -46,6 +53,11 @@ const installResumeListenersOnce = () => {
   });
 };
 
+// Modül yüklenir yüklenmez dinleyicileri kur (kullanıcı dokunduğu an AudioContext hazır olur)
+if (typeof window !== 'undefined') {
+  installResumeListenersOnce();
+}
+
 const getAudioCtx = (): AudioContext | null => {
   if (typeof window === 'undefined') return null;
   if (_muted) return null;
@@ -53,7 +65,6 @@ const getAudioCtx = (): AudioContext | null => {
     const Ctx = window.AudioContext || (window as WebkitAudioContextWindow).webkitAudioContext;
     if (!Ctx) return null;
     audioCtx = new Ctx();
-    installResumeListenersOnce();
   }
   // Çağrı bir user gesture içinden gelmiş olabilir — fırsat bulunca resume et.
   if (audioCtx.state === 'suspended') {
