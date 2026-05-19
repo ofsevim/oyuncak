@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   playComboSound,
@@ -99,6 +100,7 @@ interface Sparkle {
 const getItemStyle = (item: ItemData) => ITEM_STYLES[item.label] ?? { accent: '#f8fafc', glow: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.24), transparent 66%)', badge: 'Sec' };
 
 const ComparisonGame = () => {
+  const navigate = useNavigate();
   const [gameState, setGameState] = useState<'menu' | 'playing' | 'complete'>('menu');
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -284,6 +286,16 @@ const ComparisonGame = () => {
       <>
         {background}
         <motion.div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] pt-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          {/* Geri Dön Butonu */}
+          <div className="w-full flex justify-start">
+            <button
+              onClick={() => navigate('/games')}
+              className="rounded-full px-5 py-2 text-sm font-black text-white/80 transition-all flex items-center gap-2 hover:bg-white/10 active:scale-95 cursor-pointer"
+              style={glassCard}
+            >
+              ← Oyunlara Dön
+            </button>
+          </div>
           <div className="w-full rounded-[32px] border px-5 py-6 text-center" style={{ ...glassCard, background: 'linear-gradient(180deg, rgba(15,23,42,0.82), rgba(15,23,42,0.58))' }}>
             <div className="mx-auto mb-4 flex w-fit items-center gap-3 rounded-full border px-4 py-2 text-sm font-black text-white/90" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }}>
               <span className="text-3xl">⚖️</span>
