@@ -876,7 +876,7 @@ const RunnerGame = () => {
         if (speedRef.current > 8) {
           type = weightedRandom(OBS_DEFS);
         } else {
-          const { double, ...otherObs } = OBS_DEFS;
+          const { double: _double, ...otherObs } = OBS_DEFS;
           type = weightedRandom(otherObs);
         }
         const def = OBS_DEFS[type];
