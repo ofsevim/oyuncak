@@ -109,58 +109,72 @@ const stampPencil: StampFn = (ctx, x, y, size, color) => {
 
 const stampPastel: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const spread = size * 2.5;
+  const spread = size * 1.5;
 
-  for (let i = 0; i < 55; i++) {
+  // Yağlı pastel boyanın yoğun, mumsu ve pürüzlü (grainy) yapısını simüle etmek için yüksek opaklıkta sıkı dokulu parçacıklar çiziyoruz
+  ctx.globalAlpha = 0.75;
+  for (let i = 0; i < 45; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const dist = Math.random() * spread;
+    // Parçacıkları merkeze doğru yoğunlaştırıyoruz (kağıt lifi dokusu için)
+    const dist = Math.pow(Math.random(), 1.5) * spread;
     const px = x + Math.cos(angle) * dist;
     const py = y + Math.sin(angle) * dist;
-    const falloff = 1 - dist / spread;
-    ctx.globalAlpha = falloff * (0.04 + Math.random() * 0.09);
-    const rv = clamp(Math.floor(r + (Math.random() - 0.5) * 25));
-    const gv = clamp(Math.floor(g + (Math.random() - 0.5) * 25));
-    const bv = clamp(Math.floor(b + (Math.random() - 0.5) * 25));
-    ctx.fillStyle = `rgb(${rv},${gv},${bv})`;
-    const dotSize = 0.8 + Math.random() * 2.5;
+    
+    // Doğal renk dalgalanmaları (pigment varyasyonu)
+    const colorShift = (Math.random() - 0.5) * 22;
+    ctx.fillStyle = `rgb(${clamp(r + colorShift)}, ${clamp(g + colorShift)}, ${clamp(b + colorShift)})`;
+    
+    // Rastgele boyutlu mumsu tanecikler
+    const dotSize = 1.2 + Math.random() * 2.8;
     ctx.fillRect(px, py, dotSize, dotSize);
   }
 
-  for (let i = 0; i < 6; i++) {
-    const ox = (Math.random() - 0.5) * spread;
-    const oy = (Math.random() - 0.5) * spread;
-    ctx.globalAlpha = 0.03 + Math.random() * 0.04;
+  // Aşınma ve kağıt boşlukları (white tooth of the paper)
+  if (Math.random() > 0.4) {
+    ctx.globalAlpha = 0.35;
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(x + ox, y + oy, 1 + Math.random(), 1 + Math.random());
+    for (let i = 0; i < 4; i++) {
+      const ox = (Math.random() - 0.5) * spread * 1.2;
+      const oy = (Math.random() - 0.5) * spread * 1.2;
+      ctx.fillRect(x + ox, y + oy, 1.5, 1.5);
+    }
   }
 };
 
 const stampCrayon: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const spread = size * 1.4;
+  const spread = size * 1.2;
 
-  for (let i = 0; i < 20; i++) {
-    const ox = (Math.random() - 0.5) * spread * 1.2;
-    const oy = (Math.random() - 0.5) * spread * 0.8;
-    const falloff = 1 - Math.sqrt(ox * ox + oy * oy) / (spread * 1.2);
-    if (falloff < 0) continue;
-    ctx.globalAlpha = falloff * (0.15 + Math.random() * 0.35);
-    const noise = Math.floor((Math.random() - 0.5) * 18);
-    ctx.fillStyle = `rgb(${clamp(r + noise)},${clamp(g + noise)},${clamp(b + noise)})`;
-    const w = 1.5 + Math.random() * 3;
-    const h = 1 + Math.random() * 2;
-    ctx.fillRect(x + ox, y + oy, w, h);
+  // Kuru boyanın kuru, lifli ve çizikli (scratchy) yapısını elde etmek için
+  ctx.globalAlpha = 0.45;
+  
+  // 1. Çizgisel tarama ve karalama efekti
+  for (let i = 0; i < 8; i++) {
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.15 + Math.random() * 0.3})`;
+    ctx.lineWidth = 0.8 + Math.random() * 1.2;
+    ctx.beginPath();
+    const x1 = x + (Math.random() - 0.5) * spread * 1.6;
+    const y1 = y + (Math.random() - 0.5) * spread * 0.8;
+    const x2 = x + (Math.random() - 0.5) * spread * 1.6;
+    const y2 = y + (Math.random() - 0.5) * spread * 0.8;
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
   }
 
-  if (Math.random() > 0.7) {
-    ctx.globalAlpha = 0.06;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(
-      x + (Math.random() - 0.5) * spread,
-      y + (Math.random() - 0.5) * spread,
-      2,
-      1,
-    );
+  // 2. Kuru boya ucu aşınma tozları ve balmumu tanecikleri
+  for (let i = 0; i < 18; i++) {
+    const ox = (Math.random() - 0.5) * spread * 1.3;
+    const oy = (Math.random() - 0.5) * spread * 1.3;
+    const dist = Math.sqrt(ox * ox + oy * oy);
+    if (dist > spread) continue;
+
+    ctx.globalAlpha = (1 - dist / spread) * (0.2 + Math.random() * 0.5);
+    const shift = (Math.random() - 0.5) * 15;
+    ctx.fillStyle = `rgb(${clamp(r + shift)}, ${clamp(g + shift)}, ${clamp(b + shift)})`;
+    
+    const pSize = 1.0 + Math.random() * 1.8;
+    ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
 };
 
@@ -244,21 +258,47 @@ const stampMarker: StampFn = (ctx, x, y, size, color) => {
 };
 
 const stampGlitter: StampFn = (ctx, x, y, size, color) => {
-  const radius = size * 1.1;
+  const [r, g, b] = hexToRgb(color);
+  const spread = size * 1.6;
 
-  ctx.globalAlpha = 0.7;
-  ctx.fillStyle = color;
+  // 1. Simli boyanın altındaki jel/boya bazı
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
   ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.arc(x, y, spread * 0.8, 0, Math.PI * 2);
   ctx.fill();
 
-  for (let i = 0; i < 5; i++) {
-    const gx = x + (Math.random() - 0.5) * size * 4;
-    const gy = y + (Math.random() - 0.5) * size * 4;
-    ctx.globalAlpha = 0.5 + Math.random() * 0.5;
-    ctx.fillStyle = `hsl(${Math.random() * 360}, 100%, ${50 + Math.random() * 30}%)`;
+  // 2. Parıldayan metalik sim pulları (farklı renklerde yanar döner)
+  for (let i = 0; i < 6; i++) {
+    const ox = (Math.random() - 0.5) * spread * 1.5;
+    const oy = (Math.random() - 0.5) * spread * 1.5;
+    
+    // Sim pulları yanar döner metalik renklerde olur
+    ctx.globalAlpha = 0.65 + Math.random() * 0.35;
+    const hue = Math.random() > 0.65 ? Math.random() * 360 : (color === '#FAFAFA' || color === '#212121' ? Math.random() * 360 : 35 + Math.random() * 20); // Altın sarısı/gümüş/renkli parıltı
+    ctx.fillStyle = `hsl(${hue}, 100%, ${65 + Math.random() * 25}%)`;
+    
     ctx.beginPath();
-    ctx.arc(gx, gy, 0.5 + Math.random() * 2, 0, Math.PI * 2);
+    ctx.arc(x + ox, y + oy, 1.2 + Math.random() * 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 3. Işıltılı yıldız parıltıları (magical sparkle stars)
+  if (Math.random() > 0.45) {
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = '#ffffff';
+    const sx = x + (Math.random() - 0.5) * spread * 1.3;
+    const sy = y + (Math.random() - 0.5) * spread * 1.3;
+    const starSize = 3 + Math.random() * 5;
+    
+    // Dört köşeli parlama yıldızı çizimi
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - starSize);
+    ctx.quadraticCurveTo(sx, sy, sx + starSize, sy);
+    ctx.quadraticCurveTo(sx, sy, sx, sy + starSize);
+    ctx.quadraticCurveTo(sx, sy, sx - starSize, sy);
+    ctx.quadraticCurveTo(sx, sy, sx, sy - starSize);
+    ctx.closePath();
     ctx.fill();
   }
 };
