@@ -62,8 +62,8 @@ const SPACING: Record<BrushId, number> = {
   pencil: 2,
   pastel: 3,
   crayon: 3,
-  watercolor: 6,
-  marker: 3,
+  watercolor: 10,
+  marker: 2,
   glitter: 4,
 };
 
@@ -165,33 +165,82 @@ const stampCrayon: StampFn = (ctx, x, y, size, color) => {
 };
 
 const stampWatercolor: StampFn = (ctx, x, y, size, color) => {
-  const spread = size * 4;
+  const [r, g, b] = hexToRgb(color);
+  const spread = size * 3.5;
 
-  for (let i = 0; i < 4; i++) {
-    const ox = (Math.random() - 0.5) * size * 0.8;
-    const oy = (Math.random() - 0.5) * size * 0.8;
-    ctx.globalAlpha = 0.015 + Math.random() * 0.02;
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(x + ox, y + oy, spread * (0.5 + Math.random() * 0.5), 0, Math.PI * 2);
-    ctx.fill();
-  }
+  // 1. Yumuşak sulu boya yayılma havuzu (transparan wet-edge gradyanı)
+  const grad = ctx.createRadialGradient(x, y, spread * 0.1, x, y, spread);
+  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.08)`);
+  grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.05)`);
+  grad.addColorStop(0.85, `rgba(${r}, ${g}, ${b}, 0.09)`); // Wet edge kurumaya başlayan renk yığılması
+  grad.addColorStop(0.96, `rgba(${r}, ${g}, ${b}, 0.16)`); // Dıştaki koyu pigment sınırı
+  grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`); // Dışa doğru tamamen sıfırlanan yumuşak geçiş
 
-  ctx.globalAlpha = 0.008;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
+  ctx.globalAlpha = 1.0;
+  ctx.fillStyle = grad;
+
+  // Kusursuz bir daire yerine suyun kağıt liflerine göre düzensiz yayılmasını (organic bloom) taklit eden deforme şekil çiziyoruz
   ctx.beginPath();
-  ctx.arc(x, y, spread * 0.7, 0, Math.PI * 2);
-  ctx.stroke();
+  const numPoints = 12;
+  for (let i = 0; i < numPoints; i++) {
+    const angle = (i / numPoints) * Math.PI * 2;
+    // Düzensiz yarıçap sapmaları üretiyoruz
+    const radiusNoise = (Math.sin(angle * 3) * 0.11) + (Math.cos(angle * 7) * 0.07);
+    const currRadius = spread * (1 + radiusNoise);
+    const px = x + Math.cos(angle) * currRadius;
+    const py = y + Math.sin(angle) * currRadius;
+    if (i === 0) {
+      ctx.moveTo(px, py);
+    } else {
+      ctx.lineTo(px, py);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // 2. Kağıt dokusu ve gren simülasyonu (mikro-pigment yığılmaları)
+  ctx.globalAlpha = 0.06;
+  ctx.fillStyle = `rgb(${clamp(r - 25)}, ${clamp(g - 25)}, ${clamp(b - 25)})`;
+  for (let i = 0; i < 12; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * spread * 0.85;
+    const tx = x + Math.cos(angle) * dist;
+    const ty = y + Math.sin(angle) * dist;
+    const grainSize = 1.2 + Math.random() * 1.8;
+    ctx.fillRect(tx, ty, grainSize, grainSize);
+  }
 };
 
 const stampMarker: StampFn = (ctx, x, y, size, color) => {
-  const radius = size * 1.3;
-  ctx.globalAlpha = 0.85;
-  ctx.fillStyle = color;
+  const [r, g, b] = hexToRgb(color);
+
+  // Alkol bazlı tasarım marker kalemi (Copic/Keçeli) dokusu elde etmek için 'multiply' (renklerin üst üste binerek doğal kararması) modunu kullanıyoruz
+  ctx.globalCompositeOperation = 'multiply';
+
+  // Yüksek doymuşlukta yarı saydam mürekkep efekti
+  ctx.globalAlpha = 0.32;
+  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-Math.PI / 6); // Profesyonel çizim için 30 derecelik kesik uç eğimi
+
+  const w = size * 2.2;
+  const h = size * 0.7;
+
+  // Kesik uçlu keçeli kalem gövdesi
+  ctx.fillRect(-w / 2, -h / 2, w, h);
+
+  // Mürekkebin kağıt kenarına hafifçe emilmesini (bleeding) taklit eden ikinci yumuşak katman
+  ctx.globalAlpha = 0.05;
   ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, w * 0.54, h * 0.65, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.restore();
+
+  // Diğer fırçaların normal çizmesi için varsayılan kompozit moduna geri dönüyoruz
+  ctx.globalCompositeOperation = 'source-over';
 };
 
 const stampGlitter: StampFn = (ctx, x, y, size, color) => {
