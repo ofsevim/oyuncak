@@ -260,10 +260,10 @@ const WhackAMoleGame = () => {
   /* Timer */
   useEffect(() => {
     if (gamePhase !== 'playing') return;
-    const id = setInterval(() => {
+    const clear = hookInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          clearInterval(id);
+          clear();
           setGamePhase('ended');
           setShowSuccess(true);
           return 0;
@@ -271,8 +271,8 @@ const WhackAMoleGame = () => {
         return prev - 1;
       });
     }, 1000);
-    return () => clearInterval(id);
-  }, [gamePhase]);
+    return () => clear();
+  }, [gamePhase, hookInterval]);
 
   /* Game over — stop everything & save score */
   useEffect(() => {
@@ -405,7 +405,7 @@ const WhackAMoleGame = () => {
 
         <Leaderboard gameId="whack-a-mole" />
 
-        <button onClick={startGame} className="btn-gaming px-10 py-4 text-lg">🚀 BAŞLA!</button>
+        <button onClick={startGame} className="btn-gaming px-10 py-4 text-lg cursor-pointer">🚀 BAŞLA!</button>
       </motion.div>
     );
   }

@@ -232,6 +232,7 @@ const DrawingCanvas = () => {
   const fabricCanvasRef = useRef<HTMLCanvasElement>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
   /* ── State ── */
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
@@ -314,6 +315,12 @@ const DrawingCanvas = () => {
       backgroundColor: 'transparent',
       isDrawingMode: false,
       selection: true,
+      allowTouchScrolling: false,
+    });
+    // Fabric.js mouse:wheel zoom'unu engelle
+    canvas.on('mouse:wheel', (opt) => {
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
     });
     setFabricCanvas(canvas);
     return () => {
@@ -368,6 +375,22 @@ const DrawingCanvas = () => {
       setUndoLen(0);
     }
   }, [canvasW, canvasH]);
+
+  /* ═══════ Canvas üzerinde wheel/pinch zoom engelleme ═══════ */
+
+  useEffect(() => {
+    const wrapper = canvasWrapperRef.current;
+    if (!wrapper) return;
+    const preventZoom = (e: WheelEvent) => {
+      // ctrl+scroll = browser zoom, bunu engelle
+      // Normal scroll'u da canvas üzerinde engelle (sayfa zaten touch-none)
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+      }
+    };
+    wrapper.addEventListener('wheel', preventZoom, { passive: false });
+    return () => wrapper.removeEventListener('wheel', preventZoom);
+  }, []);
 
   /* ═══════ Cleanup ═══════ */
 
@@ -822,11 +845,13 @@ const DrawingCanvas = () => {
           transition={{ delay: 0.1 }}
         >
           <div
+            ref={canvasWrapperRef}
             className="bg-white shadow-2xl relative"
             style={{
               borderRadius: 24,
               width: canvasW,
               height: canvasH,
+              touchAction: 'none',
               boxShadow:
                 '0 30px 60px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(0,0,0,0.05)',
             }}

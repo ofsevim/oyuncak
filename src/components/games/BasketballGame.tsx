@@ -352,6 +352,7 @@ const BasketballGame = () => {
     const levelRef = useRef(1);
     const tickRef = useRef(0);
     const lastTimeRef = useRef<number>(0);
+    const physicsAccumulatorRef = useRef(0);
 
     const bgCacheRef = useRef<OffscreenCanvas | HTMLCanvasElement | null>(null);
     const bgCacheTickRef = useRef(-1);
@@ -405,6 +406,7 @@ const BasketballGame = () => {
         ballsLeftRef.current = BALLS_PER_ROUND; scoreRef.current = 0; comboRef.current = 0;
         levelRef.current = 1;
         lastTimeRef.current = 0;
+        physicsAccumulatorRef.current = 0;
         setScore(0); setBallsLeft(BALLS_PER_ROUND); setCombo(0); setLevel(1); setIsNewRecord(false);
         resetBall(); phaseRef.current = 'aim'; setPhase('aim');
     }, [resetBall]);
@@ -463,52 +465,37 @@ const BasketballGame = () => {
         const ctx = canvas?.getContext('2d');
         if (!ctx || !canvas) return;
 
-        /* Simülasyonu 60 FPS tabanında tut: 120 Hz ekranda oyun akışı hızlanmasın.
-           Aim fazında sürükleme yokken 30 FPS'e in (pil tasarrufu). */
-        const isIdleAim = phaseRef.current === 'aim' && !dragging.current;
-        const frameMs = isIdleAim ? TARGET_FRAME_MS * 2 : TARGET_FRAME_MS;
-        if (!lastTimeRef.current) lastTimeRef.current = timestamp - frameMs;
-        const elapsed = timestamp - lastTimeRef.current;
-        if (elapsed < frameMs) {
+        if (!lastTimeRef.current) {
+            lastTimeRef.current = timestamp;
+            physicsAccumulatorRef.current = 0;
             rafRef.current = requestAnimationFrame(loop);
             return;
         }
-        const dt = Math.min(elapsed / TARGET_FRAME_MS, 3);
+
+        const elapsed = timestamp - lastTimeRef.current;
         lastTimeRef.current = timestamp;
 
-        tickRef.current += dt;
-        const tick = tickRef.current;
-        const ph = phaseRef.current;
+        // Cap elapsed time to 100ms to avoid spiral of death / background tab suspension freeze
+        const cappedElapsed = Math.min(elapsed, 100);
+        const dt = cappedElapsed / TARGET_FRAME_MS;
 
-        ctx.clearRect(0, 0, CW, CH);
+        physicsAccumulatorRef.current += dt;
 
-        const bgUpdateInterval = isMobileDev ? 6 : 2;
-        const roundedTick = Math.floor(tick / bgUpdateInterval) * bgUpdateInterval;
-        if (!bgCacheRef.current) {
-          try {
-            bgCacheRef.current = typeof OffscreenCanvas !== 'undefined'
-              ? new OffscreenCanvas(CW, CH)
-              : document.createElement('canvas');
-            if ('width' in bgCacheRef.current) { bgCacheRef.current.width = CW; bgCacheRef.current.height = CH; }
-          } catch {
-            bgCacheRef.current = document.createElement('canvas');
-            bgCacheRef.current.width = CW; bgCacheRef.current.height = CH;
-          }
-        }
-        if (bgCacheTickRef.current !== roundedTick) {
-          const bgCtx = bgCacheRef.current.getContext('2d');
-          if (bgCtx) { bgCtx.clearRect(0, 0, CW, CH); drawBg(bgCtx, roundedTick); }
-          bgCacheTickRef.current = roundedTick;
-        }
-        ctx.drawImage(bgCacheRef.current as HTMLCanvasElement, 0, 0);
-        drawHoop(ctx, netStretchRef.current, netSwayRef.current);
+        const updatePhysics = (step: number) => {
+            tickRef.current += step;
+            const ph = phaseRef.current;
 
+            /* Floating Messages Decay */
+            const messages = floatMsgsRef.current;
+            for (let i = messages.length - 1; i >= 0; i--) {
+                const m = messages[i];
+                m.life -= 0.018 * step;
+                if (m.life <= 0) {
+                    messages.splice(i, 1);
+                }
+            }
 
-        /* Physics Sub-stepping (Matches Preview Trajectory Perfectly!) */
-        if (ph === 'fly' || ph === 'scored') {
-            let timeAcc = dt;
-            const step = 1.0;
-            while (timeAcc >= step) {
+            if (ph === 'fly' || ph === 'scored') {
                 if (ph === 'fly') {
                     trailRef.current.push({ x: ballX.current, y: ballY.current });
                     if (trailRef.current.length > 12) trailRef.current.shift();
@@ -577,7 +564,6 @@ const BasketballGame = () => {
                         comboRef.current = 0; setCombo(0);
                         playErrorSound();
                         phaseRef.current = 'missed'; setPhase('missed');
-                        break;
                     }
                 }
 
@@ -603,17 +589,45 @@ const BasketballGame = () => {
                         ballVY.current += 0.5 * step;
                     }
                 }
-
-                timeAcc -= step;
+            } else if (ph === 'aim') {
+                ballY.current = currentPosRef.current.y + Math.sin(tickRef.current * 0.05) * 2.5;
+                prevBallY.current = ballY.current;
             }
+        };
 
-
-        } else if (ph === 'aim') {
-            ballY.current = currentPosRef.current.y + Math.sin(tick * 0.05) * 2.5; // tick += dt, frekans normalize
-            prevBallY.current = ballY.current;
+        // Run fixed physics steps
+        while (physicsAccumulatorRef.current >= 1.0) {
+            updatePhysics(1.0);
+            physicsAccumulatorRef.current -= 1.0;
         }
 
-        /* Trail */
+        const tick = tickRef.current;
+        const ph = phaseRef.current;
+
+        ctx.clearRect(0, 0, CW, CH);
+
+        const bgUpdateInterval = isMobileDev ? 6 : 2;
+        const roundedTick = Math.floor(tick / bgUpdateInterval) * bgUpdateInterval;
+        if (!bgCacheRef.current) {
+            try {
+                bgCacheRef.current = typeof OffscreenCanvas !== 'undefined'
+                    ? new OffscreenCanvas(CW, CH)
+                    : document.createElement('canvas');
+                if ('width' in bgCacheRef.current) { bgCacheRef.current.width = CW; bgCacheRef.current.height = CH; }
+            } catch {
+                bgCacheRef.current = document.createElement('canvas');
+                bgCacheRef.current.width = CW; bgCacheRef.current.height = CH;
+            }
+        }
+        if (bgCacheTickRef.current !== roundedTick) {
+            const bgCtx = bgCacheRef.current.getContext('2d');
+            if (bgCtx) { bgCtx.clearRect(0, 0, CW, CH); drawBg(bgCtx, roundedTick); }
+            bgCacheTickRef.current = roundedTick;
+        }
+        ctx.drawImage(bgCacheRef.current as HTMLCanvasElement, 0, 0);
+        drawHoop(ctx, netStretchRef.current, netSwayRef.current);
+
+        /* Trail rendering */
         const trail = trailRef.current;
         for (let i = 0; i < trail.length; i++) {
             const t = trail[i];
@@ -627,7 +641,6 @@ const BasketballGame = () => {
         drawBall(ctx, ballX.current, ballY.current, spinRef.current, BALL_R, selectedBallRef.current);
 
         drawHoopFront(ctx);
-
 
         // Flash overlay on score
         if (flashRef.current > 0) {
@@ -663,7 +676,6 @@ const BasketballGame = () => {
                 else if (lvl === 5) guideDots = 8;
                 else if (lvl >= 6) guideDots = 0;
 
-
                 for (let i = 1; i <= guideDots; i++) {
                     pvy += GRAVITY;
                     px += pvx; py += pvy;
@@ -698,7 +710,8 @@ const BasketballGame = () => {
                     ctx.lineWidth = 1.2;
                     ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.7})`;
                     ctx.stroke();
-                }          // Arrow at drag start position
+                }
+                // Arrow at drag start position
                 ctx.strokeStyle = `rgba(255,200,80,${0.6 * power})`;
                 ctx.lineWidth = 3;
                 ctx.lineCap = 'round';
@@ -739,15 +752,10 @@ const BasketballGame = () => {
 
         /* Draw Floating Messages */
         const messages = floatMsgsRef.current;
-        for (let i = messages.length - 1; i >= 0; i--) {
+        for (let i = 0; i < messages.length; i++) {
             const m = messages[i];
-            m.life -= 0.018 * dt;
-            if (m.life <= 0) {
-                messages.splice(i, 1);
-                continue;
-            }
             ctx.save();
-            ctx.globalAlpha = m.life;
+            ctx.globalAlpha = Math.max(0, Math.min(1, m.life));
             ctx.font = 'bold 20px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillStyle = 'rgba(0,0,0,0.5)';

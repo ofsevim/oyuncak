@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
+import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════════════════════════════
@@ -69,6 +70,11 @@ const SpaceShooterGame = () => {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const rafRef = useRef<number>(0);
+    const { safeTimeout } = useSafeTimeouts();
+
+    // Physics accumulator refs
+    const lastTimeRef = useRef<number>(0);
+    const physicsAccumulatorRef = useRef<number>(0);
 
     // Game state refs
     const shipX = useRef(CW / 2);
@@ -91,7 +97,7 @@ const SpaceShooterGame = () => {
     const shieldActive = useRef(false);
     const rapidFire = useRef(false);
     const spreadShot = useRef(false);
-    const powerUpTimers = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
+    const powerUpTimers = useRef<{ [key: string]: any }>({});
 
     useEffect(() => { setHighScore(getHighScore('spaceshooter')); }, []);
 
@@ -168,56 +174,51 @@ const SpaceShooterGame = () => {
         }
     }, []);
 
-    /* ── Game loop ── */
-    const gameLoop = useCallback(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
+    /* ── Update Physics (Fixed Timestep) ── */
+    const updatePhysics = useCallback((step: number) => {
         const cfg = diffRef.current;
-        frameCount.current++;
+        frameCount.current += step;
 
         // ── Input ──
         const keys = keysRef.current;
         const shipSpeed = 6;
-        if (keys.has('ArrowLeft') || keys.has('a')) shipX.current = Math.max(SHIP_W / 2, shipX.current - shipSpeed);
-        if (keys.has('ArrowRight') || keys.has('d')) shipX.current = Math.min(CW - SHIP_W / 2, shipX.current + shipSpeed);
+        if (keys.has('ArrowLeft') || keys.has('a')) shipX.current = Math.max(SHIP_W / 2, shipX.current - shipSpeed * step);
+        if (keys.has('ArrowRight') || keys.has('d')) shipX.current = Math.min(CW - SHIP_W / 2, shipX.current + shipSpeed * step);
         if (touchX.current !== null) {
             shipX.current = Math.max(SHIP_W / 2, Math.min(CW - SHIP_W / 2, touchX.current));
         }
 
-        // ── Auto-shoot (her frame; cooldown shoot() içinde) ──
+        // ── Auto-shoot ──
         shoot();
 
         // ── Spawn ──
-        if (Math.random() < cfg.spawnRate + levelRef.current * 0.002) spawnEnemy();
+        if (Math.random() < (cfg.spawnRate + levelRef.current * 0.002) * step) spawnEnemy();
 
         // ── Update bullets ──
         bullets.current = bullets.current.filter(b => {
-            b.y -= BULLET_SPEED;
+            b.y -= BULLET_SPEED * step;
             return b.y > -10;
         });
 
         // ── Update enemies ──
         enemies.current = enemies.current.filter(e => {
             const style = ENEMY_STYLES[e.type];
-            e.y += cfg.enemySpeed * style.speed;
+            e.y += cfg.enemySpeed * style.speed * step;
             return e.y < CH + 50;
         });
 
         // ── Update power-ups ──
         powerUps.current = powerUps.current.filter(p => {
-            p.y += 2;
+            p.y += 2 * step;
             return p.y < CH + 30;
         });
 
         // ── Update particles ──
         particles.current = particles.current.filter(p => {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.1;
-            p.life--;
+            p.x += p.vx * step;
+            p.y += p.vy * step;
+            p.vy += 0.1 * step;
+            p.life -= step;
             return p.life > 0;
         });
 
@@ -286,7 +287,7 @@ const SpaceShooterGame = () => {
                 if (p.type === 'shield') shieldActive.current = true;
                 if (p.type === 'rapid') rapidFire.current = true;
                 if (p.type === 'spread') spreadShot.current = true;
-                powerUpTimers.current[p.type] = setTimeout(() => {
+                powerUpTimers.current[p.type] = safeTimeout(() => {
                     if (p.type === 'shield') shieldActive.current = false;
                     if (p.type === 'rapid') rapidFire.current = false;
                     if (p.type === 'spread') spreadShot.current = false;
@@ -301,6 +302,35 @@ const SpaceShooterGame = () => {
         if (scoreRef.current > levelRef.current * 200) {
             levelRef.current++;
             setLevel(levelRef.current);
+        }
+    }, [shoot, spawnEnemy, explode, safeTimeout]);
+
+    /* ── Game loop ── */
+    const gameLoop = useCallback((timestamp: number) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        if (!lastTimeRef.current) {
+            lastTimeRef.current = timestamp;
+            physicsAccumulatorRef.current = 0;
+            rafRef.current = requestAnimationFrame(gameLoop);
+            return;
+        }
+
+        const elapsed = timestamp - lastTimeRef.current;
+        lastTimeRef.current = timestamp;
+
+        // Cap elapsed to avoid spiral of death
+        const cappedElapsed = Math.min(elapsed, 100);
+        const dt = cappedElapsed / (1000 / 60);
+
+        physicsAccumulatorRef.current += dt;
+
+        while (physicsAccumulatorRef.current >= 1.0) {
+            updatePhysics(1.0);
+            physicsAccumulatorRef.current -= 1.0;
         }
 
         // ── DRAW ──
@@ -430,7 +460,7 @@ const SpaceShooterGame = () => {
 
         // Particles
         particles.current.forEach(p => {
-            ctx.globalAlpha = p.life / 50;
+            ctx.globalAlpha = Math.max(0, p.life / 50);
             ctx.fillStyle = p.color;
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.size * (p.life / 50), 0, Math.PI * 2);
@@ -458,7 +488,7 @@ const SpaceShooterGame = () => {
         }
 
         rafRef.current = requestAnimationFrame(gameLoop);
-    }, [shoot, spawnEnemy, explode]);
+    }, [updatePhysics]);
 
     /* ── Start game ── */
     const startGame = useCallback(() => {
@@ -471,6 +501,8 @@ const SpaceShooterGame = () => {
         livesRef.current = 3;
         levelRef.current = 1;
         frameCount.current = 0;
+        lastTimeRef.current = 0;
+        physicsAccumulatorRef.current = 0;
         shieldActive.current = false;
         rapidFire.current = false;
         spreadShot.current = false;

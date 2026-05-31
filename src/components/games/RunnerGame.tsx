@@ -363,6 +363,7 @@ const RunnerGame = () => {
   const groundOffRef = useRef(0);
   const idRef = useRef(0);
   const lastTimeRef = useRef<number>(0);
+  const physicsAccumulatorRef = useRef<number>(0);
   const phaseRef = useRef<GamePhase>('menu');
   const diffRef = useRef(DIFF_CONFIG['normal']);
   const floatIdRef = useRef(0);
@@ -832,21 +833,7 @@ const RunnerGame = () => {
   /* ═══════════════════════════════════════════
      GAME LOOP
      ═══════════════════════════════════════════ */
-  const gameLoop = useCallback((timestamp: number) => {
-    if (phaseRef.current !== 'playing') return;
-    const ctx = ctxRef.current;
-    if (!ctx) return;
-
-    /* Simülasyonu 60 FPS tabanında tut: 120 Hz cihazlarda gameplay hızlanmasın */
-    if (!lastTimeRef.current) lastTimeRef.current = timestamp - TARGET_FRAME_MS;
-    const elapsed = timestamp - lastTimeRef.current;
-    if (elapsed < TARGET_FRAME_MS) {
-      rafRef.current = requestAnimationFrame(gameLoop);
-      return;
-    }
-    const dt = Math.min(elapsed / TARGET_FRAME_MS, 3);
-    lastTimeRef.current = timestamp;
-
+  const updatePhysics = useCallback((dt: number, timestamp: number) => {
     frameRef.current += dt;
     const f = frameRef.current;
     const spd = speedRef.current * diffRef.current.speedMul;
@@ -866,7 +853,7 @@ const RunnerGame = () => {
     speedRef.current = Math.min(5 + scoreRef.current * 0.003, 14);
 
     const minGap = Math.max(160, 300 - speedRef.current * 10);
-    if (f > 60 && Math.random() < diffRef.current.spawnRate) {
+    if (f > 60 && Math.random() < diffRef.current.spawnRate * dt) {
       let lastX = 0;
       for (let i = 0; i < obstaclesRef.current.length; i++) {
         if (obstaclesRef.current[i].x > lastX) lastX = obstaclesRef.current[i].x;
@@ -886,7 +873,7 @@ const RunnerGame = () => {
       }
     }
 
-    if (Math.random() < 0.02) {
+    if (Math.random() < 0.02 * dt) {
       const type = weightedRandom(COLLECT_DEFS);
       const yBase = Math.random() > 0.4 ? GROUND_Y - 30 : GROUND_Y - 85;
       collectiblesRef.current.push({ id: idRef.current++, x: CW + 20, y: yBase, type });
@@ -936,7 +923,6 @@ const RunnerGame = () => {
         if (shieldRef.current) {
           setShowShield(false); shieldRef.current = false;
           spawnP(o.x + o.w / 2, oy + o.h / 2, 10, '#3b82f6', 'collect');
-          /* swap-and-pop: O(1) instead of splice O(n) */
           obstaclesRef.current[i] = obstaclesRef.current[obstaclesRef.current.length - 1];
           obstaclesRef.current.length--;
           addFloat(o.x, oy, '🛡️ Blok!', '#3b82f6');
@@ -946,7 +932,6 @@ const RunnerGame = () => {
           comboRef.current = 0;
           spawnP(p.x + p.w / 2, py2 + ph / 2, 15, '#ef4444', 'impact');
           playErrorSound();
-          /* swap-and-pop: O(1) instead of splice O(n) */
           obstaclesRef.current[i] = obstaclesRef.current[obstaclesRef.current.length - 1];
           obstaclesRef.current.length--;
           if (livesRef.current <= 0) {
@@ -964,13 +949,9 @@ const RunnerGame = () => {
     for (let i = collectiblesRef.current.length - 1; i >= 0; i--) {
       const c = collectiblesRef.current[i];
       if (c.collected) continue;
-      /* Collectible toplamalarında s = 0 (slack/padding yok) kullanıyoruz; 
-         böylece oyuncu nesneleri çok daha kolay ve hassas bir şekilde toplayabiliyor. 
-         Engellerde ise s = 8 (default) kullanarak oyuncuya kurtarma payı (forgiving hitbox) tanıyoruz. */
       if (boxHit(px, py2, pw, ph, c.x - 4, c.y - 14, 30, 30, 0)) {
         const def = COLLECT_DEFS[c.type];
         spawnP(c.x + 12, c.y, 10, c.type === 'coin' ? '#fbbf24' : c.type === 'star' ? '#fde68a' : '#60a5fa', 'collect');
-        /* swap-and-pop: O(1) instead of splice O(n) */
         collectiblesRef.current[i] = collectiblesRef.current[collectiblesRef.current.length - 1];
         collectiblesRef.current.length--;
         if (def.points > 0) {
@@ -1044,10 +1025,36 @@ const RunnerGame = () => {
       if (ft.life > 0) floatingTextsRef.current[fWrite++] = ft;
     }
     floatingTextsRef.current.length = fWrite;
+  }, [spawnP, addFloat, safeTimeout]);
+
+  const gameLoop = useCallback((timestamp: number) => {
+    if (phaseRef.current !== 'playing') return;
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+
+    if (!lastTimeRef.current) {
+      lastTimeRef.current = timestamp;
+      physicsAccumulatorRef.current = 0;
+      rafRef.current = requestAnimationFrame(gameLoop);
+      return;
+    }
+
+    const elapsed = timestamp - lastTimeRef.current;
+    lastTimeRef.current = timestamp;
+
+    const cappedElapsed = Math.min(elapsed, 100);
+    const dt = cappedElapsed / TARGET_FRAME_MS;
+
+    physicsAccumulatorRef.current += dt;
+
+    while (physicsAccumulatorRef.current >= 1.0) {
+      updatePhysics(1.0, timestamp);
+      physicsAccumulatorRef.current -= 1.0;
+    }
 
     draw(ctx);
     rafRef.current = requestAnimationFrame(gameLoop);
-  }, [draw, spawnP, addFloat, safeTimeout]);
+  }, [draw, updatePhysics]);
 
 
   /* ═══════════════════════════════════════════
@@ -1073,6 +1080,7 @@ const RunnerGame = () => {
     playerRef.current = { x: 90, y: GROUND_Y, vy: 0, w: 46, h: 54, grounded: true, jumps: 0, squash: 1, stretch: 1, landTimer: 0 };
     obstaclesRef.current = []; collectiblesRef.current = []; particlesRef.current = [];
     speedRef.current = 5; frameRef.current = 0; groundOffRef.current = 0; lastTimeRef.current = 0;
+    physicsAccumulatorRef.current = 0;
     scoreRef.current = 0; distanceRef.current = 0; comboRef.current = 0; livesRef.current = 3;
     invincibleRef.current = false; shieldRef.current = false; magnetRef.current = false; x2Ref.current = false;
     emittedDistanceRef.current = 0;

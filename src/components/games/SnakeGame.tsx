@@ -396,7 +396,7 @@ const SnakeGame = () => {
         </div>
         <Leaderboard gameId="snake" />
 
-        <motion.button onClick={startGame} className="btn-gaming px-12 py-4 text-lg"
+        <motion.button onClick={startGame} className="btn-gaming px-12 py-4 text-lg cursor-pointer"
           whileHover={{ y: -2 }} whileTap={{}}>🚀 BAŞLA!</motion.button>
       </motion.div>
     );
