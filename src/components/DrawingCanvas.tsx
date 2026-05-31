@@ -109,35 +109,45 @@ const stampPencil: StampFn = (ctx, x, y, size, color) => {
 
 const stampPastel: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const spread = size * 1.5;
+  const spread = size * 1.6;
 
-  // Yağlı pastel boyanın yoğun, mumsu ve pürüzlü (grainy) yapısını simüle etmek için yüksek opaklıkta sıkı dokulu parçacıklar çiziyoruz
-  ctx.globalAlpha = 0.75;
-  for (let i = 0; i < 45; i++) {
+  // Mum boya (crayon) ve pastel boyanın kağıt üzerindeki hafif şeffaf, mumsu ve canlı yapısını yakalamak için opaklığı düşürüyoruz
+  ctx.globalAlpha = 0.36;
+
+  // Mumsu canlılığı artırmak için boya renginin biraz daha açık/canlı pastel versiyonlarını da karıştırıyoruz (mum dolgu etkisi)
+  for (let i = 0; i < 35; i++) {
     const angle = Math.random() * Math.PI * 2;
-    // Parçacıkları merkeze doğru yoğunlaştırıyoruz (kağıt lifi dokusu için)
-    const dist = Math.pow(Math.random(), 1.5) * spread;
+    // Parçacıkları merkeze yığıp, uçlara doğru iyice seyreltiyoruz (kağıt dişini gösterecek şekilde)
+    const dist = Math.pow(Math.random(), 1.4) * spread;
     const px = x + Math.cos(angle) * dist;
     const py = y + Math.sin(angle) * dist;
     
-    // Doğal renk dalgalanmaları (pigment varyasyonu)
-    const colorShift = (Math.random() - 0.5) * 22;
-    ctx.fillStyle = `rgb(${clamp(r + colorShift)}, ${clamp(g + colorShift)}, ${clamp(b + colorShift)})`;
+    // Pigment varyasyonu: Koyulaştırmak yerine, boyanın kendi rengi ile hafifçe beyaza çalan wax (mum) tonlarını karıştırıyoruz
+    const mixWax = Math.random() > 0.65;
+    if (mixWax) {
+      // Mumsu beyazımsı yansıma taneciği (canlı pastel görünümü verir)
+      ctx.fillStyle = `rgb(${clamp(r + 35)}, ${clamp(g + 35)}, ${clamp(b + 35)})`;
+    } else {
+      const shift = (Math.random() - 0.3) * 15; // Hafifçe yukarı doğru kayan (parlak) renk varyasyonu
+      ctx.fillStyle = `rgb(${clamp(r + shift)}, ${clamp(g + shift)}, ${clamp(b + shift)})`;
+    }
     
-    // Rastgele boyutlu mumsu tanecikler
-    const dotSize = 1.2 + Math.random() * 2.8;
-    ctx.fillRect(px, py, dotSize, dotSize);
+    // Mum boya tanecikleri - dairesel pürüzlü yapı
+    const dotSize = 1.0 + Math.random() * 2.5;
+    ctx.beginPath();
+    ctx.arc(px, py, dotSize, 0, Math.PI * 2);
+    ctx.fill();
   }
 
-  // Aşınma ve kağıt boşlukları (white tooth of the paper)
-  if (Math.random() > 0.4) {
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = '#ffffff';
-    for (let i = 0; i < 4; i++) {
-      const ox = (Math.random() - 0.5) * spread * 1.2;
-      const oy = (Math.random() - 0.5) * spread * 1.2;
-      ctx.fillRect(x + ox, y + oy, 1.5, 1.5);
-    }
+  // Kağıt dokusu boşlukları (pürüzlü kağıt etkisi)
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 6; i++) {
+    const ox = (Math.random() - 0.5) * spread * 1.3;
+    const oy = (Math.random() - 0.5) * spread * 1.3;
+    ctx.beginPath();
+    ctx.arc(x + ox, y + oy, 0.8 + Math.random() * 1.2, 0, Math.PI * 2);
+    ctx.fill();
   }
 };
 
@@ -259,47 +269,93 @@ const stampMarker: StampFn = (ctx, x, y, size, color) => {
 
 const stampGlitter: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const spread = size * 1.6;
+  const spread = size * 1.8;
 
-  // 1. Simli boyanın altındaki jel/boya bazı
-  ctx.globalAlpha = 0.18;
+  // 1. Simli boyanın altındaki renkli jel/boya bazı (jel kıvamı için daha doygun)
+  ctx.globalAlpha = 0.24;
   ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
   ctx.beginPath();
-  ctx.arc(x, y, spread * 0.8, 0, Math.PI * 2);
+  ctx.arc(x, y, spread * 0.75, 0, Math.PI * 2);
   ctx.fill();
 
-  // 2. Parıldayan metalik sim pulları (farklı renklerde yanar döner)
-  for (let i = 0; i < 6; i++) {
-    const ox = (Math.random() - 0.5) * spread * 1.5;
-    const oy = (Math.random() - 0.5) * spread * 1.5;
+  // 2. Yoğun ve parıldayan metalik sim pulları (18 adet pul)
+  const numFlakes = 18;
+  for (let i = 0; i < numFlakes; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.sqrt(Math.random()) * spread * 1.3;
+    const fx = x + Math.cos(angle) * dist;
+    const fy = y + Math.sin(angle) * dist;
     
-    // Sim pulları yanar döner metalik renklerde olur
-    ctx.globalAlpha = 0.65 + Math.random() * 0.35;
-    const hue = Math.random() > 0.65 ? Math.random() * 360 : (color === '#FAFAFA' || color === '#212121' ? Math.random() * 360 : 35 + Math.random() * 20); // Altın sarısı/gümüş/renkli parıltı
-    ctx.fillStyle = `hsl(${hue}, 100%, ${65 + Math.random() * 25}%)`;
+    // Sim pulları yanar döner, çok boyutlu metalik renklerde olur
+    ctx.globalAlpha = 0.75 + Math.random() * 0.25;
     
+    // Altın, gümüş, gökkuşağı ve fırçanın kendi rengi arasında parıltılı geçişler
+    let flakeColor: string;
+    const randType = Math.random();
+    if (randType < 0.35) {
+      // Fırça renginin parlak ve doymuş bir tonu
+      flakeColor = `hsl(${Math.random() > 0.5 ? 35 : 0}, 100%, 70%)`; // Altın sarısı sim
+    } else if (randType < 0.65) {
+      // Yanar döner holografik gökkuşağı renkleri
+      flakeColor = `hsl(${Math.random() * 360}, 100%, 75%)`;
+    } else {
+      // Gümüş / Elmas parıltısı
+      flakeColor = `hsl(190, 80%, ${85 + Math.random() * 15}%)`;
+    }
+    
+    // Sim pulunu çiz
+    const flakeSize = 1.0 + Math.random() * 2.2;
+    ctx.fillStyle = flakeColor;
     ctx.beginPath();
-    ctx.arc(x + ox, y + oy, 1.2 + Math.random() * 2.2, 0, Math.PI * 2);
+    ctx.arc(fx, fy, flakeSize, 0, Math.PI * 2);
     ctx.fill();
+
+    // 3D Parıltı Etkisi: Bazı pulların tam ortasına ultra parlak küçük beyaz bir nokta (yansıma) ekliyoruz
+    if (Math.random() > 0.4) {
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(fx - 0.4, fy - 0.4, flakeSize * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
-  // 3. Işıltılı yıldız parıltıları (magical sparkle stars)
-  if (Math.random() > 0.45) {
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle = '#ffffff';
-    const sx = x + (Math.random() - 0.5) * spread * 1.3;
-    const sy = y + (Math.random() - 0.5) * spread * 1.3;
-    const starSize = 3 + Math.random() * 5;
-    
-    // Dört köşeli parlama yıldızı çizimi
-    ctx.beginPath();
-    ctx.moveTo(sx, sy - starSize);
-    ctx.quadraticCurveTo(sx, sy, sx + starSize, sy);
-    ctx.quadraticCurveTo(sx, sy, sx, sy + starSize);
-    ctx.quadraticCurveTo(sx, sy, sx - starSize, sy);
-    ctx.quadraticCurveTo(sx, sy, sx, sy - starSize);
-    ctx.closePath();
-    ctx.fill();
+  // 3. Sihirli Parlama Yıldızları (Specular Star Sparkles) - 2 adet olası yıldız
+  const numStars = Math.random() > 0.5 ? 2 : 1;
+  for (let s = 0; s < numStars; s++) {
+    if (Math.random() > 0.3) {
+      const sx = x + (Math.random() - 0.5) * spread * 1.4;
+      const sy = y + (Math.random() - 0.5) * spread * 1.4;
+      const starSize = 4 + Math.random() * 6;
+
+      // Yıldızın arkasına yumuşak, parlayan neon bir halo yerleştiriyoruz
+      const haloGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, starSize * 1.8);
+      haloGrad.addColorStop(0, `rgba(255, 255, 255, 0.45)`);
+      haloGrad.addColorStop(0.3, `rgba(${r}, ${g}, ${b}, 0.25)`);
+      haloGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.globalAlpha = 1.0;
+      ctx.fillStyle = haloGrad;
+      ctx.beginPath();
+      ctx.arc(sx, sy, starSize * 1.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dört köşeli keskin parlama yıldızı
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = '#ffffff';
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.rotate(Math.random() * Math.PI); // Rastgele açı ile parıldama hissi
+      
+      ctx.beginPath();
+      ctx.moveTo(0, -starSize);
+      ctx.quadraticCurveTo(0, 0, starSize, 0);
+      ctx.quadraticCurveTo(0, 0, 0, starSize);
+      ctx.quadraticCurveTo(0, 0, -starSize, 0);
+      ctx.quadraticCurveTo(0, 0, 0, -starSize);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
   }
 };
 
