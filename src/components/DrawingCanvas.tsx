@@ -381,15 +381,32 @@ const DrawingCanvas = () => {
   useEffect(() => {
     const wrapper = canvasWrapperRef.current;
     if (!wrapper) return;
-    const preventZoom = (e: WheelEvent) => {
-      // ctrl+scroll = browser zoom, bunu engelle
-      // Normal scroll'u da canvas üzerinde engelle (sayfa zaten touch-none)
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-      }
+
+    const preventWheel = (e: WheelEvent) => {
+      e.preventDefault();
     };
-    wrapper.addEventListener('wheel', preventZoom, { passive: false });
-    return () => wrapper.removeEventListener('wheel', preventZoom);
+
+    const preventTouch = (e: any) => {
+      e.preventDefault();
+    };
+
+    const preventGesture = (e: any) => {
+      e.preventDefault();
+    };
+
+    wrapper.addEventListener('wheel', preventWheel, { passive: false });
+    wrapper.addEventListener('touchstart', preventTouch, { passive: false });
+    wrapper.addEventListener('touchmove', preventTouch, { passive: false });
+    wrapper.addEventListener('gesturestart', preventGesture, { passive: false });
+    wrapper.addEventListener('gesturechange', preventGesture, { passive: false });
+
+    return () => {
+      wrapper.removeEventListener('wheel', preventWheel);
+      wrapper.removeEventListener('touchstart', preventTouch);
+      wrapper.removeEventListener('touchmove', preventTouch);
+      wrapper.removeEventListener('gesturestart', preventGesture);
+      wrapper.removeEventListener('gesturechange', preventGesture);
+    };
   }, []);
 
   /* ═══════ Cleanup ═══════ */
