@@ -41,7 +41,7 @@ Tarayıcıda `http://localhost:8080` açılır.
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | ✅ | |
 | `VITE_FIREBASE_APP_ID` | ✅ | |
 | `VITE_FIREBASE_MEASUREMENT_ID` | ❌ | Analytics için |
-| `VITE_SENTRY_DSN` | ❌ | Hata izleme (boşsa sadece konsol) |
+| `VITE_SENTRY_DSN` | ❌ | Hata izleme. DSN + `window.Sentry` (CDN script) varsa otomatik bağlanır; yoksa sadece konsol |
 | `VITE_PUBLIC_URL` | ❌ | Canonical URL, varsayılan `https://oyuncak.app` |
 
 ## Komutlar

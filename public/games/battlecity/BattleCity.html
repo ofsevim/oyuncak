@@ -158,6 +158,36 @@
         ev.keyCode = data.keyCode;
         $(document).trigger(ev);
       });
+
+      /* ── Skor köprüsü: aktif oyuncunun skorunu izle ve oyun sonunda parent'a bildir ──
+         Oyun kaynak dosyalarına dokunmadan Player/SceneManager prototiplerini sarmalar. */
+      (function () {
+        var latestScore = 0;
+
+        if (window.Player && Player.prototype && !Player.prototype.__scoreBridge) {
+          Player.prototype.__scoreBridge = true;
+          var origNotify = Player.prototype.notify;
+          Player.prototype.notify = function (event) {
+            origNotify.call(this, event);
+            /* Yalnızca aktif (abone) oyuncu bildirim alır → skor her zaman güncel oyunu yansıtır */
+            if (typeof this.getScore === 'function') latestScore = this.getScore();
+          };
+        }
+
+        function reportScore() {
+          try { parent.postMessage({ type: 'battlecity:gameover', score: latestScore }, '*'); }
+          catch (err) { /* sessiz */ }
+        }
+
+        if (window.SceneManager && SceneManager.prototype && !SceneManager.prototype.__scoreBridge) {
+          SceneManager.prototype.__scoreBridge = true;
+          var origGameOver = SceneManager.prototype.toGameOverScene;
+          SceneManager.prototype.toGameOverScene = function () {
+            reportScore();
+            return origGameOver.apply(this, arguments);
+          };
+        }
+      })();
     });
   </script>
 

@@ -1,9 +1,14 @@
 import { useEffect, useRef, useCallback, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+import Leaderboard from '@/components/Leaderboard';
+import useHighScore from '@/hooks/useHighScore';
 
 interface BattleCityGameProps {
     onActiveGameChange?: (active: boolean) => void;
 }
+
+const GAME_ID = 'battle-city';
 
 /* Oyunun native canvas boyutu: UNIT_SIZE(32) × 16 = 512w, × 14 = 448h */
 const NATIVE_W = 512;
@@ -25,11 +30,28 @@ const battleCitySrc = `${import.meta.env.BASE_URL}games/battlecity/BattleCity.ht
 const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const { highScore, checkAndSave } = useHighScore(GAME_ID);
 
     useEffect(() => {
         onActiveGameChange?.(true);
         return () => onActiveGameChange?.(false);
     }, [onActiveGameChange]);
+
+    /* ── Skor köprüsü: iframe oyun sonunda skoru bildirir → kaydet + rekoru duyur ── */
+    useEffect(() => {
+        const onMessage = (e: MessageEvent) => {
+            const data = e.data;
+            if (!data || data.type !== 'battlecity:gameover') return;
+            const score = typeof data.score === 'number' ? Math.floor(data.score) : 0;
+            if (score <= 0) return;
+            const isNewRecord = checkAndSave(score);
+            if (isNewRecord) {
+                toast.success(`🏆 Yeni rekor: ${score} puan!`);
+            }
+        };
+        window.addEventListener('message', onMessage);
+        return () => window.removeEventListener('message', onMessage);
+    }, [checkAndSave]);
 
     /* Responsive scale: React state kullanmadan doğrudan DOM güncelle → re-render yok */
     useEffect(() => {
@@ -162,6 +184,11 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
             >
                 <h2 className="text-2xl font-black text-foreground">🕹️ Tank 1990</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">Klasik atari oyunu</p>
+                {highScore > 0 && (
+                    <p className="text-xs font-bold mt-1" style={{ color: 'hsl(38 92% 58%)' }}>
+                        🏆 Rekor: {highScore}
+                    </p>
+                )}
             </motion.div>
 
             {/* Game canvas wrapper */}
@@ -337,6 +364,11 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                     </div>
                 ))}
             </motion.div>
+
+            {/* ── Liderlik tablosu ── */}
+            <div className="w-full mt-4">
+                <Leaderboard gameId={GAME_ID} />
+            </div>
         </div>
     );
 };

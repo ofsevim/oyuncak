@@ -531,11 +531,12 @@ const DrawingCanvas = () => {
       e.preventDefault();
     };
 
-    const preventTouch = (e: any) => {
+    const preventTouch = (e: Event) => {
       e.preventDefault();
     };
 
-    const preventGesture = (e: any) => {
+    /* gesturestart/gesturechange standart dışı (Safari) → Event tipi yeterli */
+    const preventGesture = (e: Event) => {
       e.preventDefault();
     };
 

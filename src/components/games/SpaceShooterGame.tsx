@@ -97,7 +97,7 @@ const SpaceShooterGame = () => {
     const shieldActive = useRef(false);
     const rapidFire = useRef(false);
     const spreadShot = useRef(false);
-    const powerUpTimers = useRef<{ [key: string]: any }>({});
+    const powerUpTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
     useEffect(() => { setHighScore(getHighScore('spaceshooter')); }, []);
 

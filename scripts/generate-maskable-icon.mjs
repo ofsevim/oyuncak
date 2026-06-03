@@ -19,6 +19,8 @@ const ROOT = path.resolve(__dirname, "..");
 const SOURCE = path.join(ROOT, "public", "favicon.png");
 const OUT_512 = path.join(ROOT, "public", "maskable-icon-512.png");
 const OUT_192 = path.join(ROOT, "public", "maskable-icon-192.png");
+const OUT_ANY_512 = path.join(ROOT, "public", "icon-512.png");
+const OUT_ANY_192 = path.join(ROOT, "public", "icon-192.png");
 
 const BG = { r: 0x0f, g: 0x12, b: 0x19, alpha: 1 };
 const SAFE_ZONE = 0.8;
@@ -47,6 +49,19 @@ async function generate(size, outPath) {
   console.log(`✓ ${path.basename(outPath)}  (${size}×${size}, ${(stat.size / 1024).toFixed(1)} KB)`);
 }
 
+/** "any" amaçlı düz ikon — şeffaf zemin, kaynağın yeniden boyutlandırılmışı. */
+async function generateAny(size, outPath) {
+  await sharp(SOURCE)
+    .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png({ compressionLevel: 9, quality: 100 })
+    .toFile(outPath);
+
+  const stat = await fs.stat(outPath);
+  console.log(`✓ ${path.basename(outPath)}  (${size}×${size}, ${(stat.size / 1024).toFixed(1)} KB)`);
+}
+
 await generate(512, OUT_512);
 await generate(192, OUT_192);
-console.log("Maskable icons hazır.");
+await generateAny(512, OUT_ANY_512);
+await generateAny(192, OUT_ANY_192);
+console.log("Maskable + any icons hazır.");

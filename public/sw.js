@@ -1,13 +1,14 @@
 /*
-  Oyuncak - Service Worker (v5)
+  Oyuncak - Service Worker (v6)
   - Network-First for index.html and manifest (prevents stale loading hangs)
   - Stale-While-Revalidate for other assets
+  - Install aşamasında build asset'lerini precache eder (precache-manifest.json) → tam offline
   - Automatic cache pruning on activation
   - Skips Firebase/API requests
   - Offline fallback page
 */
 
-const CACHE_NAME = 'oyuncak-v5';
+const CACHE_NAME = 'oyuncak-v6';
 const BASE = self.registration?.scope ?? '/';
 const OFFLINE_URL = new URL('offline.html', BASE).pathname;
 const ASSETS_TO_CACHE = [
@@ -22,9 +23,24 @@ const ASSETS_TO_CACHE = [
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
-    );
+    event.waitUntil((async () => {
+        const cache = await caches.open(CACHE_NAME);
+        // Çekirdek kabuk — başarısız olursa install başarısız olmalı
+        await cache.addAll(ASSETS_TO_CACHE);
+
+        // Build asset'lerini precache et (best-effort: tek tek, biri başarısız olsa da install sürer)
+        try {
+            const manifestUrl = new URL('precache-manifest.json', BASE).pathname;
+            const res = await fetch(manifestUrl, { cache: 'no-cache' });
+            if (res.ok) {
+                const data = await res.json();
+                const assets = Array.isArray(data.assets) ? data.assets : [];
+                await Promise.allSettled(assets.map((url) => cache.add(url)));
+            }
+        } catch (err) {
+            /* dev ortamı veya manifest yok → stale-while-revalidate devralır */
+        }
+    })());
 });
 
 self.addEventListener('activate', (event) => {

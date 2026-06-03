@@ -1,7 +1,39 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import fs from "fs";
 import legacy from "@vitejs/plugin-legacy";
+
+/**
+ * Build sonrası dist/assets içindeki hash'li JS/CSS/font dosyalarını tarayıp
+ * dist/precache-manifest.json üretir. Service Worker bunu install aşamasında
+ * okuyup tüm uygulama asset'lerini önbelleğe alır → ilk açılıştan sonra tam offline.
+ */
+function precacheManifestPlugin(): Plugin {
+  return {
+    name: "precache-manifest",
+    apply: "build",
+    closeBundle() {
+      const distDir = path.resolve(__dirname, "dist");
+      const assetsDir = path.join(distDir, "assets");
+      if (!fs.existsSync(assetsDir)) return;
+
+      const assets = fs
+        .readdirSync(assetsDir)
+        .filter((f) => /\.(js|css|woff2?)$/.test(f))
+        // Legacy/polyfill chunk'ları hariç tut: modern tarayıcılar kullanmaz,
+        // eski tarayıcılar stale-while-revalidate ile yüklenir → install boyutu yarıya iner
+        .filter((f) => !/-legacy-|polyfills/.test(f))
+        .map((f) => `/assets/${f}`)
+        .sort();
+
+      fs.writeFileSync(
+        path.join(distDir, "precache-manifest.json"),
+        JSON.stringify({ assets }),
+      );
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
@@ -65,6 +97,7 @@ export default defineConfig(() => ({
   },
   plugins: [
     react(),
+    precacheManifestPlugin(),
     legacy({
       targets: [
         "defaults",

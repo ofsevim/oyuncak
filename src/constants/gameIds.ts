@@ -35,6 +35,7 @@ export const SCORE_GAME_IDS = [
   'runner',
   'snake',
   'tetris',
+  'battle-city',
   '2048',
   'whack-a-mole',
   'balloon-pop',
