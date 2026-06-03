@@ -4,9 +4,14 @@ import { playNewRecordSound } from '@/utils/soundEffects';
 
 /**
  * Centralized high score management hook
- * Handles loading, saving, and new record detection for any game
+ * Handles loading, saving, and new record detection for any game.
+ *
+ * @param gameId  Skor anahtarı (örn. 'counting')
+ * @param options.playSound  Yeni rekorda rekor sesi çalınsın mı (varsayılan: true).
+ *   Bazı oyunlar rekor anını kendi ses akışında yönettiği için false geçebilir.
  */
-export function useHighScore(gameId: string) {
+export function useHighScore(gameId: string, options: { playSound?: boolean } = {}) {
+  const { playSound = true } = options;
   const [highScore, setHighScore] = useState(() => getHighScore(gameId));
   const [isNewRecord, setIsNewRecord] = useState(false);
   const scoreRef = useRef(0);
@@ -22,10 +27,10 @@ export function useHighScore(gameId: string) {
     if (isNew) {
       setIsNewRecord(true);
       setHighScore(score);
-      playNewRecordSound();
+      if (playSound) playNewRecordSound();
     }
     return isNew;
-  }, [gameId]);
+  }, [gameId, playSound]);
 
   const refreshHighScore = useCallback(() => {
     setHighScore(getHighScore(gameId));

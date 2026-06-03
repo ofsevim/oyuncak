@@ -176,6 +176,9 @@ const SpaceShooterGame = () => {
 
     /* ── Update Physics (Fixed Timestep) ── */
     const updatePhysics = useCallback((step: number) => {
+        // Game over olmuşsa kalan birikmiş fizik adımlarını işleme —
+        // aksi hâlde aynı frame içinde çift kayıt/çift ses tetiklenir.
+        if (livesRef.current <= 0) return;
         const cfg = diffRef.current;
         frameCount.current += step;
 

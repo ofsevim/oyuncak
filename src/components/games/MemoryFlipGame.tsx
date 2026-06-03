@@ -38,7 +38,8 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
   const [showHint, setShowHint] = useState(false);
   const [matchedCount, setMatchedCount] = useState(0);
   const { safeTimeout, safeInterval, clearSafeInterval, clearAll, clearAllIntervals } = useSafeTimeouts();
-  const autoAdvance = true;
+  // gridSize < 6 iken tamamlanınca otomatik bir üst seviyeye geç (6x6 son seviye)
+  const canAutoAdvance = gridSize < 6;
 
   const initializeGame = useCallback((size?: GridSize) => {
     clearAll();
@@ -111,8 +112,10 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
     if (newFlipped.length === 2) {
       setIsChecking(true); setMoves(p => p + 1);
       const [firstId, secondId] = newFlipped;
+      // Emoji'ler oyun boyunca sabit kalır; kart kimliğinden doğrudan okumak
+      // stale `cards` closure'ına bağımlılığı ortadan kaldırır.
       const firstCard = cards.find(c => c.id === firstId);
-      const secondCard = cards.find(c => c.id === cardId);
+      const secondCard = cards.find(c => c.id === secondId);
       if (firstCard && secondCard && firstCard.emoji === secondCard.emoji) {
         playPopSound(); playSuccessSound();
         safeTimeout(() => {
@@ -139,13 +142,13 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
     saveHighScoreObj(`memory-${gridSize}x${gridSize}`, moves > 0 ? Math.floor(10000 / moves) : 0);
     safeTimeout(() => {
       setShowSuccess(true);
-      if (autoAdvance && gridSize < 6) playLevelUpSound();
+      if (canAutoAdvance) playLevelUpSound();
     }, 500);
-  }, [allMatched, showSuccess, gridSize, moves, autoAdvance, safeTimeout]);
+  }, [allMatched, showSuccess, gridSize, moves, canAutoAdvance, safeTimeout]);
 
   const handleSuccessClose = () => {
     setShowSuccess(false);
-    if (autoAdvance && gridSize < 6) {
+    if (canAutoAdvance) {
       const next = (gridSize + 1) as GridSize;
       setGridSize(next);
       initializeGame(next);
@@ -226,7 +229,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
       </div>
 
       <SuccessPopup isOpen={showSuccess} onClose={handleSuccessClose}
-        message={autoAdvance && gridSize < 6 ? `${moves} hamlede! Sonraki: ${gridSize + 1}x${gridSize + 1}` : `${moves} hamlede tamamladın!`} />
+        message={canAutoAdvance ? `${moves} hamlede! Sonraki: ${gridSize + 1}x${gridSize + 1}` : `${moves} hamlede tamamladın!`} />
     </motion.div>
   );
 };

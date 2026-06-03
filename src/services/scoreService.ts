@@ -7,11 +7,12 @@ import { db } from '@/lib/firebase';
 import { ensureAuth, getUid } from './authService';
 import { SCORE_GAME_IDS } from '@/constants/gameIds';
 import { logger } from '@/lib/logger';
+import { sanitizeNickname } from '@/lib/utils';
 
 const NICKNAME_KEY = 'oyuncak.nickname';
 
 function getNickname(): string {
-  try { return localStorage.getItem(NICKNAME_KEY) || 'Anonim Oyuncu'; }
+  try { return sanitizeNickname(localStorage.getItem(NICKNAME_KEY) || 'Anonim Oyuncu'); }
   catch { return 'Anonim Oyuncu'; }
 }
 
@@ -35,7 +36,10 @@ export async function syncScore(gameId: string, score: number): Promise<boolean>
 
     return await runTransaction(db, async (tx) => {
       const existing = await tx.get(docRef);
-      if (existing.exists() && existing.data().score >= score) return false;
+      const existingScore = existing.exists() && typeof existing.data().score === 'number'
+        ? existing.data().score as number
+        : -1;
+      if (existingScore >= score) return false;
 
       tx.set(docRef, {
         uid: user.uid,
@@ -68,9 +72,9 @@ export async function getLeaderboard(gameId: string, max = 10): Promise<Leaderbo
       const data = d.data();
       return {
         uid: data.uid,
-        name: data.name || 'Anonim Oyuncu',
-        score: data.score,
-        date: data.date,
+        name: typeof data.name === 'string' ? data.name : 'Anonim Oyuncu',
+        score: typeof data.score === 'number' ? data.score : 0,
+        date: typeof data.date === 'string' ? data.date : '',
         isMe: data.uid === uid,
       };
     });
@@ -88,7 +92,7 @@ export async function getUserScore(gameId: string): Promise<number> {
     const user = await ensureAuth();
     const docRef = doc(db, 'scores', gameId, 'leaderboard', user.uid);
     const snap = await getDoc(docRef);
-    return snap.exists() ? snap.data().score : 0;
+    return snap.exists() && typeof snap.data().score === 'number' ? snap.data().score as number : 0;
   } catch {
     return 0;
   }
@@ -101,6 +105,7 @@ export async function getUserScore(gameId: string): Promise<number> {
 export async function updateNicknameInScores(newName: string): Promise<void> {
   try {
     const user = await ensureAuth();
+    const safeName = sanitizeNickname(newName);
 
     const updates = SCORE_GAME_IDS.map(async (gid) => {
       const docRef = doc(db, 'scores', gid, 'leaderboard', user.uid);
@@ -113,7 +118,7 @@ export async function updateNicknameInScores(newName: string): Promise<void> {
         await setDoc(docRef, {
           uid: user.uid,
           gameId: gid,
-          name: newName,
+          name: safeName,
           score,
           date: typeof data.date === 'string' ? data.date : new Date().toISOString(),
           updatedAt: serverTimestamp(),

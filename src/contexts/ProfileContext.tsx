@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react';
 
 // Avatar seçenekleri
 export const AVATARS = [
@@ -62,8 +62,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     return AVATARS.find(a => a.id === profile.avatarId);
   }, [profile]);
 
+  const value = useMemo(
+    () => ({ profile, setProfile, clearProfile, getAvatar }),
+    [profile, setProfile, clearProfile, getAvatar],
+  );
+
   return (
-    <ProfileContext.Provider value={{ profile, setProfile, clearProfile, getAvatar }}>
+    <ProfileContext.Provider value={value}>
       {children}
     </ProfileContext.Provider>
   );

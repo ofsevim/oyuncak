@@ -98,10 +98,16 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
         cw.postMessage({ type, keyCode }, '*');
     }, []);
 
+    const pressTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
     const pressKey = useCallback((key: string) => {
         focusIframe();
         sendKey(key, 'keydown');
-        setTimeout(() => sendKey(key, 'keyup'), 100);
+        const t = setTimeout(() => {
+            pressTimers.current.delete(t);
+            sendKey(key, 'keyup');
+        }, 100);
+        pressTimers.current.add(t);
     }, [focusIframe, sendKey]);
 
     const holdTimers = useRef<Record<string, ReturnType<typeof setInterval>>>({});
@@ -126,7 +132,11 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
 
     useEffect(() => {
         const timers = holdTimers.current;
-        return () => { Object.values(timers).forEach(clearInterval); };
+        const presses = pressTimers.current;
+        return () => {
+            Object.values(timers).forEach(clearInterval);
+            presses.forEach(clearTimeout);
+        };
     }, []);
 
     const preventDefault = useCallback((event: { preventDefault: () => void }) => {

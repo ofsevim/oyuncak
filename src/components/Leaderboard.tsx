@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getLeaderboard, type LeaderboardEntry } from '@/services/scoreService';
+import type { LeaderboardEntry } from '@/services/scoreService';
 
 interface Props {
   gameId: string;
@@ -16,6 +16,9 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
   const [open, setOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
+    // firebase/firestore (~370kB) yalnızca liderlik tablosu gerçekten
+    // görüntülendiğinde dinamik olarak yüklenir — oyun açılışına bağlanmaz.
+    const { getLeaderboard } = await import('@/services/scoreService');
     const data = await getLeaderboard(gameId, 10);
     return data;
   }, [gameId]);

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playComboSound } from '@/utils/soundEffects';
 import { fireConfetti } from '@/utils/confettiUtil';
 import { getNextRandomIndex, getNextRandom, shuffleArray } from '@/utils/shuffle';
-import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
+import { useHighScore } from '@/hooks/useHighScore';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
@@ -59,7 +59,6 @@ const CountingGame = () => {
   const [gameState, setGameState] = useState<'menu' | 'playing'>('menu');
   const [showResult, setShowResult] = useState<'correct' | 'wrong' | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [highScore, setHighScore] = useState(0);
   const [clickedItems, setClickedItems] = useState<Set<number>>(new Set());
   const [itemPositions, setItemPositions] = useState<ItemPos[]>([]);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
@@ -69,12 +68,12 @@ const CountingGame = () => {
   const [showCelebration, setShowCelebration] = useState(false);
 
   const { safeTimeout, safeInterval, clearSafeInterval, clearAll } = useSafeTimeouts();
+  // Counting rekor anını kendi ses akışında yönetir → rekor sesi çalmaz
+  const { highScore, checkAndSave } = useHighScore('counting', { playSound: false });
   const lastCountRef = useRef<number | null>(null);
   const lastEmojiRef = useRef<string | null>(null);
   const floatIdRef = useRef(0);
   const fieldRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setHighScore(getHighScore('counting')); }, []);
 
   const config = DIFFS[difficulty];
 
@@ -175,6 +174,8 @@ const CountingGame = () => {
   const handleItemClick = (itemId: number) => {
     if (showResult || clickedItems.has(itemId)) return;
     playPopSound();
+
+    // Yeni set'i senkron türet (stale closure'a düşmeden), sayacı buradan al
     const newClicked = new Set(clickedItems);
     newClicked.add(itemId);
     setClickedItems(newClicked);
@@ -183,8 +184,8 @@ const CountingGame = () => {
     const pos = itemPositions.find(p => p.id === itemId);
     if (pos) {
       const id = ++floatIdRef.current;
-      setFloatingTexts(prev => [...prev, { id, text: String(newClicked.size), x: pos.x + 20, y: pos.y }]);
-      safeTimeout(() => setFloatingTexts(prev => prev.filter(t => t.id !== id)), 1200);
+      setFloatingTexts(ft => [...ft, { id, text: String(newClicked.size), x: pos.x + 20, y: pos.y }]);
+      safeTimeout(() => setFloatingTexts(ft => ft.filter(t => t.id !== id)), 1200);
     }
   };
 
@@ -208,9 +209,7 @@ const CountingGame = () => {
       if (newStreak >= 3) playComboSound(newStreak);
       fireConfetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#c4b5fd', '#fbcfe8', '#a7f3d0', '#fde68a'] });
       if (newStreak % 5 === 0) playLevelUpSound();
-      if (saveHighScoreObj('counting', newScore)) {
-        setHighScore(newScore);
-      }
+      checkAndSave(newScore);
       clearAll();
       safeTimeout(setupRound, 2200);
     } else {
@@ -397,9 +396,19 @@ const CountingGame = () => {
                       stiffness: 300, damping: 18,
                     }}
                     whileTap={{ scale: 0.85 }}
-                    onClick={() => handleItemClick(pos.id)}>
+                    role="button"
+                    tabIndex={0}
+                    aria-label={isClicked ? `${emoji} sayıldı` : `${emoji} say`}
+                    aria-pressed={isClicked}
+                    onClick={() => handleItemClick(pos.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleItemClick(pos.id);
+                      }
+                    }}>
                     <div className="relative">
-                      <span className="text-4xl sm:text-5xl select-none"
+                      <span className="text-4xl sm:text-5xl select-none" aria-hidden="true"
                         style={{
                           filter: isClicked ? 'drop-shadow(0 0 8px rgba(167,139,250,0.5))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))',
                           transition: 'filter 0.2s ease',

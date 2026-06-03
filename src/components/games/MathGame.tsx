@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playComboSound } from '@/utils/soundEffects';
 import { fireConfetti } from '@/utils/confettiUtil';
 import { shuffleArray } from '@/utils/shuffle';
-import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
+import { useHighScore } from '@/hooks/useHighScore';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
@@ -34,14 +34,13 @@ const MathGame = () => {
   const [showResult, setShowResult] = useState<'correct' | 'wrong' | null>(null);
   const [timeLeft, setTimeLeft] = useState(15);
   const [gameStarted, setGameStarted] = useState(false);
-  const [highScore, setHighScore] = useState(0);
   const { safeTimeout, safeInterval, clearSafeInterval, clearAllIntervals } = useSafeTimeouts();
+  // Math rekor anını kendi ses akışında yönetir → rekor sesi çalmaz
+  const { highScore, checkAndSave } = useHighScore('math', { playSound: false });
 
   // Keeps a synchronous copy of timeLeft so the interval callback avoids stale closures
   const timeLeftRef = useRef<number>(15);
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
-
-  useEffect(() => { setHighScore(getHighScore('math')); }, []);
 
   const getDiffConfig = useCallback(() => DIFFICULTIES.find(d => d.id === difficulty)!, [difficulty]);
 
@@ -115,9 +114,7 @@ const MathGame = () => {
       if (newStreak >= 3) playComboSound(newStreak); else playSuccessSound();
       const newScore = score + 10 + bonus;
       setScore(newScore);
-      if (saveHighScoreObj('math', newScore)) {
-        setHighScore(newScore);
-      }
+      checkAndSave(newScore);
       setStreak(newStreak); setCorrectCount(p => p + 1); setShowResult('correct');
       if (newStreak >= 5) fireConfetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
     } else {

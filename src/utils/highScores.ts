@@ -1,4 +1,3 @@
-import { syncScore } from '@/services/scoreService';
 import { SCORE_GAME_IDS } from '@/constants/gameIds';
 import { logger } from '@/lib/logger';
 
@@ -7,28 +6,41 @@ const PREFIX = 'oyuncak.hs.';
 const SYNC_KEY = 'oyuncak.firebase.synced.v2';
 
 /**
+ * scoreService (ve dolayısıyla firebase/firestore + auth ~370kB) yalnızca
+ * gerçekten skor yazılırken dinamik olarak yüklenir; oyun açılış zincirine
+ * statik bağlanmaz. Hata/çevrimdışı durumda sessizce geçilir — localStorage yeterli.
+ */
+function syncScoreLazy(gameId: string, score: number): void {
+  import('@/services/scoreService')
+    .then((m) => m.syncScore(gameId, score))
+    .catch(() => {});
+}
+
+/**
  * localStorage'daki mevcut rekorları Firebase'e aktar.
  * Sadece bir kez çalışır (ilk Firebase kurulumunda).
  */
 export async function syncExistingScores(): Promise<void> {
   try {
     if (localStorage.getItem(SYNC_KEY)) return;
-    const tasks = SCORE_GAME_IDS
+    const pending = SCORE_GAME_IDS
       .map((id) => ({ id, score: getHighScore(id) }))
-      .filter((x) => x.score > 0)
-      .map((x) => syncScore(x.id, x.score));
+      .filter((x) => x.score > 0);
 
-    if (tasks.length === 0) {
+    if (pending.length === 0) {
       localStorage.setItem(SYNC_KEY, '1');
       return;
     }
 
-    const results = await Promise.allSettled(tasks);
+    const { syncScore } = await import('@/services/scoreService');
+    const results = await Promise.allSettled(
+      pending.map((x) => syncScore(x.id, x.score)),
+    );
     const failures = results.filter((result) => result.status === 'rejected');
 
     if (failures.length > 0) {
       logger.warn('Skor senkronizasyonu tamamlanamadı', {
-        attempted: tasks.length,
+        attempted: pending.length,
         failed: failures.length,
       });
       return;
@@ -55,7 +67,7 @@ export function setHighScore(gameId: string, score: number): boolean {
     try {
       localStorage.setItem(PREFIX + gameId, String(score));
     } catch { /* ignore */ }
-    syncScore(gameId, score).catch(() => {});
+    syncScoreLazy(gameId, score);
     return true;
   }
   return false;
@@ -92,7 +104,7 @@ export function saveHighScoreObj(gameId: string, score: number): boolean {
       localStorage.setItem(PREFIX + gameId, String(score));
       localStorage.setItem(PREFIX + gameId + '.obj', JSON.stringify({ score, date: new Date().toISOString() }));
     } catch { /* ignore */ }
-    syncScore(gameId, score).catch(() => {});
+    syncScoreLazy(gameId, score);
     return true;
   }
   return false;

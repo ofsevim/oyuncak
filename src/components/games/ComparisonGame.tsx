@@ -58,19 +58,19 @@ const PROPERTY_META: Record<PropertyType, { question: string; badge: string; hin
 };
 
 const ITEM_STYLES: Record<string, { accent: string; glow: string; badge: string }> = {
-  Fil: { accent: '#f59e0b', glow: 'radial-gradient(circle at 50% 30%, rgba(245,158,11,0.28), transparent 66%)', badge: 'Guclu' },
+  Fil: { accent: '#f59e0b', glow: 'radial-gradient(circle at 50% 30%, rgba(245,158,11,0.28), transparent 66%)', badge: 'Güçlü' },
   Balina: { accent: '#3b82f6', glow: 'radial-gradient(circle at 50% 30%, rgba(59,130,246,0.28), transparent 66%)', badge: 'Dev' },
   Güneş: { accent: '#facc15', glow: 'radial-gradient(circle at 50% 30%, rgba(250,204,21,0.32), transparent 68%)', badge: 'Parlak' },
-  Ev: { accent: '#fb7185', glow: 'radial-gradient(circle at 50% 30%, rgba(251,113,133,0.28), transparent 66%)', badge: 'Genis' },
+  Ev: { accent: '#fb7185', glow: 'radial-gradient(circle at 50% 30%, rgba(251,113,133,0.28), transparent 66%)', badge: 'Geniş' },
   Dünya: { accent: '#22c55e', glow: 'radial-gradient(circle at 50% 30%, rgba(34,197,94,0.28), transparent 66%)', badge: 'Dev' },
-  Araba: { accent: '#f97316', glow: 'radial-gradient(circle at 50% 30%, rgba(249,115,22,0.28), transparent 66%)', badge: 'Hizli' },
-  At: { accent: '#eab308', glow: 'radial-gradient(circle at 50% 30%, rgba(234,179,8,0.28), transparent 66%)', badge: 'Cevik' },
+  Araba: { accent: '#f97316', glow: 'radial-gradient(circle at 50% 30%, rgba(249,115,22,0.28), transparent 66%)', badge: 'Hızlı' },
+  At: { accent: '#eab308', glow: 'radial-gradient(circle at 50% 30%, rgba(234,179,8,0.28), transparent 66%)', badge: 'Çevik' },
   TV: { accent: '#a855f7', glow: 'radial-gradient(circle at 50% 30%, rgba(168,85,247,0.28), transparent 66%)', badge: 'Parlak' },
   Ayı: { accent: '#b45309', glow: 'radial-gradient(circle at 50% 30%, rgba(180,83,9,0.3), transparent 66%)', badge: 'İri' },
   Karınca: { accent: '#10b981', glow: 'radial-gradient(circle at 50% 30%, rgba(16,185,129,0.24), transparent 66%)', badge: 'Minik' },
   Fare: { accent: '#9ca3af', glow: 'radial-gradient(circle at 50% 30%, rgba(156,163,175,0.26), transparent 66%)', badge: 'Hafif' },
   Çilek: { accent: '#f43f5e', glow: 'radial-gradient(circle at 50% 30%, rgba(244,63,94,0.26), transparent 66%)', badge: 'Tatlı' },
-  Kalem: { accent: '#0ea5e9', glow: 'radial-gradient(circle at 50% 30%, rgba(14,165,233,0.26), transparent 66%)', badge: 'Ince' },
+  Kalem: { accent: '#0ea5e9', glow: 'radial-gradient(circle at 50% 30%, rgba(14,165,233,0.26), transparent 66%)', badge: 'İnce' },
   Top: { accent: '#ec4899', glow: 'radial-gradient(circle at 50% 30%, rgba(236,72,153,0.26), transparent 66%)', badge: 'Yuvarlak' },
 };
 
@@ -97,7 +97,7 @@ interface Sparkle {
   color: string;
 }
 
-const getItemStyle = (item: ItemData) => ITEM_STYLES[item.label] ?? { accent: '#f8fafc', glow: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.24), transparent 66%)', badge: 'Sec' };
+const getItemStyle = (item: ItemData) => ITEM_STYLES[item.label] ?? { accent: '#f8fafc', glow: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.24), transparent 66%)', badge: 'Seç' };
 
 const ComparisonGame = () => {
   const navigate = useNavigate();
@@ -437,7 +437,7 @@ const ComparisonGame = () => {
                   <div className="absolute inset-0 opacity-90" style={{ background: style.glow }} />
                   <div className="absolute inset-x-3 top-3 flex items-center justify-between gap-2 sm:inset-x-5 sm:top-5">
                     <span className="rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/85 sm:px-3 sm:text-[11px] sm:tracking-[0.15em]" style={{ background: `${style.accent}22`, borderColor: `${style.accent}66` }}>{style.badge}</span>
-                    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/60 sm:px-3 sm:text-[11px] sm:tracking-[0.15em]">{index === 0 ? 'Sol' : 'Sag'}</span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/60 sm:px-3 sm:text-[11px] sm:tracking-[0.15em]">{index === 0 ? 'Sol' : 'Sağ'}</span>
                   </div>
                   {isTarget && <motion.div layoutId="comparison-correct-glow" className="absolute inset-0 bg-emerald-400/12" initial={{ opacity: 0 }} animate={{ opacity: 1 }} />}
                   <div className="relative z-10 flex h-full flex-col justify-between px-3 pb-3 pt-11 sm:px-5 sm:pb-5 sm:pt-16">
@@ -449,7 +449,7 @@ const ComparisonGame = () => {
                     </div>
                     <div className="rounded-[20px] border px-3 py-3 sm:rounded-[24px] sm:px-4 sm:py-4" style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.08)' }}>
                       <p className="text-lg font-black text-white sm:text-2xl">{item.label}</p>
-                      <p className="mt-1 text-xs leading-4 text-white/62 sm:text-sm sm:leading-5">{currentRound.prop === 'weight' ? 'Daha agir olabilir mi?' : 'Daha buyuk olabilir mi?'}</p>
+                      <p className="mt-1 text-xs leading-4 text-white/62 sm:text-sm sm:leading-5">{currentRound.prop === 'weight' ? 'Daha ağır olabilir mi?' : 'Daha büyük olabilir mi?'}</p>
                     </div>
                   </div>
                 </motion.button>
@@ -473,7 +473,7 @@ const ComparisonGame = () => {
 
         <div className="mt-1 flex flex-wrap justify-center gap-3 sm:mt-2">
           <button onClick={initGame} className="rounded-full px-6 py-3 font-black text-white" style={glassCard}>🔄 Yeniden</button>
-          <button onClick={() => setGameState('menu')} className="rounded-full px-6 py-3 font-bold text-white/78" style={glassCard}>← Cikis</button>
+          <button onClick={() => setGameState('menu')} className="rounded-full px-6 py-3 font-bold text-white/78" style={glassCard}>← Çıkış</button>
         </div>
 
         <AnimatePresence>

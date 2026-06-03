@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { updateNicknameInScores } from '@/services/scoreService';
-import { ensureAuth } from '@/services/authService';
+import { sanitizeNickname, MAX_NICKNAME_LENGTH } from '@/lib/utils';
 
 const NICKNAME_KEY = 'oyuncak.nickname';
 const ASKED_KEY = 'oyuncak.nickname.asked';
@@ -13,6 +13,7 @@ const ASKED_KEY = 'oyuncak.nickname.asked';
 export default function NicknameModal() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const alreadyAsked = localStorage.getItem(ASKED_KEY);
@@ -22,14 +23,28 @@ export default function NicknameModal() {
     }
   }, []);
 
+  // Açıldığında input'a odaklan ve ESC ile kapatmayı dinle
+  useEffect(() => {
+    if (!open) return;
+    inputRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        localStorage.setItem(ASKED_KEY, '1');
+        setOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
   const handleSave = async () => {
-    const trimmed = name.trim() || 'Anonim Oyuncu';
-    localStorage.setItem(NICKNAME_KEY, trimmed);
+    const safe = sanitizeNickname(name);
+    localStorage.setItem(NICKNAME_KEY, safe);
     localStorage.setItem(ASKED_KEY, '1');
     setOpen(false);
     try {
-      await ensureAuth();
-      await updateNicknameInScores(trimmed);
+      // updateNicknameInScores kendi içinde ensureAuth çağırır
+      await updateNicknameInScores(safe);
     } catch { /* sessiz */ }
   };
 
@@ -48,10 +63,14 @@ export default function NicknameModal() {
           exit={{ opacity: 0 }}
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleSkip} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleSkip} aria-hidden="true" />
 
           {/* Modal */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="nickname-title"
+            aria-describedby="nickname-desc"
             className="relative w-full max-w-sm rounded-3xl p-6 text-center"
             style={{
               background: 'rgba(15,18,25,0.95)',
@@ -62,19 +81,20 @@ export default function NicknameModal() {
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.8, y: 30 }}
           >
-            <span className="text-5xl block mb-3">🎮</span>
-            <h2 className="text-xl font-black text-white mb-1">Takma Adını Seç!</h2>
-            <p className="text-sm text-white/50 mb-5">
+            <span className="text-5xl block mb-3" aria-hidden="true">🎮</span>
+            <h2 id="nickname-title" className="text-xl font-black text-white mb-1">Takma Adını Seç!</h2>
+            <p id="nickname-desc" className="text-sm text-white/50 mb-5">
               Liderlik tablosunda bu isimle görüneceksin
             </p>
 
             <input
+              ref={inputRef}
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Takma adın..."
-              maxLength={20}
-              autoFocus
+              aria-label="Takma adın"
+              maxLength={MAX_NICKNAME_LENGTH}
               className="w-full px-4 py-3 rounded-xl text-center font-bold text-white text-sm outline-none transition-all focus:ring-2 focus:ring-purple-500/50"
               style={{
                 background: 'rgba(255,255,255,0.08)',

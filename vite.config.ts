@@ -112,7 +112,10 @@ export default defineConfig(() => ({
         "UCAndroid >= 12.12",
         "OperaMini all",
       ],
-      modernPolyfills: true,
+      // Modern tarayıcılar (ESM destekli — Chrome 61+, Safari 11+) zaten gerekli
+      // çoğu özelliği destekler; bunlara polyfill yüklemeyiz. Eski tarayıcılar
+      // ayrı -legacy bundle + Babel polyfill'leriyle çalışmaya devam eder.
+      modernPolyfills: false,
       additionalLegacyPolyfills: [
         "regenerator-runtime/runtime",
       ],
