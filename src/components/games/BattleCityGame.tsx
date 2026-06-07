@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import useHighScore from '@/hooks/useHighScore';
+import Leaderboard from '@/components/Leaderboard';
 
 interface BattleCityGameProps {
     onActiveGameChange?: (active: boolean) => void;
@@ -373,6 +374,11 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                     </div>
                 ))}
             </motion.div>
+
+            {/* Leaderboard */}
+            <div className="w-full mt-8">
+                <Leaderboard gameId={GAME_ID} />
+            </div>
         </div>
     );
 };
