@@ -55,7 +55,7 @@ const WhackAMoleGame = () => {
 
   // Refs for stable logic & sync
   const containerRef = useRef<HTMLDivElement>(null);
-  const { safeTimeout: hookTimeout, safeInterval: hookInterval, clearSafeTimeout, clearAll: hookClearAll } = useSafeTimeouts();
+  const { safeTimeout: hookTimeout, safeInterval: hookInterval, clearSafeTimeout, clearSafeInterval, clearAll: hookClearAll } = useSafeTimeouts();
   const gamePhaseRef = useRef(gamePhase);
   const activeHolesRef = useRef<Map<number, ActiveMole>>(new Map());
   const spawnMoleRef = useRef<() => void>(() => { });
@@ -260,10 +260,10 @@ const WhackAMoleGame = () => {
   /* Timer */
   useEffect(() => {
     if (gamePhase !== 'playing') return;
-    const clear = hookInterval(() => {
+    const id = hookInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          clear();
+          clearSafeInterval(id);
           setGamePhase('ended');
           setShowSuccess(true);
           return 0;
@@ -271,8 +271,8 @@ const WhackAMoleGame = () => {
         return prev - 1;
       });
     }, 1000);
-    return () => clear();
-  }, [gamePhase, hookInterval]);
+    return () => clearSafeInterval(id);
+  }, [gamePhase, hookInterval, clearSafeInterval]);
 
   /* Game over — stop everything & save score */
   useEffect(() => {
