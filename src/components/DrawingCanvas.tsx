@@ -884,7 +884,7 @@ const DrawingCanvas = () => {
             Renkler
           </span>
           <motion.div
-            className="grid grid-cols-7 lg:grid-cols-4 gap-1.5 lg:gap-3 bg-black/20 p-2 lg:p-3 rounded-xl lg:rounded-2xl border border-white/5"
+            className="grid grid-cols-7 lg:grid-cols-5 gap-1.5 lg:gap-2 bg-black/20 p-2 lg:p-2.5 rounded-xl lg:rounded-2xl border border-white/5"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -970,14 +970,14 @@ const DrawingCanvas = () => {
                     setIsStickering(false);
                     playPopSound();
                   }}
-                  className={`relative flex flex-col items-center justify-center rounded-xl lg:rounded-2xl aspect-square cursor-pointer p-1.5 lg:p-3 transition-colors duration-150 ${isActive
+                  className={`relative flex flex-col items-center justify-center rounded-xl lg:rounded-2xl aspect-square cursor-pointer p-1 lg:p-2 transition-colors duration-150 ${isActive
                     ? 'bg-primary/20 text-foreground ring-2 ring-primary/50 shadow-lg shadow-primary/20'
                     : 'bg-black/20 text-muted-foreground border border-white/5 hover:bg-white/15 hover:border-white/20 hover:text-foreground hover:shadow-md hover:shadow-white/5'
                     }`}
                   whileHover={{ scale: 1.08, y: -2 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <span className="text-lg lg:text-2xl mb-0 lg:mb-1 pointer-events-none">
+                  <span className="text-base lg:text-xl mb-0 pointer-events-none">
                     {brush.icon}
                   </span>
                   <span className="text-[8px] lg:text-[10px] font-bold opacity-80 pointer-events-none uppercase tracking-tighter">
