@@ -103,7 +103,7 @@ const GameCard = memo(({ game, index, onClick }: GameCardProps) => {
           {/* Icon container */}
           <div
             className="w-12 h-12 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-            style={{ background: game.colorSoft, border: `1px solid ${game.color}30` }}
+            style={{ background: game.colorSoft, border: `1px solid ${game.color.replace(')', ' / 0.25)')}` }}
           >
             {game.emoji}
           </div>
