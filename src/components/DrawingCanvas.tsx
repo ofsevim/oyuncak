@@ -85,7 +85,6 @@ type StampFn = (
   y: number,
   size: number,
   color: string,
-  texture: HTMLCanvasElement,
 ) => void;
 
 const hexToRgb = (hex: string): [number, number, number] => {
@@ -97,528 +96,255 @@ const hexToRgb = (hex: string): [number, number, number] => {
 
 const clamp = (v: number) => Math.max(0, Math.min(255, v));
 
-// ── DOKU ÜRETİMİ (OFFSCREEN CANVASES) ──
-
-const createPencilTexture = (size: number, color: string): HTMLCanvasElement => {
-  const canvas = document.createElement('canvas');
-  const d = Math.max(Math.ceil(size * 1.5), 2);
-  canvas.width = d;
-  canvas.height = d;
-  const ctx = canvas.getContext('2d')!;
+const stampPencil: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
+  const radius = Math.max(size * 0.4, 1);
+
+  // Kalem (Grafit): Yumuşak, kağıt dokusuna karışan düşük opaklıklı yapı
+  ctx.globalAlpha = 0.15; // Çok düşük opaklık, üst üste binince kararsın
   
-  const radius = size * 0.4;
-  const centerX = d / 2;
-  const centerY = d / 2;
-  
-  // Kurşun kalem grafit göbeği
-  const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.25)`);
-  grad.addColorStop(0.6, `rgba(${r}, ${g}, ${b}, 0.08)`);
-  grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
-  
-  ctx.fillStyle = grad;
+  // Ana yumuşak gövde
+  ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fill();
-  
-  // Grafit parçacıkları ve kağıt pürüzü ekle
-  const imgData = ctx.getImageData(0, 0, d, d);
-  const data = imgData.data;
-  for (let y = 0; y < d; y++) {
-    for (let x = 0; x < d; x++) {
-      const dx = x - centerX;
-      const dy = y - centerY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist <= radius) {
-        const idx = (y * d + x) * 4;
-        const noise = Math.random();
-        if (noise > 0.45) {
-          const grainAlpha = (1 - dist / radius) * 0.55 * noise;
-          data[idx] = r;
-          data[idx + 1] = g;
-          data[idx + 2] = b;
-          const currentAlpha = data[idx + 3] / 255;
-          const newAlpha = Math.min(1.0, currentAlpha + grainAlpha);
-          data[idx + 3] = newAlpha * 255;
-        } else if (noise < 0.15) {
-          data[idx + 3] = data[idx + 3] * 0.25;
-        }
-      }
-    }
+
+  // Kağıt pürüzü ve grafit granülleri
+  ctx.globalAlpha = 0.4;
+  for (let i = 0; i < size * 1.5; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * radius * 1.2;
+    const ox = Math.cos(angle) * dist;
+    const oy = Math.sin(angle) * dist;
+    
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    const pSize = 0.5 + Math.random() * 1.5;
+    ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
-  ctx.putImageData(imgData, 0, 0);
-  return canvas;
 };
 
-const createPastelTexture = (size: number, color: string): HTMLCanvasElement => {
-  const canvas = document.createElement('canvas');
-  const d = Math.max(Math.ceil(size * 2), 4);
-  canvas.width = d;
-  canvas.height = d;
-  const ctx = canvas.getContext('2d')!;
+const stampPastel: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  
-  const centerX = d / 2;
-  const centerY = d / 2;
   const radius = size * 0.8;
-  
-  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.85)`;
-  
-  // Organik, pürüzlü pastel tebeşir bloğu çiz
+
+  // Pastel: Tebeşirimsi, yoğun pigmentli ve tozlu
+  for (let i = 0; i < size * 3; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * radius;
+    const ox = Math.cos(angle) * dist;
+    const oy = Math.sin(angle) * dist;
+    
+    // Kenarlara doğru tozlanma artar, merkeze doğru pigment daha yoğun
+    const isEdge = dist > radius * 0.6;
+    ctx.globalAlpha = isEdge ? 0.2 + Math.random() * 0.3 : 0.5 + Math.random() * 0.4;
+
+    // Tebeşir tozu hissi için renk varyasyonları
+    const mixChalk = Math.random() > 0.7;
+    if (mixChalk) {
+      // Açık renkli (tebeşir) toz
+      ctx.fillStyle = `rgb(${clamp(r+40)}, ${clamp(g+40)}, ${clamp(b+40)})`;
+    } else {
+      ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+    }
+    
+    const pSize = 1.5 + Math.random() * 2.5;
+    ctx.fillRect(x + ox, y + oy, pSize, pSize);
+  }
+};
+
+const stampCrayon: StampFn = (ctx, x, y, size, color) => {
+  const [r, g, b] = hexToRgb(color);
+  const radius = size * 0.8;
+
+  // Kuruboya (Wax Crayon): Mumsu doku, kağıdın girintilerini atlar, serttir
+  for (let i = 0; i < size * 4; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * radius;
+    const ox = Math.cos(angle) * dist;
+    const oy = Math.sin(angle) * dist;
+    
+    // Rastgele boşluklar bırakarak kağıt dokusunu simüle et
+    if (Math.random() > 0.85) continue; 
+
+    // Daha sert mumsu pigmentler
+    ctx.globalAlpha = 0.4 + Math.random() * 0.5;
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+    
+    const pSize = 1 + Math.random() * 2;
+    ctx.fillRect(x + ox, y + oy, pSize, pSize);
+  }
+
+  // Sürtünmeden kaynaklı sert yönlü mumsu çizgiler
+  if (Math.random() > 0.5) {
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+    ctx.lineWidth = 1 + Math.random() * 2;
+    ctx.beginPath();
+    const px1 = x + (Math.random()-0.5) * radius * 1.5;
+    const py1 = y + (Math.random()-0.5) * radius * 1.5;
+    const px2 = x + (Math.random()-0.5) * radius * 1.5;
+    const py2 = y + (Math.random()-0.5) * radius * 1.5;
+    ctx.moveTo(px1, py1);
+    ctx.lineTo(px2, py2);
+    ctx.stroke();
+  }
+};
+
+const stampWatercolor: StampFn = (ctx, x, y, size, color) => {
+  const [r, g, b] = hexToRgb(color);
+  const spread = size * 1.8;
+
+  // Sulu boyanın kağıt üzerindeki gerçekçi renk karışımı
+  ctx.globalCompositeOperation = 'multiply';
+
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, spread);
+  // Merkeze doğru şeffaf (su birikintisi)
+  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.04)`);
+  // Gövde
+  grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.07)`);
+  // 'Wet Edge' (Kenarda boya birikmesi - karakteristik sulu boya lekesi)
+  grad.addColorStop(0.85, `rgba(${r}, ${g}, ${b}, 0.16)`);
+  grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+
+  ctx.fillStyle = grad;
   ctx.beginPath();
+  
+  // Suyun kağıt dokusu üzerindeki düzensiz dağılımını taklit etmek için rastgele organik dalgalanmalar
   const numPoints = 12;
   for (let i = 0; i < numPoints; i++) {
     const angle = (i / numPoints) * Math.PI * 2;
-    const rVar = radius * (0.8 + Math.random() * 0.4);
-    const px = centerX + Math.cos(angle) * rVar;
-    const py = centerY + Math.sin(angle) * rVar;
+    // Yarıçapı rastgele esnetiyoruz
+    const radiusNoise = 1 + (Math.random() * 0.2 - 0.1); 
+    const px = x + Math.cos(angle) * spread * radiusNoise;
+    const py = y + Math.sin(angle) * spread * radiusNoise;
     if (i === 0) ctx.moveTo(px, py);
     else ctx.lineTo(px, py);
   }
   ctx.closePath();
   ctx.fill();
-  
-  // Yoğun tebeşirimsi boşluklar ve pürüzler uygula
-  const imgData = ctx.getImageData(0, 0, d, d);
-  const data = imgData.data;
-  for (let y = 0; y < d; y++) {
-    for (let x = 0; x < d; x++) {
-      const idx = (y * d + x) * 4;
-      const alpha = data[idx + 3];
-      if (alpha > 0) {
-        const dx = x - centerX;
-        const dy = y - centerY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        
-        const rand = Math.random();
-        const edgeFactor = dist / radius;
-        const threshold = 0.38 + edgeFactor * 0.48; // Kenarlarda boşluk olasılığı artar
-        
-        if (rand < threshold) {
-          data[idx + 3] = alpha * 0.12; // Boşluklar
-        } else {
-          // Tebeşir tozu renk varyasyonu
-          const brightnessOffset = Math.floor((Math.random() - 0.5) * 35);
-          data[idx] = clamp(r + brightnessOffset);
-          data[idx + 1] = clamp(g + brightnessOffset);
-          data[idx + 2] = clamp(b + brightnessOffset);
-          data[idx + 3] = Math.min(255, alpha * (0.45 + Math.random() * 0.55));
-        }
-      }
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
-  return canvas;
 };
 
-const createCrayonTexture = (size: number, color: string): HTMLCanvasElement => {
-  const canvas = document.createElement('canvas');
-  const d = Math.max(Math.ceil(size * 1.8), 4);
-  canvas.width = d;
-  canvas.height = d;
-  const ctx = canvas.getContext('2d')!;
+const stampMarker: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  
-  const centerX = d / 2;
-  const centerY = d / 2;
-  const radius = size * 0.75;
-  
-  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.95)`;
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-  ctx.fill();
-  
-  // Balmumu dokusu (kağıt dokusunun üzerinden atlama)
-  const imgData = ctx.getImageData(0, 0, d, d);
-  const data = imgData.data;
-  for (let y = 0; y < d; y++) {
-    for (let x = 0; x < d; x++) {
-      const idx = (y * d + x) * 4;
-      const alpha = data[idx + 3];
-      if (alpha > 0) {
-        const dx = x - centerX;
-        const dy = y - centerY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        
-        // Periyodik kağıt dokusu ızgarası simülasyonu
-        const paperFiber = Math.sin(x * 0.55) * Math.cos(y * 0.55);
-        const rand = Math.random();
-        
-        const skipThreshold = -0.22 + (dist / radius) * 0.65;
-        if (paperFiber < skipThreshold && rand > 0.25) {
-          data[idx + 3] = alpha * 0.08; // Mum boyanın ulaşamadığı çukurlar
-        } else {
-          const scratch = rand > 0.85 ? 0.55 : 1.0;
-          data[idx] = r;
-          data[idx + 1] = g;
-          data[idx + 2] = b;
-          data[idx + 3] = alpha * scratch * (0.6 + Math.random() * 0.4);
-        }
-      }
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
-  return canvas;
-};
 
-const createWatercolorTexture = (size: number, color: string): HTMLCanvasElement => {
-  const canvas = document.createElement('canvas');
-  const d = Math.max(Math.ceil(size * 3.0), 6);
-  canvas.width = d;
-  canvas.height = d;
-  const ctx = canvas.getContext('2d')!;
-  const [r, g, b] = hexToRgb(color);
-  
-  const centerX = d / 2;
-  const centerY = d / 2;
-  const spread = size * 1.35;
-  
-  // Sulu boyanın kağıda yayılırkenki organik şekli
-  ctx.beginPath();
-  const numPoints = 14;
-  const points: { x: number; y: number }[] = [];
-  for (let i = 0; i < numPoints; i++) {
-    const angle = (i / numPoints) * Math.PI * 2;
-    const radiusNoise = spread * (0.85 + Math.random() * 0.3);
-    const px = centerX + Math.cos(angle) * radiusNoise;
-    const py = centerY + Math.sin(angle) * radiusNoise;
-    points.push({ x: px, y: py });
-  }
-  
-  ctx.moveTo(points[0].x, points[0].y);
-  for (let i = 0; i < numPoints; i++) {
-    const nextIdx = (i + 1) % numPoints;
-    const xc = (points[i].x + points[nextIdx].x) / 2;
-    const yc = (points[i].y + points[nextIdx].y) / 2;
-    ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
-  }
-  ctx.closePath();
-  
-  // Wet edge (Kenarlara pigment birikmesi ve su süzülmesi)
-  const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, spread * 1.15);
-  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.02)`);
-  grad.addColorStop(0.55, `rgba(${r}, ${g}, ${b}, 0.08)`);
-  grad.addColorStop(0.85, `rgba(${r}, ${g}, ${b}, 0.28)`);
-  grad.addColorStop(0.96, `rgba(${r}, ${g}, ${b}, 0.38)`);
-  grad.addColorStop(1.0, `rgba(${r}, ${g}, ${b}, 0)`);
-  
-  ctx.fillStyle = grad;
-  ctx.fill();
-  
-  // Sulu boyanın yumuşak kağıt dokusuyla etkileşimi
-  const imgData = ctx.getImageData(0, 0, d, d);
-  const data = imgData.data;
-  for (let y = 0; y < d; y++) {
-    for (let x = 0; x < d; x++) {
-      const idx = (y * d + x) * 4;
-      const alpha = data[idx + 3];
-      if (alpha > 0) {
-        const grainNoise = Math.sin(x * 0.14) * Math.cos(y * 0.14) * 0.22 + 0.88;
-        const cellNoise = Math.random() > 0.94 ? 1.25 : 1.0;
-        data[idx + 3] = clamp(alpha * grainNoise * cellNoise);
-      }
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
-  
-  return canvas;
-};
+  // Alkol bazlı tasarım marker kalemi (Copic/Keçeli) dokusu elde etmek için 'multiply' (renklerin üst üste binerek doğal kararması) modunu kullanıyoruz
+  ctx.globalCompositeOperation = 'multiply';
 
-const createMarkerTexture = (size: number, color: string): HTMLCanvasElement => {
-  const canvas = document.createElement('canvas');
-  const w = Math.max(Math.ceil(size * 2.2), 4);
-  const h = Math.max(Math.ceil(size * 0.8), 2);
-  const d = Math.max(w, h) * 1.5;
-  canvas.width = d;
-  canvas.height = d;
-  const ctx = canvas.getContext('2d')!;
-  const [r, g, b] = hexToRgb(color);
-  
+  // Yüksek doymuşlukta yarı saydam mürekkep efekti
+  ctx.globalAlpha = 0.32;
+  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+
   ctx.save();
-  ctx.translate(d / 2, d / 2);
-  ctx.rotate(-Math.PI / 6); // 30 derece kesik uç
-  
-  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.35)`;
+  ctx.translate(x, y);
+  ctx.rotate(-Math.PI / 6); // Profesyonel çizim için 30 derecelik kesik uç eğimi
+
+  const w = size * 2.2;
+  const h = size * 0.7;
+
+  // Kesik uçlu keçeli kalem gövdesi
   ctx.fillRect(-w / 2, -h / 2, w, h);
-  
-  // Kalemin emilme payı
-  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.06)`;
+
+  // Mürekkebin kağıt kenarına hafifçe emilmesini (bleeding) taklit eden ikinci yumuşak katman
+  ctx.globalAlpha = 0.05;
   ctx.beginPath();
   ctx.ellipse(0, 0, w * 0.54, h * 0.65, 0, 0, Math.PI * 2);
   ctx.fill();
-  
+
   ctx.restore();
-  
-  // Alkol süzülmesi çizgileri
-  const imgData = ctx.getImageData(0, 0, d, d);
-  const data = imgData.data;
-  for (let y = 0; y < d; y++) {
-    for (let x = 0; x < d; x++) {
-      const idx = (y * d + x) * 4;
-      const alpha = data[idx + 3];
-      if (alpha > 0) {
-        const streak = Math.sin(x * 1.4 - y * 0.8) > 0.82 ? 0.78 : 1.0;
-        data[idx + 3] = clamp(alpha * streak);
-      }
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
-  return canvas;
+
+  // Diğer fırçaların normal çizmesi için varsayılan kompozit moduna geri dönüyoruz
+  ctx.globalCompositeOperation = 'source-over';
 };
 
-const createGlitterTexture = (size: number, color: string): HTMLCanvasElement => {
-  const canvas = document.createElement('canvas');
-  const d = Math.max(Math.ceil(size * 3.0), 6);
-  canvas.width = d;
-  canvas.height = d;
-  const ctx = canvas.getContext('2d')!;
+const stampGlitter: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  
-  const centerX = d / 2;
-  const centerY = d / 2;
-  const radius = size * 0.95;
-  
-  // Simli boyanın jel bazı
-  const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.3)`);
-  grad.addColorStop(0.6, `rgba(${r}, ${g}, ${b}, 0.15)`);
-  grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
-  
-  ctx.fillStyle = grad;
+  const spread = size * 1.8;
+
+  // 1. Simli boyanın altındaki renkli jel/boya bazı (jel kıvamı için daha doygun)
+  ctx.globalAlpha = 0.24;
+  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
   ctx.beginPath();
-  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.arc(x, y, spread * 0.75, 0, Math.PI * 2);
   ctx.fill();
-  
-  return canvas;
-};
 
-// ── DOKU ÖNBELLEĞİ (TEXTURE CACHE) ──
-
-class TextureCache {
-  private static cache: Map<string, HTMLCanvasElement> = new Map();
-  private static maxCacheSize = 65;
-
-  public static getTexture(brushId: BrushId, color: string, size: number): HTMLCanvasElement {
-    const key = `${brushId}_${color}_${size}`;
-    if (this.cache.has(key)) {
-      return this.cache.get(key)!;
-    }
-
-    let texture: HTMLCanvasElement;
-    switch (brushId) {
-      case 'pencil':
-        texture = createPencilTexture(size, color);
-        break;
-      case 'pastel':
-        texture = createPastelTexture(size, color);
-        break;
-      case 'crayon':
-        texture = createCrayonTexture(size, color);
-        break;
-      case 'watercolor':
-        texture = createWatercolorTexture(size, color);
-        break;
-      case 'marker':
-        texture = createMarkerTexture(size, color);
-        break;
-      case 'glitter':
-        texture = createGlitterTexture(size, color);
-        break;
-      default:
-        texture = document.createElement('canvas');
-        texture.width = size;
-        texture.height = size;
-        const ctx = texture.getContext('2d')!;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    if (this.cache.size >= this.maxCacheSize) {
-      const firstKey = this.cache.keys().next().value;
-      if (firstKey) this.cache.delete(firstKey);
-    }
-
-    this.cache.set(key, texture);
-    return texture;
-  }
-
-  public static clear() {
-    this.cache.clear();
-  }
-}
-
-// ── FIRÇA STAMP FONKSİYONLARI ──
-
-const stampPencil: StampFn = (ctx, x, y, size, color, texture) => {
-  const jx = (Math.random() - 0.5) * 0.3;
-  const jy = (Math.random() - 0.5) * 0.3;
-  ctx.save();
-  ctx.translate(x + jx, y + jy);
-  ctx.rotate(Math.random() * Math.PI * 2);
-  ctx.drawImage(texture, -texture.width / 2, -texture.height / 2);
-  ctx.restore();
-};
-
-const stampPastel: StampFn = (ctx, x, y, size, color, texture) => {
-  ctx.save();
-  const scale = 0.95 + Math.random() * 0.1;
-  const alpha = 0.75 + Math.random() * 0.25;
-  
-  ctx.translate(x, y);
-  ctx.rotate(Math.random() * Math.PI * 2);
-  ctx.scale(scale, scale);
-  ctx.globalAlpha = alpha;
-  ctx.drawImage(texture, -texture.width / 2, -texture.height / 2);
-  ctx.restore();
-  
-  // Ekstra toz zerrecikleri yayılımı
-  if (Math.random() > 0.4) {
-    const [r, g, b] = hexToRgb(color);
-    const radius = size * 0.9;
-    const numDust = Math.floor(size * 0.25) + 1;
-    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.15 + Math.random() * 0.25})`;
-    for (let i = 0; i < numDust; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const dist = radius * (1.0 + Math.random() * 0.5);
-      const dx = x + Math.cos(angle) * dist;
-      const dy = y + Math.sin(angle) * dist;
-      const dSize = 0.8 + Math.random() * 1.5;
-      ctx.fillRect(dx, dy, dSize, dSize);
-    }
-  }
-};
-
-const stampCrayon: StampFn = (ctx, x, y, size, color, texture) => {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(Math.random() * Math.PI * 2);
-  ctx.globalAlpha = 0.8 + Math.random() * 0.2;
-  ctx.drawImage(texture, -texture.width / 2, -texture.height / 2);
-  ctx.restore();
-  
-  // Balmumu sürtünmesi kaynaklı ince dikey/yatay çizikler
-  if (Math.random() > 0.65) {
-    const [r, g, b] = hexToRgb(color);
-    const w = size * 0.75;
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.15 + Math.random() * 0.2})`;
-    ctx.lineWidth = 0.5 + Math.random() * 1.2;
-    ctx.beginPath();
-    ctx.moveTo(x + (Math.random() - 0.5) * w, y + (Math.random() - 0.5) * w);
-    ctx.lineTo(x + (Math.random() - 0.5) * w, y + (Math.random() - 0.5) * w);
-    ctx.stroke();
-  }
-};
-
-const stampWatercolor: StampFn = (ctx, x, y, size, color, texture) => {
-  ctx.globalCompositeOperation = 'multiply';
-  
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(Math.random() * Math.PI * 2);
-  const scale = 0.92 + Math.random() * 0.16;
-  ctx.scale(scale, scale);
-  ctx.globalAlpha = 0.85 + Math.random() * 0.15;
-  ctx.drawImage(texture, -texture.width / 2, -texture.height / 2);
-  ctx.restore();
-  
-  ctx.globalCompositeOperation = 'source-over';
-};
-
-const stampMarker: StampFn = (ctx, x, y, size, color, texture) => {
-  ctx.globalCompositeOperation = 'multiply';
-  
-  ctx.save();
-  ctx.translate(x, y);
-  const jx = (Math.random() - 0.5) * 0.4;
-  const jy = (Math.random() - 0.5) * 0.4;
-  ctx.translate(jx, jy);
-  ctx.globalAlpha = 0.9 + Math.random() * 0.1;
-  ctx.drawImage(texture, -texture.width / 2, -texture.height / 2);
-  ctx.restore();
-  
-  ctx.globalCompositeOperation = 'source-over';
-};
-
-const stampGlitter: StampFn = (ctx, x, y, size, color, texture) => {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(Math.random() * Math.PI * 2);
-  ctx.globalAlpha = 0.95;
-  ctx.drawImage(texture, -texture.width / 2, -texture.height / 2);
-  ctx.restore();
-  
-  const spread = size * 1.5;
-  const numFlakes = Math.floor(size * 0.35) + 1;
-  const [r, g, b] = hexToRgb(color);
-  
-  // Parıltılı metal sim pulları
+  // 2. Yoğun ve parıldayan metalik sim pulları (18 adet pul)
+  const numFlakes = 18;
   for (let i = 0; i < numFlakes; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const dist = Math.sqrt(Math.random()) * spread;
+    const dist = Math.sqrt(Math.random()) * spread * 1.3;
     const fx = x + Math.cos(angle) * dist;
     const fy = y + Math.sin(angle) * dist;
     
+    // Sim pulları yanar döner, çok boyutlu metalik renklerde olur
+    ctx.globalAlpha = 0.75 + Math.random() * 0.25;
+    
+    // Altın, gümüş, gökkuşağı ve fırçanın kendi rengi arasında parıltılı geçişler
     let flakeColor: string;
     const randType = Math.random();
     if (randType < 0.35) {
-      flakeColor = `hsl(${Math.random() > 0.5 ? 35 : 0}, 100%, 70%)`; // Altın
+      // Fırça renginin parlak ve doymuş bir tonu
+      flakeColor = `hsl(${Math.random() > 0.5 ? 35 : 0}, 100%, 70%)`; // Altın sarısı sim
     } else if (randType < 0.65) {
-      flakeColor = `hsl(${Math.random() * 360}, 100%, 75%)`; // Gökkuşağı holografik
+      // Yanar döner holografik gökkuşağı renkleri
+      flakeColor = `hsl(${Math.random() * 360}, 100%, 75%)`;
     } else {
-      flakeColor = `hsl(190, 80%, ${85 + Math.random() * 15}%)`; // Gümüş
+      // Gümüş / Elmas parıltısı
+      flakeColor = `hsl(190, 80%, ${85 + Math.random() * 15}%)`;
     }
     
-    ctx.globalAlpha = 0.8 + Math.random() * 0.2;
+    // Sim pulunu çiz
     const flakeSize = 1.0 + Math.random() * 2.2;
     ctx.fillStyle = flakeColor;
     ctx.beginPath();
     ctx.arc(fx, fy, flakeSize, 0, Math.PI * 2);
     ctx.fill();
-    
-    // Işık yansıması (kristal parıltısı)
+
+    // 3D Parıltı Etkisi: Bazı pulların tam ortasına ultra parlak küçük beyaz bir nokta (yansıma) ekliyoruz
     if (Math.random() > 0.4) {
       ctx.globalAlpha = 0.95;
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(fx - 0.3, fy - 0.3, flakeSize * 0.4, 0, Math.PI * 2);
+      ctx.arc(fx - 0.4, fy - 0.4, flakeSize * 0.4, 0, Math.PI * 2);
       ctx.fill();
     }
   }
-  
-  // Keskin parlama yıldızları
-  if (Math.random() > 0.78) {
-    const sx = x + (Math.random() - 0.5) * spread * 1.25;
-    const sy = y + (Math.random() - 0.5) * spread * 1.25;
-    const starSize = 3 + Math.random() * 5;
-    
-    const haloGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, starSize * 1.8);
-    haloGrad.addColorStop(0, `rgba(255, 255, 255, 0.5)`);
-    haloGrad.addColorStop(0.3, `rgba(${r}, ${g}, ${b}, 0.25)`);
-    haloGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    ctx.globalAlpha = 1.0;
-    ctx.fillStyle = haloGrad;
-    ctx.beginPath();
-    ctx.arc(sx, sy, starSize * 1.8, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.globalAlpha = 0.95;
-    ctx.fillStyle = '#ffffff';
-    ctx.save();
-    ctx.translate(sx, sy);
-    ctx.rotate(Math.random() * Math.PI);
-    
-    ctx.beginPath();
-    ctx.moveTo(0, -starSize);
-    ctx.quadraticCurveTo(0, 0, starSize, 0);
-    ctx.quadraticCurveTo(0, 0, 0, starSize);
-    ctx.quadraticCurveTo(0, 0, -starSize, 0);
-    ctx.quadraticCurveTo(0, 0, 0, -starSize);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
+
+  // 3. Sihirli Parlama Yıldızları (Specular Star Sparkles) - 2 adet olası yıldız
+  const numStars = Math.random() > 0.5 ? 2 : 1;
+  for (let s = 0; s < numStars; s++) {
+    if (Math.random() > 0.3) {
+      const sx = x + (Math.random() - 0.5) * spread * 1.4;
+      const sy = y + (Math.random() - 0.5) * spread * 1.4;
+      const starSize = 4 + Math.random() * 6;
+
+      // Yıldızın arkasına yumuşak, parlayan neon bir halo yerleştiriyoruz
+      const haloGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, starSize * 1.8);
+      haloGrad.addColorStop(0, `rgba(255, 255, 255, 0.45)`);
+      haloGrad.addColorStop(0.3, `rgba(${r}, ${g}, ${b}, 0.25)`);
+      haloGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.globalAlpha = 1.0;
+      ctx.fillStyle = haloGrad;
+      ctx.beginPath();
+      ctx.arc(sx, sy, starSize * 1.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dört köşeli keskin parlama yıldızı
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = '#ffffff';
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.rotate(Math.random() * Math.PI); // Rastgele açı ile parıldama hissi
+      
+      ctx.beginPath();
+      ctx.moveTo(0, -starSize);
+      ctx.quadraticCurveTo(0, 0, starSize, 0);
+      ctx.quadraticCurveTo(0, 0, 0, starSize);
+      ctx.quadraticCurveTo(0, 0, -starSize, 0);
+      ctx.quadraticCurveTo(0, 0, 0, -starSize);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
   }
 };
 
@@ -901,10 +627,8 @@ const DrawingCanvas = () => {
         color = RAINBOW[rainbowIdxRef.current];
       }
 
-      const texture = TextureCache.getTexture(activeBrush, color, brushSize);
-
       ctx.save();
-      STAMP_FN[activeBrush](ctx, pos.x, pos.y, brushSize, color, texture);
+      STAMP_FN[activeBrush](ctx, pos.x, pos.y, brushSize, color);
       ctx.restore();
     },
     [getPos, saveUndo, activeColor, isRainbow, activeBrush, brushSize],
@@ -925,17 +649,14 @@ const DrawingCanvas = () => {
       const spacing = SPACING[activeBrush];
       let color = activeColor;
 
-      let texture = isRainbow ? null : TextureCache.getTexture(activeBrush, color, brushSize);
-
       const pts = interpolate(lastPtRef.current, pos, spacing);
       for (const pt of pts) {
         if (isRainbow) {
           rainbowIdxRef.current = (rainbowIdxRef.current + 1) % RAINBOW.length;
           color = RAINBOW[rainbowIdxRef.current];
-          texture = TextureCache.getTexture(activeBrush, color, brushSize);
         }
         ctx.save();
-        STAMP_FN[activeBrush](ctx, pt.x, pt.y, brushSize, color, texture!);
+        STAMP_FN[activeBrush](ctx, pt.x, pt.y, brushSize, color);
         ctx.restore();
       }
 
