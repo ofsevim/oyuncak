@@ -17,23 +17,25 @@ interface ColorDef {
 }
 
 const COLORS: ColorDef[] = [
-  { name: 'Kırmızı', value: '#E53935', light: '#FFCDD2' },
+  { name: 'Kırmızı', value: '#FF0000', light: '#FFCDD2' },
   { name: 'Bordo', value: '#880E4F', light: '#F48FB1' },
-  { name: 'Turuncu', value: '#FB8C00', light: '#FFE0B2' },
-  { name: 'Sarı', value: '#FDD835', light: '#FFF9C4' },
-  { name: 'Açık Yeşil', value: '#7CB342', light: '#DCEDC8' },
-  { name: 'Yeşil', value: '#43A047', light: '#C8E6C9' },
+  { name: 'Turuncu', value: '#FF9800', light: '#FFE0B2' },
+  { name: 'Sarı', value: '#FFEB3B', light: '#FFF9C4' },
+  { name: 'Açık Yeşil', value: '#8BC34A', light: '#DCEDC8' },
+  { name: 'Yeşil', value: '#4CAF50', light: '#C8E6C9' },
   { name: 'Koyu Yeşil', value: '#1B5E20', light: '#A5D6A7' },
-  { name: 'Camgöbeği', value: '#00ACC1', light: '#B2EBF2' },
-  { name: 'Açık Mavi', value: '#29B6F6', light: '#B3E5FC' },
-  { name: 'Mavi', value: '#1E88E5', light: '#BBDEFB' },
+  { name: 'Camgöbeği', value: '#00BCD4', light: '#B2EBF2' },
+  { name: 'Açık Mavi', value: '#03A9F4', light: '#B3E5FC' },
+  { name: 'Mavi', value: '#2196F3', light: '#BBDEFB' },
   { name: 'Lacivert', value: '#1A237E', light: '#9FA8DA' },
-  { name: 'Mor', value: '#8E24AA', light: '#E1BEE7' },
-  { name: 'Pembe', value: '#D81B60', light: '#F8BBD0' },
-  { name: 'Ten Rengi', value: '#FFBCA4', light: '#FFCCBC' },
-  { name: 'Kahverengi', value: '#6D4C41', light: '#D7CCC8' },
-  { name: 'Gri', value: '#546E7A', light: '#CFD8DC' },
-  { name: 'Siyah', value: '#212121', light: '#9E9E9E' },
+  { name: 'Mor', value: '#9C27B0', light: '#E1BEE7' },
+  { name: 'Açık Pembe', value: '#FF80AB', light: '#F8BBD0' },
+  { name: 'Pembe', value: '#E91E63', light: '#F06292' },
+  { name: 'Koyu Pembe', value: '#C2185B', light: '#F48FB1' },
+  { name: 'Ten Rengi', value: '#FFCCBC', light: '#FBE9E7' },
+  { name: 'Kahverengi', value: '#795548', light: '#D7CCC8' },
+  { name: 'Gri', value: '#9E9E9E', light: '#F5F5F5' },
+  { name: 'Siyah', value: '#212121', light: '#757575' },
   { name: 'Beyaz', value: '#FAFAFA', light: '#FFFFFF' },
 ];
 
@@ -65,10 +67,10 @@ const BRUSHES: BrushDef[] = [
 
 /** Her fırçanın stamp noktaları arasındaki piksel mesafesi */
 const SPACING: Record<BrushId, number> = {
-  pencil: 2,
-  pastel: 3,
-  crayon: 3,
-  watercolor: 10,
+  pencil: 1,
+  pastel: 1.5,
+  crayon: 1.5,
+  watercolor: 3,
   marker: 2,
   glitter: 4,
 };
@@ -96,149 +98,130 @@ const clamp = (v: number) => Math.max(0, Math.min(255, v));
 
 const stampPencil: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const radius = Math.max(size * 0.35, 1);
+  const radius = Math.max(size * 0.4, 1);
 
-  ctx.globalAlpha = 0.82;
+  // Kalem (Grafit): Yumuşak, kağıt dokusuna karışan düşük opaklıklı yapı
+  ctx.globalAlpha = 0.15; // Çok düşük opaklık, üst üste binince kararsın
+  
+  // Ana yumuşak gövde
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fill();
 
-  for (let i = 0; i < 6; i++) {
-    const ox = (Math.random() - 0.5) * radius * 3;
-    const oy = (Math.random() - 0.5) * radius * 3;
-    ctx.globalAlpha = 0.04 + Math.random() * 0.06;
+  // Kağıt pürüzü ve grafit granülleri
+  ctx.globalAlpha = 0.4;
+  for (let i = 0; i < size * 1.5; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * radius * 1.2;
+    const ox = Math.cos(angle) * dist;
+    const oy = Math.sin(angle) * dist;
+    
     ctx.fillStyle = `rgb(${r},${g},${b})`;
-    ctx.fillRect(x + ox, y + oy, 1, 1);
+    const pSize = 0.5 + Math.random() * 1.5;
+    ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
 };
 
 const stampPastel: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const spread = size * 1.6;
+  const radius = size * 0.8;
 
-  // Mum boya (crayon) ve pastel boyanın kağıt üzerindeki hafif şeffaf, mumsu ve canlı yapısını yakalamak için opaklığı düşürüyoruz
-  ctx.globalAlpha = 0.36;
-
-  // Mumsu canlılığı artırmak için boya renginin biraz daha açık/canlı pastel versiyonlarını da karıştırıyoruz (mum dolgu etkisi)
-  for (let i = 0; i < 35; i++) {
+  // Pastel: Tebeşirimsi, yoğun pigmentli ve tozlu
+  for (let i = 0; i < size * 3; i++) {
     const angle = Math.random() * Math.PI * 2;
-    // Parçacıkları merkeze yığıp, uçlara doğru iyice seyreltiyoruz (kağıt dişini gösterecek şekilde)
-    const dist = Math.pow(Math.random(), 1.4) * spread;
-    const px = x + Math.cos(angle) * dist;
-    const py = y + Math.sin(angle) * dist;
+    const dist = Math.random() * radius;
+    const ox = Math.cos(angle) * dist;
+    const oy = Math.sin(angle) * dist;
     
-    // Pigment varyasyonu: Koyulaştırmak yerine, boyanın kendi rengi ile hafifçe beyaza çalan wax (mum) tonlarını karıştırıyoruz
-    const mixWax = Math.random() > 0.65;
-    if (mixWax) {
-      // Mumsu beyazımsı yansıma taneciği (canlı pastel görünümü verir)
-      ctx.fillStyle = `rgb(${clamp(r + 35)}, ${clamp(g + 35)}, ${clamp(b + 35)})`;
+    // Kenarlara doğru tozlanma artar, merkeze doğru pigment daha yoğun
+    const isEdge = dist > radius * 0.6;
+    ctx.globalAlpha = isEdge ? 0.2 + Math.random() * 0.3 : 0.5 + Math.random() * 0.4;
+
+    // Tebeşir tozu hissi için renk varyasyonları
+    const mixChalk = Math.random() > 0.7;
+    if (mixChalk) {
+      // Açık renkli (tebeşir) toz
+      ctx.fillStyle = `rgb(${clamp(r+40)}, ${clamp(g+40)}, ${clamp(b+40)})`;
     } else {
-      const shift = (Math.random() - 0.3) * 15; // Hafifçe yukarı doğru kayan (parlak) renk varyasyonu
-      ctx.fillStyle = `rgb(${clamp(r + shift)}, ${clamp(g + shift)}, ${clamp(b + shift)})`;
+      ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
     }
     
-    // Mum boya tanecikleri - dairesel pürüzlü yapı
-    const dotSize = 1.0 + Math.random() * 2.5;
-    ctx.beginPath();
-    ctx.arc(px, py, dotSize, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Kağıt dokusu boşlukları (pürüzlü kağıt etkisi)
-  ctx.globalAlpha = 0.28;
-  ctx.fillStyle = '#ffffff';
-  for (let i = 0; i < 6; i++) {
-    const ox = (Math.random() - 0.5) * spread * 1.3;
-    const oy = (Math.random() - 0.5) * spread * 1.3;
-    ctx.beginPath();
-    ctx.arc(x + ox, y + oy, 0.8 + Math.random() * 1.2, 0, Math.PI * 2);
-    ctx.fill();
+    const pSize = 1.5 + Math.random() * 2.5;
+    ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
 };
 
 const stampCrayon: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const spread = size * 1.2;
+  const radius = size * 0.8;
 
-  // Kuru boyanın kuru, lifli ve çizikli (scratchy) yapısını elde etmek için
-  ctx.globalAlpha = 0.45;
-  
-  // 1. Çizgisel tarama ve karalama efekti
-  for (let i = 0; i < 8; i++) {
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.15 + Math.random() * 0.3})`;
-    ctx.lineWidth = 0.8 + Math.random() * 1.2;
-    ctx.beginPath();
-    const x1 = x + (Math.random() - 0.5) * spread * 1.6;
-    const y1 = y + (Math.random() - 0.5) * spread * 0.8;
-    const x2 = x + (Math.random() - 0.5) * spread * 1.6;
-    const y2 = y + (Math.random() - 0.5) * spread * 0.8;
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
+  // Kuruboya (Wax Crayon): Mumsu doku, kağıdın girintilerini atlar, serttir
+  for (let i = 0; i < size * 4; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * radius;
+    const ox = Math.cos(angle) * dist;
+    const oy = Math.sin(angle) * dist;
+    
+    // Rastgele boşluklar bırakarak kağıt dokusunu simüle et
+    if (Math.random() > 0.85) continue; 
+
+    // Daha sert mumsu pigmentler
+    ctx.globalAlpha = 0.4 + Math.random() * 0.5;
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+    
+    const pSize = 1 + Math.random() * 2;
+    ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
 
-  // 2. Kuru boya ucu aşınma tozları ve balmumu tanecikleri
-  for (let i = 0; i < 18; i++) {
-    const ox = (Math.random() - 0.5) * spread * 1.3;
-    const oy = (Math.random() - 0.5) * spread * 1.3;
-    const dist = Math.sqrt(ox * ox + oy * oy);
-    if (dist > spread) continue;
-
-    ctx.globalAlpha = (1 - dist / spread) * (0.2 + Math.random() * 0.5);
-    const shift = (Math.random() - 0.5) * 15;
-    ctx.fillStyle = `rgb(${clamp(r + shift)}, ${clamp(g + shift)}, ${clamp(b + shift)})`;
-    
-    const pSize = 1.0 + Math.random() * 1.8;
-    ctx.fillRect(x + ox, y + oy, pSize, pSize);
+  // Sürtünmeden kaynaklı sert yönlü mumsu çizgiler
+  if (Math.random() > 0.5) {
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+    ctx.lineWidth = 1 + Math.random() * 2;
+    ctx.beginPath();
+    const px1 = x + (Math.random()-0.5) * radius * 1.5;
+    const py1 = y + (Math.random()-0.5) * radius * 1.5;
+    const px2 = x + (Math.random()-0.5) * radius * 1.5;
+    const py2 = y + (Math.random()-0.5) * radius * 1.5;
+    ctx.moveTo(px1, py1);
+    ctx.lineTo(px2, py2);
+    ctx.stroke();
   }
 };
 
 const stampWatercolor: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const spread = size * 3.5;
+  const spread = size * 1.8;
 
-  // 1. Yumuşak sulu boya yayılma havuzu (transparan wet-edge gradyanı)
-  const grad = ctx.createRadialGradient(x, y, spread * 0.1, x, y, spread);
-  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.08)`);
-  grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.05)`);
-  grad.addColorStop(0.85, `rgba(${r}, ${g}, ${b}, 0.09)`); // Wet edge kurumaya başlayan renk yığılması
-  grad.addColorStop(0.96, `rgba(${r}, ${g}, ${b}, 0.16)`); // Dıştaki koyu pigment sınırı
-  grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`); // Dışa doğru tamamen sıfırlanan yumuşak geçiş
+  // Sulu boyanın kağıt üzerindeki gerçekçi renk karışımı
+  ctx.globalCompositeOperation = 'multiply';
 
-  ctx.globalAlpha = 1.0;
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, spread);
+  // Merkeze doğru şeffaf (su birikintisi)
+  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.04)`);
+  // Gövde
+  grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.07)`);
+  // 'Wet Edge' (Kenarda boya birikmesi - karakteristik sulu boya lekesi)
+  grad.addColorStop(0.85, `rgba(${r}, ${g}, ${b}, 0.16)`);
+  grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+
   ctx.fillStyle = grad;
-
-  // Kusursuz bir daire yerine suyun kağıt liflerine göre düzensiz yayılmasını (organic bloom) taklit eden deforme şekil çiziyoruz
   ctx.beginPath();
+  
+  // Suyun kağıt dokusu üzerindeki düzensiz dağılımını taklit etmek için rastgele organik dalgalanmalar
   const numPoints = 12;
   for (let i = 0; i < numPoints; i++) {
     const angle = (i / numPoints) * Math.PI * 2;
-    // Düzensiz yarıçap sapmaları üretiyoruz
-    const radiusNoise = (Math.sin(angle * 3) * 0.11) + (Math.cos(angle * 7) * 0.07);
-    const currRadius = spread * (1 + radiusNoise);
-    const px = x + Math.cos(angle) * currRadius;
-    const py = y + Math.sin(angle) * currRadius;
-    if (i === 0) {
-      ctx.moveTo(px, py);
-    } else {
-      ctx.lineTo(px, py);
-    }
+    // Yarıçapı rastgele esnetiyoruz
+    const radiusNoise = 1 + (Math.random() * 0.2 - 0.1); 
+    const px = x + Math.cos(angle) * spread * radiusNoise;
+    const py = y + Math.sin(angle) * spread * radiusNoise;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
   }
   ctx.closePath();
   ctx.fill();
-
-  // 2. Kağıt dokusu ve gren simülasyonu (mikro-pigment yığılmaları)
-  ctx.globalAlpha = 0.06;
-  ctx.fillStyle = `rgb(${clamp(r - 25)}, ${clamp(g - 25)}, ${clamp(b - 25)})`;
-  for (let i = 0; i < 12; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const dist = Math.random() * spread * 0.85;
-    const tx = x + Math.cos(angle) * dist;
-    const ty = y + Math.sin(angle) * dist;
-    const grainSize = 1.2 + Math.random() * 1.8;
-    ctx.fillRect(tx, ty, grainSize, grainSize);
-  }
 };
 
 const stampMarker: StampFn = (ctx, x, y, size, color) => {
