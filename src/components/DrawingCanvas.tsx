@@ -18,13 +18,19 @@ interface ColorDef {
 
 const COLORS: ColorDef[] = [
   { name: 'Kırmızı', value: '#E53935', light: '#FFCDD2' },
+  { name: 'Bordo', value: '#880E4F', light: '#F48FB1' },
   { name: 'Turuncu', value: '#FB8C00', light: '#FFE0B2' },
   { name: 'Sarı', value: '#FDD835', light: '#FFF9C4' },
+  { name: 'Açık Yeşil', value: '#7CB342', light: '#DCEDC8' },
   { name: 'Yeşil', value: '#43A047', light: '#C8E6C9' },
+  { name: 'Koyu Yeşil', value: '#1B5E20', light: '#A5D6A7' },
+  { name: 'Camgöbeği', value: '#00ACC1', light: '#B2EBF2' },
   { name: 'Açık Mavi', value: '#29B6F6', light: '#B3E5FC' },
   { name: 'Mavi', value: '#1E88E5', light: '#BBDEFB' },
+  { name: 'Lacivert', value: '#1A237E', light: '#9FA8DA' },
   { name: 'Mor', value: '#8E24AA', light: '#E1BEE7' },
   { name: 'Pembe', value: '#D81B60', light: '#F8BBD0' },
+  { name: 'Ten Rengi', value: '#FFBCA4', light: '#FFCCBC' },
   { name: 'Kahverengi', value: '#6D4C41', light: '#D7CCC8' },
   { name: 'Gri', value: '#546E7A', light: '#CFD8DC' },
   { name: 'Siyah', value: '#212121', light: '#9E9E9E' },
@@ -434,12 +440,12 @@ const DrawingCanvas = () => {
       const isDesktop = window.innerWidth >= 1024;
       if (isDesktop) {
         const w = Math.min(containerRef.current.clientWidth - 16, 1000);
-        const h = window.innerHeight * 0.6;
+        const h = window.innerHeight * 0.8;
         setCanvasW(w);
         setCanvasH(h);
       } else {
         const w = Math.min(containerRef.current.clientWidth - 16, 400);
-        const h = Math.min(window.innerHeight * 0.55, 600);
+        const h = Math.min(window.innerHeight * 0.75, 600);
         setCanvasW(w);
         setCanvasH(h);
       }
@@ -884,7 +890,7 @@ const DrawingCanvas = () => {
             Renkler
           </span>
           <motion.div
-            className="grid grid-cols-7 lg:grid-cols-5 gap-1.5 lg:gap-2 bg-black/20 p-2 lg:p-2.5 rounded-xl lg:rounded-2xl border border-white/5"
+            className="grid grid-cols-8 lg:grid-cols-7 gap-1 lg:gap-1.5 bg-black/20 p-1.5 lg:p-2 rounded-xl border border-white/5"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -955,7 +961,7 @@ const DrawingCanvas = () => {
             Fırça Türü
           </span>
           <motion.div
-            className="grid grid-cols-6 lg:grid-cols-3 gap-1.5 lg:gap-2"
+            className="grid grid-cols-6 lg:grid-cols-4 gap-1 lg:gap-1.5"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -977,10 +983,10 @@ const DrawingCanvas = () => {
                   whileHover={{ scale: 1.08, y: -2 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <span className="text-base lg:text-xl mb-0 pointer-events-none">
+                  <span className="text-sm lg:text-lg mb-0 pointer-events-none">
                     {brush.icon}
                   </span>
-                  <span className="text-[8px] lg:text-[10px] font-bold opacity-80 pointer-events-none uppercase tracking-tighter">
+                  <span className="text-[8px] lg:text-[9px] font-bold opacity-80 pointer-events-none uppercase tracking-tighter">
                     {brush.name}
                   </span>
                   {isActive && (
@@ -994,6 +1000,144 @@ const DrawingCanvas = () => {
             })}
           </motion.div>
         </div>
+
+        {/* ── Araçlar & Kontroller ── */}
+        <div className="flex flex-col gap-3 mt-1">
+          {/* Üst Sıra: Geri Al, Temizle, Sticker */}
+          <div className="flex items-center justify-between gap-2 bg-black/20 p-1.5 lg:p-2 rounded-xl border border-white/5">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleUndo}
+                disabled={undoLen === 0}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-all ${undoLen === 0 ? 'opacity-20 cursor-not-allowed' : 'active:scale-95 cursor-pointer'
+                  }`}
+                title="Geri Al"
+              >
+                <Undo className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleClear}
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-100 hover:bg-red-500/20 transition-all active:scale-95 cursor-pointer"
+                title="Temizle"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <div className="relative">
+                <button
+                  onClick={() => setShowStickers((prev) => !prev)}
+                  className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all active:scale-95 cursor-pointer ${showStickers
+                    ? 'bg-amber-500 text-white shadow-lg'
+                    : 'bg-white/5 text-muted-foreground border border-white/10 hover:bg-white/10'
+                    }`}
+                >
+                  😊
+                </button>
+                <AnimatePresence>
+                  {showStickers && (
+                    <motion.div
+                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-[#1a1c22] p-3 rounded-2xl border border-white/10 shadow-2xl z-50 w-[240px] max-w-[calc(100vw-2rem)]"
+                      initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                    >
+                      <div className="grid grid-cols-5 gap-2">
+                        {STICKERS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            onClick={() => {
+                              addSticker(emoji);
+                              setShowStickers(false);
+                            }}
+                            className="text-2xl hover:scale-125 transition-transform p-1 active:scale-90 cursor-pointer"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <button
+                onClick={() => {
+                  setIsStickering(!isStickering);
+                  if (fabricCanvas && isStickering) {
+                    fabricCanvas.discardActiveObject();
+                    fabricCanvas.renderAll();
+                  }
+                  playPopSound();
+                }}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all active:scale-95 cursor-pointer ${isStickering
+                  ? 'bg-blue-500 text-white shadow-lg ring-2 ring-blue-400/50'
+                  : 'bg-white/5 text-muted-foreground border border-white/10 hover:bg-white/10'
+                  }`}
+                title="Sticker'ları Düzenle"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              
+              {isStickering && (
+                <button
+                  onClick={deleteActiveSticker}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-500/20 text-red-100 border border-red-500/30 hover:bg-red-500/30 transition-all active:scale-95 cursor-pointer"
+                  title="Seçili Sticker'ı Sil"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Fırça boyutu */}
+          <div className="flex items-center gap-3 bg-black/20 p-2 lg:p-3 rounded-xl border border-white/5">
+            <div
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ background: isRainbow ? '#42A5F5' : activeColor }}
+            />
+            <input
+              type="range"
+              min="2"
+              max="50"
+              value={brushSize}
+              onChange={(e) => setBrushSize(Number(e.target.value))}
+              className="w-full h-1 accent-primary cursor-pointer appearance-none bg-white/10 rounded-full"
+            />
+          </div>
+
+          {/* Alt Sıra: İndir, Galeri, Kaydet */}
+          <div className="flex items-center gap-2">
+             <button
+              onClick={handleDownload}
+              className="w-10 h-10 lg:w-11 lg:h-11 flex items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all active:scale-95 cursor-pointer"
+              title="İndir"
+            >
+              <Download className="w-4 h-4 lg:w-5 lg:h-5" />
+            </button>
+            <button
+              onClick={() => {
+                playPopSound();
+                setShowGallery(true);
+              }}
+              className="w-10 h-10 lg:w-11 lg:h-11 flex items-center justify-center rounded-xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all active:scale-95 cursor-pointer"
+              title="Galerim"
+            >
+              <Image className="w-4 h-4 lg:w-5 lg:h-5" />
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex-1 h-10 lg:h-11 flex items-center justify-center gap-2 rounded-xl font-bold text-xs lg:text-sm bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <Download className="w-4 h-4 lg:w-5 lg:h-5" /> Kaydet
+            </button>
+          </div>
+        </div>
+
       </aside>
 
       {/* ══════════════════════════
@@ -1057,149 +1201,6 @@ const DrawingCanvas = () => {
             </div>
           </div>
         </motion.div>
-
-        {/* ── Kontrol Çubuğu ── */}
-        <div className="flex flex-wrap lg:flex-nowrap items-center justify-center gap-2.5 w-full max-w-[1100px] px-2 mb-4">
-          {/* Araçlar */}
-          <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-2xl border border-white/5">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleUndo}
-                disabled={undoLen === 0}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-all ${undoLen === 0 ? 'opacity-20 cursor-not-allowed' : 'active:scale-95 cursor-pointer'
-                  }`}
-                title="Geri Al"
-              >
-                <Undo className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleClear}
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20 text-red-100 hover:bg-red-500/20 transition-all active:scale-95 cursor-pointer"
-                title="Temizle"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="w-px h-6 bg-white/10 mx-1 hidden lg:block" />
-
-            {/* Fırça boyutu */}
-            <div className="flex items-center gap-3 px-2">
-              <div
-                className="w-2 h-2 rounded-full"
-                style={{ background: isRainbow ? '#42A5F5' : activeColor }}
-              />
-              <input
-                type="range"
-                min="2"
-                max="50"
-                value={brushSize}
-                onChange={(e) => setBrushSize(Number(e.target.value))}
-                className="w-20 lg:w-28 h-1 accent-primary cursor-pointer appearance-none bg-white/10 rounded-full"
-              />
-            </div>
-
-            {/* Sticker butonu */}
-            <div className="flex items-center gap-1.5">
-              <div className="relative">
-                <button
-                  onClick={() => setShowStickers((prev) => !prev)}
-                  className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all active:scale-95 cursor-pointer ${showStickers
-                    ? 'bg-amber-500 text-white shadow-lg'
-                    : 'bg-white/5 text-muted-foreground border border-white/10 hover:bg-white/10'
-                    }`}
-                >
-                  😊
-                </button>
-                <AnimatePresence>
-                  {showStickers && (
-                    <motion.div
-                      className="absolute bottom-full right-0 mb-4 bg-[#1a1c22] p-3 rounded-2xl border border-white/10 shadow-2xl z-50 w-[200px] sm:w-[240px] max-w-[calc(100vw-2rem)]"
-                      initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                    >
-                      <div className="grid grid-cols-5 gap-2">
-                        {STICKERS.map((emoji) => (
-                          <button
-                            key={emoji}
-                            onClick={() => {
-                              addSticker(emoji);
-                              setShowStickers(false);
-                            }}
-                            className="text-2xl hover:scale-125 transition-transform p-1 active:scale-90 cursor-pointer"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Düzenle Modu Toggle */}
-              <button
-                onClick={() => {
-                  setIsStickering(!isStickering);
-                  if (fabricCanvas && isStickering) {
-                    fabricCanvas.discardActiveObject();
-                    fabricCanvas.renderAll();
-                  }
-                  playPopSound();
-                }}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all active:scale-95 cursor-pointer ${isStickering
-                  ? 'bg-blue-500 text-white shadow-lg ring-2 ring-blue-400/50'
-                  : 'bg-white/5 text-muted-foreground border border-white/10 hover:bg-white/10'
-                  }`}
-                title="Sticker'ları Düzenle (Büyüt/Küçült/Taşı)"
-              >
-                <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-
-              {isStickering && (
-                <button
-                  onClick={deleteActiveSticker}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/20 text-red-100 border border-red-500/30 hover:bg-red-500/30 transition-all active:scale-95 cursor-pointer"
-                  title="Seçili Sticker'ı Sil"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Kaydet */}
-          <button
-            onClick={handleSave}
-            className="flex-1 lg:flex-[1.2] flex items-center justify-center gap-3 py-3.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all min-w-[200px] cursor-pointer"
-          >
-            <Download className="w-4 h-4" /> Galeriye Kaydet ✨
-          </button>
-
-          {/* İndir & Galeri */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleDownload}
-              className="w-12 h-12 flex items-center justify-center rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all active:scale-95 cursor-pointer"
-              title="İndir"
-            >
-              <Download className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => {
-                playPopSound();
-                setShowGallery(true);
-              }}
-              className="w-12 h-12 flex items-center justify-center rounded-2xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all active:scale-95 cursor-pointer"
-              title="Galerim"
-            >
-              <Image className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
 
         {/* Kayıt bildirimi */}
         <AnimatePresence>
