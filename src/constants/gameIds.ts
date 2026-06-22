@@ -2,7 +2,7 @@
 export const GAME_ROUTE_IDS = [
   'balloon',
   'basketball',
-  'battle-city',
+  'tank-arena',
   'whack',
   'runner',
   'tetris',
@@ -35,7 +35,7 @@ export const SCORE_GAME_IDS = [
   'runner',
   'snake',
   'tetris',
-  'battle-city',
+  'tank-arena',
   '2048',
   'whack-a-mole',
   'balloon-pop',

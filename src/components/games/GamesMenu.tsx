@@ -44,7 +44,7 @@ interface GameDef {
 const games: GameDef[] = [
   { id: 'balloon', title: 'Balon Patlat', emoji: '🎈', icon: Wind, color: 'hsl(198 85% 50%)', colorSoft: 'hsl(198 85% 50% / 0.1)', description: 'Doğru renkli balonları yakala!', category: ['action'], badge: 'Popüler', badgeColor: 'hsl(198 85% 50%)' },
   { id: 'basketball', title: 'Basket At', emoji: '🏀', icon: Gamepad2, color: 'hsl(28 90% 55%)', colorSoft: 'hsl(28 90% 55% / 0.1)', description: 'Çek bırak — topu potaya sok!', category: ['action'], badge: 'Yeni', badgeColor: 'hsl(158 65% 48%)' },
-  { id: 'battle-city', title: 'Tank 1990', emoji: '🕹️', icon: Gamepad2, color: 'hsl(220 18% 45%)', colorSoft: 'hsl(220 18% 45% / 0.1)', description: 'Atari salonlarının efsanesi!', category: ['action'], badge: 'Retro', badgeColor: 'hsl(220 18% 55%)' },
+  { id: 'tank-arena', title: 'Tank Arena', emoji: '🛡️', icon: Gamepad2, color: 'hsl(220 18% 45%)', colorSoft: 'hsl(220 18% 45% / 0.1)', description: 'Üssünü koru, tankları durdur!', category: ['action'], badge: 'Oyuncak', badgeColor: 'hsl(220 18% 55%)' },
   { id: 'whack', title: 'Köstebek Yakala', emoji: '🐹', icon: Rat, color: 'hsl(28 90% 55%)', colorSoft: 'hsl(28 90% 55% / 0.1)', description: 'Hızlı ol, köstebekleri yakala!', category: ['action'], badge: 'Eğlenceli', badgeColor: 'hsl(28 90% 55%)' },
   { id: 'runner', title: 'Koşucu', emoji: '🏃', icon: Gamepad2, color: 'hsl(152 65% 45%)', colorSoft: 'hsl(152 65% 45% / 0.1)', description: 'Engelleri atla, yıldız topla!', category: ['action'] },
   { id: 'tetris', title: 'Tetris', emoji: '🧱', icon: Zap, color: 'hsl(220 85% 58%)', colorSoft: 'hsl(220 85% 58% / 0.1)', description: 'Blokları yerleştir, puanları yakala!', category: ['action', 'brain'], badge: 'Klasik', badgeColor: 'hsl(220 85% 58%)' },
@@ -152,7 +152,7 @@ const GamesMenu = () => {
       case 'odd-one-out': return <OddOneOutGame />;
       case 'memory': return <MemoryFlipGame onActiveGameChange={onActiveGameChange} />;
       case 'whack': return <WhackAMoleGame />;
-      case 'battle-city': return <BattleCityGame onActiveGameChange={onActiveGameChange} />;
+      case 'tank-arena': return <BattleCityGame onActiveGameChange={onActiveGameChange} />;
       case 'counting': return <CountingGame />;
       case 'balloon': return <BalloonPopGame />;
       case 'piano': return <PianoGame />;

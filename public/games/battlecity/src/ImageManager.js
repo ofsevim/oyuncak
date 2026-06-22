@@ -176,9 +176,6 @@ var ImageManager = (function() {
     powerup_tank: null,
     powerup_timer: null,
     
-    battle_city: null,
-    namcot: null,
-    copyright: null,
     white_line: null,
     arrow: null,
     game_over: null,

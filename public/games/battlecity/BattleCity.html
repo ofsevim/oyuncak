@@ -2,7 +2,7 @@
   "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <title>Battle City</title>
+  <title>Tank Arena</title>
   
   <link rel="stylesheet" type="text/css" href="css/BattleCity.css" />
   
@@ -149,10 +149,14 @@
         return canvas.getContext('2d');
       };
 
+      var trustedOrigin = window.location.origin;
+
       /* ── postMessage bridge: React mobil kontrollerinden gelen tuş olayları ── */
       window.addEventListener('message', function(e) {
+        if (e.origin !== trustedOrigin) return;
         var data = e.data;
         if (!data || (data.type !== 'keydown' && data.type !== 'keyup')) return;
+        if (data.keyCode !== 13 && data.keyCode !== 32 && data.keyCode !== 37 && data.keyCode !== 38 && data.keyCode !== 39 && data.keyCode !== 40) return;
         var ev = $.Event(data.type);
         ev.which = data.keyCode;
         ev.keyCode = data.keyCode;
@@ -175,7 +179,7 @@
         }
 
         function reportScore() {
-          try { parent.postMessage({ type: 'battlecity:gameover', score: latestScore }, '*'); }
+          try { parent.postMessage({ type: 'battlecity:gameover', score: latestScore }, trustedOrigin); }
           catch (err) { /* sessiz */ }
         }
 
@@ -199,19 +203,19 @@
       <p>CONTROLS:</p>
       <table>
         <tr>
-          <td><img src="images/Nintendo-Dpad-Neutral.png" alt="" /></td>
+          <td><span class="keycap">D-PAD</span></td>
           <td>ARROWS</td>
         </tr>
         <tr>
-          <td><img src="images/Nintendo-Button-A.png" alt="" />,<img src="images/Nintendo-Button-B.png" alt="" /></td>
+          <td><span class="keycap">FIRE</span></td>
           <td>SPACE</td>
         </tr>
         <tr>
-          <td><img src="images/Nintendo-Button-Start.png" alt="" /></td>
+          <td><span class="keycap">START</span></td>
           <td>ENTER</td>
         </tr>
         <tr>
-          <td><img src="images/Nintendo-Button-Select.png" alt="" /></td>
+          <td><span class="keycap">SELECT</span></td>
           <td>CTRL</td>
         </tr>
       </table>

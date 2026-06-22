@@ -55,20 +55,28 @@ MainMenuScene.prototype.update = function () {
 
 MainMenuScene.prototype.draw = function (ctx) {
   this._clearCanvas(ctx);
-  ctx.drawImage(ImageManager.getImage('battle_city'), 56, this._y + 80);
   
   ctx.fillStyle = "#ffffff";
-  
+
   ctx.drawImage(ImageManager.getImage('roman_one_white'), 36, this._y + 32);
   ctx.fillText("-    00", 50, this._y + 46);
   
   ctx.fillText("HI- 20000", 178, this._y + 46);
-  
-  ctx.drawImage(ImageManager.getImage('namcot'), 176, this._y + 352);
-  
-  ctx.drawImage(ImageManager.getImage('copyright'), 64, this._y + 384);
-  ctx.fillText("1980 1985 NAMCO LTD.", 98, this._y + 398);
-  ctx.fillText("ALL RIGHTS RESERVED", 98, this._y + 430);
+
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = "40px prstart";
+  ctx.fillText("TANK", 256, this._y + 132);
+  ctx.fillText("ARENA", 256, this._y + 188);
+
+  ctx.font = "16px prstart";
+  ctx.fillStyle = "#facc15";
+  ctx.fillText("OYUNCAK ORIGINAL", 256, this._y + 344);
+  ctx.fillStyle = "#94a3b8";
+  ctx.fillText("DEFEND YOUR BASE", 256, this._y + 390);
+  ctx.fillText("PLAY SAFE - HAVE FUN", 256, this._y + 424);
+  ctx.restore();
   
   this._mainMenuView.draw(ctx, this._y);
 };

@@ -26,3 +26,12 @@ html, body {
 #help {
   display: none;
 }
+.keycap {
+  display: inline-block;
+  min-width: 72px;
+  padding: 6px 8px;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  text-align: center;
+  color: #fff;
+}

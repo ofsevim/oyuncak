@@ -4,9 +4,9 @@ import path from "node:path";
 import { loadTsModule } from "./helpers/load-ts-module.mjs";
 
 /**
- * Battle City skor/liderlik entegrasyonunun uçtan uca tutarlılığını kilitler:
- *   - SCORE_GAME_IDS benzersiz ve 'battle-city' içeriyor
- *   - iframe oyunu (BattleCity.html) skoru postMessage ile bildiriyor
+ * Tank Arena skor/liderlik entegrasyonunun uçtan uca tutarlılığını kilitler:
+ *   - SCORE_GAME_IDS benzersiz ve 'tank-arena' içeriyor
+ *   - iframe oyunu skoru postMessage ile bildiriyor
  *   - React bileşeni mesajı dinleyip aynı GAME_ID ile kaydediyor + Leaderboard render ediyor
  */
 export async function run() {
@@ -20,9 +20,9 @@ export async function run() {
     "SCORE_GAME_IDS yinelenen kimlik içeriyor",
   );
 
-  // battle-city hem rota hem skor sözlüğünde olmalı
-  assert.ok(GAME_ROUTE_IDS.includes("battle-city"), "battle-city GAME_ROUTE_IDS'te yok");
-  assert.ok(SCORE_GAME_IDS.includes("battle-city"), "battle-city SCORE_GAME_IDS'te yok");
+  // tank-arena hem rota hem skor sözlüğünde olmalı
+  assert.ok(GAME_ROUTE_IDS.includes("tank-arena"), "tank-arena GAME_ROUTE_IDS'te yok");
+  assert.ok(SCORE_GAME_IDS.includes("tank-arena"), "tank-arena SCORE_GAME_IDS'te yok");
 
   // iframe oyunu skoru parent'a bildirmeli
   const html = await readFile(

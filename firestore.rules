@@ -2,6 +2,31 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isKnownScoreGame(gameId) {
+      return gameId in [
+        'runner',
+        'snake',
+        'tetris',
+        'tank-arena',
+        '2048',
+        'whack-a-mole',
+        'balloon-pop',
+        'basketball',
+        'piano',
+        'math',
+        'counting',
+        'oddoneout',
+        'comparison',
+        'shapematch',
+        'simonsays',
+        'codingturtle',
+        'spaceshooter',
+        'memory-3x3',
+        'memory-4x4',
+        'memory-5x5',
+        'memory-6x6'
+      ];
+    }
 
     // Skor: scores/{gameId}/leaderboard/{userId}
     match /scores/{gameId}/leaderboard/{userId} {
@@ -13,6 +38,7 @@ service cloud.firestore {
                    && userId == request.auth.uid
                    && request.resource.data.uid == request.auth.uid
                    && request.resource.data.gameId == gameId
+                   && isKnownScoreGame(gameId)
                    && gameId.size() <= 40
                    && request.resource.data.score is number
                    && request.resource.data.score >= 0

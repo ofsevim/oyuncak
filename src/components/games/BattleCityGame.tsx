@@ -8,7 +8,7 @@ interface BattleCityGameProps {
     onActiveGameChange?: (active: boolean) => void;
 }
 
-const GAME_ID = 'battle-city';
+const GAME_ID = 'tank-arena';
 
 /* Oyunun native canvas boyutu: UNIT_SIZE(32) × 16 = 512w, × 14 = 448h */
 const NATIVE_W = 512;
@@ -27,6 +27,10 @@ const touchSafeStyle = {
 
 const battleCitySrc = `${import.meta.env.BASE_URL}games/battlecity/BattleCity.html`;
 
+function getBattleCityOrigin(): string {
+    return new URL(battleCitySrc, window.location.href).origin;
+}
+
 const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -40,6 +44,8 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
     /* ── Skor köprüsü: iframe oyun sonunda skoru bildirir → kaydet + rekoru duyur ── */
     useEffect(() => {
         const onMessage = (e: MessageEvent) => {
+            if (e.source !== iframeRef.current?.contentWindow) return;
+            if (e.origin !== getBattleCityOrigin()) return;
             const data = e.data;
             if (!data || data.type !== 'battlecity:gameover') return;
             const score = typeof data.score === 'number' ? Math.floor(data.score) : 0;
@@ -94,8 +100,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
         const cw = iframeRef.current?.contentWindow;
         if (!cw) return;
 
-        /* postMessage: same-origin olduğu için targetOrigin '*' yeterli */
-        cw.postMessage({ type, keyCode }, '*');
+        cw.postMessage({ type, keyCode }, getBattleCityOrigin());
     }, []);
 
     const pressTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
@@ -163,7 +168,6 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
             onTouchCancel={preventTouchDefault}
             onContextMenu={(e) => e.preventDefault()}
             onDragStart={preventDefault}
-            onSelectStart={preventDefault}
             whileTap={{ scale: 0.85 }}
             className="flex items-center justify-center select-none active:opacity-70 transition-opacity"
             style={{
@@ -192,8 +196,8 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
             >
-                <h2 className="text-2xl font-black text-foreground">🕹️ Tank 1990</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Klasik atari oyunu</p>
+                <h2 className="text-2xl font-black text-foreground">🛡️ Tank Arena</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Oyuncak özgün tank savunması</p>
                 {highScore > 0 && (
                     <p className="text-xs font-bold mt-1" style={{ color: 'hsl(38 92% 58%)' }}>
                         🏆 Rekor: {highScore}
@@ -225,7 +229,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                 <iframe
                     ref={iframeRef}
                     src={battleCitySrc}
-                    title="Battle City"
+                    title="Tank Arena"
                     sandbox="allow-scripts allow-same-origin"
                     scrolling="no"
                     tabIndex={0}
@@ -268,7 +272,6 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                     onTouchCancel={preventTouchDefault}
                     onContextMenu={(e) => e.preventDefault()}
                     onDragStart={preventDefault}
-                    onSelectStart={preventDefault}
                     onClick={() => pressKey('Enter')}
                     draggable={false}
                     whileTap={{ scale: 0.95 }}
@@ -322,7 +325,6 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                         onTouchCancel={preventTouchDefault}
                         onContextMenu={(e) => e.preventDefault()}
                         onDragStart={preventDefault}
-                        onSelectStart={preventDefault}
                         whileTap={{ scale: 0.88 }}
                         className="flex items-center justify-center select-none flex-shrink-0"
                         style={{
