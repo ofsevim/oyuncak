@@ -17,17 +17,25 @@ interface ColorDef {
 }
 
 const COLORS: ColorDef[] = [
-  { name: 'Kırmızı', value: '#E53935', light: '#FFCDD2' },
-  { name: 'Turuncu', value: '#FB8C00', light: '#FFE0B2' },
-  { name: 'Sarı', value: '#FDD835', light: '#FFF9C4' },
-  { name: 'Yeşil', value: '#43A047', light: '#C8E6C9' },
-  { name: 'Açık Mavi', value: '#29B6F6', light: '#B3E5FC' },
-  { name: 'Mavi', value: '#1E88E5', light: '#BBDEFB' },
-  { name: 'Mor', value: '#8E24AA', light: '#E1BEE7' },
-  { name: 'Pembe', value: '#D81B60', light: '#F8BBD0' },
-  { name: 'Kahverengi', value: '#6D4C41', light: '#D7CCC8' },
-  { name: 'Gri', value: '#546E7A', light: '#CFD8DC' },
-  { name: 'Siyah', value: '#212121', light: '#9E9E9E' },
+  { name: 'Kırmızı', value: '#FF0000', light: '#FFCDD2' },
+  { name: 'Bordo', value: '#880E4F', light: '#F48FB1' },
+  { name: 'Turuncu', value: '#FF9800', light: '#FFE0B2' },
+  { name: 'Sarı', value: '#FFEB3B', light: '#FFF9C4' },
+  { name: 'Açık Yeşil', value: '#8BC34A', light: '#DCEDC8' },
+  { name: 'Yeşil', value: '#4CAF50', light: '#C8E6C9' },
+  { name: 'Koyu Yeşil', value: '#1B5E20', light: '#A5D6A7' },
+  { name: 'Camgöbeği', value: '#00BCD4', light: '#B2EBF2' },
+  { name: 'Açık Mavi', value: '#03A9F4', light: '#B3E5FC' },
+  { name: 'Mavi', value: '#2196F3', light: '#BBDEFB' },
+  { name: 'Lacivert', value: '#1A237E', light: '#9FA8DA' },
+  { name: 'Mor', value: '#9C27B0', light: '#E1BEE7' },
+  { name: 'Açık Pembe', value: '#FF80AB', light: '#F8BBD0' },
+  { name: 'Pembe', value: '#E91E63', light: '#F06292' },
+  { name: 'Koyu Pembe', value: '#C2185B', light: '#F48FB1' },
+  { name: 'Ten Rengi', value: '#FFCCBC', light: '#FBE9E7' },
+  { name: 'Kahverengi', value: '#795548', light: '#D7CCC8' },
+  { name: 'Gri', value: '#9E9E9E', light: '#F5F5F5' },
+  { name: 'Siyah', value: '#212121', light: '#757575' },
   { name: 'Beyaz', value: '#FAFAFA', light: '#FFFFFF' },
 ];
 
@@ -59,10 +67,10 @@ const BRUSHES: BrushDef[] = [
 
 /** Her fırçanın stamp noktaları arasındaki piksel mesafesi */
 const SPACING: Record<BrushId, number> = {
-  pencil: 2,
-  pastel: 3,
-  crayon: 3,
-  watercolor: 10,
+  pencil: 1,
+  pastel: 1.5,
+  crayon: 1.5,
+  watercolor: 3,
   marker: 2,
   glitter: 4,
 };
@@ -90,149 +98,130 @@ const clamp = (v: number) => Math.max(0, Math.min(255, v));
 
 const stampPencil: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const radius = Math.max(size * 0.35, 1);
+  const radius = Math.max(size * 0.4, 1);
 
-  ctx.globalAlpha = 0.82;
+  // Kalem (Grafit): Yumuşak, kağıt dokusuna karışan düşük opaklıklı yapı
+  ctx.globalAlpha = 0.15; // Çok düşük opaklık, üst üste binince kararsın
+  
+  // Ana yumuşak gövde
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fill();
 
-  for (let i = 0; i < 6; i++) {
-    const ox = (Math.random() - 0.5) * radius * 3;
-    const oy = (Math.random() - 0.5) * radius * 3;
-    ctx.globalAlpha = 0.04 + Math.random() * 0.06;
+  // Kağıt pürüzü ve grafit granülleri
+  ctx.globalAlpha = 0.4;
+  for (let i = 0; i < size * 1.5; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * radius * 1.2;
+    const ox = Math.cos(angle) * dist;
+    const oy = Math.sin(angle) * dist;
+    
     ctx.fillStyle = `rgb(${r},${g},${b})`;
-    ctx.fillRect(x + ox, y + oy, 1, 1);
+    const pSize = 0.5 + Math.random() * 1.5;
+    ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
 };
 
 const stampPastel: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const spread = size * 1.6;
+  const radius = size * 0.8;
 
-  // Mum boya (crayon) ve pastel boyanın kağıt üzerindeki hafif şeffaf, mumsu ve canlı yapısını yakalamak için opaklığı düşürüyoruz
-  ctx.globalAlpha = 0.36;
-
-  // Mumsu canlılığı artırmak için boya renginin biraz daha açık/canlı pastel versiyonlarını da karıştırıyoruz (mum dolgu etkisi)
-  for (let i = 0; i < 35; i++) {
+  // Pastel: Tebeşirimsi, yoğun pigmentli ve tozlu
+  for (let i = 0; i < size * 3; i++) {
     const angle = Math.random() * Math.PI * 2;
-    // Parçacıkları merkeze yığıp, uçlara doğru iyice seyreltiyoruz (kağıt dişini gösterecek şekilde)
-    const dist = Math.pow(Math.random(), 1.4) * spread;
-    const px = x + Math.cos(angle) * dist;
-    const py = y + Math.sin(angle) * dist;
+    const dist = Math.random() * radius;
+    const ox = Math.cos(angle) * dist;
+    const oy = Math.sin(angle) * dist;
     
-    // Pigment varyasyonu: Koyulaştırmak yerine, boyanın kendi rengi ile hafifçe beyaza çalan wax (mum) tonlarını karıştırıyoruz
-    const mixWax = Math.random() > 0.65;
-    if (mixWax) {
-      // Mumsu beyazımsı yansıma taneciği (canlı pastel görünümü verir)
-      ctx.fillStyle = `rgb(${clamp(r + 35)}, ${clamp(g + 35)}, ${clamp(b + 35)})`;
+    // Kenarlara doğru tozlanma artar, merkeze doğru pigment daha yoğun
+    const isEdge = dist > radius * 0.6;
+    ctx.globalAlpha = isEdge ? 0.2 + Math.random() * 0.3 : 0.5 + Math.random() * 0.4;
+
+    // Tebeşir tozu hissi için renk varyasyonları
+    const mixChalk = Math.random() > 0.7;
+    if (mixChalk) {
+      // Açık renkli (tebeşir) toz
+      ctx.fillStyle = `rgb(${clamp(r+40)}, ${clamp(g+40)}, ${clamp(b+40)})`;
     } else {
-      const shift = (Math.random() - 0.3) * 15; // Hafifçe yukarı doğru kayan (parlak) renk varyasyonu
-      ctx.fillStyle = `rgb(${clamp(r + shift)}, ${clamp(g + shift)}, ${clamp(b + shift)})`;
+      ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
     }
     
-    // Mum boya tanecikleri - dairesel pürüzlü yapı
-    const dotSize = 1.0 + Math.random() * 2.5;
-    ctx.beginPath();
-    ctx.arc(px, py, dotSize, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Kağıt dokusu boşlukları (pürüzlü kağıt etkisi)
-  ctx.globalAlpha = 0.28;
-  ctx.fillStyle = '#ffffff';
-  for (let i = 0; i < 6; i++) {
-    const ox = (Math.random() - 0.5) * spread * 1.3;
-    const oy = (Math.random() - 0.5) * spread * 1.3;
-    ctx.beginPath();
-    ctx.arc(x + ox, y + oy, 0.8 + Math.random() * 1.2, 0, Math.PI * 2);
-    ctx.fill();
+    const pSize = 1.5 + Math.random() * 2.5;
+    ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
 };
 
 const stampCrayon: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const spread = size * 1.2;
+  const radius = size * 0.8;
 
-  // Kuru boyanın kuru, lifli ve çizikli (scratchy) yapısını elde etmek için
-  ctx.globalAlpha = 0.45;
-  
-  // 1. Çizgisel tarama ve karalama efekti
-  for (let i = 0; i < 8; i++) {
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.15 + Math.random() * 0.3})`;
-    ctx.lineWidth = 0.8 + Math.random() * 1.2;
-    ctx.beginPath();
-    const x1 = x + (Math.random() - 0.5) * spread * 1.6;
-    const y1 = y + (Math.random() - 0.5) * spread * 0.8;
-    const x2 = x + (Math.random() - 0.5) * spread * 1.6;
-    const y2 = y + (Math.random() - 0.5) * spread * 0.8;
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
+  // Kuruboya (Wax Crayon): Mumsu doku, kağıdın girintilerini atlar, serttir
+  for (let i = 0; i < size * 4; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * radius;
+    const ox = Math.cos(angle) * dist;
+    const oy = Math.sin(angle) * dist;
+    
+    // Rastgele boşluklar bırakarak kağıt dokusunu simüle et
+    if (Math.random() > 0.85) continue; 
+
+    // Daha sert mumsu pigmentler
+    ctx.globalAlpha = 0.4 + Math.random() * 0.5;
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+    
+    const pSize = 1 + Math.random() * 2;
+    ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
 
-  // 2. Kuru boya ucu aşınma tozları ve balmumu tanecikleri
-  for (let i = 0; i < 18; i++) {
-    const ox = (Math.random() - 0.5) * spread * 1.3;
-    const oy = (Math.random() - 0.5) * spread * 1.3;
-    const dist = Math.sqrt(ox * ox + oy * oy);
-    if (dist > spread) continue;
-
-    ctx.globalAlpha = (1 - dist / spread) * (0.2 + Math.random() * 0.5);
-    const shift = (Math.random() - 0.5) * 15;
-    ctx.fillStyle = `rgb(${clamp(r + shift)}, ${clamp(g + shift)}, ${clamp(b + shift)})`;
-    
-    const pSize = 1.0 + Math.random() * 1.8;
-    ctx.fillRect(x + ox, y + oy, pSize, pSize);
+  // Sürtünmeden kaynaklı sert yönlü mumsu çizgiler
+  if (Math.random() > 0.5) {
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+    ctx.lineWidth = 1 + Math.random() * 2;
+    ctx.beginPath();
+    const px1 = x + (Math.random()-0.5) * radius * 1.5;
+    const py1 = y + (Math.random()-0.5) * radius * 1.5;
+    const px2 = x + (Math.random()-0.5) * radius * 1.5;
+    const py2 = y + (Math.random()-0.5) * radius * 1.5;
+    ctx.moveTo(px1, py1);
+    ctx.lineTo(px2, py2);
+    ctx.stroke();
   }
 };
 
 const stampWatercolor: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const spread = size * 3.5;
+  const spread = size * 1.8;
 
-  // 1. Yumuşak sulu boya yayılma havuzu (transparan wet-edge gradyanı)
-  const grad = ctx.createRadialGradient(x, y, spread * 0.1, x, y, spread);
-  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.08)`);
-  grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.05)`);
-  grad.addColorStop(0.85, `rgba(${r}, ${g}, ${b}, 0.09)`); // Wet edge kurumaya başlayan renk yığılması
-  grad.addColorStop(0.96, `rgba(${r}, ${g}, ${b}, 0.16)`); // Dıştaki koyu pigment sınırı
-  grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`); // Dışa doğru tamamen sıfırlanan yumuşak geçiş
+  // Sulu boyanın kağıt üzerindeki gerçekçi renk karışımı
+  ctx.globalCompositeOperation = 'multiply';
 
-  ctx.globalAlpha = 1.0;
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, spread);
+  // Merkeze doğru şeffaf (su birikintisi)
+  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.04)`);
+  // Gövde
+  grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.07)`);
+  // 'Wet Edge' (Kenarda boya birikmesi - karakteristik sulu boya lekesi)
+  grad.addColorStop(0.85, `rgba(${r}, ${g}, ${b}, 0.16)`);
+  grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+
   ctx.fillStyle = grad;
-
-  // Kusursuz bir daire yerine suyun kağıt liflerine göre düzensiz yayılmasını (organic bloom) taklit eden deforme şekil çiziyoruz
   ctx.beginPath();
+  
+  // Suyun kağıt dokusu üzerindeki düzensiz dağılımını taklit etmek için rastgele organik dalgalanmalar
   const numPoints = 12;
   for (let i = 0; i < numPoints; i++) {
     const angle = (i / numPoints) * Math.PI * 2;
-    // Düzensiz yarıçap sapmaları üretiyoruz
-    const radiusNoise = (Math.sin(angle * 3) * 0.11) + (Math.cos(angle * 7) * 0.07);
-    const currRadius = spread * (1 + radiusNoise);
-    const px = x + Math.cos(angle) * currRadius;
-    const py = y + Math.sin(angle) * currRadius;
-    if (i === 0) {
-      ctx.moveTo(px, py);
-    } else {
-      ctx.lineTo(px, py);
-    }
+    // Yarıçapı rastgele esnetiyoruz
+    const radiusNoise = 1 + (Math.random() * 0.2 - 0.1); 
+    const px = x + Math.cos(angle) * spread * radiusNoise;
+    const py = y + Math.sin(angle) * spread * radiusNoise;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
   }
   ctx.closePath();
   ctx.fill();
-
-  // 2. Kağıt dokusu ve gren simülasyonu (mikro-pigment yığılmaları)
-  ctx.globalAlpha = 0.06;
-  ctx.fillStyle = `rgb(${clamp(r - 25)}, ${clamp(g - 25)}, ${clamp(b - 25)})`;
-  for (let i = 0; i < 12; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const dist = Math.random() * spread * 0.85;
-    const tx = x + Math.cos(angle) * dist;
-    const ty = y + Math.sin(angle) * dist;
-    const grainSize = 1.2 + Math.random() * 1.8;
-    ctx.fillRect(tx, ty, grainSize, grainSize);
-  }
 };
 
 const stampMarker: StampFn = (ctx, x, y, size, color) => {
@@ -434,12 +423,12 @@ const DrawingCanvas = () => {
       const isDesktop = window.innerWidth >= 1024;
       if (isDesktop) {
         const w = Math.min(containerRef.current.clientWidth - 16, 1000);
-        const h = window.innerHeight * 0.6;
+        const h = window.innerHeight * 0.8;
         setCanvasW(w);
         setCanvasH(h);
       } else {
         const w = Math.min(containerRef.current.clientWidth - 16, 400);
-        const h = Math.min(window.innerHeight * 0.55, 600);
+        const h = Math.min(window.innerHeight * 0.75, 600);
         setCanvasW(w);
         setCanvasH(h);
       }
@@ -884,7 +873,7 @@ const DrawingCanvas = () => {
             Renkler
           </span>
           <motion.div
-            className="grid grid-cols-7 lg:grid-cols-4 gap-1.5 lg:gap-3 bg-black/20 p-2 lg:p-3 rounded-xl lg:rounded-2xl border border-white/5"
+            className="grid grid-cols-8 lg:grid-cols-7 gap-1 lg:gap-1.5 bg-black/20 p-1.5 lg:p-2 rounded-xl border border-white/5"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -955,7 +944,7 @@ const DrawingCanvas = () => {
             Fırça Türü
           </span>
           <motion.div
-            className="grid grid-cols-6 lg:grid-cols-3 gap-1.5 lg:gap-2"
+            className="grid grid-cols-6 lg:grid-cols-4 gap-1 lg:gap-1.5"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -970,17 +959,17 @@ const DrawingCanvas = () => {
                     setIsStickering(false);
                     playPopSound();
                   }}
-                  className={`relative flex flex-col items-center justify-center rounded-xl lg:rounded-2xl aspect-square cursor-pointer p-1.5 lg:p-3 transition-colors duration-150 ${isActive
+                  className={`relative flex flex-col items-center justify-center rounded-xl lg:rounded-2xl aspect-square cursor-pointer p-1 lg:p-2 transition-colors duration-150 ${isActive
                     ? 'bg-primary/20 text-foreground ring-2 ring-primary/50 shadow-lg shadow-primary/20'
                     : 'bg-black/20 text-muted-foreground border border-white/5 hover:bg-white/15 hover:border-white/20 hover:text-foreground hover:shadow-md hover:shadow-white/5'
                     }`}
                   whileHover={{ scale: 1.08, y: -2 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <span className="text-lg lg:text-2xl mb-0 lg:mb-1 pointer-events-none">
+                  <span className="text-sm lg:text-lg mb-0 pointer-events-none">
                     {brush.icon}
                   </span>
-                  <span className="text-[8px] lg:text-[10px] font-bold opacity-80 pointer-events-none uppercase tracking-tighter">
+                  <span className="text-[8px] lg:text-[9px] font-bold opacity-80 pointer-events-none uppercase tracking-tighter">
                     {brush.name}
                   </span>
                   {isActive && (
@@ -994,6 +983,144 @@ const DrawingCanvas = () => {
             })}
           </motion.div>
         </div>
+
+        {/* ── Araçlar & Kontroller ── */}
+        <div className="flex flex-col gap-3 mt-1">
+          {/* Üst Sıra: Geri Al, Temizle, Sticker */}
+          <div className="flex items-center justify-between gap-2 bg-black/20 p-1.5 lg:p-2 rounded-xl border border-white/5">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleUndo}
+                disabled={undoLen === 0}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-all ${undoLen === 0 ? 'opacity-20 cursor-not-allowed' : 'active:scale-95 cursor-pointer'
+                  }`}
+                title="Geri Al"
+              >
+                <Undo className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleClear}
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-100 hover:bg-red-500/20 transition-all active:scale-95 cursor-pointer"
+                title="Temizle"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <div className="relative">
+                <button
+                  onClick={() => setShowStickers((prev) => !prev)}
+                  className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all active:scale-95 cursor-pointer ${showStickers
+                    ? 'bg-amber-500 text-white shadow-lg'
+                    : 'bg-white/5 text-muted-foreground border border-white/10 hover:bg-white/10'
+                    }`}
+                >
+                  😊
+                </button>
+                <AnimatePresence>
+                  {showStickers && (
+                    <motion.div
+                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-[#1a1c22] p-3 rounded-2xl border border-white/10 shadow-2xl z-50 w-[240px] max-w-[calc(100vw-2rem)]"
+                      initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                    >
+                      <div className="grid grid-cols-5 gap-2">
+                        {STICKERS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            onClick={() => {
+                              addSticker(emoji);
+                              setShowStickers(false);
+                            }}
+                            className="text-2xl hover:scale-125 transition-transform p-1 active:scale-90 cursor-pointer"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <button
+                onClick={() => {
+                  setIsStickering(!isStickering);
+                  if (fabricCanvas && isStickering) {
+                    fabricCanvas.discardActiveObject();
+                    fabricCanvas.renderAll();
+                  }
+                  playPopSound();
+                }}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all active:scale-95 cursor-pointer ${isStickering
+                  ? 'bg-blue-500 text-white shadow-lg ring-2 ring-blue-400/50'
+                  : 'bg-white/5 text-muted-foreground border border-white/10 hover:bg-white/10'
+                  }`}
+                title="Sticker'ları Düzenle"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              
+              {isStickering && (
+                <button
+                  onClick={deleteActiveSticker}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-500/20 text-red-100 border border-red-500/30 hover:bg-red-500/30 transition-all active:scale-95 cursor-pointer"
+                  title="Seçili Sticker'ı Sil"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Fırça boyutu */}
+          <div className="flex items-center gap-3 bg-black/20 p-2 lg:p-3 rounded-xl border border-white/5">
+            <div
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ background: isRainbow ? '#42A5F5' : activeColor }}
+            />
+            <input
+              type="range"
+              min="2"
+              max="50"
+              value={brushSize}
+              onChange={(e) => setBrushSize(Number(e.target.value))}
+              className="w-full h-1 accent-primary cursor-pointer appearance-none bg-white/10 rounded-full"
+            />
+          </div>
+
+          {/* Alt Sıra: İndir, Galeri, Kaydet */}
+          <div className="flex items-center gap-2">
+             <button
+              onClick={handleDownload}
+              className="w-10 h-10 lg:w-11 lg:h-11 flex items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all active:scale-95 cursor-pointer"
+              title="İndir"
+            >
+              <Download className="w-4 h-4 lg:w-5 lg:h-5" />
+            </button>
+            <button
+              onClick={() => {
+                playPopSound();
+                setShowGallery(true);
+              }}
+              className="w-10 h-10 lg:w-11 lg:h-11 flex items-center justify-center rounded-xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all active:scale-95 cursor-pointer"
+              title="Galerim"
+            >
+              <Image className="w-4 h-4 lg:w-5 lg:h-5" />
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex-1 h-10 lg:h-11 flex items-center justify-center gap-2 rounded-xl font-bold text-xs lg:text-sm bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <Download className="w-4 h-4 lg:w-5 lg:h-5" /> Kaydet
+            </button>
+          </div>
+        </div>
+
       </aside>
 
       {/* ══════════════════════════
@@ -1057,149 +1184,6 @@ const DrawingCanvas = () => {
             </div>
           </div>
         </motion.div>
-
-        {/* ── Kontrol Çubuğu ── */}
-        <div className="flex flex-wrap lg:flex-nowrap items-center justify-center gap-2.5 w-full max-w-[1100px] px-2 mb-4">
-          {/* Araçlar */}
-          <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-2xl border border-white/5">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleUndo}
-                disabled={undoLen === 0}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-all ${undoLen === 0 ? 'opacity-20 cursor-not-allowed' : 'active:scale-95 cursor-pointer'
-                  }`}
-                title="Geri Al"
-              >
-                <Undo className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleClear}
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20 text-red-100 hover:bg-red-500/20 transition-all active:scale-95 cursor-pointer"
-                title="Temizle"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="w-px h-6 bg-white/10 mx-1 hidden lg:block" />
-
-            {/* Fırça boyutu */}
-            <div className="flex items-center gap-3 px-2">
-              <div
-                className="w-2 h-2 rounded-full"
-                style={{ background: isRainbow ? '#42A5F5' : activeColor }}
-              />
-              <input
-                type="range"
-                min="2"
-                max="50"
-                value={brushSize}
-                onChange={(e) => setBrushSize(Number(e.target.value))}
-                className="w-20 lg:w-28 h-1 accent-primary cursor-pointer appearance-none bg-white/10 rounded-full"
-              />
-            </div>
-
-            {/* Sticker butonu */}
-            <div className="flex items-center gap-1.5">
-              <div className="relative">
-                <button
-                  onClick={() => setShowStickers((prev) => !prev)}
-                  className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all active:scale-95 cursor-pointer ${showStickers
-                    ? 'bg-amber-500 text-white shadow-lg'
-                    : 'bg-white/5 text-muted-foreground border border-white/10 hover:bg-white/10'
-                    }`}
-                >
-                  😊
-                </button>
-                <AnimatePresence>
-                  {showStickers && (
-                    <motion.div
-                      className="absolute bottom-full right-0 mb-4 bg-[#1a1c22] p-3 rounded-2xl border border-white/10 shadow-2xl z-50 w-[200px] sm:w-[240px] max-w-[calc(100vw-2rem)]"
-                      initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                    >
-                      <div className="grid grid-cols-5 gap-2">
-                        {STICKERS.map((emoji) => (
-                          <button
-                            key={emoji}
-                            onClick={() => {
-                              addSticker(emoji);
-                              setShowStickers(false);
-                            }}
-                            className="text-2xl hover:scale-125 transition-transform p-1 active:scale-90 cursor-pointer"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Düzenle Modu Toggle */}
-              <button
-                onClick={() => {
-                  setIsStickering(!isStickering);
-                  if (fabricCanvas && isStickering) {
-                    fabricCanvas.discardActiveObject();
-                    fabricCanvas.renderAll();
-                  }
-                  playPopSound();
-                }}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all active:scale-95 cursor-pointer ${isStickering
-                  ? 'bg-blue-500 text-white shadow-lg ring-2 ring-blue-400/50'
-                  : 'bg-white/5 text-muted-foreground border border-white/10 hover:bg-white/10'
-                  }`}
-                title="Sticker'ları Düzenle (Büyüt/Küçült/Taşı)"
-              >
-                <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-
-              {isStickering && (
-                <button
-                  onClick={deleteActiveSticker}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/20 text-red-100 border border-red-500/30 hover:bg-red-500/30 transition-all active:scale-95 cursor-pointer"
-                  title="Seçili Sticker'ı Sil"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Kaydet */}
-          <button
-            onClick={handleSave}
-            className="flex-1 lg:flex-[1.2] flex items-center justify-center gap-3 py-3.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all min-w-[200px] cursor-pointer"
-          >
-            <Download className="w-4 h-4" /> Galeriye Kaydet ✨
-          </button>
-
-          {/* İndir & Galeri */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleDownload}
-              className="w-12 h-12 flex items-center justify-center rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all active:scale-95 cursor-pointer"
-              title="İndir"
-            >
-              <Download className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => {
-                playPopSound();
-                setShowGallery(true);
-              }}
-              className="w-12 h-12 flex items-center justify-center rounded-2xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all active:scale-95 cursor-pointer"
-              title="Galerim"
-            >
-              <Image className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
 
         {/* Kayıt bildirimi */}
         <AnimatePresence>

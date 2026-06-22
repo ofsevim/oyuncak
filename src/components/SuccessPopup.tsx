@@ -12,7 +12,7 @@ interface SuccessPopupProps {
   disableVoice?: boolean;
 }
 
-const SuccessPopup = ({ isOpen, onClose, message = 'Harikasın!', level, disableVoice = false }: SuccessPopupProps) => {
+const SuccessPopup = ({ isOpen, onClose, message = 'Tebrikler!', level, disableVoice = false }: SuccessPopupProps) => {
   useEffect(() => {
     if (isOpen) {
       const duration = 2000;

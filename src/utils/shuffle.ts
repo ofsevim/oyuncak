@@ -17,11 +17,11 @@ export const shuffleArray = <T,>(array: T[]): T[] => {
 export const smartShuffle = <T,>(array: T[], key?: keyof T): T[] => {
     if (array.length <= 1) return [...array];
 
-    const shuffled = shuffleArray(array);
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 100;
 
     while (attempts < maxAttempts) {
+        const shuffled = shuffleArray(array);
         let hasConsecutive = false;
         for (let i = 0; i < shuffled.length - 1; i++) {
             const current = key ? shuffled[i][key] : shuffled[i];
@@ -29,17 +29,18 @@ export const smartShuffle = <T,>(array: T[], key?: keyof T): T[] => {
 
             if (current === next) {
                 hasConsecutive = true;
-                // Swap with a random element
-                const swapIdx = Math.floor(Math.random() * shuffled.length);
-                [shuffled[i + 1], shuffled[swapIdx]] = [shuffled[swapIdx], shuffled[i + 1]];
+                break;
             }
         }
 
-        if (!hasConsecutive) break;
+        if (!hasConsecutive) {
+            return shuffled;
+        }
         attempts++;
     }
 
-    return shuffled;
+    // Fallback if we couldn't find a perfect configuration
+    return shuffleArray(array);
 };
 
 /**
