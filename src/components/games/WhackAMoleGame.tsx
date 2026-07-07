@@ -112,7 +112,9 @@ const WhackAMoleGame = () => {
 
   const clearAllTimers = useCallback(() => {
     hookClearAll();
+    if (moleRef.current) clearTimeout(moleRef.current);
     moleRef.current = null;
+    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     comboTimerRef.current = null;
   }, [hookClearAll]);
 
@@ -239,12 +241,12 @@ const WhackAMoleGame = () => {
   /* Initial spawn delay */
   useEffect(() => {
     if (gamePhase === 'playing') {
-      const t = safeTimeout(() => spawnMoleRef.current(), 600);
-      return () => clearTimeout(t);
+      const id = safeTimeout(() => spawnMoleRef.current(), 600);
+      return () => clearSafeTimeout(id);
     } else {
       updateHoles(m => m.clear());
     }
-  }, [gamePhase, safeTimeout, updateHoles]);
+  }, [gamePhase, safeTimeout, clearSafeTimeout, updateHoles]);
 
   const startGame = useCallback(() => {
     clearAllTimers();
@@ -683,7 +685,7 @@ const WhackAMoleGame = () => {
         ))}
       </AnimatePresence>
 
-      <SuccessPopup isOpen={showSuccess} onClose={() => { clearAllTimers(); setGamePhase('start'); }} disableVoice={true}
+      <SuccessPopup isOpen={showSuccess} onClose={() => { clearAllTimers(); setGamePhase('start'); }}
         message={`${score} puan! ${isNewRecord ? '🏆 Yeni Rekor!' : `Maks Kombo: x${maxCombo}`}`} />
     </motion.div>
   );

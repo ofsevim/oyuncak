@@ -2,17 +2,15 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fireConfetti } from '@/utils/confettiUtil';
 import { Star, Heart, Sparkles } from 'lucide-react';
-import { speakSuccess } from '@/utils/voiceFeedback';
 
 interface SuccessPopupProps {
   isOpen: boolean;
   onClose: () => void;
   message?: string;
   level?: number;
-  disableVoice?: boolean;
 }
 
-const SuccessPopup = ({ isOpen, onClose, message = 'Tebrikler!', level, disableVoice = false }: SuccessPopupProps) => {
+const SuccessPopup = ({ isOpen, onClose, message = 'Tebrikler!', level }: SuccessPopupProps) => {
   useEffect(() => {
     if (isOpen) {
       const duration = 2000;
@@ -37,10 +35,6 @@ const SuccessPopup = ({ isOpen, onClose, message = 'Tebrikler!', level, disableV
         });
       }, 50);
 
-      if (!disableVoice) {
-        speakSuccess();
-      }
-
       const timeout = setTimeout(() => {
         onClose();
       }, 3000);
@@ -50,7 +44,7 @@ const SuccessPopup = ({ isOpen, onClose, message = 'Tebrikler!', level, disableV
         clearTimeout(timeout);
       };
     }
-  }, [disableVoice, isOpen, onClose]);
+  }, [isOpen, onClose]);
 
   return (
     <AnimatePresence>

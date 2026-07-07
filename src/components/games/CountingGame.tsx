@@ -74,6 +74,8 @@ const CountingGame = () => {
   const lastEmojiRef = useRef<string | null>(null);
   const floatIdRef = useRef(0);
   const fieldRef = useRef<HTMLDivElement>(null);
+  const timeLeftRef = useRef<number>(0);
+  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
   const config = DIFFS[difficulty];
 
@@ -157,15 +159,18 @@ const CountingGame = () => {
       return;
     }
     const id = safeInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          playErrorSound(); setStreak(0); setTotal(p => p + 1);
-          setShowResult('wrong');
-          safeTimeout(setupRound, 1800);
-          return 0;
-        }
-        return prev - 1;
-      });
+      const tl = timeLeftRef.current;
+      if (tl <= 1) {
+        // Side effects outside the updater — React 18 Strict Mode safe
+        playErrorSound();
+        setStreak(0);
+        setTotal(p => p + 1);
+        setShowResult('wrong');
+        safeTimeout(setupRound, 1800);
+        setTimeLeft(0);
+      } else {
+        setTimeLeft(tl - 1);
+      }
     }, 1000);
     return () => clearSafeInterval(id);
   }, [gameState, config.timer, showResult, setupRound, safeInterval, safeTimeout, clearSafeInterval]);

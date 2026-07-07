@@ -529,32 +529,30 @@ const TetrisGame = () => {
           )}
 
           {/* Ghost parça */}
-          {activePiece &&
-            gameState === 'playing' &&
-            (() => {
-              const ghostY = getGhostY(activePiece);
-              return activePiece.shape.map((row, r) =>
-                row.map((cell, c) => {
-                  if (cell === 0) return null;
-                  const gx = activePiece.pos.x + c;
-                  const gy = ghostY + r;
-                  if (gy < 0 || gy >= ROWS) return null;
-                  return (
-                    <div
-                      key={`ghost-${r}-${c}`}
-                      className="absolute border border-white/20 rounded-[2px]"
-                      style={{
-                        width: `${100 / COLS}%`,
-                        height: `${100 / ROWS}%`,
-                        left: `${gx * (100 / COLS)}%`,
-                        top: `${gy * (100 / ROWS)}%`,
-                        background: `${TETROMINOS[activePiece.type].hex}15`,
-                      }}
-                    />
-                  );
-                }),
-              );
-            })()}
+          {activePiece && gameState === 'playing' && (() => {
+            const ghostY = getGhostY(activePiece);
+            return activePiece.shape.map((row, r) =>
+              row.map((cell, c) => {
+                if (cell === 0) return null;
+                const gx = activePiece.pos.x + c;
+                const gy = ghostY + r;
+                if (gy < 0 || gy >= ROWS) return null;
+                return (
+                  <div
+                    key={`ghost-${r}-${c}`}
+                    className="absolute border border-white/20 rounded-[2px]"
+                    style={{
+                      width: `${100 / COLS}%`,
+                      height: `${100 / ROWS}%`,
+                      left: `${gx * (100 / COLS)}%`,
+                      top: `${gy * (100 / ROWS)}%`,
+                      background: `${TETROMINOS[activePiece.type].hex}15`,
+                    }}
+                  />
+                );
+              }),
+            );
+          })()}
 
           {/* Aktif parça */}
           {activePiece &&

@@ -387,8 +387,8 @@ const BalloonPopGame = () => {
           ...prev,
           { id: effectId, x: relX, y: relY, color, points },
         ]);
-        // Oyun bitse de efekt temizlenir — bilinçli olarak safeTimeout değil
-        setTimeout(
+        // 600ms sonra efekti temizle — safeTimeout ile component unmount'ta temizlenir
+        hookTimeout(
           () =>
             setPopEffects((prev) =>
               prev.filter((p) => p.id !== effectId),

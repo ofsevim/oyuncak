@@ -98,11 +98,15 @@ const SpaceShooterGame = () => {
     const rapidFire = useRef(false);
     const spreadShot = useRef(false);
     const powerUpTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+    const lastResizeCall = useRef(0);
 
     useEffect(() => { setHighScore(getHighScore('spaceshooter')); }, []);
 
     useEffect(() => {
         const updateScale = () => {
+            const now = Date.now();
+            if (now - lastResizeCall.current < 200) return;
+            lastResizeCall.current = now;
             const maxW = window.innerWidth - 32;
             const maxH = window.innerHeight - 200;
             setCanvasScale(Math.min(1, maxW / CW, maxH / CH));

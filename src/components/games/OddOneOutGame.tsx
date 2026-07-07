@@ -118,7 +118,7 @@ const OddOneOutGame = () => {
   const [praiseText, setPraiseText] = useState('');
   const [showPraise, setShowPraise] = useState(false);
 
-  const { safeTimeout, safeInterval, clearAll, clearAllIntervals } = useSafeTimeouts();
+  const { safeTimeout, safeInterval, clearAll, clearSafeTimeout, clearSafeInterval } = useSafeTimeouts();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sparkleIdRef = useRef(0);
   const scoreRef = useRef(0);
@@ -150,7 +150,6 @@ const OddOneOutGame = () => {
   /* ── Init game ── */
   const initGame = useCallback(() => {
     clearAll();
-    clearAllIntervals();
     const rounds = generateDynamicRounds(useHardMode);
     setShuffledRounds(rounds);
     setCurrentRoundIndex(0); setSelectedId(null); setIsCorrect(false);
@@ -160,7 +159,7 @@ const OddOneOutGame = () => {
     setIsNewRecord(false); setShowPraise(false);
     if (rounds.length > 0) setRoundItems(shuffleArray(rounds[0].items));
     if (useTimer) setTimeLeft(15);
-  }, [useHardMode, useTimer, clearAll, clearAllIntervals]);
+  }, [useHardMode, useTimer, clearAll]);
 
   const round = shuffledRounds[currentRoundIndex];
 
@@ -176,8 +175,8 @@ const OddOneOutGame = () => {
   useEffect(() => {
     if (gameState !== 'playing' || selectedId || !round) return;
     const t = safeTimeout(() => setHintPulse(true), 8000);
-    return () => clearTimeout(t);
-  }, [currentRoundIndex, gameState, selectedId, round, safeTimeout]);
+    return () => clearSafeTimeout(t);
+  }, [currentRoundIndex, gameState, selectedId, round, safeTimeout, clearSafeTimeout]);
 
   /* ── Timer — side effects stay outside the functional updater (React 18 Strict Mode safe) ── */
   useEffect(() => {
@@ -209,8 +208,8 @@ const OddOneOutGame = () => {
       }
     }, 1000);
     timerRef.current = intervalId;
-    return () => clearInterval(intervalId);
-  }, [useTimer, round, currentRoundIndex, shuffledRounds.length, selectedId, gameState, safeInterval]);
+    return () => clearSafeInterval(intervalId);
+  }, [useTimer, round, currentRoundIndex, shuffledRounds.length, selectedId, gameState, safeInterval, clearSafeInterval]);
 
   /* ── Handle selection ── */
   const handleSelect = (itemId: string, e: React.MouseEvent | React.TouchEvent) => {

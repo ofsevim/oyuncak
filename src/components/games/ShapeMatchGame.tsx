@@ -46,7 +46,7 @@ const ShapeMatchGame = () => {
     const [praiseText, setPraiseText] = useState('');
     const [showPraise, setShowPraise] = useState(false);
 
-    const { safeTimeout, safeInterval, clearAll, clearAllIntervals } = useSafeTimeouts();
+    const { safeTimeout, safeInterval, clearAll, clearSafeInterval } = useSafeTimeouts();
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const sparkleIdRef = useRef(0);
     const scoreRef = useRef(0);
@@ -117,7 +117,6 @@ const ShapeMatchGame = () => {
 
     const initGame = useCallback(() => {
         clearAll();
-        clearAllIntervals();
 
         setGameState('playing'); setScore(0); scoreRef.current = 0;
         setStreak(0);
@@ -126,7 +125,7 @@ const ShapeMatchGame = () => {
         setIsNewRecord(false); setShowPraise(false);
 
         generateNewRound();
-    }, [clearAll, clearAllIntervals, generateNewRound]);
+    }, [clearAll, generateNewRound]);
 
     /* Timer — all side effects live outside the functional updater (React 18 Strict Mode safe) */
     useEffect(() => {
@@ -160,8 +159,8 @@ const ShapeMatchGame = () => {
             }
         }, 1000);
         timerRef.current = intervalId;
-        return () => clearInterval(intervalId);
-    }, [useTimer, useHardMode, currentRound, isCorrect, gameState, finishGame, generateNewRound, safeInterval, safeTimeout]);
+        return () => clearSafeInterval(intervalId);
+    }, [useTimer, useHardMode, currentRound, isCorrect, gameState, finishGame, generateNewRound, safeInterval, safeTimeout, clearSafeInterval]);
 
     const handleOptionSelect = (emoji: string, e: React.MouseEvent | React.TouchEvent) => {
         if (isCorrect || gameState !== 'playing' || !currentRound) return;

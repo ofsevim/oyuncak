@@ -74,7 +74,11 @@ const MathGame = () => {
       // Simplified: compare type shows result vs a close number
       const offset = Math.floor(Math.random() * 4) + 1;
       const wrongAnswers2: number[] = [answer + offset, answer - offset, answer + offset * 2].filter(w => w !== answer && w >= 0);
-      while (wrongAnswers2.length < 3) wrongAnswers2.push(answer + wrongAnswers2.length + 1);
+      let fillAttempts = 0;
+      while (wrongAnswers2.length < 3 && fillAttempts < 10) {
+        wrongAnswers2.push(answer + wrongAnswers2.length + 1 + fillAttempts);
+        fillAttempts++;
+      }
       setQuestion({ display, answer, type: qType });
       setOptions(shuffleArray([answer, ...wrongAnswers2.slice(0, 3)]));
       setShowResult(null);

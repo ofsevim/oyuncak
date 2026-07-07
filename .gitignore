@@ -37,3 +37,6 @@ android/app/src/main/assets/capacitor.config.json
 # Environment variables
 .env
 .env.local
+
+# MiMoCode
+.mimocode
