@@ -98,22 +98,26 @@ const SpaceShooterGame = () => {
     const rapidFire = useRef(false);
     const spreadShot = useRef(false);
     const powerUpTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-    const lastResizeCall = useRef(0);
+    const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => { setHighScore(getHighScore('spaceshooter')); }, []);
 
     useEffect(() => {
-        const updateScale = () => {
-            const now = Date.now();
-            if (now - lastResizeCall.current < 200) return;
-            lastResizeCall.current = now;
+        const applyScale = () => {
             const maxW = window.innerWidth - 32;
             const maxH = window.innerHeight - 200;
             setCanvasScale(Math.min(1, maxW / CW, maxH / CH));
         };
-        updateScale();
-        window.addEventListener('resize', updateScale);
-        return () => window.removeEventListener('resize', updateScale);
+        const onResize = () => {
+            if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
+            resizeTimerRef.current = setTimeout(applyScale, 150);
+        };
+        applyScale();
+        window.addEventListener('resize', onResize);
+        return () => {
+            window.removeEventListener('resize', onResize);
+            if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
+        };
     }, []);
 
     useEffect(() => { diffRef.current = DIFFS[diff]; }, [diff]);

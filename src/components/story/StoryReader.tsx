@@ -116,7 +116,7 @@ export default function StoryReader({ story, initialPageIndex = 0, onExit }: Pro
         <AnimatePresence mode="wait">
           <motion.div
             key={`${story.id}-${pageIndex}`}
-            className="relative overflow-hidden rounded-[2.5rem] border-4 border-primary/10 bg-white/60 backdrop-blur-sm p-6 md:p-10 shadow-playful"
+            className="relative overflow-hidden rounded-[2.5rem] border-4 border-primary/10 bg-card/80 backdrop-blur-sm p-6 md:p-10 shadow-playful"
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -18 }}

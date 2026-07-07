@@ -112,9 +112,9 @@ const WhackAMoleGame = () => {
 
   const clearAllTimers = useCallback(() => {
     hookClearAll();
-    if (moleRef.current) clearTimeout(moleRef.current);
+    // hookClearAll zaten tüm safeTimeout/hookTimeout ID'lerini temizler.
+    // Ref'leri null'layarak stale referansı önlüyoruz.
     moleRef.current = null;
-    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     comboTimerRef.current = null;
   }, [hookClearAll]);
 
@@ -259,19 +259,19 @@ const WhackAMoleGame = () => {
     setFloatingTexts([]);
   }, [config.time, clearAllTimers]);
 
-  /* Timer */
+  /* Timer — side effects stay outside the functional updater (React 18 Strict Mode safe) */
   useEffect(() => {
     if (gamePhase !== 'playing') return;
     const id = hookInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearSafeInterval(id);
-          setGamePhase('ended');
-          setShowSuccess(true);
-          return 0;
-        }
-        return prev - 1;
-      });
+      const tl = timeLeftRef.current;
+      if (tl <= 1) {
+        clearSafeInterval(id);
+        setTimeLeft(0);
+        setGamePhase('ended');
+        setShowSuccess(true);
+      } else {
+        setTimeLeft(tl - 1);
+      }
     }, 1000);
     return () => clearSafeInterval(id);
   }, [gamePhase, hookInterval, clearSafeInterval]);
