@@ -17,8 +17,13 @@ export async function run() {
   );
   assert.match(
     rules,
-    /&&\s*isKnownScoreGame\(gameId\)/,
+    /isKnownScoreGame\(gameId\)/,
     "Skor yazma kuralı bilinen oyun kimliği kontrolünü çağırmalı",
+  );
+  assert.match(
+    rules,
+    /request\.resource\.data\.score\s*>=\s*resource\.data\.score/,
+    "Firestore kuralları mevcut skorun düşürülmesini engellemeli",
   );
 
   for (const gameId of SCORE_GAME_IDS) {

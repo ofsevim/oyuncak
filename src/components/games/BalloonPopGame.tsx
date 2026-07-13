@@ -283,7 +283,7 @@ const BalloonPopGame = () => {
     const nextColor =
       BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
     setTargetColor(nextColor);
-    
+
     const initialBalloons = Array.from({ length: 6 }, (_, i) => {
       const isTarget = i < 3;
       const c = isTarget ? nextColor : BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
@@ -473,7 +473,7 @@ const BalloonPopGame = () => {
         setCombo(0);
       }
     },
-    [safeTimeout, startNewRound, config.popsPerRound],
+    [safeTimeout, hookTimeout, startNewRound, config.popsPerRound],
   );
 
   /* ═══════════════════ RENDER ═══════════════════ */
@@ -789,39 +789,39 @@ const BalloonPopGame = () => {
               }}
               aria-label={`${balloon.special ?? balloon.color.name} balon`}
             >
-                <svg
-                  width="48"
-                  height="64"
-                  viewBox="0 0 48 64"
-                  className="drop-shadow-lg"
-                >
-                  <ellipse cx="24" cy="26" rx="20" ry="24" fill={balloon.color.glow} opacity={0.5} />
-                  <ellipse
-                    cx="24" cy="26" rx="18" ry="22"
-                    fill={`url(#${getGradId(balloon)})`}
-                    stroke="rgba(255,255,255,0.2)" strokeWidth={0.5}
-                  />
-                  <ellipse
-                    cx="17" cy="18" rx="4" ry="6"
-                    fill="white" opacity={0.3}
-                    transform="rotate(-20 17 18)"
-                  />
-                  {balloon.special === 'freeze' && (
-                    <text x="24" y="30" textAnchor="middle" fontSize="14">❄️</text>
-                  )}
-                  {balloon.special === 'double' && (
-                    <text x="24" y="32" textAnchor="middle" fontSize="13" fontWeight="bold" fill="white">2x</text>
-                  )}
-                  {balloon.special === 'bomb' && (
-                    <text x="24" y="30" textAnchor="middle" fontSize="14">💣</text>
-                  )}
-                  <ellipse cx="24" cy="48" rx="3" ry="2" fill={balloon.color.value} opacity={0.8} />
-                  <path d="M24 50 Q22 56 24 62" stroke="rgba(255,255,255,0.3)" strokeWidth={1} fill="none" />
-                </svg>
-              </button>
-            </div>
+              <svg
+                width="48"
+                height="64"
+                viewBox="0 0 48 64"
+                className="drop-shadow-lg"
+              >
+                <ellipse cx="24" cy="26" rx="20" ry="24" fill={balloon.color.glow} opacity={0.5} />
+                <ellipse
+                  cx="24" cy="26" rx="18" ry="22"
+                  fill={`url(#${getGradId(balloon)})`}
+                  stroke="rgba(255,255,255,0.2)" strokeWidth={0.5}
+                />
+                <ellipse
+                  cx="17" cy="18" rx="4" ry="6"
+                  fill="white" opacity={0.3}
+                  transform="rotate(-20 17 18)"
+                />
+                {balloon.special === 'freeze' && (
+                  <text x="24" y="30" textAnchor="middle" fontSize="14">❄️</text>
+                )}
+                {balloon.special === 'double' && (
+                  <text x="24" y="32" textAnchor="middle" fontSize="13" fontWeight="bold" fill="white">2x</text>
+                )}
+                {balloon.special === 'bomb' && (
+                  <text x="24" y="30" textAnchor="middle" fontSize="14">💣</text>
+                )}
+                <ellipse cx="24" cy="48" rx="3" ry="2" fill={balloon.color.value} opacity={0.8} />
+                <path d="M24 50 Q22 56 24 62" stroke="rgba(255,255,255,0.3)" strokeWidth={1} fill="none" />
+              </svg>
+            </button>
           </div>
-        ))}
+        </div>
+      ))}
     </div>
   );
 };

@@ -37,24 +37,32 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<Profile | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setProfileState(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed: unknown = JSON.parse(stored);
+        if (
+          typeof parsed === 'object' && parsed !== null &&
+          typeof (parsed as Profile).name === 'string' &&
+          typeof (parsed as Profile).avatarId === 'string' &&
+          typeof (parsed as Profile).createdAt === 'number'
+        ) {
+          setProfileState(parsed as Profile);
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
       }
-    }
+    } catch { /* localStorage kullanılamıyor olabilir */ }
   }, []);
 
   const setProfile = useCallback((newProfile: Profile) => {
     setProfileState(newProfile);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile)); } catch { /* ignore */ }
   }, []);
 
   const clearProfile = useCallback(() => {
     setProfileState(null);
-    localStorage.removeItem(STORAGE_KEY);
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
   }, []);
 
   const getAvatar = useCallback(() => {
@@ -81,4 +89,5 @@ export function useProfile() {
   }
   return context;
 }
+
 

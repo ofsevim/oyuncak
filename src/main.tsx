@@ -15,15 +15,21 @@ declare global {
  */
 function showFatalError(message: string) {
   const loader = document.getElementById("app-loader");
-  const html = `
-    <div style="padding:2rem;text-align:center;max-width:480px;margin:0 auto;color:#ff6b6b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
-      <div style="font-size:3rem;margin-bottom:1rem">⚠️</div>
-      <h1 style="font-size:1.25rem;color:#fff;margin-bottom:0.75rem">Yapılandırma Hatası</h1>
-      <p style="font-size:0.9rem;color:#cbd5e1;line-height:1.6">${message}</p>
-    </div>
-  `;
-  if (loader) loader.innerHTML = html;
-  else document.body.innerHTML = html;
+  const container = document.createElement("div");
+  container.style.cssText = "padding:2rem;text-align:center;max-width:480px;margin:0 auto;color:#ff6b6b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+
+  const icon = document.createElement("div");
+  icon.style.cssText = "font-size:3rem;margin-bottom:1rem";
+  icon.textContent = "⚠️";
+  const title = document.createElement("h1");
+  title.style.cssText = "font-size:1.25rem;color:#fff;margin-bottom:0.75rem";
+  title.textContent = "Yapılandırma Hatası";
+  const detail = document.createElement("p");
+  detail.style.cssText = "font-size:0.9rem;color:#cbd5e1;line-height:1.6";
+  detail.textContent = message;
+  container.append(icon, title, detail);
+
+  (loader ?? document.body).replaceChildren(container);
 }
 
 async function bootstrap() {

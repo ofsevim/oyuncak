@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
 import DrawingGallery, { saveDrawing } from './DrawingGallery';
 import { fireConfetti } from '@/utils/confettiUtil';
+import { toast } from 'sonner';
 
 /* ═══════════════════════════════════════════
    SABİTLER
@@ -102,7 +103,7 @@ const stampPencil: StampFn = (ctx, x, y, size, color) => {
 
   // Kalem (Grafit): Yumuşak, kağıt dokusuna karışan düşük opaklıklı yapı
   ctx.globalAlpha = 0.15; // Çok düşük opaklık, üst üste binince kararsın
-  
+
   // Ana yumuşak gövde
   ctx.fillStyle = color;
   ctx.beginPath();
@@ -116,7 +117,7 @@ const stampPencil: StampFn = (ctx, x, y, size, color) => {
     const dist = Math.random() * radius * 1.2;
     const ox = Math.cos(angle) * dist;
     const oy = Math.sin(angle) * dist;
-    
+
     ctx.fillStyle = `rgb(${r},${g},${b})`;
     const pSize = 0.5 + Math.random() * 1.5;
     ctx.fillRect(x + ox, y + oy, pSize, pSize);
@@ -133,7 +134,7 @@ const stampPastel: StampFn = (ctx, x, y, size, color) => {
     const dist = Math.random() * radius;
     const ox = Math.cos(angle) * dist;
     const oy = Math.sin(angle) * dist;
-    
+
     // Kenarlara doğru tozlanma artar, merkeze doğru pigment daha yoğun
     const isEdge = dist > radius * 0.6;
     ctx.globalAlpha = isEdge ? 0.2 + Math.random() * 0.3 : 0.5 + Math.random() * 0.4;
@@ -142,11 +143,11 @@ const stampPastel: StampFn = (ctx, x, y, size, color) => {
     const mixChalk = Math.random() > 0.7;
     if (mixChalk) {
       // Açık renkli (tebeşir) toz
-      ctx.fillStyle = `rgb(${clamp(r+40)}, ${clamp(g+40)}, ${clamp(b+40)})`;
+      ctx.fillStyle = `rgb(${clamp(r + 40)}, ${clamp(g + 40)}, ${clamp(b + 40)})`;
     } else {
       ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
     }
-    
+
     const pSize = 1.5 + Math.random() * 2.5;
     ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
@@ -162,14 +163,14 @@ const stampCrayon: StampFn = (ctx, x, y, size, color) => {
     const dist = Math.random() * radius;
     const ox = Math.cos(angle) * dist;
     const oy = Math.sin(angle) * dist;
-    
+
     // Rastgele boşluklar bırakarak kağıt dokusunu simüle et
-    if (Math.random() > 0.85) continue; 
+    if (Math.random() > 0.85) continue;
 
     // Daha sert mumsu pigmentler
     ctx.globalAlpha = 0.4 + Math.random() * 0.5;
     ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-    
+
     const pSize = 1 + Math.random() * 2;
     ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
@@ -180,10 +181,10 @@ const stampCrayon: StampFn = (ctx, x, y, size, color) => {
     ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
     ctx.lineWidth = 1 + Math.random() * 2;
     ctx.beginPath();
-    const px1 = x + (Math.random()-0.5) * radius * 1.5;
-    const py1 = y + (Math.random()-0.5) * radius * 1.5;
-    const px2 = x + (Math.random()-0.5) * radius * 1.5;
-    const py2 = y + (Math.random()-0.5) * radius * 1.5;
+    const px1 = x + (Math.random() - 0.5) * radius * 1.5;
+    const py1 = y + (Math.random() - 0.5) * radius * 1.5;
+    const px2 = x + (Math.random() - 0.5) * radius * 1.5;
+    const py2 = y + (Math.random() - 0.5) * radius * 1.5;
     ctx.moveTo(px1, py1);
     ctx.lineTo(px2, py2);
     ctx.stroke();
@@ -208,13 +209,13 @@ const stampWatercolor: StampFn = (ctx, x, y, size, color) => {
 
   ctx.fillStyle = grad;
   ctx.beginPath();
-  
+
   // Suyun kağıt dokusu üzerindeki düzensiz dağılımını taklit etmek için rastgele organik dalgalanmalar
   const numPoints = 12;
   for (let i = 0; i < numPoints; i++) {
     const angle = (i / numPoints) * Math.PI * 2;
     // Yarıçapı rastgele esnetiyoruz
-    const radiusNoise = 1 + (Math.random() * 0.2 - 0.1); 
+    const radiusNoise = 1 + (Math.random() * 0.2 - 0.1);
     const px = x + Math.cos(angle) * spread * radiusNoise;
     const py = y + Math.sin(angle) * spread * radiusNoise;
     if (i === 0) ctx.moveTo(px, py);
@@ -274,10 +275,10 @@ const stampGlitter: StampFn = (ctx, x, y, size, color) => {
     const dist = Math.sqrt(Math.random()) * spread * 1.3;
     const fx = x + Math.cos(angle) * dist;
     const fy = y + Math.sin(angle) * dist;
-    
+
     // Sim pulları yanar döner, çok boyutlu metalik renklerde olur
     ctx.globalAlpha = 0.75 + Math.random() * 0.25;
-    
+
     // Altın, gümüş, gökkuşağı ve fırçanın kendi rengi arasında parıltılı geçişler
     let flakeColor: string;
     const randType = Math.random();
@@ -291,7 +292,7 @@ const stampGlitter: StampFn = (ctx, x, y, size, color) => {
       // Gümüş / Elmas parıltısı
       flakeColor = `hsl(190, 80%, ${85 + Math.random() * 15}%)`;
     }
-    
+
     // Sim pulunu çiz
     const flakeSize = 1.0 + Math.random() * 2.2;
     ctx.fillStyle = flakeColor;
@@ -334,7 +335,7 @@ const stampGlitter: StampFn = (ctx, x, y, size, color) => {
       ctx.save();
       ctx.translate(sx, sy);
       ctx.rotate(Math.random() * Math.PI); // Rastgele açı ile parıldama hissi
-      
+
       ctx.beginPath();
       ctx.moveTo(0, -starSize);
       ctx.quadraticCurveTo(0, 0, starSize, 0);
@@ -771,8 +772,13 @@ const DrawingCanvas = () => {
   }, [canvasW, canvasH, fabricCanvas]);
 
   const handleSave = useCallback(() => {
-    const dataUrl = getMergedDataUrl();
-    saveDrawing(dataUrl, `Çizim ${new Date().toLocaleDateString('tr-TR')}`);
+    try {
+      const dataUrl = getMergedDataUrl();
+      saveDrawing(dataUrl, `Çizim ${new Date().toLocaleDateString('tr-TR')}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Çizim kaydedilemedi.');
+      return;
+    }
     playSuccessSound();
     fireConfetti({
       particleCount: 80,
@@ -1064,7 +1070,7 @@ const DrawingCanvas = () => {
                   <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
-              
+
               {isStickering && (
                 <button
                   onClick={deleteActiveSticker}
@@ -1095,7 +1101,7 @@ const DrawingCanvas = () => {
 
           {/* Alt Sıra: İndir, Galeri, Kaydet */}
           <div className="flex items-center gap-2">
-             <button
+            <button
               onClick={handleDownload}
               className="w-10 h-10 lg:w-11 lg:h-11 flex items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all active:scale-95 cursor-pointer"
               title="İndir"

@@ -11,8 +11,22 @@ export interface SavedDrawing {
 }
 
 const STORAGE_KEY = 'oyuncak-drawings';
+const MAX_DRAWINGS = 20;
+const MAX_STORAGE_CHARS = 4_000_000;
+
+function isSavedDrawing(value: unknown): value is SavedDrawing {
+  if (typeof value !== 'object' || value === null) return false;
+  const item = value as Partial<SavedDrawing>;
+  return typeof item.id === 'string' &&
+    typeof item.dataUrl === 'string' && item.dataUrl.startsWith('data:image/') &&
+    typeof item.createdAt === 'number' && Number.isFinite(item.createdAt) &&
+    typeof item.name === 'string';
+}
 
 export function saveDrawing(dataUrl: string, name: string): SavedDrawing {
+  if (!dataUrl.startsWith('data:image/') || dataUrl.length > MAX_STORAGE_CHARS) {
+    throw new Error('Çizim yerel depolama için çok büyük.');
+  }
   const drawings = getDrawings();
   const newDrawing: SavedDrawing = {
     id: Date.now().toString(),
@@ -21,16 +35,27 @@ export function saveDrawing(dataUrl: string, name: string): SavedDrawing {
     name,
   };
   drawings.unshift(newDrawing);
-  // Max 20 çizim sakla
-  if (drawings.length > 20) drawings.pop();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(drawings));
+  while (drawings.length > MAX_DRAWINGS) drawings.pop();
+  let serialized = JSON.stringify(drawings);
+  while (serialized.length > MAX_STORAGE_CHARS && drawings.length > 1) {
+    drawings.pop();
+    serialized = JSON.stringify(drawings);
+  }
+  if (serialized.length > MAX_STORAGE_CHARS) throw new Error('Çizim yerel depolama için çok büyük.');
+  try {
+    localStorage.setItem(STORAGE_KEY, serialized);
+  } catch {
+    throw new Error('Çizim kaydedilemedi. Tarayıcı depolama alanı dolu olabilir.');
+  }
   return newDrawing;
 }
 
 export function getDrawings(): SavedDrawing[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    const parsed: unknown = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed.filter(isSavedDrawing).slice(0, MAX_DRAWINGS) : [];
   } catch {
     return [];
   }
@@ -38,7 +63,7 @@ export function getDrawings(): SavedDrawing[] {
 
 export function deleteDrawing(id: string): void {
   const drawings = getDrawings().filter(d => d.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(drawings));
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(drawings)); } catch { /* ignore */ }
 }
 
 interface DrawingGalleryProps {
@@ -190,4 +215,5 @@ export default function DrawingGallery({ onClose }: DrawingGalleryProps) {
     </div>
   );
 }
+
 

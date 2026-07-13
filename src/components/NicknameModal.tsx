@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { updateNicknameInScores } from '@/services/scoreService';
+import {
+  getNicknameFromExistingScores,
+  updateNicknameInScores,
+} from '@/services/scoreService';
 import { sanitizeNickname, MAX_NICKNAME_LENGTH } from '@/lib/utils';
 
 const NICKNAME_KEY = 'oyuncak.nickname';
@@ -16,11 +19,46 @@ export default function NicknameModal() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const alreadyAsked = localStorage.getItem(ASKED_KEY);
-    if (!alreadyAsked) {
-      const timer = setTimeout(() => setOpen(true), 1500);
-      return () => clearTimeout(timer);
-    }
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const initialize = async () => {
+      try {
+        const savedNickname = localStorage.getItem(NICKNAME_KEY);
+        const alreadyAsked = localStorage.getItem(ASKED_KEY);
+
+        // Önceki sürümlerde takma ad kaydedilmiş fakat "soruldu" işareti yoksa
+        // kullanıcıdan aynı bilgiyi yeniden isteme.
+        if (savedNickname?.trim()) {
+          localStorage.setItem(ASKED_KEY, '1');
+          return;
+        }
+        if (alreadyAsked) return;
+      } catch {
+        // localStorage erişilemiyorsa bulut geri kazanımını yine de dene.
+      }
+
+      const recoveredNickname = await getNicknameFromExistingScores();
+      if (cancelled) return;
+
+      if (recoveredNickname) {
+        try {
+          localStorage.setItem(NICKNAME_KEY, recoveredNickname);
+          localStorage.setItem(ASKED_KEY, '1');
+        } catch { /* Depolama kapalı olsa da modalı bu oturumda gösterme. */ }
+        return;
+      }
+
+      timer = setTimeout(() => {
+        if (!cancelled) setOpen(true);
+      }, 1500);
+    };
+
+    void initialize();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
   }, []);
 
   // Açıldığında input'a odaklan ve ESC ile kapatmayı dinle

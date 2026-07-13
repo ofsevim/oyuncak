@@ -99,6 +99,35 @@ export async function getUserScore(gameId: string): Promise<number> {
 }
 
 /**
+ * Yerel takma ad kaydı bulunmayan eski kullanıcılar için mevcut skorlardan
+ * kayıtlı adı geri getirir. Bu, takma ad modalının daha önce skor kaydetmiş
+ * kullanıcıya yeniden gösterilmesini önleyen tek seferlik bir geri kazanımdır.
+ */
+export async function getNicknameFromExistingScores(): Promise<string | null> {
+  try {
+    const user = await ensureAuth();
+    const snapshots = await Promise.all(
+      SCORE_GAME_IDS.map((gameId) =>
+        getDoc(doc(db, 'scores', gameId, 'leaderboard', user.uid)),
+      ),
+    );
+
+    for (const snapshot of snapshots) {
+      if (!snapshot.exists()) continue;
+      const name = snapshot.data().name;
+      if (typeof name === 'string' && name.trim()) {
+        return sanitizeNickname(name);
+      }
+    }
+
+    return null;
+  } catch (err) {
+    logger.warn('Mevcut skorlardan takma ad okunamadı', { err: String(err) });
+    return null;
+  }
+}
+
+/**
  * Takma adı Firestore'daki tüm mevcut skorlarda güncelle.
  * Yeni takma ad seçildiğinde çağrılır.
  */
