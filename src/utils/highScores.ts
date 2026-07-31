@@ -63,14 +63,16 @@ export function getHighScore(gameId: string): number {
 
 export function setHighScore(gameId: string, score: number): boolean {
   const current = getHighScore(gameId);
-  if (score > current) {
+  const isNew = score > current;
+  if (isNew) {
     try {
       localStorage.setItem(PREFIX + gameId, String(score));
     } catch { /* ignore */ }
-    syncScoreLazy(gameId, score);
-    return true;
   }
-  return false;
+  if (score > 0) {
+    syncScoreLazy(gameId, score);
+  }
+  return isNew;
 }
 
 export function getHighScoreObj(gameId: string): { score: number; date: string } | null {
@@ -99,13 +101,15 @@ export function getHighScoreObj(gameId: string): { score: number; date: string }
  */
 export function saveHighScoreObj(gameId: string, score: number): boolean {
   const current = getHighScore(gameId);
-  if (score > current) {
+  const isNew = score > current;
+  if (isNew) {
     try {
       localStorage.setItem(PREFIX + gameId, String(score));
       localStorage.setItem(PREFIX + gameId + '.obj', JSON.stringify({ score, date: new Date().toISOString() }));
     } catch { /* ignore */ }
-    syncScoreLazy(gameId, score);
-    return true;
   }
-  return false;
+  if (score > 0) {
+    syncScoreLazy(gameId, score);
+  }
+  return isNew;
 }
