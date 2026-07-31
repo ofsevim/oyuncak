@@ -26,14 +26,38 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
   useEffect(() => {
     if (!open && !compact) return;
     let cancelled = false;
-    setLoading(true);
-    fetchData().then((data) => {
-      if (!cancelled) {
-        setEntries(data);
-        setLoading(false);
+    
+    const load = () => {
+      setLoading(true);
+      fetchData().then((data) => {
+        if (!cancelled) {
+          setEntries(data);
+          setLoading(false);
+        }
+      });
+    };
+
+    load();
+
+    const onScoreUpdated = (e: Event) => {
+      const ev = e as CustomEvent<{ gameId: string }>;
+      if (ev.detail?.gameId === gameId) {
+        load();
       }
-    });
-    return () => { cancelled = true; };
+    };
+    
+    const onNicknameChanged = () => {
+      load();
+    };
+
+    window.addEventListener('oyuncak:score-updated', onScoreUpdated);
+    window.addEventListener('oyuncak:nickname-changed', onNicknameChanged);
+
+    return () => { 
+      cancelled = true; 
+      window.removeEventListener('oyuncak:score-updated', onScoreUpdated);
+      window.removeEventListener('oyuncak:nickname-changed', onNicknameChanged);
+    };
   }, [gameId, open, compact, fetchData]);
 
   /* ── Compact mod: sadece top 3 satır ── */

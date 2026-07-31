@@ -97,6 +97,7 @@ const SpaceShooterGame = () => {
     const shieldActive = useRef(false);
     const rapidFire = useRef(false);
     const spreadShot = useRef(false);
+    const invincibleTimer = useRef(0);
     const powerUpTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
     const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -233,6 +234,8 @@ const SpaceShooterGame = () => {
             return p.life > 0;
         });
 
+        if (invincibleTimer.current > 0) invincibleTimer.current -= step;
+
         // ── Collision: bullet vs enemy ──
         bullets.current = bullets.current.filter(b => {
             for (let i = enemies.current.length - 1; i >= 0; i--) {
@@ -264,7 +267,7 @@ const SpaceShooterGame = () => {
         });
 
         // ── Collision: ship vs enemy ──
-        if (!shieldActive.current) {
+        if (!shieldActive.current && invincibleTimer.current <= 0) {
             for (let i = enemies.current.length - 1; i >= 0; i--) {
                 const e = enemies.current[i];
                 const style = ENEMY_STYLES[e.type];
@@ -285,6 +288,8 @@ const SpaceShooterGame = () => {
                         }
                         setPhase('gameover');
                         return;
+                    } else {
+                        invincibleTimer.current = 60; // 1 saniye dokunulmazlık (60 kare)
                     }
                 }
             }
@@ -433,6 +438,10 @@ const SpaceShooterGame = () => {
         ctx.save();
         ctx.translate(sx, sy);
 
+        if (invincibleTimer.current > 0) {
+            ctx.globalAlpha = Math.floor(frameCount.current / 5) % 2 === 0 ? 0.3 : 0.8;
+        }
+
         // Shield effect
         if (shieldActive.current) {
             ctx.strokeStyle = 'rgba(59,130,246,0.5)';
@@ -518,6 +527,7 @@ const SpaceShooterGame = () => {
         shieldActive.current = false;
         rapidFire.current = false;
         spreadShot.current = false;
+        invincibleTimer.current = 0;
         Object.values(powerUpTimers.current).forEach(clearTimeout);
         powerUpTimers.current = {};
         setScore(0);
