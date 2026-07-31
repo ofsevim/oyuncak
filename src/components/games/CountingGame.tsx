@@ -506,7 +506,7 @@ const CountingGame = () => {
         </motion.div>
 
         {/* ── Bottom ── */}
-        <motion.button onClick={() => setGameState('menu')}
+        <motion.button onClick={() => { clearAll(); setGameState('menu'); }}
           whileHover={{ }} whileTap={{ }}
           className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation mt-2" style={pill}>
           ← Menü

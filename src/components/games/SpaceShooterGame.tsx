@@ -318,6 +318,7 @@ const SpaceShooterGame = () => {
 
     /* ── Game loop ── */
     const gameLoop = useCallback((timestamp: number) => {
+        if (livesRef.current <= 0) return;
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -547,7 +548,9 @@ const SpaceShooterGame = () => {
     const handleTouch = (e: React.TouchEvent) => {
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect) return;
-        touchX.current = (e.touches[0].clientX - rect.left) / canvasScale;
+        if (e.touches && e.touches.length > 0) {
+            touchX.current = (e.touches[0].clientX - rect.left) / canvasScale;
+        }
     };
     const handleTouchEnd = () => { touchX.current = null; };
 

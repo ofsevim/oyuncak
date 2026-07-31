@@ -185,8 +185,9 @@ const Game2048 = () => {
     return () => window.removeEventListener('keydown', handleKey);
   }, [handleMove, handleUndo, gameState]);
 
-  const handleTouchStart = (e: React.TouchEvent) => { setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY }); };
+  const handleTouchStart = (e: React.TouchEvent) => { e.preventDefault(); setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY }); };
   const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
     if (!touchStart) return;
     const dx = e.changedTouches[0].clientX - touchStart.x;
     const dy = e.changedTouches[0].clientY - touchStart.y;

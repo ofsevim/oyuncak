@@ -63,24 +63,16 @@ const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: n
     else ctx.rect(x, y, w, h);
 };
 
-let skyGradCache: CanvasGradient | null = null;
-let seaGradCache: CanvasGradient | null = null;
-let floorGradCache: CanvasGradient | null = null;
-
 function drawBg(ctx: CanvasRenderingContext2D, tick: number) {
     // Sky
-    if (!skyGradCache) {
-        skyGradCache = ctx.createLinearGradient(0, 0, 0, CH * 0.62);
-        skyGradCache.addColorStop(0, '#5BA8D0'); skyGradCache.addColorStop(0.6, '#9AD4F0'); skyGradCache.addColorStop(1, '#C8EBF8');
-    }
-    ctx.fillStyle = skyGradCache; ctx.fillRect(0, 0, CW, CH * 0.62);
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, CH * 0.62);
+    skyGrad.addColorStop(0, '#5BA8D0'); skyGrad.addColorStop(0.6, '#9AD4F0'); skyGrad.addColorStop(1, '#C8EBF8');
+    ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, CW, CH * 0.62);
 
     // Sea
-    if (!seaGradCache) {
-        seaGradCache = ctx.createLinearGradient(0, CH * 0.46, 0, CH * 0.62);
-        seaGradCache.addColorStop(0, '#2E9BBF'); seaGradCache.addColorStop(1, '#1A7A9C');
-    }
-    ctx.fillStyle = seaGradCache; ctx.fillRect(0, CH * 0.46, CW, CH * 0.16);
+    const seaGrad = ctx.createLinearGradient(0, CH * 0.46, 0, CH * 0.62);
+    seaGrad.addColorStop(0, '#2E9BBF'); seaGrad.addColorStop(1, '#1A7A9C');
+    ctx.fillStyle = seaGrad; ctx.fillRect(0, CH * 0.46, CW, CH * 0.16);
 
     // Waves
     for (let i = 0; i < 3; i++) {
@@ -116,11 +108,9 @@ function drawBg(ctx: CanvasRenderingContext2D, tick: number) {
     drawPalm(670, CH * 0.62, 80, 1); drawPalm(720, CH * 0.62, 65, -1);
 
     // Court floor
-    if (!floorGradCache) {
-        floorGradCache = ctx.createLinearGradient(0, CH * 0.62, 0, CH);
-        floorGradCache.addColorStop(0, '#C8935A'); floorGradCache.addColorStop(0.3, '#AE7038'); floorGradCache.addColorStop(1, '#8A5428');
-    }
-    ctx.fillStyle = floorGradCache; ctx.fillRect(0, CH * 0.62, CW, CH * 0.38);
+    const floorGrad = ctx.createLinearGradient(0, CH * 0.62, 0, CH);
+    floorGrad.addColorStop(0, '#C8935A'); floorGrad.addColorStop(0.3, '#AE7038'); floorGrad.addColorStop(1, '#8A5428');
+    ctx.fillStyle = floorGrad; ctx.fillRect(0, CH * 0.62, CW, CH * 0.38);
 
     // ── Court markings (2D side-view) ──
     const FLOOR_Y = CH * 0.62;  // top of court floor
@@ -872,6 +862,7 @@ const BasketballGame = () => {
     };
 
     const onUp = (e: React.PointerEvent) => {
+        if ((e.target as HTMLElement).hasPointerCapture?.(e.pointerId)) (e.target as HTMLElement).releasePointerCapture(e.pointerId);
         if (!dragging.current || phaseRef.current !== 'aim') return;
         e.preventDefault();
         const ds = dragStart.current, dc = dragCur.current;

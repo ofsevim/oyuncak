@@ -52,6 +52,7 @@ const SimonSaysGame = () => {
         if (!audioCtxRef.current) {
             audioCtxRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
         }
+        if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume().catch(() => {});
         return audioCtxRef.current;
     }, []);
 

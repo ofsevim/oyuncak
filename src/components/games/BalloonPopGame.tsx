@@ -373,7 +373,6 @@ const BalloonPopGame = () => {
     (balloon: Balloon, e: React.PointerEvent) => {
       if (gamePhaseRef.current !== 'playing') return;
       if (poppedRef.current.has(balloon.id)) return;
-      poppedRef.current.add(balloon.id);
 
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -404,6 +403,7 @@ const BalloonPopGame = () => {
 
       /* ── Özel balonlar ── */
       if (balloon.special === 'freeze') {
+        poppedRef.current.add(balloon.id);
         playSuccessSound();
         setIsFrozen(true);
         removeBalloon();
@@ -412,6 +412,7 @@ const BalloonPopGame = () => {
         return;
       }
       if (balloon.special === 'double') {
+        poppedRef.current.add(balloon.id);
         playSuccessSound();
         setIsDouble(true);
         removeBalloon();
@@ -420,6 +421,7 @@ const BalloonPopGame = () => {
         return;
       }
       if (balloon.special === 'bomb') {
+        poppedRef.current.add(balloon.id);
         playErrorSound();
         comboRef.current = 0;
         setCombo(0);
@@ -434,6 +436,7 @@ const BalloonPopGame = () => {
       const currentTarget = targetColorRef.current;
 
       if (balloon.color.value === currentTarget.value) {
+        poppedRef.current.add(balloon.id);
         comboRef.current += 1;
         const newCombo = comboRef.current;
         const multiplier = Math.min(newCombo, 5);
@@ -769,6 +772,7 @@ const BalloonPopGame = () => {
         >
           <div
             className="balloon-sway-animate"
+            onAnimationEnd={(e) => e.stopPropagation()}
             style={
               {
                 '--sway': `${balloon.swayAmount}px`,

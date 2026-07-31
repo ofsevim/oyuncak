@@ -42,7 +42,7 @@ const MathGame = () => {
   const timeLeftRef = useRef<number>(15);
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
-  const getDiffConfig = useCallback(() => DIFFICULTIES.find(d => d.id === difficulty)!, [difficulty]);
+  const getDiffConfig = useCallback(() => DIFFICULTIES.find(d => d.id === difficulty) ?? DIFFICULTIES[0], [difficulty]);
 
   const generateQuestion = useCallback(() => {
     const config = getDiffConfig();
@@ -209,7 +209,7 @@ const MathGame = () => {
           </motion.div>
         </AnimatePresence>
       )}
-      <button onClick={() => setGameStarted(false)} className="px-4 py-2 glass-card text-muted-foreground rounded-full font-bold text-sm">← Zorluk Değiştir</button>
+      <button onClick={() => { clearAllIntervals(); setGameStarted(false); }} className="px-4 py-2 glass-card text-muted-foreground rounded-full font-bold text-sm">← Zorluk Değiştir</button>
     </motion.div>
   );
 };

@@ -304,12 +304,13 @@ const SnakeGame = () => {
 
     const handleTouchStart = (e: TouchEvent) => {
       if (e.cancelable) e.preventDefault();
+      if (!e.touches || !e.touches.length) return;
       touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
       if (e.cancelable) e.preventDefault();
-      if (!touchStart.current || gameState !== 'playing') return;
+      if (!e.changedTouches || !e.changedTouches.length || !touchStart.current || gameState !== 'playing') return;
       const dx = e.changedTouches[0].clientX - touchStart.current.x;
       const dy = e.changedTouches[0].clientY - touchStart.current.y;
 

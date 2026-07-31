@@ -289,7 +289,7 @@ const ComparisonGame = () => {
           {/* Geri Dön Butonu */}
           <div className="w-full flex justify-start">
             <button
-              onClick={() => navigate('/games')}
+              onClick={() => { clearAll(); navigate('/games'); }}
               className="rounded-full px-5 py-2 text-sm font-black text-white/80 transition-all flex items-center gap-2 hover:bg-white/10 active:scale-95 cursor-pointer"
               style={glassCard}
             >
@@ -371,7 +371,7 @@ const ComparisonGame = () => {
             <motion.button onClick={initGame} className="rounded-full px-8 py-3 font-black text-white" style={{ background: 'linear-gradient(135deg, #fb923c, #a855f7)', boxShadow: '0 18px 36px rgba(168,85,247,0.22)' }} whileTap={{ scale: 0.98 }}>
               🔄 Tekrar Oyna
             </motion.button>
-            <button onClick={() => setGameState('menu')} className="rounded-full px-6 py-3 font-bold text-white/80" style={glassCard}>← Menü</button>
+            <button onClick={() => { clearAll(); setGameState('menu'); }} className="rounded-full px-6 py-3 font-bold text-white/80" style={glassCard}>← Menü</button>
           </div>
         </motion.div>
       </>
@@ -473,7 +473,7 @@ const ComparisonGame = () => {
 
         <div className="mt-1 flex flex-wrap justify-center gap-3 sm:mt-2">
           <button onClick={initGame} className="rounded-full px-6 py-3 font-black text-white" style={glassCard}>🔄 Yeniden</button>
-          <button onClick={() => setGameState('menu')} className="rounded-full px-6 py-3 font-bold text-white/78" style={glassCard}>← Çıkış</button>
+          <button onClick={() => { clearAll(); setGameState('menu'); }} className="rounded-full px-6 py-3 font-bold text-white/78" style={glassCard}>← Çıkış</button>
         </div>
 
         <AnimatePresence>

@@ -265,6 +265,7 @@ const CodingTurtleGame = () => {
 
         safeTimeout(() => {
             const dir = commands[executingIndex];
+            if (!dir || !DIR_VECTORS[dir]) { resetRun(); return; }
             const vec = DIR_VECTORS[dir];
             const nextPos = { x: currentPosRef.current.x + vec.dx, y: currentPosRef.current.y + vec.dy };
 
@@ -370,7 +371,7 @@ const CodingTurtleGame = () => {
                             style={{ background: 'linear-gradient(135deg, #10b981, #d946ef)' }}
                             onClick={initGame} className="btn-gaming px-8 py-3 text-base text-white">🔄 Tekrar Oyna</motion.button>
                         <motion.button whileHover={{}} whileTap={{}}
-                            onClick={() => setGameState('menu')}
+                            onClick={() => { clearAll(); setGameState('menu'); }}
                             className="px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
                     </motion.div>
                 </motion.div>
@@ -509,7 +510,7 @@ const CodingTurtleGame = () => {
                             ↺ Yeni Bölüm
                         </motion.button>
                         <motion.button whileHover={{}} whileTap={{}}
-                            onClick={() => setGameState('menu')}
+                            onClick={() => { clearAll(); setGameState('menu'); }}
                             className="px-4 py-2.5 rounded-xl font-bold text-muted-foreground touch-manipulation text-xs sm:text-sm active:scale-95"
                             style={{ ...pill, background: 'rgba(0,0,0,0.4)' }}>
                             ← Çıkış

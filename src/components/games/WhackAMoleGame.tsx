@@ -140,7 +140,7 @@ const WhackAMoleGame = () => {
   /* Spawn mole */
   const spawnMole = useCallback(() => {
     if (gamePhaseRef.current !== 'playing') return;
-    if (moleRef.current) clearTimeout(moleRef.current);
+    if (moleRef.current) clearSafeTimeout(moleRef.current);
 
     // Find available holes
     const activeSet = new Set(activeHolesRef.current.keys());
@@ -210,7 +210,7 @@ const WhackAMoleGame = () => {
   /* Multi-mole spawn loop */
   useEffect(() => {
     if (gamePhase !== 'playing' || config.multiChance === 0) return;
-    hookInterval(() => {
+    const id = hookInterval(() => {
       if (Math.random() < config.multiChance) {
         const activeSet = new Set(activeHolesRef.current.keys());
         const available = Array.from({ length: config.holes }, (_, i) => i)
@@ -235,7 +235,8 @@ const WhackAMoleGame = () => {
         }, 900);
       }
     }, 2200);
-  }, [gamePhase, config, safeTimeout, updateHoles, hookInterval]);
+    return () => clearSafeInterval(id);
+  }, [gamePhase, config, safeTimeout, updateHoles, hookInterval, clearSafeInterval]);
 
   /* Start game loop */
   /* Initial spawn delay */
