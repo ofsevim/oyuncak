@@ -1,14 +1,17 @@
 /*
-  Oyuncak - Service Worker (v6)
+  Oyuncak - Service Worker (v8 – auto-update)
+  - Build-unique versiyon: __SW_VERSION__ (vite plugin tarafından inject edilir)
   - Network-First for index.html and manifest (prevents stale loading hangs)
   - Stale-While-Revalidate for other assets
   - Install aşamasında build asset'lerini precache eder (precache-manifest.json) → tam offline
   - Automatic cache pruning on activation
   - Skips Firebase/API requests
   - Offline fallback page
+  - Yeni versiyon tespit edildiğinde client'lara bildirim gönderir
 */
 
-const CACHE_NAME = 'oyuncak-v7';
+const SW_VERSION = '__SW_VERSION__';
+const CACHE_NAME = 'oyuncak-' + SW_VERSION;
 const BASE = self.registration?.scope ?? '/';
 const OFFLINE_URL = new URL('offline.html', BASE).pathname;
 const ASSETS_TO_CACHE = [
@@ -55,7 +58,17 @@ self.addEventListener('activate', (event) => {
                     }
                 })
             );
-        }).then(() => self.clients.claim())
+        }).then(() => {
+            // Tüm açık tab'lara yeni SW'nin kontrolünü al
+            return self.clients.claim();
+        }).then(() => {
+            // Tüm client'lara "güncelleme var, sayfayı yenile" mesajı gönder
+            return self.clients.matchAll({ type: 'window' }).then((clients) => {
+                clients.forEach((client) => {
+                    client.postMessage({ type: 'SW_UPDATED', version: SW_VERSION });
+                });
+            });
+        })
     );
 });
 
@@ -103,6 +116,24 @@ self.addEventListener('fetch', (event) => {
                     return response;
                 })
                 .catch(() => caches.match(event.request))
+        );
+        return;
+    }
+
+    // Hash'li asset'ler (Vite tarafından /assets/chunk-abc123.js): Cache-First
+    // Dosya adında hash olduğundan, içerik değiştiğinde URL da değişir → eski cache sorun olmaz
+    if (url.pathname.startsWith('/assets/') && /\.[a-f0-9]{8,}\./.test(url.pathname)) {
+        event.respondWith(
+            caches.match(event.request).then((cached) => {
+                if (cached) return cached;
+                return fetch(event.request).then((response) => {
+                    if (response && response.status === 200) {
+                        const cloned = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cloned));
+                    }
+                    return response;
+                });
+            })
         );
         return;
     }

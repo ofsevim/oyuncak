@@ -5,6 +5,26 @@ import fs from "fs";
 import legacy from "@vitejs/plugin-legacy";
 
 /**
+ * Build sırasında sw.js içindeki __SW_VERSION__ placeholder'ını benzersiz
+ * build hash'iyle değiştirir → her deploy'da tarayıcı yeni SW tespit eder.
+ */
+function swVersionPlugin(): Plugin {
+  return {
+    name: "sw-version",
+    apply: "build",
+    closeBundle() {
+      const swPath = path.resolve(__dirname, "dist", "sw.js");
+      if (!fs.existsSync(swPath)) return;
+
+      const buildHash = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+      let content = fs.readFileSync(swPath, "utf-8");
+      content = content.replace(/__SW_VERSION__/g, buildHash);
+      fs.writeFileSync(swPath, content);
+    },
+  };
+}
+
+/**
  * Build sonrası dist/assets içindeki hash'li JS/CSS/font dosyalarını tarayıp
  * dist/precache-manifest.json üretir. Service Worker bunu install aşamasında
  * okuyup tüm uygulama asset'lerini önbelleğe alır → ilk açılıştan sonra tam offline.
@@ -97,6 +117,7 @@ export default defineConfig(() => ({
   },
   plugins: [
     react(),
+    swVersionPlugin(),
     precacheManifestPlugin(),
     legacy({
       targets: [

@@ -49,8 +49,33 @@ async function bootstrap() {
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker
-          .register(`${import.meta.env.BASE_URL}sw.js`)
+          .register(`${import.meta.env.BASE_URL}sw.js`, {
+            // SW dosyasını her zaman ağdan çek, HTTP cache'i bypass et
+            updateViaCache: "none",
+          })
+          .then((registration) => {
+            // Her 30 dakikada bir güncelleme kontrolü yap
+            setInterval(() => registration.update(), 30 * 60 * 1000);
+          })
           .catch((err) => logger.warn("Service worker register failed", { err: String(err) }));
+
+        // Yeni SW aktif olduğunda: SW'den gelen mesajı dinle, sayfayı yenile
+        navigator.serviceWorker.addEventListener("message", (event) => {
+          if (event.data?.type === "SW_UPDATED") {
+            logger.info("SW updated, reloading page", { version: event.data.version });
+            window.location.reload();
+          }
+        });
+
+        // Controller değiştiğinde de sayfayı yenile (ilk SW kurulumunda değil)
+        let isFirstController = !navigator.serviceWorker.controller;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (isFirstController) {
+            isFirstController = false;
+            return; // İlk kurulumda yenileme yapma
+          }
+          window.location.reload();
+        });
       });
     }
   } catch (err) {
