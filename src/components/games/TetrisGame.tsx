@@ -526,7 +526,7 @@ const TetrisGame = () => {
             )),
           )}
 
-          {/* Ghost parça */}
+          {/* Ghost parça (Silik, ince projeksiyon) */}
           {activePiece && gameState === 'playing' && (() => {
             const ghostY = getGhostY(activePiece);
             return activePiece.shape.map((row, r) =>
@@ -538,13 +538,15 @@ const TetrisGame = () => {
                 return (
                   <div
                     key={`ghost-${r}-${c}`}
-                    className="absolute border border-white/20 rounded-[2px]"
+                    className="absolute border border-dashed rounded-[2px] pointer-events-none"
                     style={{
                       width: `${100 / COLS}%`,
                       height: `${100 / ROWS}%`,
                       left: `${gx * (100 / COLS)}%`,
                       top: `${gy * (100 / ROWS)}%`,
-                      background: `${TETROMINOS[activePiece.type].hex}15`,
+                      borderColor: `${TETROMINOS[activePiece.type].hex}40`,
+                      background: `${TETROMINOS[activePiece.type].hex}06`,
+                      boxShadow: `inset 0 0 4px ${TETROMINOS[activePiece.type].hex}10`,
                     }}
                   />
                 );

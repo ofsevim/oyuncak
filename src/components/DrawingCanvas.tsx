@@ -101,6 +101,7 @@ const stampPencil: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
   const radius = Math.max(size * 0.4, 1);
 
+  ctx.save();
   // Kalem (Grafit): Yumuşak, kağıt dokusuna karışan düşük opaklıklı yapı
   ctx.globalAlpha = 0.15; // Çok düşük opaklık, üst üste binince kararsın
 
@@ -122,12 +123,14 @@ const stampPencil: StampFn = (ctx, x, y, size, color) => {
     const pSize = 0.5 + Math.random() * 1.5;
     ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
+  ctx.restore();
 };
 
 const stampPastel: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
   const radius = size * 0.8;
 
+  ctx.save();
   // Pastel: Tebeşirimsi, yoğun pigmentli ve tozlu
   for (let i = 0; i < size * 3; i++) {
     const angle = Math.random() * Math.PI * 2;
@@ -151,12 +154,14 @@ const stampPastel: StampFn = (ctx, x, y, size, color) => {
     const pSize = 1.5 + Math.random() * 2.5;
     ctx.fillRect(x + ox, y + oy, pSize, pSize);
   }
+  ctx.restore();
 };
 
 const stampCrayon: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
   const radius = size * 0.8;
 
+  ctx.save();
   // Kuruboya (Wax Crayon): Mumsu doku, kağıdın girintilerini atlar, serttir
   for (let i = 0; i < size * 4; i++) {
     const angle = Math.random() * Math.PI * 2;
@@ -189,33 +194,34 @@ const stampCrayon: StampFn = (ctx, x, y, size, color) => {
     ctx.lineTo(px2, py2);
     ctx.stroke();
   }
+  ctx.restore();
 };
 
 const stampWatercolor: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
-  const spread = size * 1.8;
+  const spread = size * 1.9;
 
+  ctx.save();
   // Sulu boyanın kağıt üzerindeki gerçekçi renk karışımı
   ctx.globalCompositeOperation = 'multiply';
 
   const grad = ctx.createRadialGradient(x, y, 0, x, y, spread);
   // Merkeze doğru şeffaf (su birikintisi)
-  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.04)`);
+  grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.05)`);
   // Gövde
-  grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.07)`);
+  grad.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, 0.08)`);
   // 'Wet Edge' (Kenarda boya birikmesi - karakteristik sulu boya lekesi)
-  grad.addColorStop(0.85, `rgba(${r}, ${g}, ${b}, 0.16)`);
+  grad.addColorStop(0.85, `rgba(${r}, ${g}, ${b}, 0.22)`);
   grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
 
   ctx.fillStyle = grad;
   ctx.beginPath();
 
   // Suyun kağıt dokusu üzerindeki düzensiz dağılımını taklit etmek için rastgele organik dalgalanmalar
-  const numPoints = 12;
+  const numPoints = 14;
   for (let i = 0; i < numPoints; i++) {
     const angle = (i / numPoints) * Math.PI * 2;
-    // Yarıçapı rastgele esnetiyoruz
-    const radiusNoise = 1 + (Math.random() * 0.2 - 0.1);
+    const radiusNoise = 1 + (Math.random() * 0.28 - 0.14);
     const px = x + Math.cos(angle) * spread * radiusNoise;
     const py = y + Math.sin(angle) * spread * radiusNoise;
     if (i === 0) ctx.moveTo(px, py);
@@ -223,21 +229,20 @@ const stampWatercolor: StampFn = (ctx, x, y, size, color) => {
   }
   ctx.closePath();
   ctx.fill();
+  ctx.restore();
 };
 
 const stampMarker: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
 
-  // Alkol bazlı tasarım marker kalemi (Copic/Keçeli) dokusu elde etmek için 'multiply' (renklerin üst üste binerek doğal kararması) modunu kullanıyoruz
+  ctx.save();
+  // Alkol bazlı tasarım marker kalemi (Copic/Keçeli) dokusu
   ctx.globalCompositeOperation = 'multiply';
-
-  // Yüksek doymuşlukta yarı saydam mürekkep efekti
-  ctx.globalAlpha = 0.32;
+  ctx.globalAlpha = 0.35;
   ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
 
-  ctx.save();
   ctx.translate(x, y);
-  ctx.rotate(-Math.PI / 6); // Profesyonel çizim için 30 derecelik kesik uç eğimi
+  ctx.rotate(-Math.PI / 6); // Kesik uç eğimi
 
   const w = size * 2.2;
   const h = size * 0.7;
@@ -245,30 +250,28 @@ const stampMarker: StampFn = (ctx, x, y, size, color) => {
   // Kesik uçlu keçeli kalem gövdesi
   ctx.fillRect(-w / 2, -h / 2, w, h);
 
-  // Mürekkebin kağıt kenarına hafifçe emilmesini (bleeding) taklit eden ikinci yumuşak katman
-  ctx.globalAlpha = 0.05;
+  // Mürekkebin kağıda emilmesini (bleeding) taklit eden ikinci yumuşak katman
+  ctx.globalAlpha = 0.06;
   ctx.beginPath();
-  ctx.ellipse(0, 0, w * 0.54, h * 0.65, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, w * 0.55, h * 0.68, 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
-
-  // Diğer fırçaların normal çizmesi için varsayılan kompozit moduna geri dönüyoruz
-  ctx.globalCompositeOperation = 'source-over';
 };
 
 const stampGlitter: StampFn = (ctx, x, y, size, color) => {
   const [r, g, b] = hexToRgb(color);
   const spread = size * 1.8;
 
-  // 1. Simli boyanın altındaki renkli jel/boya bazı (jel kıvamı için daha doygun)
+  ctx.save();
+  // 1. Simli boyanın altındaki renkli jel/boya bazı
   ctx.globalAlpha = 0.24;
   ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
   ctx.beginPath();
   ctx.arc(x, y, spread * 0.75, 0, Math.PI * 2);
   ctx.fill();
 
-  // 2. Yoğun ve parıldayan metalik sim pulları (18 adet pul)
+  // 2. Yoğun ve parıldayan metalik sim pulları
   const numFlakes = 18;
   for (let i = 0; i < numFlakes; i++) {
     const angle = Math.random() * Math.PI * 2;
@@ -276,31 +279,24 @@ const stampGlitter: StampFn = (ctx, x, y, size, color) => {
     const fx = x + Math.cos(angle) * dist;
     const fy = y + Math.sin(angle) * dist;
 
-    // Sim pulları yanar döner, çok boyutlu metalik renklerde olur
     ctx.globalAlpha = 0.75 + Math.random() * 0.25;
 
-    // Altın, gümüş, gökkuşağı ve fırçanın kendi rengi arasında parıltılı geçişler
     let flakeColor: string;
     const randType = Math.random();
     if (randType < 0.35) {
-      // Fırça renginin parlak ve doymuş bir tonu
       flakeColor = `hsl(${Math.random() > 0.5 ? 35 : 0}, 100%, 70%)`; // Altın sarısı sim
     } else if (randType < 0.65) {
-      // Yanar döner holografik gökkuşağı renkleri
-      flakeColor = `hsl(${Math.random() * 360}, 100%, 75%)`;
+      flakeColor = `hsl(${Math.random() * 360}, 100%, 75%)`; // Holografik
     } else {
-      // Gümüş / Elmas parıltısı
-      flakeColor = `hsl(190, 80%, ${85 + Math.random() * 15}%)`;
+      flakeColor = `hsl(190, 80%, ${85 + Math.random() * 15}%)`; // Gümüş / Elmas
     }
 
-    // Sim pulunu çiz
     const flakeSize = 1.0 + Math.random() * 2.2;
     ctx.fillStyle = flakeColor;
     ctx.beginPath();
     ctx.arc(fx, fy, flakeSize, 0, Math.PI * 2);
     ctx.fill();
 
-    // 3D Parıltı Etkisi: Bazı pulların tam ortasına ultra parlak küçük beyaz bir nokta (yansıma) ekliyoruz
     if (Math.random() > 0.4) {
       ctx.globalAlpha = 0.95;
       ctx.fillStyle = '#ffffff';
@@ -310,7 +306,7 @@ const stampGlitter: StampFn = (ctx, x, y, size, color) => {
     }
   }
 
-  // 3. Sihirli Parlama Yıldızları (Specular Star Sparkles) - 2 adet olası yıldız
+  // 3. Sihirli Parlama Yıldızları
   const numStars = Math.random() > 0.5 ? 2 : 1;
   for (let s = 0; s < numStars; s++) {
     if (Math.random() > 0.3) {
@@ -318,7 +314,6 @@ const stampGlitter: StampFn = (ctx, x, y, size, color) => {
       const sy = y + (Math.random() - 0.5) * spread * 1.4;
       const starSize = 4 + Math.random() * 6;
 
-      // Yıldızın arkasına yumuşak, parlayan neon bir halo yerleştiriyoruz
       const haloGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, starSize * 1.8);
       haloGrad.addColorStop(0, `rgba(255, 255, 255, 0.45)`);
       haloGrad.addColorStop(0.3, `rgba(${r}, ${g}, ${b}, 0.25)`);
@@ -329,12 +324,11 @@ const stampGlitter: StampFn = (ctx, x, y, size, color) => {
       ctx.arc(sx, sy, starSize * 1.8, 0, Math.PI * 2);
       ctx.fill();
 
-      // Dört köşeli keskin parlama yıldızı
       ctx.globalAlpha = 0.95;
       ctx.fillStyle = '#ffffff';
       ctx.save();
       ctx.translate(sx, sy);
-      ctx.rotate(Math.random() * Math.PI); // Rastgele açı ile parıldama hissi
+      ctx.rotate(Math.random() * Math.PI);
 
       ctx.beginPath();
       ctx.moveTo(0, -starSize);
@@ -347,6 +341,7 @@ const stampGlitter: StampFn = (ctx, x, y, size, color) => {
       ctx.restore();
     }
   }
+  ctx.restore();
 };
 
 const STAMP_FN: Record<BrushId, StampFn> = {
