@@ -833,7 +833,7 @@ const DrawingCanvas = () => {
       {/* ══════════════════════════
          ARAÇ PANELİ (sol kenar)
          ══════════════════════════ */}
-      <aside className="relative z-20 w-full lg:w-80 flex flex-col gap-3 lg:gap-6 lg:sticky lg:top-8 order-1">
+      <aside className="relative z-30 w-full lg:w-80 flex flex-col gap-3 lg:gap-6 lg:sticky lg:top-8 order-1">
         {/* Başlık — Mobilde gizli */}
         <div className="hidden lg:flex items-center gap-3">
           <motion.div
@@ -879,7 +879,7 @@ const DrawingCanvas = () => {
             Renkler
           </span>
           <motion.div
-            className="grid grid-cols-8 lg:grid-cols-7 gap-1 lg:gap-1.5 bg-black/20 p-1.5 lg:p-2 rounded-xl border border-white/5"
+            className="grid grid-cols-7 sm:grid-cols-8 lg:grid-cols-7 gap-1 lg:gap-1.5 bg-black/20 p-1.5 lg:p-2 rounded-xl border border-white/5"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}

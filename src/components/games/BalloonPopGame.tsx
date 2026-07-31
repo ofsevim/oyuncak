@@ -227,7 +227,7 @@ const BalloonPopGame = () => {
         delay,
         swayAmount: 3 + Math.random() * 5,
         swayDuration: 3 + Math.random() * 2,
-        size: 0.8 + Math.random() * 0.4,
+        size: 1.0 + Math.random() * 0.3,
         special,
       };
     },
@@ -692,7 +692,7 @@ const BalloonPopGame = () => {
       </AnimatePresence>
 
       {/* ── Skor Arayüzü ── */}
-      <div className="absolute top-2 left-0 right-0 z-20 flex flex-col items-center gap-1 pointer-events-none px-2">
+      <div className="absolute top-2 left-0 right-0 z-40 flex flex-col items-center gap-1 pointer-events-none px-2">
         <div className="flex items-center gap-2 flex-wrap justify-center">
           <div className="glass-card px-3 py-1 border border-primary/20">
             <span className="text-sm font-black text-primary">

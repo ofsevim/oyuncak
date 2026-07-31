@@ -1356,7 +1356,7 @@ const RunnerGame = () => {
           className="absolute left-2 md:left-3 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 text-[10px] md:text-xs transition-all"
           style={{
             top: 'calc(env(safe-area-inset-top, 8px) + 8px)',
-            zIndex: 50,
+            zIndex: 30,
             background: 'rgba(0,0,0,0.5)',
             backdropFilter: 'blur(12px)',
             border: '1px solid rgba(255,255,255,0.15)',
@@ -1391,7 +1391,7 @@ const RunnerGame = () => {
           />
 
           {/* ── HUD overlay ── */}
-          <div className="absolute md:top-3 left-[140px] md:left-[170px] right-2 md:right-3 flex items-center justify-between pointer-events-none" style={{ top: 'calc(env(safe-area-inset-top, 8px) + 8px)', zIndex: 10 }}>
+          <div className="absolute md:top-3 left-[120px] sm:left-[140px] md:left-[170px] right-2 md:right-3 flex items-center justify-between pointer-events-none" style={{ top: 'calc(env(safe-area-inset-top, 8px) + 8px)', zIndex: 10 }}>
             {/* Lives */}
             <div className="flex items-center gap-0.5 md:gap-1 px-2 md:px-3 py-1 md:py-2 rounded-xl md:rounded-2xl"
               style={{
@@ -1469,14 +1469,14 @@ const RunnerGame = () => {
         <AnimatePresence>
           {phase === 'gameover' && (
             <motion.div
-              className="absolute inset-0 z-50 flex items-center justify-center p-4"
+              className="absolute inset-0 z-[70] flex items-center justify-center p-4"
               style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div
-                className="w-full max-w-2xl flex flex-col items-center gap-3 py-4 md:py-8 px-4 md:px-6 glass-card neon-border rounded-3xl text-center"
+                className="w-full max-w-2xl max-h-[85vh] overflow-y-auto flex flex-col items-center gap-3 py-3 md:py-8 px-3 md:px-6 glass-card neon-border rounded-3xl text-center"
                 initial={{ opacity: 0, y: 30, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 30, scale: 0.9 }}

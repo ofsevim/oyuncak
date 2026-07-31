@@ -851,10 +851,9 @@ const BasketballGame = () => {
     const toCanvas = (e: React.PointerEvent) => {
         const canvas = canvasRef.current; if (!canvas) return { x: 0, y: 0 };
         const rect = canvas.getBoundingClientRect();
-        const s = scaleRef.current;
         const cx = e.clientX;
         const cy = e.clientY;
-        return { x: (cx - rect.left) / s, y: (cy - rect.top) / s };
+        return { x: (cx - rect.left) * (CW / rect.width), y: (cy - rect.top) * (CH / rect.height) };
     };
 
     const onDown = (e: React.PointerEvent) => {
@@ -991,10 +990,10 @@ const BasketballGame = () => {
             {/* Game over */}
             <AnimatePresence>
                 {phase === 'gameover' && (
-                    <motion.div className="fixed inset-0 z-40 flex items-center justify-center"
+                    <motion.div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto"
                         style={{ background: 'hsl(224 28% 5% / 0.92)' }}
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <motion.div className="flex flex-col items-center gap-5 p-8 rounded-3xl text-center"
+                        <motion.div className="flex flex-col items-center gap-5 p-8 rounded-3xl text-center max-h-[90vh]"
                             style={{ background: 'hsl(224 24% 10%)', border: '1px solid hsl(220 20% 100% / 0.08)', maxWidth: 320 }}
                             initial={{ scale: 0.8, y: 40 }} animate={{ scale: 1, y: 0 }}
                             transition={{ type: 'spring', stiffness: 260, damping: 24 }}>

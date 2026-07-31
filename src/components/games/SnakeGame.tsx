@@ -447,7 +447,7 @@ const SnakeGame = () => {
             boxShadow: '0 8px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.06)',
             transform: `scale(${boardScale})`,
-            transformOrigin: 'top left',
+            transformOrigin: 'top center',
           }}>
 
           {/* Grass texture background */}
@@ -587,14 +587,14 @@ const SnakeGame = () => {
       <div className="grid grid-cols-3 gap-3 w-56 md:hidden mt-2" role="group" aria-label="Game Controls">
         <div />
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'DOWN') inputQueueRef.current.push('UP'); }}
-          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }} aria-label="Move Up">⬆️</motion.button>
+          className="flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Up">⬆️</motion.button>
         <div />
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'RIGHT') inputQueueRef.current.push('LEFT'); }}
-          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }} aria-label="Move Left">⬅️</motion.button>
+          className="flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Left">⬅️</motion.button>
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'UP') inputQueueRef.current.push('DOWN'); }}
-          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }} aria-label="Move Down">⬇️</motion.button>
+          className="flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Down">⬇️</motion.button>
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'LEFT') inputQueueRef.current.push('RIGHT'); }}
-          className="flex items-center justify-center text-3xl touch-manipulation p-5" style={{ ...pill, borderRadius: 16 }} aria-label="Move Right">➡️</motion.button>
+          className="flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Right">➡️</motion.button>
       </div>
     </motion.div>
   );

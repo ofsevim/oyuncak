@@ -644,7 +644,7 @@ const WhackAMoleGame = () => {
                   </div>
 
                   {/* Dirt rim on top — covers mole bottom for depth illusion */}
-                  <div className="absolute bottom-0 left-[-5%] right-[-5%] h-[40%] rounded-b-[50%] pointer-events-none"
+                  <div className="absolute bottom-0 left-[-5%] right-[-5%] h-[28%] rounded-b-[50%] pointer-events-none"
                     style={{
                       background: 'linear-gradient(180deg, transparent 0%, #5c4023 20%, #7A5C12 60%, #634b25 100%)',
                       zIndex: 4,

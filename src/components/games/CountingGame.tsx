@@ -93,7 +93,7 @@ const CountingGame = () => {
   /* ── Generate non-overlapping positions for items ── */
   const generatePositions = useCallback((n: number): ItemPos[] => {
     const positions: ItemPos[] = [];
-    const fieldW = 280;
+    const fieldW = 360;
     const fieldH = 200;
     const itemSize = 48;
     const padding = 10;

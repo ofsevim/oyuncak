@@ -456,7 +456,7 @@ const CodingTurtleGame = () => {
                                 onClick={() => removeCommand(i)}
                                 initial={{ scale: 0, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1, y: isExecuting ? -5 : 0 }}
-                                className={`w-8 h-8 rounded flex items-center justify-center text-sm border-b-2 ${isExecuting ? 'bg-emerald-500/80 border-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 border-white/20'
+                                className={`w-10 h-10 rounded flex items-center justify-center text-base border-b-2 ${isExecuting ? 'bg-emerald-500/80 border-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 border-white/20'
                                     }`}
                             >
                                 {DIR_ICONS[cmd]}

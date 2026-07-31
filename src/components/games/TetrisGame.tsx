@@ -499,11 +499,9 @@ const TetrisGame = () => {
 
       {/* ── Oyun alanı ───────────────────────────────────── */}
       <div
-        className="relative glass-card p-2 origin-top"
+        className="relative glass-card p-2 origin-top overflow-hidden mb-4"
         style={{
           transform: `scale(${uiScale})`,
-          marginBottom:
-            uiScale < 1 ? `${Math.round((uiScale - 1) * (gridHeight + 20))}px` : undefined,
         }}
       >
         <div

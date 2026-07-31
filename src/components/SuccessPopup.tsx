@@ -57,7 +57,7 @@ const SuccessPopup = ({ isOpen, onClose, message = 'Tebrikler!', level }: Succes
           onClick={onClose}
         >
           <motion.div
-            className="card-playful p-8 md:p-12 text-center max-w-md mx-4"
+            className="card-playful p-8 md:p-12 text-center max-w-md mx-4 max-h-[90vh] overflow-y-auto"
             initial={{ scale: 0.3, opacity: 0, y: 50 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.3, opacity: 0, y: 50 }}

@@ -492,7 +492,7 @@ const OddOneOutGame = () => {
                   }
                   whileHover={!selectedId ? { y: -3 } : {}}
                   whileTap={!selectedId ? { } : {}}>
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center text-4xl sm:text-5xl"
+                  <div className="w-full aspect-square max-w-24 sm:max-w-32 flex items-center justify-center text-4xl sm:text-5xl"
                     style={{
                       borderRadius: 20,
                       background: isSelected && isCorrect

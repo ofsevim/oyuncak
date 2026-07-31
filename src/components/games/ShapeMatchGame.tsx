@@ -406,7 +406,7 @@ const ShapeMatchGame = () => {
 
                     {!isCorrect && (
                         <motion.p
-                            className="absolute bottom-[-10px] z-10 font-bold text-muted-foreground/80 tracking-widest uppercase text-xs"
+                            className="relative mt-4 z-10 font-bold text-muted-foreground/80 tracking-widest uppercase text-xs"
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
                         >
                             Bu gölge kime ait?

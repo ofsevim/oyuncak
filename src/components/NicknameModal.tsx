@@ -109,7 +109,7 @@ export default function NicknameModal() {
             aria-modal="true"
             aria-labelledby="nickname-title"
             aria-describedby="nickname-desc"
-            className="relative w-full max-w-sm rounded-3xl p-6 text-center"
+            className="relative w-full max-w-sm rounded-3xl p-6 text-center max-h-[90vh] overflow-y-auto"
             style={{
               background: 'rgba(15,18,25,0.95)',
               border: '1px solid rgba(255,255,255,0.1)',

@@ -72,7 +72,7 @@ const PWAInstall = () => {
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 100, opacity: 0 }}
-                className="fixed left-4 right-4 z-[9999] md:left-auto md:right-8 md:bottom-8 md:w-80"
+                className="fixed left-4 right-4 z-40 md:left-auto md:right-8 md:bottom-8 md:w-80"
                 style={{ bottom: 'max(6rem, calc(env(safe-area-inset-bottom, 0px) + 5rem))' }}
             >
                 <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-center gap-4">
@@ -88,9 +88,10 @@ const PWAInstall = () => {
                     <div className="flex flex-col gap-1">
                         <button
                             onClick={() => setShowBanner(false)}
-                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center hover:bg-slate-700 transition-all"
+                            aria-label="Kapat"
+                            className="absolute -top-2 -right-2 w-8 h-8 touch-manipulation rounded-full bg-slate-800 border border-white/10 flex items-center justify-center hover:bg-slate-700 transition-all"
                         >
-                            <X className="w-3 h-3 text-white" />
+                            <X className="w-4 h-4 text-white" />
                         </button>
 
                         {isIOS ? (

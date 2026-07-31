@@ -194,7 +194,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
 
       {/* Game grid */}
       <div className="relative w-full flex flex-col items-center">
-        <div className="grid gap-1.5 sm:gap-2 p-2 sm:p-3 glass-card neon-border rounded-[32px] w-full"
+        <div className="grid gap-1 sm:gap-1.5 p-1.5 sm:p-2 glass-card neon-border rounded-[32px] w-full"
           style={{
             gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
             maxWidth: gridSize === 6 ? '480px' : gridSize === 5 ? '440px' : gridSize === 4 ? '400px' : '360px',
