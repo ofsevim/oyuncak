@@ -541,35 +541,10 @@ const PianoGame = () => {
         Tuşlara tıkla veya klavyeden çal (A-K beyaz, W-E-T-Y-U siyah)
       </p>
 
-      <Leaderboard gameId="piano" />
+      
 
-      {/* Skor çubuğu */}
-      {(currentMelody || highScore > 0) && (
-        <div className="flex gap-2 items-center flex-wrap justify-center">
-          {currentMelody && (
-            <div className="glass-card px-3 py-1">
-              <span className="text-sm font-black text-primary">🎵 {score}</span>
-            </div>
-          )}
-          {combo > 1 && (
-            <motion.div
-              key={combo}
-              initial={{ scale: 0.5 }}
-              animate={{ scale: 1 }}
-              className="glass-card px-3 py-1 border border-yellow-500/30"
-            >
-              <span className="text-sm font-black text-yellow-400">🔥 x{combo}</span>
-            </motion.div>
-          )}
-          {highScore > 0 && (
-            <div className="glass-card px-3 py-1">
-              <span className="text-sm font-bold text-muted-foreground">🏆 {highScore}</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Başarı mesajı */}
+      
+          {/* Başarı mesajı */}
       <AnimatePresence>
         {showSuccess && (
           <motion.div
