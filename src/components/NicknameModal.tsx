@@ -75,10 +75,21 @@ export default function NicknameModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
+  useEffect(() => {
+    const handleOpenReq = () => {
+      const saved = localStorage.getItem(NICKNAME_KEY) || '';
+      setName(saved);
+      setOpen(true);
+    };
+    window.addEventListener('oyuncak:open-nickname-modal', handleOpenReq);
+    return () => window.removeEventListener('oyuncak:open-nickname-modal', handleOpenReq);
+  }, []);
+
   const handleSave = async () => {
     const safe = sanitizeNickname(name);
     localStorage.setItem(NICKNAME_KEY, safe);
     localStorage.setItem(ASKED_KEY, '1');
+    window.dispatchEvent(new CustomEvent('oyuncak:nickname-changed', { detail: safe }));
     setOpen(false);
     try {
       // updateNicknameInScores kendi içinde ensureAuth çağırır

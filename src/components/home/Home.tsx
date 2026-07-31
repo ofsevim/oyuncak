@@ -52,6 +52,22 @@ const QUICK = [
 
 export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGame }: Props) {
   const [time, setTime] = useState(new Date());
+  const [nickname, setNickname] = useState<string>(() => {
+    try { return localStorage.getItem('oyuncak.nickname') || ''; }
+    catch { return ''; }
+  });
+
+  useEffect(() => {
+    const handleNickChange = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) setNickname(customEvent.detail);
+      else {
+        try { setNickname(localStorage.getItem('oyuncak.nickname') || ''); } catch { /* ignore */ }
+      }
+    };
+    window.addEventListener('oyuncak:nickname-changed', handleNickChange);
+    return () => window.removeEventListener('oyuncak:nickname-changed', handleNickChange);
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 60_000);
@@ -103,10 +119,10 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
           />
 
           <div className="relative flex flex-col gap-5">
-            {/* Greeting chip */}
-            <div className="flex items-center gap-2 w-fit">
+            {/* Greeting & Profile chip container */}
+            <div className="flex items-center justify-between gap-3 w-full flex-wrap">
               <span
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold"
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold"
                 style={{
                   background: 'hsl(var(--muted) / 0.6)',
                   border: '1px solid hsl(220 20% 100% / 0.06)',
@@ -114,8 +130,23 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
                 }}
               >
                 <span>{greetEmoji}</span>
-                <span>{greeting}! Eğlenceye hazır mısın?</span>
+                <span>{greeting}{nickname ? `, ${nickname}` : ''}! Eğlenceye hazır mısın?</span>
               </span>
+
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('oyuncak:open-nickname-modal'))}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold text-white/90 transition-all hover:bg-white/10 active:scale-95 cursor-pointer backdrop-blur-md"
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+                }}
+                title="Rumuzunu Değiştir"
+              >
+                <span className="text-sm">👤</span>
+                <span>{nickname ? nickname : 'Rumuz Belirle'}</span>
+                <span className="text-white/40 text-[11px] ml-0.5">✏️</span>
+              </button>
             </div>
 
             {/* Title */}
