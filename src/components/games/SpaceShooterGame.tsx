@@ -70,7 +70,7 @@ const SpaceShooterGame = () => {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const rafRef = useRef<number>(0);
-    const { safeTimeout } = useSafeTimeouts();
+    const { safeTimeout, clearSafeTimeout } = useSafeTimeouts();
 
     // Physics accumulator refs
     const lastTimeRef = useRef<number>(0);
@@ -127,7 +127,7 @@ const SpaceShooterGame = () => {
     useEffect(() => {
         return () => {
             cancelAnimationFrame(rafRef.current);
-            Object.values(powerUpTimers.current).forEach(clearTimeout);
+            Object.values(powerUpTimers.current).forEach(clearSafeTimeout);
         };
     }, []);
 
@@ -299,7 +299,7 @@ const SpaceShooterGame = () => {
         powerUps.current = powerUps.current.filter(p => {
             if (Math.abs(shipX.current - p.x) < SHIP_W / 2 + 15 && Math.abs(CH - SHIP_H / 2 - p.y) < SHIP_H / 2 + 15) {
                 // Activate power-up
-                if (powerUpTimers.current[p.type]) clearTimeout(powerUpTimers.current[p.type]);
+                if (powerUpTimers.current[p.type]) clearSafeTimeout(powerUpTimers.current[p.type]);
                 if (p.type === 'shield') shieldActive.current = true;
                 if (p.type === 'rapid') rapidFire.current = true;
                 if (p.type === 'spread') spreadShot.current = true;
@@ -351,6 +351,10 @@ const SpaceShooterGame = () => {
         }
 
         // ── DRAW ──
+        const dpr = window.devicePixelRatio || 1;
+        ctx.save();
+        ctx.scale(dpr, dpr);
+
         ctx.clearRect(0, 0, CW, CH);
 
         // Background
@@ -508,6 +512,8 @@ const SpaceShooterGame = () => {
             ctx.fillText('🔱 Yaylım Ateş', 10, indicatorY);
         }
 
+        ctx.restore();
+
         rafRef.current = requestAnimationFrame(gameLoop);
     }, [updatePhysics]);
 
@@ -528,7 +534,7 @@ const SpaceShooterGame = () => {
         rapidFire.current = false;
         spreadShot.current = false;
         invincibleTimer.current = 0;
-        Object.values(powerUpTimers.current).forEach(clearTimeout);
+        Object.values(powerUpTimers.current).forEach(clearSafeTimeout);
         powerUpTimers.current = {};
         setScore(0);
         setLives(3);
@@ -681,8 +687,8 @@ const SpaceShooterGame = () => {
             {/* Canvas */}
             <canvas
                 ref={canvasRef}
-                width={CW}
-                height={CH}
+                width={CW * (window.devicePixelRatio || 1)}
+                height={CH * (window.devicePixelRatio || 1)}
                 onTouchStart={handleTouch}
                 onTouchMove={handleTouch}
                 onTouchEnd={handleTouchEnd}

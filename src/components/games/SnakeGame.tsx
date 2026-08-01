@@ -64,7 +64,7 @@ const SnakeGame = () => {
 
   const dirRef = useRef<Dir>('RIGHT');
   const inputQueueRef = useRef<Dir[]>([]);
-  const { safeTimeout, safeInterval, clearAllIntervals } = useSafeTimeouts();
+  const { safeTimeout, safeInterval, clearAllIntervals, clearSafeTimeout } = useSafeTimeouts();
   const snakeRef = useRef(snake);
   const scoreRef = useRef(0);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -178,7 +178,7 @@ const SnakeGame = () => {
     setFood(initialFood); foodRef.current = initialFood;
     setDir('RIGHT'); dirRef.current = 'RIGHT';
     inputQueueRef.current = [];
-    if (comboTimerRef.current) { clearTimeout(comboTimerRef.current); comboTimerRef.current = null; }
+    if (comboTimerRef.current) { clearSafeTimeout(comboTimerRef.current); comboTimerRef.current = null; }
     scoreRef.current = 0;
     setScore(0); setSpeed(cfg.speed); setCombo(0); comboRef.current = 0; setEaten(0); setIsNewRecord(false);
     setParticles([]);
@@ -243,7 +243,7 @@ const SnakeGame = () => {
         if (nc > 2) playComboSound(nc); else playSuccessSound();
 
         // Reset combo after 3 seconds of not eating anything
-        if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+        if (comboTimerRef.current) clearSafeTimeout(comboTimerRef.current);
         comboTimerRef.current = safeTimeout(() => {
           comboRef.current = 0;
           setCombo(0);

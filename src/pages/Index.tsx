@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import FloatingBubbles from '@/components/ui/FloatingBubbles';
 import Navigation from '@/components/Navigation';
@@ -26,10 +26,18 @@ const Index = () => {
 
   const isGameActive = activeTab === 'games' && !!gameId;
 
-  const setActiveTab = (tab: Tab) => {
+  const setActiveTab = useCallback((tab: Tab) => {
     if (tab === 'home') navigate('/');
     else navigate(`/${tab}`);
-  };
+  }, [navigate]);
+
+  const handleGoDraw = useCallback(() => setActiveTab('draw'), [setActiveTab]);
+  const handleGoGames = useCallback(() => setActiveTab('games'), [setActiveTab]);
+  const handleGoStories = useCallback(() => setActiveTab('story'), [setActiveTab]);
+  const handleGoFeaturedGame = useCallback((id: string) => {
+    setPreferredGameId(id);
+    navigate(`/games/${id}`);
+  }, [setPreferredGameId, navigate]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -42,13 +50,10 @@ const Index = () => {
       default:
         return (
           <Home
-            onGoDraw={() => setActiveTab('draw')}
-            onGoGames={() => setActiveTab('games')}
-            onGoStories={() => setActiveTab('story')}
-            onGoFeaturedGame={(id) => {
-              setPreferredGameId(id);
-              navigate(`/games/${id}`);
-            }}
+            onGoDraw={handleGoDraw}
+            onGoGames={handleGoGames}
+            onGoStories={handleGoStories}
+            onGoFeaturedGame={handleGoFeaturedGame}
           />
         );
     }

@@ -10,7 +10,13 @@ export function useSafeTimeouts() {
   const intervalsRef = useRef<ReturnType<typeof setInterval>[]>([]);
 
   const safeTimeout = useCallback((fn: () => void, ms: number) => {
-    const id = setTimeout(fn, ms);
+    const id = setTimeout(() => {
+      fn();
+      // Execute after fn so id is removed from tracking
+      const arr = timeoutsRef.current;
+      const idx = arr.indexOf(id);
+      if (idx !== -1) arr.splice(idx, 1);
+    }, ms);
     timeoutsRef.current.push(id);
     return id;
   }, []);

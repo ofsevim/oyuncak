@@ -282,6 +282,7 @@ const WhackAMoleGame = () => {
     if (gamePhase !== 'ended') return;
     clearAllTimers();
     activeHolesRef.current.clear();
+    setFloatingTexts([]);
     const isNew = saveHighScoreObj('whack-a-mole', scoreRef.current);
     if (isNew) {
       setIsNewRecord(true);

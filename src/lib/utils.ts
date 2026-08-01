@@ -23,6 +23,7 @@ export function sanitizeNickname(raw: string): string {
     if (ch === "<" || ch === ">") continue;  // HTML açılı parantez
     out += ch;
   }
-  const cleaned = out.replace(/\s+/g, " ").trim().slice(0, MAX_NICKNAME_LENGTH);
+  const trimmed = out.replace(/\s+/g, " ").trim();
+  const cleaned = [...trimmed].slice(0, MAX_NICKNAME_LENGTH).join('');
   return cleaned || "Anonim Oyuncu";
 }

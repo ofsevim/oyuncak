@@ -8,13 +8,18 @@ import { useEffect } from 'react';
 export function useLandscape() {
   useEffect(() => {
     let locked = false;
+    let aborted = false;
 
     const lock = async () => {
       try {
         const orientation = screen.orientation;
         if (orientation?.lock) {
           await orientation.lock('landscape');
-          locked = true;
+          if (aborted) {
+            screen.orientation?.unlock?.();
+          } else {
+            locked = true;
+          }
         }
       } catch {
         /* Tarayıcı desteklemiyorsa veya izin yoksa sessizce geç */
@@ -24,6 +29,7 @@ export function useLandscape() {
     lock();
 
     return () => {
+      aborted = true;
       if (locked) {
         try {
           screen.orientation?.unlock?.();

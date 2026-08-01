@@ -18,10 +18,23 @@ export function useLocalStorageState<T>(key: string, defaultValue: T) {
     }
   });
 
-  // İlk render'da yazma — sadece state değişikliklerinde sync et
+  const prevKeyRef = useRef(key);
   const isFirstRender = useRef(true);
 
   useEffect(() => {
+    if (prevKeyRef.current !== key) {
+      prevKeyRef.current = key;
+      try {
+        if (typeof window !== "undefined") {
+          const raw = window.localStorage.getItem(key);
+          setValue(raw === null ? defaultValue : (JSON.parse(raw) as T));
+        }
+      } catch {
+        setValue(defaultValue);
+      }
+      return;
+    }
+
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
@@ -32,7 +45,7 @@ export function useLocalStorageState<T>(key: string, defaultValue: T) {
     } catch {
       // ignore
     }
-  }, [key, value]);
+  }, [key, value, defaultValue]);
 
   return [value, setValue] as const;
 }

@@ -13,8 +13,10 @@ const ua = typeof navigator !== 'undefined' ? navigator.userAgent ?? '' : '';
 const MOBILE_RE = /iPhone|iPad|iPod|Android/i;
 const IOS_RE = /iPhone|iPad|iPod/i;
 
-const cachedIsMobile = MOBILE_RE.test(ua);
-const cachedIsIOS = IOS_RE.test(ua);
+const IS_IPAD = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1 && /Macintosh/.test(ua);
+
+const cachedIsMobile = MOBILE_RE.test(ua) || IS_IPAD;
+const cachedIsIOS = IOS_RE.test(ua) || IS_IPAD;
 
 export const isMobileDevice = (): boolean => cachedIsMobile;
 
