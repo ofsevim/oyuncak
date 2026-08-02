@@ -1,8 +1,8 @@
 import {
-  doc, getDoc, collection, query, orderBy, limit, getDocs,
+  doc, setDoc, getDoc, collection, query, orderBy, limit, getDocs,
+  runTransaction, serverTimestamp,
 } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { ensureAuth, getUid } from './authService';
 import { SCORE_GAME_IDS } from '@/constants/gameIds';
 import { logger } from '@/lib/logger';
@@ -23,21 +23,6 @@ export interface LeaderboardEntry {
   isMe?: boolean;
 }
 
-interface SubmitScoreResult {
-  updated: boolean;
-  score: number;
-}
-
-const submitScoreCall = httpsCallable<
-  { gameId: string; score: number; name: string },
-  SubmitScoreResult
->(functions, 'submitScore');
-
-const updateNicknameCall = httpsCallable<{ name: string }, { updated: number }>(
-  functions,
-  'updateScoreNickname',
-);
-
 /**
  * Firestore'a skor kaydet.
  * Atomik transaction: paralel yazımlarda en yüksek skor korunur.
@@ -45,12 +30,31 @@ const updateNicknameCall = httpsCallable<{ name: string }, { updated: number }>(
  */
 export async function syncScore(gameId: string, score: number): Promise<boolean> {
   try {
-    await ensureAuth();
-    const result = await submitScoreCall({ gameId, score, name: getNickname() });
-    if (result.data.updated) {
+    const user = await ensureAuth();
+    const docRef = doc(db, 'scores', gameId, 'leaderboard', user.uid);
+
+    const updated = await runTransaction(db, async (tx) => {
+      const existing = await tx.get(docRef);
+      const existingScore = existing.exists() && typeof existing.data().score === 'number'
+        ? existing.data().score as number
+        : -1;
+      if (existingScore >= score) return false;
+
+      tx.set(docRef, {
+        uid: user.uid,
+        gameId,
+        name: getNickname(),
+        score,
+        date: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      });
+      return true;
+    });
+
+    if (updated) {
       window.dispatchEvent(new CustomEvent('oyuncak:score-updated', { detail: { gameId } }));
     }
-    return result.data.updated;
+    return updated;
   } catch (err) {
     logger.warn('Firebase skor yazma hatası', { gameId, err: String(err) });
     throw err;
@@ -89,7 +93,7 @@ export async function getLeaderboard(gameId: string, max = 10): Promise<Leaderbo
  */
 export async function getUserScore(gameId: string): Promise<number> {
   try {
-    await ensureAuth();
+    const user = await ensureAuth();
     const docRef = doc(db, 'scores', gameId, 'leaderboard', user.uid);
     const snap = await getDoc(docRef);
     return snap.exists() && typeof snap.data().score === 'number' ? snap.data().score as number : 0;
@@ -136,10 +140,26 @@ export async function updateNicknameInScores(newName: string): Promise<void> {
     await ensureAuth();
     const safeName = sanitizeNickname(newName);
 
-    const result = await updateNicknameCall({ name: safeName });
-    if (result.data.updated > 0) {
-      window.dispatchEvent(new Event('oyuncak:nickname-changed'));
-    }
+    const updates = SCORE_GAME_IDS.map(async (gid) => {
+      const docRef = doc(db, 'scores', gid, 'leaderboard', user.uid);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) return;
+      const data = snap.data();
+      const score = typeof data.score === 'number' ? data.score : null;
+      if (score === null) return;
+
+      await setDoc(docRef, {
+        uid: user.uid,
+        gameId: gid,
+        name: safeName,
+        score,
+        date: typeof data.date === 'string' ? data.date : new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      });
+    });
+
+    await Promise.allSettled(updates);
+    window.dispatchEvent(new Event('oyuncak:nickname-changed'));
   } catch {
     /* sessiz */
   }
