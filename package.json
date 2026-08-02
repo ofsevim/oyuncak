@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "test": "node tests/run-tests.mjs",
+    "functions:check": "node --check functions/index.js",
     "typecheck": "tsc --noEmit",
     "check": "npm run lint && npm run test && npm run typecheck && npm run build",
     "icons:generate": "node scripts/generate-maskable-icon.mjs",

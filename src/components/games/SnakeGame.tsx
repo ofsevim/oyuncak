@@ -183,7 +183,7 @@ const SnakeGame = () => {
     setScore(0); setSpeed(cfg.speed); setCombo(0); comboRef.current = 0; setEaten(0); setIsNewRecord(false);
     setParticles([]);
     setGameState('playing');
-  }, [spawnFood, spawnObstacles, cfg.speed]);
+  }, [spawnFood, spawnObstacles, cfg.speed, clearSafeTimeout]);
 
   /* ── Game over helper ── */
   const endGame = useCallback(() => {
@@ -272,7 +272,7 @@ const SnakeGame = () => {
 
       setSnake(ns); snakeRef.current = ns;
     }, speed);
-  }, [gameState, speed, cfg.speed, cfg.wrap, spawnFood, endGame, burst, safeInterval, clearAllIntervals, safeTimeout]);
+  }, [gameState, speed, cfg.speed, cfg.wrap, spawnFood, endGame, burst, safeInterval, clearAllIntervals, safeTimeout, clearSafeTimeout]);
 
   /* ── Keyboard ── */
   useEffect(() => {

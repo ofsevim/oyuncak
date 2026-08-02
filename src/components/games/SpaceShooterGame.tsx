@@ -129,7 +129,7 @@ const SpaceShooterGame = () => {
             cancelAnimationFrame(rafRef.current);
             Object.values(powerUpTimers.current).forEach(clearSafeTimeout);
         };
-    }, []);
+    }, [clearSafeTimeout]);
 
     /* ── Spawn enemy ── */
     const spawnEnemy = useCallback(() => {
@@ -319,7 +319,7 @@ const SpaceShooterGame = () => {
             levelRef.current++;
             setLevel(levelRef.current);
         }
-    }, [shoot, spawnEnemy, explode, safeTimeout]);
+    }, [shoot, spawnEnemy, explode, safeTimeout, clearSafeTimeout]);
 
     /* ── Game loop ── */
     const gameLoop = useCallback((timestamp: number) => {
@@ -541,7 +541,7 @@ const SpaceShooterGame = () => {
         setLevel(1);
         setIsNewRecord(false);
         setPhase('playing');
-    }, []);
+    }, [clearSafeTimeout]);
 
     /* ── RAF start/stop ── */
     useEffect(() => {

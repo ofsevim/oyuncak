@@ -40,6 +40,7 @@ Tarayıcıda `http://localhost:8080` açılır.
 | `VITE_FIREBASE_STORAGE_BUCKET` | ✅ | `proje.appspot.com` |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | ✅ | |
 | `VITE_FIREBASE_APP_ID` | ✅ | |
+| `VITE_FIREBASE_FUNCTIONS_REGION` | ❌ | Skor Cloud Functions bölgesi, varsayılan `europe-west1` |
 | `VITE_FIREBASE_MEASUREMENT_ID` | ❌ | Analytics için |
 | `VITE_SENTRY_DSN` | ❌ | Hata izleme. DSN + `window.Sentry` (CDN script) varsa otomatik bağlanır; yoksa sadece konsol |
 | `VITE_PUBLIC_URL` | ❌ | Canonical URL, varsayılan `https://oyuncak.app` |
@@ -53,6 +54,7 @@ npm run preview      # Build'i önizle
 npm run lint         # ESLint
 npm run typecheck    # TypeScript kontrol
 npm test             # Birim testler
+npm run functions:check # Cloud Functions sözdizimi kontrolü
 npm run check        # lint + test + typecheck + build
 
 # Android
@@ -91,9 +93,22 @@ src/
 ## Güvenlik
 
 - Firebase konfigürasyonu `.env` üzerinden (koda gömülmez)
-- Güvenlik `firestore.rules` ile uygulanır
+- Skor yazımları yalnızca Cloud Functions üzerinden yapılır; Firestore kuralları istemciden doğrudan yazmayı engeller
 - CSP ve XSS önlemleri mevcuttur
-- Kullanıcı girdileri Firestore'a prepared şekilde yazılır
+- Kullanıcı girdileri sunucuda doğrulanır ve temizlenir
+
+## Skor altyapısını dağıtma
+
+Skorların çalışması için önce Functions bağımlılıklarını kurup kuralları ve fonksiyonları birlikte dağıtın:
+
+```bash
+cd functions
+npm install
+cd ..
+npx firebase-tools deploy --only firestore:rules,functions
+```
+
+Fonksiyonlar `europe-west1` bölgesinde yayınlanır; farklı bir bölge seçilirse `VITE_FIREBASE_FUNCTIONS_REGION` değerini aynı bölgeyle güncelleyin.
 
 ## PWA
 

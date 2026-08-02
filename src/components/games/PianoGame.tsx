@@ -1,9 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playComboSound } from '@/utils/soundEffects';
-import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
+import { saveHighScoreObj } from '@/utils/highScores';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
-import Leaderboard from '@/components/Leaderboard';
 
 /* ═══════════════════════════════════════════════════════════
    SABİTLER
@@ -210,9 +209,6 @@ const PianoGame = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMelody, setCurrentMelody] = useState<(typeof MELODIES)[0] | null>(null);
   const [melodyIndex, setMelodyIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [combo, setCombo] = useState(0);
-  const [highScore, setHighScore] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedNotes, setRecordedNotes] = useState<string[]>([]);
@@ -238,8 +234,6 @@ const PianoGame = () => {
   useEffect(() => { melodyIndexRef.current = melodyIndex; }, [melodyIndex]);
 
   /* ── Init & Cleanup ────────────────────────────────────── */
-  useEffect(() => { setHighScore(getHighScore('piano')); }, []);
-
   useEffect(() => {
     const noteTimeouts = noteTimeoutsRef.current;
     return () => {
@@ -347,8 +341,6 @@ const PianoGame = () => {
         const points = 10 + Math.min(newCombo, 5) * 5;
         scoreRef.current += points;
 
-        setCombo(newCombo);
-        setScore(scoreRef.current);
         if (newCombo > 2) playComboSound(newCombo);
 
         const finalIndex = skipDashes(melody.notes, checkIndex + 1);
@@ -360,8 +352,7 @@ const PianoGame = () => {
           playSuccessSound();
           setShowSuccess(true);
 
-          const isNew = saveHighScoreObj('piano', scoreRef.current);
-          if (isNew) setHighScore(scoreRef.current);
+          saveHighScoreObj('piano', scoreRef.current);
 
           if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
           successTimeoutRef.current = safeTimeout(() => {
@@ -371,13 +362,11 @@ const PianoGame = () => {
             melodyIndexRef.current = 0;
             setMelodyIndex(0);
             comboRef.current = 0;
-            setCombo(0);
           }, 2000);
         }
       } else {
         /* YANLIŞ */
         comboRef.current = 0;
-        setCombo(0);
       }
     },
     [playNote, safeTimeout],

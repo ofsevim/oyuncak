@@ -104,6 +104,10 @@ export default defineConfig(() => ({
             return "firebase-app";
           }
 
+          if (id.includes("firebase/functions") || id.includes("@firebase/functions")) {
+            return "firebase-functions";
+          }
+
           if (id.includes("firebase")) {
             return "firebase-vendor";
           }

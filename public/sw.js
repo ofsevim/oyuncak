@@ -53,7 +53,9 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
+                    // Bu uygulamaya ait olmayan cache'lere dokunma. Aynı origin
+                    // altında barınan başka bir uygulamanın offline verisi olabilir.
+                    if (cacheName.startsWith('oyuncak-') && cacheName !== CACHE_NAME) {
                         return caches.delete(cacheName);
                     }
                 })
