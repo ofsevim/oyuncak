@@ -1,8 +1,6 @@
-import {
-  doc, setDoc, getDoc, collection, query, orderBy, limit, getDocs,
-  runTransaction, serverTimestamp,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/lib/firebase';
 import { ensureAuth, getUid } from './authService';
 import { SCORE_GAME_IDS } from '@/constants/gameIds';
 import { logger } from '@/lib/logger';
@@ -11,8 +9,11 @@ import { sanitizeNickname } from '@/lib/utils';
 const NICKNAME_KEY = 'oyuncak.nickname';
 
 function getNickname(): string {
-  try { return sanitizeNickname(localStorage.getItem(NICKNAME_KEY) || 'Anonim Oyuncu'); }
-  catch { return 'Anonim Oyuncu'; }
+  try {
+    return sanitizeNickname(localStorage.getItem(NICKNAME_KEY) || 'Anonim Oyuncu');
+  } catch {
+    return 'Anonim Oyuncu';
+  }
 }
 
 export interface LeaderboardEntry {
@@ -23,57 +24,39 @@ export interface LeaderboardEntry {
   isMe?: boolean;
 }
 
-/**
- * Firestore'a skor kaydet.
- * Atomik transaction: paralel yazımlarda en yüksek skor korunur.
- * Yalnızca mevcut skordan yüksekse günceller; aksi hâlde false döner.
- */
+type SubmitScoreResult = { updated: boolean; score: number };
+
+/** Saves a score through Cloud Functions; Firestore is client read-only. */
 export async function syncScore(gameId: string, score: number): Promise<boolean> {
   try {
-    const user = await ensureAuth();
-    const docRef = doc(db, 'scores', gameId, 'leaderboard', user.uid);
+    await ensureAuth();
+    const submitScore = httpsCallable<{ gameId: string; score: number; name: string }, SubmitScoreResult>(
+      functions,
+      'submitScore',
+    );
+    const { data } = await submitScore({ gameId, score, name: getNickname() });
 
-    const updated = await runTransaction(db, async (tx) => {
-      const existing = await tx.get(docRef);
-      const existingScore = existing.exists() && typeof existing.data().score === 'number'
-        ? existing.data().score as number
-        : -1;
-      if (existingScore >= score) return false;
-
-      tx.set(docRef, {
-        uid: user.uid,
-        gameId,
-        name: getNickname(),
-        score,
-        date: new Date().toISOString(),
-        updatedAt: serverTimestamp(),
-      });
-      return true;
-    });
-
-    if (updated) {
+    if (data.updated) {
       window.dispatchEvent(new CustomEvent('oyuncak:score-updated', { detail: { gameId } }));
     }
-    return updated;
+    return data.updated;
   } catch (err) {
-    logger.warn('Firebase skor yazma hatası', { gameId, err: String(err) });
+    logger.warn('Firebase score write failed', { gameId, err: String(err) });
     throw err;
   }
 }
 
-/**
- * Oyunun top N liderlik tablosunu getir.
- */
+/** Returns the top scores for a game. */
 export async function getLeaderboard(gameId: string, max = 10): Promise<LeaderboardEntry[]> {
   try {
     await ensureAuth();
     const uid = getUid();
     const colRef = collection(db, 'scores', gameId, 'leaderboard');
-    const q = query(colRef, orderBy('score', 'desc'), limit(max));
-    const snap = await getDocs(q);
+    const scoreQuery = query(colRef, orderBy('score', 'desc'), limit(max));
+    const snap = await getDocs(scoreQuery);
 
-    return snap.docs.map((d) => {
-      const data = d.data();
+    return snap.docs.map((entry) => {
+      const data = entry.data();
       return {
         uid: data.uid,
         name: typeof data.name === 'string' ? data.name : 'Anonim Oyuncu',
@@ -83,84 +66,54 @@ export async function getLeaderboard(gameId: string, max = 10): Promise<Leaderbo
       };
     });
   } catch (err) {
-    logger.warn('Firebase leaderboard okuma hatası', { gameId, err: String(err) });
+    logger.warn('Firebase leaderboard read failed', { gameId, err: String(err) });
     return [];
   }
 }
 
-/**
- * Kullanıcının belirli bir oyundaki kendi rekorunu getir.
- */
+/** Returns the signed-in player's score for one game. */
 export async function getUserScore(gameId: string): Promise<number> {
   try {
     const user = await ensureAuth();
-    const docRef = doc(db, 'scores', gameId, 'leaderboard', user.uid);
-    const snap = await getDoc(docRef);
+    const scoreRef = doc(db, 'scores', gameId, 'leaderboard', user.uid);
+    const snap = await getDoc(scoreRef);
     return snap.exists() && typeof snap.data().score === 'number' ? snap.data().score as number : 0;
   } catch {
     return 0;
   }
 }
 
-/**
- * Yerel takma ad kaydı bulunmayan eski kullanıcılar için mevcut skorlardan
- * kayıtlı adı geri getirir. Bu, takma ad modalının daha önce skor kaydetmiş
- * kullanıcıya yeniden gösterilmesini önleyen tek seferlik bir geri kazanımdır.
- */
+/** Restores a nickname from previously saved scores. */
 export async function getNicknameFromExistingScores(): Promise<string | null> {
   try {
-    await ensureAuth();
+    const user = await ensureAuth();
     const snapshots = await Promise.all(
-      SCORE_GAME_IDS.map((gameId) =>
-        getDoc(doc(db, 'scores', gameId, 'leaderboard', user.uid)),
-      ),
+      SCORE_GAME_IDS.map((gameId) => getDoc(doc(db, 'scores', gameId, 'leaderboard', user.uid))),
     );
 
     for (const snapshot of snapshots) {
       if (!snapshot.exists()) continue;
       const name = snapshot.data().name;
-      if (typeof name === 'string' && name.trim()) {
-        return sanitizeNickname(name);
-      }
+      if (typeof name === 'string' && name.trim()) return sanitizeNickname(name);
     }
-
     return null;
   } catch (err) {
-    logger.warn('Mevcut skorlardan takma ad okunamadı', { err: String(err) });
+    logger.warn('Existing score nickname read failed', { err: String(err) });
     return null;
   }
 }
 
-/**
- * Takma adı Firestore'daki tüm mevcut skorlarda güncelle.
- * Yeni takma ad seçildiğinde çağrılır.
- */
+/** Updates the signed-in player's displayed name on existing scores. */
 export async function updateNicknameInScores(newName: string): Promise<void> {
   try {
     await ensureAuth();
-    const safeName = sanitizeNickname(newName);
-
-    const updates = SCORE_GAME_IDS.map(async (gid) => {
-      const docRef = doc(db, 'scores', gid, 'leaderboard', user.uid);
-      const snap = await getDoc(docRef);
-      if (!snap.exists()) return;
-      const data = snap.data();
-      const score = typeof data.score === 'number' ? data.score : null;
-      if (score === null) return;
-
-      await setDoc(docRef, {
-        uid: user.uid,
-        gameId: gid,
-        name: safeName,
-        score,
-        date: typeof data.date === 'string' ? data.date : new Date().toISOString(),
-        updatedAt: serverTimestamp(),
-      });
-    });
-
-    await Promise.allSettled(updates);
+    const updateNickname = httpsCallable<{ name: string }, { updated: number }>(
+      functions,
+      'updateScoreNickname',
+    );
+    await updateNickname({ name: sanitizeNickname(newName) });
     window.dispatchEvent(new Event('oyuncak:nickname-changed'));
-  } catch {
-    /* sessiz */
+  } catch (err) {
+    logger.warn('Nickname update failed', { err: String(err) });
   }
 }

@@ -2,40 +2,10 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isKnownScoreGame(gameId) {
-      return gameId in [
-        'runner', 'snake', 'tetris', 'tank-arena', '2048', 'whack-a-mole',
-        'balloon-pop', 'basketball', 'piano', 'math', 'counting', 'oddoneout',
-        'comparison', 'shapematch', 'simonsays', 'codingturtle', 'spaceshooter',
-        'memory-3x3', 'memory-4x4', 'memory-5x5', 'memory-6x6'
-      ];
-    }
-
-    function isValidScoreWrite(gameId, userId) {
-      return request.auth != null
-          && userId == request.auth.uid
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.gameId == gameId
-          && isKnownScoreGame(gameId)
-          && request.resource.data.score is number
-          && request.resource.data.score >= 0
-          && request.resource.data.score <= 9999999
-          && request.resource.data.name is string
-          && request.resource.data.name.size() >= 1
-          && request.resource.data.name.size() <= 30
-          && request.resource.data.name.matches('^[^<>\\n\\r\\t]+$')
-          && request.resource.data.date is string
-          && request.resource.data.date.size() <= 40
-          && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T.*Z$')
-          && request.resource.data.updatedAt == request.time
-          && request.resource.data.keys().hasOnly(['score', 'name', 'uid', 'gameId', 'date', 'updatedAt']);
-    }
-
     match /scores/{gameId}/leaderboard/{userId} {
       allow read: if true;
-      allow create: if isValidScoreWrite(gameId, userId);
-      allow update: if isValidScoreWrite(gameId, userId)
-                    && request.resource.data.score >= resource.data.score;
+      // Scores are written only through Cloud Functions (Admin SDK).
+      allow write: if false;
     }
   }
 }

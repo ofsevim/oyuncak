@@ -91,7 +91,7 @@ const GameCard = memo(({ game, index, onClick }: GameCardProps) => {
       {/* Badge */}
       {game.badge && (
         <span
-          className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white"
+          className="absolute top-3 right-3 hidden sm:inline text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white"
           style={{ background: game.badgeColor ?? game.color, opacity: 0.9 }}
         >
           {game.badge}

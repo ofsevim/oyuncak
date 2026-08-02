@@ -100,10 +100,6 @@ export default defineConfig(() => ({
             return "firebase-firestore";
           }
 
-          if (id.includes("firebase/app") || id.includes("@firebase/app")) {
-            return "firebase-app";
-          }
-
           if (id.includes("firebase")) {
             return "firebase-vendor";
           }

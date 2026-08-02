@@ -705,11 +705,11 @@ const SpaceShooterGame = () => {
 
             {/* Mobile controls */}
             <div className="flex gap-4 mt-2 md:hidden">
-                <button onTouchStart={() => keysRef.current.add('ArrowLeft')} onTouchEnd={() => keysRef.current.delete('ArrowLeft')}
+                <button onTouchStart={() => keysRef.current.add('ArrowLeft')} onTouchEnd={() => keysRef.current.delete('ArrowLeft')} onTouchCancel={() => keysRef.current.delete('ArrowLeft')}
                     className="w-16 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform" style={pill}>⬅️</button>
-                <button onTouchStart={() => keysRef.current.add(' ')} onTouchEnd={() => keysRef.current.delete(' ')}
+                <button onTouchStart={() => keysRef.current.add(' ')} onTouchEnd={() => keysRef.current.delete(' ')} onTouchCancel={() => keysRef.current.delete(' ')}
                     className="w-20 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform" style={{ ...pill, background: 'rgba(0,212,255,0.3)' }}>🔥</button>
-                <button onTouchStart={() => keysRef.current.add('ArrowRight')} onTouchEnd={() => keysRef.current.delete('ArrowRight')}
+                <button onTouchStart={() => keysRef.current.add('ArrowRight')} onTouchEnd={() => keysRef.current.delete('ArrowRight')} onTouchCancel={() => keysRef.current.delete('ArrowRight')}
                     className="w-16 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform" style={pill}>➡️</button>
             </div>
 
