@@ -11,13 +11,8 @@ service cloud.firestore {
       ];
     }
 
-    function isAppCheckValid() {
-      return request.appCheck != null && request.appCheck.token != null;
-    }
-
     function isValidScoreWrite(gameId, userId) {
       return request.auth != null
-          && isAppCheckValid()
           && userId == request.auth.uid
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.gameId == gameId
@@ -37,7 +32,7 @@ service cloud.firestore {
     }
 
     match /scores/{gameId}/leaderboard/{userId} {
-      allow read: if isAppCheckValid();
+      allow read: if true;
       allow create: if isValidScoreWrite(gameId, userId);
       allow update: if isValidScoreWrite(gameId, userId)
                     && request.resource.data.score >= resource.data.score;
