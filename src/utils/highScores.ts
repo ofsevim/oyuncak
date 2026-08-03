@@ -51,7 +51,7 @@ export function setHighScore(gameId: string, score: number): boolean {
       localStorage.setItem(PREFIX + gameId, String(score));
     } catch { /* ignore */ }
   }
-  if (score > 0) {
+  if (isNew && score > 0) {
     enqueueScoreSync(gameId, score);
   }
   return isNew;
@@ -90,7 +90,7 @@ export function saveHighScoreObj(gameId: string, score: number): boolean {
       localStorage.setItem(PREFIX + gameId + '.obj', JSON.stringify({ score, date: new Date().toISOString() }));
     } catch { /* ignore */ }
   }
-  if (score > 0) {
+  if (isNew && score > 0) {
     enqueueScoreSync(gameId, score);
   }
   return isNew;

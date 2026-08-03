@@ -8,22 +8,28 @@ import {
 } from '@/utils/scoreSyncQueue';
 
 export default function ScoreSyncNotice() {
-  const [pending, setPending] = useState(() => getPendingScoreSyncCount());
+  const initialPending = getPendingScoreSyncCount();
+  const [status, setStatus] = useState<ScoreSyncStatus>(() => ({
+    state: navigator.onLine ? 'retry_scheduled' : 'offline',
+    pending: initialPending,
+  }));
   const [retrying, setRetrying] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     const onStatus = (event: Event) => {
       const { detail } = event as CustomEvent<ScoreSyncStatus>;
-      setPending(detail.pending);
+      setStatus(detail);
       setRetrying(false);
-      if (detail.state === 'pending') setDismissed(false);
+      if (detail.pending > 0) setDismissed(false);
     };
     window.addEventListener(SCORE_SYNC_STATUS_EVENT, onStatus);
     return () => window.removeEventListener(SCORE_SYNC_STATUS_EVENT, onStatus);
   }, []);
 
-  if (pending === 0 || dismissed) return null;
+  if (status.pending === 0 || dismissed) return null;
+
+  const isOffline = status.state === 'offline';
 
   return (
     <aside className="fixed left-4 right-4 top-4 z-50 mx-auto max-w-sm rounded-2xl border border-amber-400/20 bg-slate-900/95 p-3 shadow-xl backdrop-blur-xl">
@@ -36,10 +42,18 @@ export default function ScoreSyncNotice() {
         <X className="h-4 w-4" />
       </button>
       <div className="flex items-center gap-3 pr-7">
-        <CloudOff className="h-5 w-5 flex-none text-amber-300" />
+        {isOffline
+          ? <CloudOff className="h-5 w-5 flex-none text-amber-300" />
+          : <RefreshCw className="h-5 w-5 flex-none text-amber-300" />}
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold text-white">Skor cihazda güvende</p>
-          <p className="text-[11px] text-white/55">{pending} skor internete bağlanınca gönderilecek.</p>
+          <p className="text-xs font-bold text-white">
+            {isOffline ? 'Skor cihazda güvende' : 'Skor sunucuya gönderilemedi'}
+          </p>
+          <p className="text-[11px] text-white/55">
+            {isOffline
+              ? `${status.pending} skor bağlantı geldiğinde gönderilecek.`
+              : `${status.pending} skor otomatik olarak yeniden denenecek.`}
+          </p>
         </div>
         <button
           type="button"

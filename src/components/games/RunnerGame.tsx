@@ -10,7 +10,8 @@ import { useLandscape } from '@/hooks/useLandscape';
 import { IS_MOBILE } from '@/utils/platform';
 import Leaderboard from '@/components/Leaderboard';
 
-import { CANVAS_DPR_CAP, CHARACTERS, CH, COLLECT_DEFS, COLLECTIBLE_EMOJIS, CW, DIFF_CONFIG, DOUBLE_JUMP_FORCE, GRAVITY, GROUND_Y, HUD_UPDATE_MS, JUMP_FORCE, MAX_LIVES, MAX_PARTICLES, OBS_DEFS, TARGET_FRAME_MS, boxHit, buildRenderCache, drawRoundRect, weightedRandom, type Collectible, type Difficulty, type FloatingText, type GamePhase, type Obstacle, type Particle, type RenderCache } from './runner/runnerRuntime';
+import { CANVAS_DPR_CAP, CHARACTERS, CH, COLLECT_DEFS, COLLECTIBLE_EMOJIS, CW, DIFF_CONFIG, DOUBLE_JUMP_FORCE, GRAVITY, GROUND_Y, HUD_UPDATE_MS, JUMP_FORCE, MAX_LIVES, MAX_PARTICLES, OBS_DEFS, boxHit, buildRenderCache, drawRoundRect, weightedRandom, type Collectible, type Difficulty, type FloatingText, type GamePhase, type Obstacle, type Particle, type RenderCache } from './runner/runnerRuntime';
+import { planPhysicsFrame, shouldRenderFrame } from './runner/runnerTiming';
 
 /* ═══════════════════════════════════════════
    MAIN COMPONENT
@@ -58,6 +59,7 @@ const RunnerGame = () => {
   const groundOffRef = useRef(0);
   const idRef = useRef(0);
   const lastTimeRef = useRef<number>(0);
+  const lastRenderTimeRef = useRef<number>(0);
   const physicsAccumulatorRef = useRef<number>(0);
   const phaseRef = useRef<GamePhase>('menu');
   const diffRef = useRef(DIFF_CONFIG['normal']);
@@ -729,22 +731,25 @@ const RunnerGame = () => {
 
     if (!lastTimeRef.current) {
       lastTimeRef.current = timestamp;
+      lastRenderTimeRef.current = timestamp;
       physicsAccumulatorRef.current = 0;
+      rafRef.current = requestAnimationFrame(gameLoop);
+      return;
+    }
+
+    if (!shouldRenderFrame(timestamp - lastRenderTimeRef.current)) {
       rafRef.current = requestAnimationFrame(gameLoop);
       return;
     }
 
     const elapsed = timestamp - lastTimeRef.current;
     lastTimeRef.current = timestamp;
+    lastRenderTimeRef.current = timestamp;
 
-    const cappedElapsed = Math.min(elapsed, 100);
-    const dt = cappedElapsed / TARGET_FRAME_MS;
-
-    physicsAccumulatorRef.current += dt;
-
-    while (physicsAccumulatorRef.current >= 1.0) {
+    const plan = planPhysicsFrame(elapsed, physicsAccumulatorRef.current);
+    physicsAccumulatorRef.current = plan.accumulator;
+    for (let step = 0; step < plan.steps; step++) {
       updatePhysics(1.0, timestamp);
-      physicsAccumulatorRef.current -= 1.0;
     }
 
     draw(ctx);
@@ -774,7 +779,7 @@ const RunnerGame = () => {
     diffRef.current = DIFF_CONFIG[difficulty];
     playerRef.current = { x: 90, y: GROUND_Y, vy: 0, w: 46, h: 54, grounded: true, jumps: 0, squash: 1, stretch: 1, landTimer: 0 };
     obstaclesRef.current = []; collectiblesRef.current = []; particlesRef.current = [];
-    speedRef.current = 5; frameRef.current = 0; groundOffRef.current = 0; lastTimeRef.current = 0;
+    speedRef.current = 5; frameRef.current = 0; groundOffRef.current = 0; lastTimeRef.current = 0; lastRenderTimeRef.current = 0;
     physicsAccumulatorRef.current = 0;
     scoreRef.current = 0; distanceRef.current = 0; comboRef.current = 0; livesRef.current = 3;
     invincibleRef.current = false; shieldRef.current = false; magnetRef.current = false; x2Ref.current = false;

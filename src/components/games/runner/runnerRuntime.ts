@@ -34,9 +34,8 @@ export const GRAVITY = 0.62;
 export const JUMP_FORCE = -13.5;
 export const DOUBLE_JUMP_FORCE = -11;
 export const MAX_LIVES = 5;
-export const TARGET_FRAME_MS = 1000 / 60;
-export const HUD_UPDATE_MS = 120;
-export const CANVAS_DPR_CAP = 2;
+export const HUD_UPDATE_MS = 200;
+export const CANVAS_DPR_CAP = IS_MOBILE ? 1.5 : 1.75;
 export const MAX_PARTICLES = 60;
 
 export const CHARACTERS = [
