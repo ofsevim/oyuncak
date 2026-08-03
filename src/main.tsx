@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { initErrorTracking, logger } from "./lib/logger";
+import { SERVICE_WORKER_UPDATE_EVENT, watchForServiceWorkerUpdate } from "./utils/serviceWorkerUpdate";
 
 declare global {
   interface Window {
@@ -54,26 +55,26 @@ async function bootstrap() {
             updateViaCache: "none",
           })
           .then((registration) => {
+            watchForServiceWorkerUpdate(
+              registration,
+              () => Boolean(navigator.serviceWorker.controller),
+              () => window.dispatchEvent(new Event(SERVICE_WORKER_UPDATE_EVENT)),
+            );
             // Her 30 dakikada bir güncelleme kontrolü yap
             setInterval(() => registration.update(), 30 * 60 * 1000);
           })
           .catch((err) => logger.warn("Service worker register failed", { err: String(err) }));
 
-        // Yeni SW aktif olduğunda: SW'den gelen mesajı dinle, sayfayı yenile
-        navigator.serviceWorker.addEventListener("message", (event) => {
-          if (event.data?.type === "SW_UPDATED") {
-            logger.info("SW updated, reloading page", { version: event.data.version });
-            window.location.reload();
-          }
-        });
-
-        // Controller değiştiğinde de sayfayı yenile (ilk SW kurulumunda değil)
-        let isFirstController = !navigator.serviceWorker.controller;
+        // Kullanıcı güncellemeyi onaylayınca yeni worker kontrolü alır.
+        let reloading = false;
+        let hadController = Boolean(navigator.serviceWorker.controller);
         navigator.serviceWorker.addEventListener("controllerchange", () => {
-          if (isFirstController) {
-            isFirstController = false;
-            return; // İlk kurulumda yenileme yapma
+          if (!hadController) {
+            hadController = true;
+            return;
           }
+          if (reloading) return;
+          reloading = true;
           window.location.reload();
         });
       });

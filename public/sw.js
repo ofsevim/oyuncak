@@ -12,7 +12,7 @@
 
 const SW_VERSION = '__SW_VERSION__';
 const CACHE_NAME = 'oyuncak-' + SW_VERSION;
-const BASE = self.registration?.scope ?? '/';
+const BASE = self.registration && self.registration.scope ? self.registration.scope : '/';
 const OFFLINE_URL = new URL('offline.html', BASE).pathname;
 const ASSETS_TO_CACHE = [
     BASE,
@@ -27,7 +27,6 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
-    self.skipWaiting();
     event.waitUntil((async () => {
         const cache = await caches.open(CACHE_NAME);
         // Çekirdek kabuk — başarısız olursa install başarısız olmalı
@@ -40,12 +39,18 @@ self.addEventListener('install', (event) => {
             if (res.ok) {
                 const data = await res.json();
                 const assets = Array.isArray(data.assets) ? data.assets : [];
-                await Promise.allSettled(assets.map((url) => cache.add(url)));
+                await Promise.all(assets.map((url) => cache.add(url).catch(() => undefined)));
             }
-        } catch (err) {
+        } catch {
             /* dev ortamı veya manifest yok → stale-while-revalidate devralır */
         }
     })());
+});
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 self.addEventListener('activate', (event) => {
@@ -60,17 +65,7 @@ self.addEventListener('activate', (event) => {
                     }
                 })
             );
-        }).then(() => {
-            // Tüm açık tab'lara yeni SW'nin kontrolünü al
-            return self.clients.claim();
-        }).then(() => {
-            // Tüm client'lara "güncelleme var, sayfayı yenile" mesajı gönder
-            return self.clients.matchAll({ type: 'window' }).then((clients) => {
-                clients.forEach((client) => {
-                    client.postMessage({ type: 'SW_UPDATED', version: SW_VERSION });
-                });
-            });
-        })
+        }).then(() => self.clients.claim())
     );
 });
 
@@ -124,7 +119,8 @@ self.addEventListener('fetch', (event) => {
 
     // Hash'li asset'ler (Vite tarafından /assets/chunk-abc123.js): Cache-First
     // Dosya adında hash olduğundan, içerik değiştiğinde URL da değişir → eski cache sorun olmaz
-    if (url.pathname.startsWith('/assets/') && /\.[a-f0-9]{8,}\./.test(url.pathname)) {
+    const assetsPath = new URL('assets/', BASE).pathname;
+    if (url.pathname.startsWith(assetsPath) && /\.[a-f0-9]{8,}\./.test(url.pathname)) {
         event.respondWith(
             caches.match(event.request).then((cached) => {
                 if (cached) return cached;

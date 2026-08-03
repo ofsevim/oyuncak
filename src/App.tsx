@@ -10,6 +10,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 const NicknameModal = lazy(() => import("@/components/NicknameModal"));
+const PWAUpdatePrompt = lazy(() => import("@/components/PWAUpdatePrompt"));
+const ScoreSyncNotice = lazy(() => import("@/components/ScoreSyncNotice"));
 
 const ModalFallback = () => null;
 const PageFallback = () => (
@@ -27,6 +29,8 @@ const App = () => (
           <BrowserRouter basename={import.meta.env.BASE_URL}>
             <Suspense fallback={<ModalFallback />}>
               <NicknameModal />
+              <PWAUpdatePrompt />
+              <ScoreSyncNotice />
             </Suspense>
             <ErrorBoundary>
               <Suspense fallback={<PageFallback />}>

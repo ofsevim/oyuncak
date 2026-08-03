@@ -48,6 +48,17 @@ export async function run() {
 
   // viewport'ta user-scalable=no olmamalı (a11y)
   assert.doesNotMatch(indexHtml, /user-scalable=no/i, "user-scalable=no WCAG ihlali");
+
+  // Güncelleme yalnızca kullanıcı onayından sonra etkinleşmeli.
+  const serviceWorker = await readFile(path.join(root, "public/sw.js"), "utf8");
+  assert.match(serviceWorker, /type === 'SKIP_WAITING'/, "SW kullanıcı onay mesajını dinlemeli");
+  const installHandler = serviceWorker.match(/self\.addEventListener\('install',[\s\S]*?\n}\);/);
+  assert.ok(installHandler, "SW install handler bulunmalı");
+  assert.doesNotMatch(
+    installHandler[0],
+    /self\.skipWaiting\(\)/,
+    "SW ilk kurulumda veya güncellemede otomatik etkinleşmemeli",
+  );
 }
 
 export default run;

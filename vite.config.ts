@@ -30,9 +30,13 @@ function swVersionPlugin(): Plugin {
  * okuyup tüm uygulama asset'lerini önbelleğe alır → ilk açılıştan sonra tam offline.
  */
 function precacheManifestPlugin(): Plugin {
+  let basePath = "/";
   return {
     name: "precache-manifest",
     apply: "build",
+    configResolved(config) {
+      basePath = config.base.endsWith("/") ? config.base : `${config.base}/`;
+    },
     closeBundle() {
       const distDir = path.resolve(__dirname, "dist");
       const assetsDir = path.join(distDir, "assets");
@@ -44,7 +48,7 @@ function precacheManifestPlugin(): Plugin {
         // Legacy/polyfill chunk'ları hariç tut: modern tarayıcılar kullanmaz,
         // eski tarayıcılar stale-while-revalidate ile yüklenir → install boyutu yarıya iner
         .filter((f) => !/-legacy-|polyfills/.test(f))
-        .map((f) => `/assets/${f}`)
+        .map((f) => `${basePath}assets/${f}`)
         .sort();
 
       fs.writeFileSync(

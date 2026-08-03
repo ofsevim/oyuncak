@@ -1,5 +1,5 @@
 import { SCORE_GAME_IDS } from '@/constants/gameIds';
-import { logger } from '@/lib/logger';
+import { enqueueScoreSync, flushScoreSyncQueue } from './scoreSyncQueue';
 
 /** localStorage + Firebase tabanlı highscore sistemi */
 const PREFIX = 'oyuncak.hs.';
@@ -10,12 +10,6 @@ const SYNC_KEY = 'oyuncak.firebase.synced.v2';
  * gerçekten skor yazılırken dinamik olarak yüklenir; oyun açılış zincirine
  * statik bağlanmaz. Hata/çevrimdışı durumda sessizce geçilir — localStorage yeterli.
  */
-function syncScoreLazy(gameId: string, score: number): void {
-  import('@/services/scoreService')
-    .then((m) => m.syncScore(gameId, score))
-    .catch(() => {});
-}
-
 /**
  * localStorage'daki mevcut rekorları Firebase'e aktar.
  * Sadece bir kez çalışır (ilk Firebase kurulumunda).
@@ -32,21 +26,9 @@ export async function syncExistingScores(): Promise<void> {
       return;
     }
 
-    const { syncScore } = await import('@/services/scoreService');
-    const results = await Promise.allSettled(
-      pending.map((x) => syncScore(x.id, x.score)),
-    );
-    const failures = results.filter((result) => result.status === 'rejected');
-
-    if (failures.length > 0) {
-      logger.warn('Skor senkronizasyonu tamamlanamadı', {
-        attempted: pending.length,
-        failed: failures.length,
-      });
-      return;
-    }
-
+    pending.forEach((entry) => enqueueScoreSync(entry.id, entry.score));
     localStorage.setItem(SYNC_KEY, '1');
+    await flushScoreSyncQueue(true);
   } catch { /* sessiz */ }
 }
 
@@ -70,7 +52,7 @@ export function setHighScore(gameId: string, score: number): boolean {
     } catch { /* ignore */ }
   }
   if (score > 0) {
-    syncScoreLazy(gameId, score);
+    enqueueScoreSync(gameId, score);
   }
   return isNew;
 }
@@ -109,7 +91,7 @@ export function saveHighScoreObj(gameId: string, score: number): boolean {
     } catch { /* ignore */ }
   }
   if (score > 0) {
-    syncScoreLazy(gameId, score);
+    enqueueScoreSync(gameId, score);
   }
   return isNew;
 }

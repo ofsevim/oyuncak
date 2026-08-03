@@ -1,20 +1,18 @@
 import { initializeApp } from 'firebase-admin/app';
 import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import {
+  SCORE_GAME_IDS,
+  isValidGameId,
+  isValidScore,
+  sanitizeName,
+} from './scoreValidation.js';
 
 initializeApp();
 const db = getFirestore();
 
 const REGION = 'europe-west1';
-const MAX_SCORE = 9_999_999;
 const MIN_UPDATE_INTERVAL_MS = 10_000;
-
-const SCORE_GAME_IDS = new Set([
-  'runner', 'snake', 'tetris', 'tank-arena', '2048', 'whack-a-mole',
-  'balloon-pop', 'basketball', 'piano', 'math', 'counting', 'oddoneout',
-  'comparison', 'shapematch', 'simonsays', 'codingturtle', 'spaceshooter',
-  'memory-3x3', 'memory-4x4', 'memory-5x5', 'memory-6x6',
-]);
 
 function requireUser(request) {
   if (!request.auth?.uid) {
@@ -24,24 +22,17 @@ function requireUser(request) {
 }
 
 function validateGameId(gameId) {
-  if (typeof gameId !== 'string' || !SCORE_GAME_IDS.has(gameId)) {
+  if (!isValidGameId(gameId)) {
     throw new HttpsError('invalid-argument', 'Geçersiz oyun kimliği.');
   }
   return gameId;
 }
 
 function validateScore(score) {
-  if (!Number.isSafeInteger(score) || score < 0 || score > MAX_SCORE) {
+  if (!isValidScore(score)) {
     throw new HttpsError('invalid-argument', 'Geçersiz skor.');
   }
   return score;
-}
-
-function sanitizeName(name) {
-  const sanitized = typeof name === 'string'
-    ? name.replace(/[<>\n\r\t]/g, '').trim().slice(0, 30)
-    : '';
-  return sanitized || 'Anonim Oyuncu';
 }
 
 /**

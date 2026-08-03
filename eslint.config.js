@@ -54,4 +54,18 @@ export default tseslint.config(
       "no-console": "off",
     },
   },
+  {
+    extends: [js.configs.recommended],
+    files: ["functions/**/*.js", "tests/**/*.mjs", "scripts/**/*.mjs", "public/sw.js"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: {
+        ...globals.node,
+        ...globals.serviceworker,
+      },
+    },
+    rules: {
+      "no-console": "off",
+    },
+  },
 );
