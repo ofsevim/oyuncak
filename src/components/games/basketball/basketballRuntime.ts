@@ -27,7 +27,7 @@ export const SHOT_POSITIONS: ShotPos[] = [
 export const MAX_DRAG = 150;      // pixels of drag = full power
 export const MAX_SPEED = 22;      // max launch speed
 export const TARGET_FRAME_MS = 1000 / 60;
-export const CANVAS_DPR_CAP = 2;
+export const CANVAS_DPR_CAP = IS_MOBILE ? 1.5 : 1.75;
 export const isMobileDev = IS_MOBILE;
 
 const TARGETS = [15, 35, 60, 90, 165];

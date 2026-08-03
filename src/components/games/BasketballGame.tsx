@@ -5,8 +5,11 @@ import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
+import { alignRenderTimestamp, planPhysicsFrame, shouldRenderFrame } from './runner/runnerTiming';
 
-import { BALLS_PER_ROUND, BALL_R, BALL_TYPES, CANVAS_DPR_CAP, CH, CW, GRAVITY, HOOP_X, HOOP_Y, MAX_DRAG, MAX_SPEED, RIM_W, SHOT_POSITIONS, TARGET_FRAME_MS, drawBall, drawBg, drawHoop, drawHoopFront, getTargetScore, isMobileDev, perspFloorY, type FloatMsg, type Phase, type TrailPt } from './basketball/basketballRuntime';
+import { BALLS_PER_ROUND, BALL_R, BALL_TYPES, CANVAS_DPR_CAP, CH, CW, GRAVITY, HOOP_X, HOOP_Y, MAX_DRAG, MAX_SPEED, RIM_W, SHOT_POSITIONS, drawBall, drawBg, drawHoop, drawHoopFront, getTargetScore, isMobileDev, perspFloorY, type FloatMsg, type Phase, type TrailPt } from './basketball/basketballRuntime';
+
+const MAX_RENDER_FPS = 60;
 
 /* ═══════════════ MAIN COMPONENT ═══════════════ */
 const BasketballGame = () => {
@@ -29,6 +32,7 @@ const BasketballGame = () => {
     const levelRef = useRef(1);
     const tickRef = useRef(0);
     const lastTimeRef = useRef<number>(0);
+    const lastRenderTimeRef = useRef<number>(0);
     const physicsAccumulatorRef = useRef(0);
 
     const bgCacheRef = useRef<OffscreenCanvas | HTMLCanvasElement | null>(null);
@@ -36,6 +40,10 @@ const BasketballGame = () => {
     const dragging = useRef(false);
     const dragStart = useRef({ x: 0, y: 0 });
     const dragCur = useRef({ x: 0, y: 0 });
+    const trajectoryCacheRef = useRef<{
+        key: string;
+        points: Array<{ x: number; y: number; alpha: number; radius: number }>;
+    }>({ key: '', points: [] });
     const { safeTimeout, clearSafeTimeout } = useSafeTimeouts();
     const rafRef = useRef(0);
 
@@ -83,6 +91,7 @@ const BasketballGame = () => {
         ballsLeftRef.current = BALLS_PER_ROUND; scoreRef.current = 0; comboRef.current = 0;
         levelRef.current = 1;
         lastTimeRef.current = 0;
+        lastRenderTimeRef.current = 0;
         physicsAccumulatorRef.current = 0;
         setScore(0); setBallsLeft(BALLS_PER_ROUND); setCombo(0); setLevel(1); setIsNewRecord(false);
         resetBall(); phaseRef.current = 'aim'; setPhase('aim');
@@ -144,19 +153,24 @@ const BasketballGame = () => {
 
         if (!lastTimeRef.current) {
             lastTimeRef.current = timestamp;
+            lastRenderTimeRef.current = timestamp;
             physicsAccumulatorRef.current = 0;
+            rafRef.current = requestAnimationFrame(loop);
+            return;
+        }
+
+        if (!shouldRenderFrame(timestamp - lastRenderTimeRef.current, MAX_RENDER_FPS)) {
             rafRef.current = requestAnimationFrame(loop);
             return;
         }
 
         const elapsed = timestamp - lastTimeRef.current;
         lastTimeRef.current = timestamp;
-
-        // Cap elapsed time to 100ms to avoid spiral of death / background tab suspension freeze
-        const cappedElapsed = Math.min(elapsed, 100);
-        const dt = cappedElapsed / TARGET_FRAME_MS;
-
-        physicsAccumulatorRef.current += dt;
+        lastRenderTimeRef.current = alignRenderTimestamp(
+            timestamp,
+            lastRenderTimeRef.current,
+            MAX_RENDER_FPS,
+        );
 
         const updatePhysics = (step: number) => {
             tickRef.current += step;
@@ -272,10 +286,10 @@ const BasketballGame = () => {
             }
         };
 
-        // Run fixed physics steps
-        while (physicsAccumulatorRef.current >= 1.0) {
+        const plan = planPhysicsFrame(elapsed, physicsAccumulatorRef.current);
+        physicsAccumulatorRef.current = plan.accumulator;
+        for (let step = 0; step < plan.steps; step++) {
             updatePhysics(1.0);
-            physicsAccumulatorRef.current -= 1.0;
         }
 
         const tick = tickRef.current;
@@ -341,9 +355,6 @@ const BasketballGame = () => {
                 const spd = power * MAX_SPEED;
 
                 // ── Trajectory dots (perspektif zemin bounce simulasyonu ile) ──
-                let px = currentPosRef.current.x, py = currentPosRef.current.y;
-                let pvx = ndx * spd, pvy = ndy * spd;
-
                 // Seviyeye göre gösterge uzunluğu (Daha kademeli geçiş)
                 let guideDots = 60;
                 const lvl = levelRef.current;
@@ -353,23 +364,38 @@ const BasketballGame = () => {
                 else if (lvl === 5) guideDots = 8;
                 else if (lvl >= 6) guideDots = 0;
 
-                for (let i = 1; i <= guideDots; i++) {
-                    pvy += GRAVITY;
-                    px += pvx; py += pvy;
+                if (isMobileDev) guideDots = Math.min(guideDots, 36);
+                const trajectoryKey = `${Math.round(dc.x * 2)}:${Math.round(dc.y * 2)}:${lvl}`;
+                if (trajectoryCacheRef.current.key !== trajectoryKey) {
+                    let px = currentPosRef.current.x, py = currentPosRef.current.y;
+                    let pvx = ndx * spd, pvy = ndy * spd;
+                    const points: Array<{ x: number; y: number; alpha: number; radius: number }> = [];
 
-                    // Zemin bounce (preview'da da görünsün)
-                    const FLOOR = perspFloorY(px);
-                    if (py + BALL_R >= FLOOR && pvy > 0) {
-                        py = FLOOR - BALL_R;
-                        pvy = -pvy * 0.58;
-                        pvx *= 0.78;
+                    for (let i = 1; i <= guideDots; i++) {
+                        pvy += GRAVITY;
+                        px += pvx; py += pvy;
+
+                        const floor = perspFloorY(px);
+                        if (py + BALL_R >= floor && pvy > 0) {
+                            py = floor - BALL_R;
+                            pvy = -pvy * 0.58;
+                            pvx *= 0.78;
+                        }
+                        if (px < 0 || py > CH + 40 || px > CW) break;
+                        if (i % 3 !== 0) continue;
+
+                        points.push({
+                            x: px,
+                            y: py,
+                            alpha: Math.max(0.25, 1 - i / 50),
+                            radius: Math.max(2.5, 5.5 - i * 0.08),
+                        });
                     }
-                    if (px < 0 || py > CH + 40 || px > CW) break;
+                    trajectoryCacheRef.current = { key: trajectoryKey, points };
+                }
 
-                    // Draw every 3rd step for dotted effect
-                    if (i % 3 !== 0) continue;
-                    const alpha = Math.max(0.25, 1 - i / 50);
-                    const r = Math.max(2.5, 5.5 - i * 0.08);
+                for (const point of trajectoryCacheRef.current.points) {
+                    const { x: px, y: py, alpha, radius: r } = point;
 
                     // Outer glow
                     ctx.beginPath();
@@ -540,6 +566,7 @@ const BasketballGame = () => {
         const pos = toCanvas(e);
         dragging.current = true;
         dragStart.current = pos; dragCur.current = pos;
+        trajectoryCacheRef.current.key = '';
     };
 
     const onMove = (e: React.PointerEvent) => {
@@ -556,12 +583,13 @@ const BasketballGame = () => {
         const dx = dc.x - ds.x, dy = dc.y - ds.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const power = Math.min(dist / MAX_DRAG, 1);
-        if (power < 0.06) { dragging.current = false; return; }
+        if (power < 0.06) { dragging.current = false; trajectoryCacheRef.current.key = ''; return; }
         const spd = power * MAX_SPEED;
         ballVX.current = (dx / dist) * spd;
         ballVY.current = (dy / dist) * spd;
         trailRef.current = [];
         dragging.current = false;
+        trajectoryCacheRef.current.key = '';
         phaseRef.current = 'fly'; setPhase('fly');
     };
 

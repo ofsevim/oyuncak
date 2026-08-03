@@ -20,6 +20,12 @@ export async function run() {
   );
   assert.equal(SCORE_GAME_IDS.length, 21, "Skor oyun kimlikleri beklenmedik şekilde değişti");
   assert.match(functionsSource, /export const submitScore = onCall/, "Sunucu skor fonksiyonu bulunmalı");
+  assert.match(
+    functionsSource,
+    /https:\/\/adenerva\.netlify\.app/,
+    "Canlı Netlify kaynağı callable CORS listesinde bulunmalı",
+  );
+  assert.match(functionsSource, /invoker:\s*'public'/, "Callable preflight herkese açık olmalı");
 
   assert.deepEqual(
     [...serverValidation.SCORE_GAME_IDS].sort(),

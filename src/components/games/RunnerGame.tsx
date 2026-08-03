@@ -11,7 +11,7 @@ import { IS_MOBILE } from '@/utils/platform';
 import Leaderboard from '@/components/Leaderboard';
 
 import { CANVAS_DPR_CAP, CHARACTERS, CH, COLLECT_DEFS, COLLECTIBLE_EMOJIS, CW, DIFF_CONFIG, DOUBLE_JUMP_FORCE, GRAVITY, GROUND_Y, HUD_UPDATE_MS, JUMP_FORCE, MAX_LIVES, MAX_PARTICLES, OBS_DEFS, boxHit, buildRenderCache, drawRoundRect, weightedRandom, type Collectible, type Difficulty, type FloatingText, type GamePhase, type Obstacle, type Particle, type RenderCache } from './runner/runnerRuntime';
-import { planPhysicsFrame, shouldRenderFrame } from './runner/runnerTiming';
+import { alignRenderTimestamp, planPhysicsFrame, shouldRenderFrame } from './runner/runnerTiming';
 
 /* ═══════════════════════════════════════════
    MAIN COMPONENT
@@ -744,7 +744,7 @@ const RunnerGame = () => {
 
     const elapsed = timestamp - lastTimeRef.current;
     lastTimeRef.current = timestamp;
-    lastRenderTimeRef.current = timestamp;
+    lastRenderTimeRef.current = alignRenderTimestamp(timestamp, lastRenderTimeRef.current);
 
     const plan = planPhysicsFrame(elapsed, physicsAccumulatorRef.current);
     physicsAccumulatorRef.current = plan.accumulator;

@@ -28,6 +28,24 @@ export function planPhysicsFrame(
   return { steps, accumulator: nextAccumulator };
 }
 
-export function shouldRenderFrame(elapsedSinceRenderMs: number): boolean {
-  return elapsedSinceRenderMs >= MIN_RENDER_INTERVAL_MS;
+export function shouldRenderFrame(
+  elapsedSinceRenderMs: number,
+  maxRenderFps = MAX_RENDER_FPS,
+): boolean {
+  const renderIntervalMs = maxRenderFps > 0
+    ? 1000 / maxRenderFps
+    : MIN_RENDER_INTERVAL_MS;
+  return elapsedSinceRenderMs >= renderIntervalMs;
+}
+
+/** Keeps fractional refresh-rate time so 60 FPS stays close to 60 on 144 Hz displays. */
+export function alignRenderTimestamp(
+  timestamp: number,
+  previousRenderTimestamp: number,
+  maxRenderFps = MAX_RENDER_FPS,
+): number {
+  if (maxRenderFps <= 0) return timestamp;
+  const renderIntervalMs = 1000 / maxRenderFps;
+  const elapsed = Math.max(0, timestamp - previousRenderTimestamp);
+  return timestamp - (elapsed % renderIntervalMs);
 }

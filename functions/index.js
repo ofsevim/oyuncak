@@ -13,6 +13,20 @@ const db = getFirestore();
 
 const REGION = 'europe-west1';
 const MIN_UPDATE_INTERVAL_MS = 10_000;
+const CALLABLE_OPTIONS = {
+  region: REGION,
+  // Callable endpoints must remain publicly reachable so browser preflight
+  // requests can complete. Authentication is still enforced in requireUser.
+  invoker: 'public',
+  cors: [
+    'https://adenerva.netlify.app',
+    'https://oyuncak.app',
+    'https://www.oyuncak.app',
+    /^https:\/\/deploy-preview-\d+--adenerva\.netlify\.app$/,
+    /^https?:\/\/localhost(?::\d+)?$/,
+    'capacitor://localhost',
+  ],
+};
 
 function requireUser(request) {
   if (!request.auth?.uid) {
@@ -40,7 +54,7 @@ function validateScore(score) {
  * authenticated caller, game id, score shape, ownership and update cadence
  * have been validated on the server.
  */
-export const submitScore = onCall({ region: REGION }, async (request) => {
+export const submitScore = onCall(CALLABLE_OPTIONS, async (request) => {
   const uid = requireUser(request);
   const gameId = validateGameId(request.data?.gameId);
   const score = validateScore(request.data?.score);
@@ -76,7 +90,7 @@ export const submitScore = onCall({ region: REGION }, async (request) => {
 });
 
 /** Update a player's displayed name without exposing a client-side write. */
-export const updateScoreNickname = onCall({ region: REGION }, async (request) => {
+export const updateScoreNickname = onCall(CALLABLE_OPTIONS, async (request) => {
   const uid = requireUser(request);
   const name = sanitizeName(request.data?.name);
   const refs = [...SCORE_GAME_IDS].map((gameId) =>

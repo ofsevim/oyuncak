@@ -119,7 +119,7 @@ const GAME_STYLES = `
     animation: balloon-rise var(--rise-duration) var(--rise-delay) linear both;
     animation-play-state: var(--play-state, running);
     will-change: transform, opacity;
-    contain: layout style;
+    contain: layout paint style;
   }
 
   @keyframes balloon-sway {
@@ -131,7 +131,7 @@ const GAME_STYLES = `
     animation: balloon-sway var(--sway-duration) ease-in-out infinite;
     animation-play-state: var(--play-state, running);
     will-change: transform;
-    contain: layout style;
+    contain: layout paint style;
   }
 `;
 
@@ -797,7 +797,6 @@ const BalloonPopGame = () => {
                 width="48"
                 height="64"
                 viewBox="0 0 48 64"
-                className="drop-shadow-lg"
               >
                 <ellipse cx="24" cy="26" rx="20" ry="24" fill={balloon.color.glow} opacity={0.5} />
                 <ellipse

@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playNewRecordSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
+import { IS_MOBILE } from '@/utils/platform';
 import Leaderboard from '@/components/Leaderboard';
+import { alignRenderTimestamp, planPhysicsFrame, shouldRenderFrame } from './runner/runnerTiming';
 
 /* ═══════════════════════════════════════════
    TYPES
@@ -24,6 +26,10 @@ const CH = 600;
 const SHIP_W = 40;
 const SHIP_H = 40;
 const BULLET_SPEED = 8;
+const MAX_RENDER_FPS = 60;
+const MAX_PARTICLES = IS_MOBILE ? 120 : 180;
+const CANVAS_DPR_CAP = IS_MOBILE ? 1.5 : 1.75;
+const HUD_UPDATE_FRAMES = 6;
 
 const DIFFS: Record<Difficulty, { label: string; enemySpeed: number; spawnRate: number; enemyHP: number }> = {
     easy: { label: '🌟 Kolay', enemySpeed: 1.5, spawnRate: 0.015, enemyHP: 1 },
@@ -45,6 +51,17 @@ const STARS = Array.from({ length: 60 }, () => ({
     speed: 0.3 + Math.random() * 1.5,
     opacity: 0.3 + Math.random() * 0.7,
 }));
+
+const POWER_UP_COLORS: Record<PowerUp['type'], string> = {
+    shield: '#3b82f6',
+    rapid: '#f59e0b',
+    spread: '#10b981',
+};
+const POWER_UP_ICONS: Record<PowerUp['type'], string> = {
+    shield: '🛡️',
+    rapid: '⚡',
+    spread: '🔱',
+};
 
 const pill: React.CSSProperties = {
     background: 'rgba(0,0,0,0.6)',
@@ -74,6 +91,7 @@ const SpaceShooterGame = () => {
 
     // Physics accumulator refs
     const lastTimeRef = useRef<number>(0);
+    const lastRenderTimeRef = useRef<number>(0);
     const physicsAccumulatorRef = useRef<number>(0);
 
     // Game state refs
@@ -91,6 +109,8 @@ const SpaceShooterGame = () => {
     const powerUpId = useRef(0);
     const lastShot = useRef(0);
     const frameCount = useRef(0);
+    const lastHudFrameRef = useRef(0);
+    const emittedScoreRef = useRef(0);
     const diffRef = useRef(DIFFS.normal);
     const keysRef = useRef<Set<string>>(new Set());
     const touchX = useRef<number | null>(null);
@@ -168,7 +188,9 @@ const SpaceShooterGame = () => {
 
     /* ── Explosion particles ── */
     const explode = useCallback((x: number, y: number, color: string, count = 12) => {
-        for (let i = 0; i < count; i++) {
+        const available = Math.max(0, MAX_PARTICLES - particles.current.length);
+        const particleCount = Math.min(count, available);
+        for (let i = 0; i < particleCount; i++) {
             const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
             const speed = 2 + Math.random() * 4;
             particles.current.push({
@@ -246,7 +268,6 @@ const SpaceShooterGame = () => {
                     if (e.hp <= 0) {
                         explode(e.x, e.y, style.color, e.type === 'boss' ? 30 : 12);
                         scoreRef.current += style.points;
-                        setScore(scoreRef.current);
                         enemies.current.splice(i, 1);
                         playSuccessSound();
                         // Drop power-up chance
@@ -319,6 +340,14 @@ const SpaceShooterGame = () => {
             levelRef.current++;
             setLevel(levelRef.current);
         }
+
+        if (frameCount.current - lastHudFrameRef.current >= HUD_UPDATE_FRAMES) {
+            lastHudFrameRef.current = frameCount.current;
+            if (scoreRef.current !== emittedScoreRef.current) {
+                emittedScoreRef.current = scoreRef.current;
+                setScore(scoreRef.current);
+            }
+        }
     }, [shoot, spawnEnemy, explode, safeTimeout, clearSafeTimeout]);
 
     /* ── Game loop ── */
@@ -331,27 +360,33 @@ const SpaceShooterGame = () => {
 
         if (!lastTimeRef.current) {
             lastTimeRef.current = timestamp;
+            lastRenderTimeRef.current = timestamp;
             physicsAccumulatorRef.current = 0;
+            rafRef.current = requestAnimationFrame(gameLoop);
+            return;
+        }
+
+        if (!shouldRenderFrame(timestamp - lastRenderTimeRef.current, MAX_RENDER_FPS)) {
             rafRef.current = requestAnimationFrame(gameLoop);
             return;
         }
 
         const elapsed = timestamp - lastTimeRef.current;
         lastTimeRef.current = timestamp;
+        lastRenderTimeRef.current = alignRenderTimestamp(
+            timestamp,
+            lastRenderTimeRef.current,
+            MAX_RENDER_FPS,
+        );
 
-        // Cap elapsed to avoid spiral of death
-        const cappedElapsed = Math.min(elapsed, 100);
-        const dt = cappedElapsed / (1000 / 60);
-
-        physicsAccumulatorRef.current += dt;
-
-        while (physicsAccumulatorRef.current >= 1.0) {
+        const plan = planPhysicsFrame(elapsed, physicsAccumulatorRef.current);
+        physicsAccumulatorRef.current = plan.accumulator;
+        for (let step = 0; step < plan.steps; step++) {
             updatePhysics(1.0);
-            physicsAccumulatorRef.current -= 1.0;
         }
 
         // ── DRAW ──
-        const dpr = window.devicePixelRatio || 1;
+        const dpr = Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP);
         ctx.save();
         ctx.scale(dpr, dpr);
 
@@ -374,9 +409,7 @@ const SpaceShooterGame = () => {
 
         // Power-ups
         powerUps.current.forEach(p => {
-            const colors: Record<PowerUp['type'], string> = { shield: '#3b82f6', rapid: '#f59e0b', spread: '#10b981' };
-            const icons: Record<PowerUp['type'], string> = { shield: '🛡️', rapid: '⚡', spread: '🔱' };
-            ctx.fillStyle = colors[p.type];
+            ctx.fillStyle = POWER_UP_COLORS[p.type];
             ctx.globalAlpha = 0.3;
             ctx.beginPath();
             ctx.arc(p.x, p.y, 18, 0, Math.PI * 2);
@@ -385,7 +418,7 @@ const SpaceShooterGame = () => {
             ctx.font = '18px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(icons[p.type], p.x, p.y);
+            ctx.fillText(POWER_UP_ICONS[p.type], p.x, p.y);
         });
 
         // Bullets
@@ -528,7 +561,10 @@ const SpaceShooterGame = () => {
         livesRef.current = 3;
         levelRef.current = 1;
         frameCount.current = 0;
+        lastHudFrameRef.current = 0;
+        emittedScoreRef.current = 0;
         lastTimeRef.current = 0;
+        lastRenderTimeRef.current = 0;
         physicsAccumulatorRef.current = 0;
         shieldActive.current = false;
         rapidFire.current = false;
@@ -687,8 +723,8 @@ const SpaceShooterGame = () => {
             {/* Canvas */}
             <canvas
                 ref={canvasRef}
-                width={CW * (window.devicePixelRatio || 1)}
-                height={CH * (window.devicePixelRatio || 1)}
+                width={CW * Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP)}
+                height={CH * Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP)}
                 onTouchStart={handleTouch}
                 onTouchMove={handleTouch}
                 onTouchEnd={handleTouchEnd}

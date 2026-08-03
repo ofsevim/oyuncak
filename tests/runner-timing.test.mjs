@@ -5,12 +5,19 @@ export async function run() {
   const {
     MAX_PHYSICS_STEPS_PER_FRAME,
     MIN_RENDER_INTERVAL_MS,
+    alignRenderTimestamp,
     planPhysicsFrame,
     shouldRenderFrame,
   } = await loadTsModule('src/components/games/runner/runnerTiming.ts');
 
   assert.equal(shouldRenderFrame(MIN_RENDER_INTERVAL_MS - 0.1), false);
   assert.equal(shouldRenderFrame(MIN_RENDER_INTERVAL_MS), true);
+  assert.equal(shouldRenderFrame(15, 60), false);
+  assert.equal(shouldRenderFrame(1000 / 60, 60), true);
+  assert.ok(
+    Math.abs(alignRenderTimestamp(20.8, 0, 60) - (1000 / 60)) < 0.01,
+    'yenileme hızı artığı bir sonraki kareye taşınmalı',
+  );
 
   const normalFrame = planPhysicsFrame(1000 / 60, 0);
   assert.equal(normalFrame.steps, 1);
