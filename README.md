@@ -92,22 +92,19 @@ src/
 ## Güvenlik
 
 - Firebase konfigürasyonu `.env` üzerinden (koda gömülmez)
-- Skor yazımları yalnızca Cloud Functions üzerinden yapılır; Firestore kuralları istemciden doğrudan yazmayı engeller
+- Skor yazımları Firestore güvenlik kurallarıyla kullanıcıya ait belgeyle sınırlandırılır
 - CSP ve XSS önlemleri mevcuttur
 - Kullanıcı girdileri sunucuda doğrulanır ve temizlenir
 
 ## Skor altyapısını dağıtma
 
-Skorların çalışması için önce Functions bağımlılıklarını kurup kuralları ve fonksiyonları birlikte dağıtın:
+Skorlar Spark planında Firestore güvenlik kuralları üzerinden çalışır. Kuralları dağıtın:
 
 ```bash
-cd functions
-npm install
-cd ..
-npx firebase-tools deploy --only firestore:rules,functions
+npx firebase-tools deploy --only firestore:rules
 ```
 
-Fonksiyonlar `europe-west1` bölgesinde yayınlanır.
+Oturum açmış kullanıcı yalnızca kendi belgesini oluşturabilir ve mevcut skorunu düşüremez.
 
 ## PWA
 

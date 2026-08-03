@@ -1,6 +1,16 @@
-import { collection, doc, getDoc, getDocs, limit, orderBy, query } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '@/lib/firebase';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  runTransaction,
+  serverTimestamp,
+  writeBatch,
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { ensureAuth, getUid } from './authService';
 import { SCORE_GAME_IDS } from '@/constants/gameIds';
 import { logger } from '@/lib/logger';
@@ -24,22 +34,35 @@ export interface LeaderboardEntry {
   isMe?: boolean;
 }
 
-type SubmitScoreResult = { updated: boolean; score: number };
-
-/** Saves a score through Cloud Functions; Firestore is client read-only. */
+/** Saves only a new personal best; Firestore rules enforce ownership and shape. */
 export async function syncScore(gameId: string, score: number): Promise<boolean> {
   try {
-    await ensureAuth();
-    const submitScore = httpsCallable<{ gameId: string; score: number; name: string }, SubmitScoreResult>(
-      functions,
-      'submitScore',
-    );
-    const { data } = await submitScore({ gameId, score, name: getNickname() });
+    if (!SCORE_GAME_IDS.includes(gameId)) throw new Error('Geçersiz oyun kimliği');
+    const user = await ensureAuth();
+    const scoreRef = doc(db, 'scores', gameId, 'leaderboard', user.uid);
+    const updated = await runTransaction(db, async (transaction) => {
+      const existing = await transaction.get(scoreRef);
+      const existingScore = existing.exists() && Number.isSafeInteger(existing.data().score)
+        ? existing.data().score as number
+        : -1;
 
-    if (data.updated) {
+      if (existingScore >= score) return false;
+
+      transaction.set(scoreRef, {
+        uid: user.uid,
+        gameId,
+        name: getNickname(),
+        score,
+        date: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      });
+      return true;
+    });
+
+    if (updated) {
       window.dispatchEvent(new CustomEvent('oyuncak:score-updated', { detail: { gameId } }));
     }
-    return data.updated;
+    return updated;
   } catch (err) {
     logger.warn('Firebase score write failed', { gameId, err: String(err) });
     throw err;
@@ -106,12 +129,22 @@ export async function getNicknameFromExistingScores(): Promise<string | null> {
 /** Updates the signed-in player's displayed name on existing scores. */
 export async function updateNicknameInScores(newName: string): Promise<void> {
   try {
-    await ensureAuth();
-    const updateNickname = httpsCallable<{ name: string }, { updated: number }>(
-      functions,
-      'updateScoreNickname',
+    const user = await ensureAuth();
+    const safeName = sanitizeNickname(newName);
+    const refs = SCORE_GAME_IDS.map((gameId) =>
+      doc(db, 'scores', gameId, 'leaderboard', user.uid),
     );
-    await updateNickname({ name: sanitizeNickname(newName) });
+    const snapshots = await Promise.all(refs.map((scoreRef) => getDoc(scoreRef)));
+    const batch = writeBatch(db);
+    let updated = 0;
+
+    snapshots.forEach((snapshot, index) => {
+      if (!snapshot.exists()) return;
+      batch.update(refs[index], { name: safeName, updatedAt: serverTimestamp() });
+      updated += 1;
+    });
+
+    if (updated > 0) await batch.commit();
     window.dispatchEvent(new Event('oyuncak:nickname-changed'));
   } catch (err) {
     logger.warn('Nickname update failed', { err: String(err) });

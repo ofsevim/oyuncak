@@ -5,33 +5,40 @@ import { loadTsModule } from "./helpers/load-ts-module.mjs";
 
 export async function run() {
   const root = process.cwd();
-  const [{ SCORE_GAME_IDS }, rules, functionsSource, serverValidation] = await Promise.all([
+  const [{ SCORE_GAME_IDS }, rules, scoreServiceSource] = await Promise.all([
     loadTsModule("src/constants/gameIds.ts"),
     readFile(path.join(root, "firestore.rules"), "utf8"),
-    readFile(path.join(root, "functions", "index.js"), "utf8"),
-    import("../functions/scoreValidation.js"),
+    readFile(path.join(root, "src", "services", "scoreService.ts"), "utf8"),
   ]);
 
   assert.match(rules, /allow\s+read:\s*if\s+true/, "Liderlik tablosu okunabilir olmalı");
   assert.match(
     rules,
-    /allow\s+write:\s*if\s+false/,
-    "Skor belgelerine istemci tarafından doğrudan yazma kapatılmalı",
+    /request\.auth\.uid\s*==\s*userId/,
+    "Kullanıcı yalnızca kendi skor belgesini yazabilmeli",
   );
   assert.equal(SCORE_GAME_IDS.length, 21, "Skor oyun kimlikleri beklenmedik şekilde değişti");
-  assert.match(functionsSource, /export const submitScore = onCall/, "Sunucu skor fonksiyonu bulunmalı");
   assert.match(
-    functionsSource,
-    /https:\/\/adenerva\.netlify\.app/,
-    "Canlı Netlify kaynağı callable CORS listesinde bulunmalı",
+    rules,
+    /request\.resource\.data\.score\s*>=\s*resource\.data\.score/,
+    "Skor düşürülememeli",
   );
-  assert.match(functionsSource, /invoker:\s*'public'/, "Callable preflight herkese açık olmalı");
-
-  assert.deepEqual(
-    [...serverValidation.SCORE_GAME_IDS].sort(),
-    [...SCORE_GAME_IDS].sort(),
-    "İstemci ve sunucu skor oyun kimlikleri aynı olmalı",
+  assert.match(
+    rules,
+    /request\.resource\.data\.score\s*<=\s*9999999/,
+    "Skor üst sınırı korunmalı",
   );
+  assert.match(
+    rules,
+    /request\.resource\.data\.updatedAt\s*==\s*request\.time/,
+    "Sunucu zamanı zorunlu olmalı",
+  );
+  assert.doesNotMatch(
+    scoreServiceSource,
+    /httpsCallable|firebase\/functions/,
+    "Skor servisi Cloud Functions çağırmamalı",
+  );
+  assert.match(scoreServiceSource, /runTransaction/, "Yeni rekor atomik işlemle yazılmalı");
 }
 
 export default run;

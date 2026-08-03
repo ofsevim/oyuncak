@@ -2,10 +2,45 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedInUser(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isSupportedGame(gameId) {
+      return gameId in [
+        'runner', 'snake', 'tetris', 'tank-arena', '2048', 'whack-a-mole',
+        'balloon-pop', 'basketball', 'piano', 'math', 'counting', 'oddoneout',
+        'comparison', 'shapematch', 'simonsays', 'codingturtle', 'spaceshooter',
+        'memory-3x3', 'memory-4x4', 'memory-5x5', 'memory-6x6'
+      ];
+    }
+
+    function hasValidScoreData(gameId, userId) {
+      return request.resource.data.keys().hasOnly([
+          'uid', 'gameId', 'name', 'score', 'date', 'updatedAt'
+        ])
+        && request.resource.data.uid == userId
+        && request.resource.data.gameId == gameId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 30
+        && request.resource.data.score is int
+        && request.resource.data.score >= 0
+        && request.resource.data.score <= 9999999
+        && request.resource.data.date is string
+        && request.resource.data.updatedAt == request.time;
+    }
+
     match /scores/{gameId}/leaderboard/{userId} {
       allow read: if true;
-      // Scores are written only through Cloud Functions (Admin SDK).
-      allow write: if false;
+      allow create: if isSignedInUser(userId)
+        && isSupportedGame(gameId)
+        && hasValidScoreData(gameId, userId);
+      allow update: if isSignedInUser(userId)
+        && isSupportedGame(gameId)
+        && hasValidScoreData(gameId, userId)
+        && request.resource.data.score >= resource.data.score;
+      allow delete: if false;
     }
   }
 }
