@@ -336,6 +336,16 @@ const TetrisGame = () => {
     else if (gameStateRef.current === 'paused') updateGameState('playing');
   }, [updateGameState]);
 
+  useEffect(() => {
+    const pauseWhenHidden = () => {
+      if (document.visibilityState === 'hidden' && gameStateRef.current === 'playing') {
+        updateGameState('paused');
+      }
+    };
+    document.addEventListener('visibilitychange', pauseWhenHidden);
+    return () => document.removeEventListener('visibilitychange', pauseWhenHidden);
+  }, [updateGameState]);
+
   /* ── Oyun döngüsü (stabil interval — yalnızca gameState / dropTime değişince yeniden oluşur) */
   gameTickRef.current = () => movePiece(0, 1);
 

@@ -529,7 +529,7 @@ const DrawingCanvas = () => {
             Renkler
           </span>
           <motion.div
-            className="grid grid-cols-7 sm:grid-cols-8 lg:grid-cols-7 gap-1 lg:gap-1.5 bg-black/20 p-1.5 lg:p-2 rounded-xl border border-white/5"
+            className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-7 gap-1 lg:gap-1.5 bg-black/20 p-1.5 lg:p-2 rounded-xl border border-white/5"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -540,6 +540,7 @@ const DrawingCanvas = () => {
                 <motion.button
                   key={color.value}
                   onClick={() => handleColorSelect(color.value)}
+                  aria-label={`${color.name} rengini seç`}
                   className="relative aspect-square w-full rounded-lg lg:rounded-xl active:scale-75 touch-manipulation cursor-pointer flex items-center justify-center p-0"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -573,6 +574,7 @@ const DrawingCanvas = () => {
                 setIsRainbow((prev) => !prev);
                 setIsStickering(false);
               }}
+              aria-label="Gökkuşağı fırçasını aç veya kapat"
               className="relative aspect-square w-full rounded-lg lg:rounded-xl rainbow-gradient flex items-center justify-center active:scale-75 touch-manipulation cursor-pointer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.85 }}
@@ -648,7 +650,7 @@ const DrawingCanvas = () => {
               <button
                 onClick={handleUndo}
                 disabled={undoLen === 0}
-                className={`w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-all ${undoLen === 0 ? 'opacity-20 cursor-not-allowed' : 'active:scale-95 cursor-pointer'
+                className={`w-11 h-11 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-all ${undoLen === 0 ? 'opacity-20 cursor-not-allowed' : 'active:scale-95 cursor-pointer'
                   }`}
                 title="Geri Al"
               >
@@ -656,7 +658,7 @@ const DrawingCanvas = () => {
               </button>
               <button
                 onClick={handleClear}
-                className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-100 hover:bg-red-500/20 transition-all active:scale-95 cursor-pointer"
+                className="w-11 h-11 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-100 hover:bg-red-500/20 transition-all active:scale-95 cursor-pointer"
                 title="Temizle"
               >
                 <Trash2 className="w-4 h-4" />
@@ -667,7 +669,8 @@ const DrawingCanvas = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowStickers((prev) => !prev)}
-                  className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all active:scale-95 cursor-pointer ${showStickers
+                  aria-label="Sticker menüsünü aç veya kapat"
+                  className={`w-11 h-11 flex items-center justify-center rounded-lg transition-all active:scale-95 cursor-pointer ${showStickers
                     ? 'bg-amber-500 text-white shadow-lg'
                     : 'bg-white/5 text-muted-foreground border border-white/10 hover:bg-white/10'
                     }`}
@@ -690,7 +693,8 @@ const DrawingCanvas = () => {
                               addSticker(emoji);
                               setShowStickers(false);
                             }}
-                            className="text-2xl hover:scale-125 transition-transform p-1 active:scale-90 cursor-pointer"
+                            className="min-w-11 min-h-11 text-2xl hover:scale-125 transition-transform p-1 active:scale-90 cursor-pointer"
+                            aria-label={`${emoji} stickerını ekle`}
                           >
                             {emoji}
                           </button>
@@ -710,7 +714,7 @@ const DrawingCanvas = () => {
                   }
                   playPopSound();
                 }}
-                className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all active:scale-95 cursor-pointer ${isStickering
+                className={`w-11 h-11 flex items-center justify-center rounded-lg transition-all active:scale-95 cursor-pointer ${isStickering
                   ? 'bg-blue-500 text-white shadow-lg ring-2 ring-blue-400/50'
                   : 'bg-white/5 text-muted-foreground border border-white/10 hover:bg-white/10'
                   }`}
@@ -724,7 +728,7 @@ const DrawingCanvas = () => {
               {isStickering && (
                 <button
                   onClick={deleteActiveSticker}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-500/20 text-red-100 border border-red-500/30 hover:bg-red-500/30 transition-all active:scale-95 cursor-pointer"
+                  className="w-11 h-11 flex items-center justify-center rounded-lg bg-red-500/20 text-red-100 border border-red-500/30 hover:bg-red-500/30 transition-all active:scale-95 cursor-pointer"
                   title="Seçili Sticker'ı Sil"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -753,7 +757,7 @@ const DrawingCanvas = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleDownload}
-              className="w-10 h-10 lg:w-11 lg:h-11 flex items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all active:scale-95 cursor-pointer"
+              className="w-11 h-11 flex items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all active:scale-95 cursor-pointer"
               title="İndir"
             >
               <Download className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -763,14 +767,14 @@ const DrawingCanvas = () => {
                 playPopSound();
                 setShowGallery(true);
               }}
-              className="w-10 h-10 lg:w-11 lg:h-11 flex items-center justify-center rounded-xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all active:scale-95 cursor-pointer"
+              className="w-11 h-11 flex items-center justify-center rounded-xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all active:scale-95 cursor-pointer"
               title="Galerim"
             >
               <Image className="w-4 h-4 lg:w-5 lg:h-5" />
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 h-10 lg:h-11 flex items-center justify-center gap-2 rounded-xl font-bold text-xs lg:text-sm bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+              className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl font-bold text-xs lg:text-sm bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
             >
               <Download className="w-4 h-4 lg:w-5 lg:h-5" /> Kaydet
             </button>

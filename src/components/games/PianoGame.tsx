@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { playSuccessSound, playComboSound } from '@/utils/soundEffects';
 import { saveHighScoreObj } from '@/utils/highScores';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 
@@ -341,15 +340,12 @@ const PianoGame = () => {
         const points = 10 + Math.min(newCombo, 5) * 5;
         scoreRef.current += points;
 
-        if (newCombo > 2) playComboSound(newCombo);
-
         const finalIndex = skipDashes(melody.notes, checkIndex + 1);
         melodyIndexRef.current = finalIndex;
         setMelodyIndex(finalIndex);
 
         /* Melodi tamamlandı mı? */
         if (finalIndex >= melody.notes.length) {
-          playSuccessSound();
           setShowSuccess(true);
 
           saveHighScoreObj('piano', scoreRef.current);

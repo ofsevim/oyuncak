@@ -91,7 +91,7 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
         aria-expanded={open}
         aria-controls={`leaderboard-panel-${gameId}`}
         aria-label="Liderlik tablosunu aç/kapat"
-        className="w-full px-4 py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+        className="w-full min-h-11 px-4 py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
         style={{
           background: open ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.05)',
           border: `1px solid ${open ? 'rgba(168,85,247,0.3)' : 'rgba(255,255,255,0.1)'}`,

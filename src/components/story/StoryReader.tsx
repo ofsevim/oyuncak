@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Home, RefreshCw } from "lucide-react";
 import type { Story } from "@/data/stories";
 import { StoryIllustration } from "./StoryIllustration";
 import { clearStoryProgress, saveStoryProgress } from "./storyProgress";
-import { playPopSound, playSuccessSound } from "@/utils/soundEffects";
 
 type Props = {
   story: Story;
@@ -29,11 +28,9 @@ export default function StoryReader({ story, initialPageIndex = 0, onExit }: Pro
   }, [story.id, pageIndex]);
 
   const goPrev = useCallback(() => {
-    playPopSound();
     setPageIndex((p) => Math.max(0, p - 1));
   }, []);
   const goNext = useCallback(() => {
-    playPopSound();
     setPageIndex((p) => {
       const target = story.pages[p]?.nextPageIndex;
       return Math.min(maxIndex, typeof target === "number" ? target : p + 1);
@@ -57,17 +54,7 @@ export default function StoryReader({ story, initialPageIndex = 0, onExit }: Pro
 
   const hasChoices = !!page.choices?.length;
 
-  const completionFiredRef = useRef(false);
   const isFinished = pageIndex === maxIndex && !hasChoices;
-  useEffect(() => {
-    if (isFinished && !completionFiredRef.current) {
-      completionFiredRef.current = true;
-      playSuccessSound();
-    }
-    if (!isFinished) {
-      completionFiredRef.current = false;
-    }
-  }, [isFinished]);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 pb-32">
@@ -136,7 +123,6 @@ export default function StoryReader({ story, initialPageIndex = 0, onExit }: Pro
                     <button
                       key={c.label}
                       onClick={() => {
-                        playPopSound();
                         setPageIndex(Math.min(Math.max(c.nextPageIndex, 0), maxIndex));
                       }}
                       className="rounded-2xl bg-primary px-5 py-4 text-left font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]"

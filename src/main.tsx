@@ -87,19 +87,22 @@ async function bootstrap() {
 }
 
 function warmFirebaseInBackground() {
-  window.setTimeout(async () => {
+  const syncScores = async () => {
     try {
-      const [{ ensureAuth }, { syncExistingScores }] = await Promise.all([
-        import("@/services/authService"),
-        import("@/utils/highScores"),
-      ]);
-
-      await ensureAuth();
+      // highScores Firebase'i yalnızca gerçekten gönderilecek bir skor varsa yükler.
+      const { syncExistingScores } = await import("@/utils/highScores");
       await syncExistingScores();
     } catch (err) {
       logger.warn("Firebase warm-up failed", { err: String(err) });
     }
-  }, 1200);
+  };
+
+  // İlk oyun etkileşimiyle ağ/JS ayrıştırma işinin çakışmasını önle.
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(() => void syncScores(), { timeout: 10_000 });
+  } else {
+    window.setTimeout(() => void syncScores(), 5_000);
+  }
 }
 
 bootstrap();

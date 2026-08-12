@@ -34,6 +34,7 @@ const RunnerGame = () => {
   const [showMagnet, setShowMagnet] = useState(false);
   const [showX2, setShowX2] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
+  const [isPageVisible, setIsPageVisible] = useState(() => document.visibilityState !== 'hidden');
 
   /* ── Refs ── */
   const rafRef = useRef(0);
@@ -812,9 +813,20 @@ const RunnerGame = () => {
   }, [character, clearAllTimeouts, difficulty]);
 
   useEffect(() => {
-    if (phase === 'playing') rafRef.current = requestAnimationFrame(gameLoop);
+    if (phase === 'playing' && isPageVisible) {
+      lastTimeRef.current = 0;
+      lastRenderTimeRef.current = 0;
+      physicsAccumulatorRef.current = 0;
+      rafRef.current = requestAnimationFrame(gameLoop);
+    }
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [phase, gameLoop]);
+  }, [phase, gameLoop, isPageVisible]);
+
+  useEffect(() => {
+    const handleVisibility = () => setIsPageVisible(document.visibilityState !== 'hidden');
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
   useEffect(() => {
     if (phase !== 'gameover') return;
@@ -849,7 +861,7 @@ const RunnerGame = () => {
       document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
     const checkOrientation = () => {
-      setIsPortrait(IS_MOBILE && window.innerHeight > window.innerWidth);
+      setIsPortrait(window.innerWidth < 900 && window.innerHeight > window.innerWidth);
       setVH();
     };
     checkOrientation();
@@ -1053,7 +1065,7 @@ const RunnerGame = () => {
         {/* Geri butonu — safe area altında */}
         <button
           onClick={() => navigate('/games')}
-          className="absolute left-2 md:left-3 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 text-[10px] md:text-xs transition-all"
+          className="absolute left-2 md:left-3 min-h-11 px-3 py-2 rounded-xl font-bold flex items-center gap-1.5 text-[10px] md:text-xs transition-all"
           style={{
             top: 'calc(env(safe-area-inset-top, 8px) + 8px)',
             zIndex: 30,
@@ -1255,7 +1267,7 @@ const RunnerGame = () => {
 
       {/* Rotate Prompt Overlay */}
       <AnimatePresence>
-        {isPortrait && (
+        {isPortrait && phase === 'playing' && (
           <motion.div
             className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 text-white p-6 text-center"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

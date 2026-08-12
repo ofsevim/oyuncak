@@ -135,7 +135,7 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
 
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('oyuncak:open-nickname-modal'))}
-                className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold text-white/90 transition-all hover:bg-white/10 active:scale-95 cursor-pointer backdrop-blur-md"
+                className="flex min-h-11 items-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-white/90 transition-all hover:bg-white/10 active:scale-95 cursor-pointer backdrop-blur-md"
                 style={{
                   background: 'rgba(255,255,255,0.08)',
                   border: '1px solid rgba(255,255,255,0.15)',
@@ -257,7 +257,7 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
           </div>
           <button
             onClick={onGoGames}
-            className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+            className="flex min-h-11 items-center gap-1 px-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
           >
             Tümü <ChevronRight className="w-3.5 h-3.5" />
           </button>

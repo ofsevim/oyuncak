@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, memo } from 'react';
+import { forwardRef, lazy, Suspense, useState, memo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Search, Brain, Hash, Wind, Piano, Calculator, Gamepad2, Rat, ArrowLeft, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -76,10 +76,11 @@ interface GameCardProps {
   onClick: () => void;
 }
 
-const GameCard = memo(({ game, index, onClick }: GameCardProps) => {
+const GameCard = memo(forwardRef<HTMLButtonElement, GameCardProps>(({ game, index, onClick }, ref) => {
   const Icon = game.icon;
   return (
     <motion.button
+      ref={ref}
       layout
       initial={{ opacity: 0, scale: 0.92, y: 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -126,7 +127,7 @@ const GameCard = memo(({ game, index, onClick }: GameCardProps) => {
       </div>
     </motion.button>
   );
-});
+}));
 
 GameCard.displayName = 'GameCard';
 
@@ -187,7 +188,7 @@ const GamesMenu = () => {
                 border: '1px solid rgba(255, 255, 255, 0.16)',
                 color: '#fff',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
-                minHeight: '42px',
+                minHeight: '44px',
               }}
               whileHover={{ x: -2, background: 'rgba(0, 0, 0, 0.72)', scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
@@ -265,7 +266,7 @@ const GamesMenu = () => {
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className="relative flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
+              className="relative flex min-h-11 items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{
                 background: isActive ? 'hsl(var(--primary))' : 'hsl(var(--muted) / 0.5)',
                 color: isActive ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',

@@ -593,6 +593,14 @@ const BasketballGame = () => {
         phaseRef.current = 'fly'; setPhase('fly');
     };
 
+    const onCancel = (e: React.PointerEvent) => {
+        if ((e.target as HTMLElement).hasPointerCapture?.(e.pointerId)) {
+            (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+        }
+        dragging.current = false;
+        trajectoryCacheRef.current.key = '';
+    };
+
     return (
         <div className="flex flex-col items-center w-full max-w-3xl mx-auto px-3 pb-36">
             <motion.div className="text-center py-3" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
@@ -647,7 +655,7 @@ const BasketballGame = () => {
 
             {/* Canvas */}
             <div ref={containerRef} className="relative w-full select-none" style={{ touchAction: 'none' }}
-                onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}>
+                onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}>
                 <canvas ref={canvasRef} width={CW} height={CH}
                     role="application" aria-label="Basketbol Sahası"
                     className="block rounded-2xl"

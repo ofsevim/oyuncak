@@ -84,6 +84,7 @@ const SpaceShooterGame = () => {
     const [lives, setLives] = useState(3);
     const [level, setLevel] = useState(1);
     const [canvasScale, setCanvasScale] = useState(1);
+    const [isPageVisible, setIsPageVisible] = useState(() => document.visibilityState !== 'hidden');
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const rafRef = useRef<number>(0);
@@ -563,6 +564,8 @@ const SpaceShooterGame = () => {
         frameCount.current = 0;
         lastHudFrameRef.current = 0;
         emittedScoreRef.current = 0;
+        keysRef.current.clear();
+        touchX.current = null;
         lastTimeRef.current = 0;
         lastRenderTimeRef.current = 0;
         physicsAccumulatorRef.current = 0;
@@ -581,19 +584,38 @@ const SpaceShooterGame = () => {
 
     /* ── RAF start/stop ── */
     useEffect(() => {
-        if (phase === 'playing') {
+        if (phase === 'playing' && isPageVisible) {
+            lastTimeRef.current = 0;
+            lastRenderTimeRef.current = 0;
+            physicsAccumulatorRef.current = 0;
             rafRef.current = requestAnimationFrame(gameLoop);
         }
         return () => cancelAnimationFrame(rafRef.current);
-    }, [phase, gameLoop]);
+    }, [phase, gameLoop, isPageVisible]);
 
     /* ── Keyboard ── */
     useEffect(() => {
         const down = (e: KeyboardEvent) => { keysRef.current.add(e.key); if (e.key === ' ') e.preventDefault(); };
         const up = (e: KeyboardEvent) => { keysRef.current.delete(e.key); };
+        const clearInputs = () => {
+            keysRef.current.clear();
+            touchX.current = null;
+        };
+        const handleVisibility = () => {
+            clearInputs();
+            setIsPageVisible(document.visibilityState !== 'hidden');
+        };
         window.addEventListener('keydown', down);
         window.addEventListener('keyup', up);
-        return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
+        window.addEventListener('blur', clearInputs);
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => {
+            window.removeEventListener('keydown', down);
+            window.removeEventListener('keyup', up);
+            window.removeEventListener('blur', clearInputs);
+            document.removeEventListener('visibilitychange', handleVisibility);
+            clearInputs();
+        };
     }, []);
 
     /* ── Touch ── */
@@ -741,11 +763,11 @@ const SpaceShooterGame = () => {
 
             {/* Mobile controls */}
             <div className="flex gap-4 mt-2 md:hidden">
-                <button onTouchStart={() => keysRef.current.add('ArrowLeft')} onTouchEnd={() => keysRef.current.delete('ArrowLeft')} onTouchCancel={() => keysRef.current.delete('ArrowLeft')}
+                <button type="button" aria-label="Sola git" onTouchStart={() => keysRef.current.add('ArrowLeft')} onTouchEnd={() => keysRef.current.delete('ArrowLeft')} onTouchCancel={() => keysRef.current.delete('ArrowLeft')}
                     className="w-16 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform" style={pill}>⬅️</button>
-                <button onTouchStart={() => keysRef.current.add(' ')} onTouchEnd={() => keysRef.current.delete(' ')} onTouchCancel={() => keysRef.current.delete(' ')}
+                <button type="button" aria-label="Ateş et" onTouchStart={() => keysRef.current.add(' ')} onTouchEnd={() => keysRef.current.delete(' ')} onTouchCancel={() => keysRef.current.delete(' ')}
                     className="w-20 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform" style={{ ...pill, background: 'rgba(0,212,255,0.3)' }}>🔥</button>
-                <button onTouchStart={() => keysRef.current.add('ArrowRight')} onTouchEnd={() => keysRef.current.delete('ArrowRight')} onTouchCancel={() => keysRef.current.delete('ArrowRight')}
+                <button type="button" aria-label="Sağa git" onTouchStart={() => keysRef.current.add('ArrowRight')} onTouchEnd={() => keysRef.current.delete('ArrowRight')} onTouchCancel={() => keysRef.current.delete('ArrowRight')}
                     className="w-16 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform" style={pill}>➡️</button>
             </div>
 
