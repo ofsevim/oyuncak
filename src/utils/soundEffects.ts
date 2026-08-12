@@ -110,8 +110,8 @@ const playTone = (ctx: AudioContext, options: ToneOptions) => {
 
 const playNoise = (
   ctx: AudioContext,
-  { duration, frequency, endFrequency, gain = 0.08, delay = 0 }: {
-    duration: number; frequency: number; endFrequency?: number; gain?: number; delay?: number;
+  { duration, frequency, endFrequency, gain = 0.08, delay = 0, attack = 0.002 }: {
+    duration: number; frequency: number; endFrequency?: number; gain?: number; delay?: number; attack?: number;
   },
 ) => {
   if (!masterBus) return;
@@ -132,7 +132,8 @@ const playNoise = (
   filter.frequency.setValueAtTime(frequency, start);
   if (endFrequency) filter.frequency.exponentialRampToValueAtTime(endFrequency, start + duration);
   filter.Q.setValueAtTime(1.4, start);
-  envelope.gain.setValueAtTime(gain, start);
+  envelope.gain.setValueAtTime(0.0001, start);
+  envelope.gain.linearRampToValueAtTime(gain, start + Math.min(attack, duration * 0.25));
   envelope.gain.exponentialRampToValueAtTime(0.0001, start + duration);
   source.connect(filter);
   filter.connect(envelope);
@@ -212,8 +213,52 @@ export const playTickSound = () => {
 export const playSwishSound = () => {
   const ctx = getAudioCtx();
   if (!ctx) return;
-  playNoise(ctx, { duration: 0.26, frequency: 1800, endFrequency: 720, gain: 0.16 });
-  playTone(ctx, { frequency: 210, endFrequency: 135, duration: 0.16, delay: 0.08, gain: 0.045, type: 'sine' });
+  playNoise(ctx, { duration: 0.24, frequency: 2500, endFrequency: 780, gain: 0.12, attack: 0.012 });
+  playNoise(ctx, { duration: 0.14, frequency: 920, endFrequency: 1650, delay: 0.035, gain: 0.045, attack: 0.008 });
+  playTone(ctx, { frequency: 235, endFrequency: 145, duration: 0.15, delay: 0.07, gain: 0.038, type: 'sine' });
+};
+
+export type BasketballImpactSurface = 'floor' | 'rim' | 'backboard';
+
+/** Basketbol temaslarını yüzeye ve çarpma şiddetine göre ayırır. */
+export const playBasketballImpactSound = (surface: BasketballImpactSurface, intensity = 0.7) => {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const strength = Math.min(Math.max(intensity, 0.15), 1);
+
+  if (surface === 'rim') {
+    playTone(ctx, { frequency: 1380, endFrequency: 1120, duration: 0.095, gain: 0.045 + strength * 0.055, type: 'sine' });
+    playTone(ctx, { frequency: 2240, endFrequency: 1830, duration: 0.075, delay: 0.006, gain: 0.018 + strength * 0.025, type: 'sine' });
+    playNoise(ctx, { duration: 0.045, frequency: 1850, endFrequency: 980, gain: 0.018 + strength * 0.025 });
+    return;
+  }
+
+  if (surface === 'backboard') {
+    playNoise(ctx, { duration: 0.065, frequency: 820, endFrequency: 340, gain: 0.035 + strength * 0.055 });
+    playTone(ctx, { frequency: 310, endFrequency: 175, duration: 0.105, gain: 0.04 + strength * 0.045, type: 'triangle' });
+    return;
+  }
+
+  playTone(ctx, { frequency: 185 + strength * 55, endFrequency: 72, duration: 0.12, gain: 0.055 + strength * 0.075, type: 'sine' });
+  playTone(ctx, { frequency: 390 + strength * 90, endFrequency: 215, duration: 0.07, gain: 0.018 + strength * 0.028, type: 'triangle' });
+  playNoise(ctx, { duration: 0.045, frequency: 480, endFrequency: 210, gain: 0.018 + strength * 0.025 });
+};
+
+/** Top elden çıkarken kısa deri teması ve hava hareketi. */
+export const playBasketballReleaseSound = (power = 0.7) => {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const strength = Math.min(Math.max(power, 0.1), 1);
+  playNoise(ctx, { duration: 0.085 + strength * 0.045, frequency: 1150, endFrequency: 430, gain: 0.018 + strength * 0.025, attack: 0.01 });
+  playTone(ctx, { frequency: 175 + strength * 35, endFrequency: 105, duration: 0.065, gain: 0.025 + strength * 0.025, type: 'sine' });
+};
+
+/** Kaçan atış için genel hata melodisinden daha kısa ve yumuşak geri bildirim. */
+export const playBasketballMissSound = () => {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  playTone(ctx, { frequency: 245, endFrequency: 175, duration: 0.14, gain: 0.07, type: 'triangle' });
+  playTone(ctx, { frequency: 180, endFrequency: 135, duration: 0.12, delay: 0.055, gain: 0.035, type: 'sine' });
 };
 
 /** Menü geçişlerinde minik bir cam/balon dokunuşu. */

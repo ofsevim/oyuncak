@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound, playSwishSound, playLevelUpSound } from '@/utils/soundEffects';
+import { playBasketballImpactSound, playBasketballMissSound, playBasketballReleaseSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound, playSwishSound, playLevelUpSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import { fireConfetti } from '@/utils/confettiUtil';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
@@ -208,7 +208,7 @@ const BasketballGame = () => {
                     ballVX.current *= 0.78;
                     spinRef.current *= 0.65;
                     if (Math.abs(ballVY.current) < 2.0 * step) { ballVY.current = 0; ballVX.current *= 0.5; }
-                    if (impactSpeed > 3 * step) playPopSound();
+                    if (impactSpeed > 3 * step) playBasketballImpactSound('floor', impactSpeed / MAX_SPEED);
                 }
 
                 // Backboard collision
@@ -219,9 +219,10 @@ const BasketballGame = () => {
                 if (ballX.current - BALL_R <= hitBoardX && ballX.current > hitBoardX - 25) {
                     if (ballY.current > boardTop && ballY.current < boardBot) {
                         if (ballVX.current < 0) {
+                            const impactStrength = Math.abs(ballVX.current) / MAX_SPEED;
                             ballX.current = hitBoardX + BALL_R;
                             ballVX.current = -ballVX.current * 0.55;
-                            playPopSound();
+                            playBasketballImpactSound('backboard', impactStrength);
                         }
                     }
                 }
@@ -234,11 +235,12 @@ const BasketballGame = () => {
                             const nx = dx / dist, ny = dy / dist;
                             const dot = ballVX.current * nx + ballVY.current * ny;
                             if (dot < 0) {
+                                const impactStrength = Math.hypot(ballVX.current, ballVY.current) / MAX_SPEED;
                                 ballVX.current -= (1 + 0.5) * dot * nx;
                                 ballVY.current -= (1 + 0.5) * dot * ny;
                                 ballX.current = px + nx * (BALL_R + 3);
                                 ballY.current = py + ny * (BALL_R + 3);
-                                playPopSound();
+                                playBasketballImpactSound('rim', impactStrength);
                             }
                         }
                     };
@@ -254,7 +256,7 @@ const BasketballGame = () => {
                         stoppedOnFloor
                     )) {
                         comboRef.current = 0; setCombo(0);
-                        playErrorSound();
+                        playBasketballMissSound();
                         phaseRef.current = 'missed'; setPhase('missed');
                     }
                 }
@@ -579,6 +581,7 @@ const BasketballGame = () => {
         const power = Math.min(dist / MAX_DRAG, 1);
         if (power < 0.06) { dragging.current = false; trajectoryCacheRef.current.key = ''; return; }
         const spd = power * MAX_SPEED;
+        playBasketballReleaseSound(power);
         ballVX.current = (dx / dist) * spd;
         ballVY.current = (dy / dist) * spd;
         trailRef.current = [];

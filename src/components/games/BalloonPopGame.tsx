@@ -119,7 +119,8 @@ const GAME_STYLES = `
     animation: balloon-rise var(--rise-duration) var(--rise-delay) linear both;
     animation-play-state: var(--play-state, running);
     will-change: transform, opacity;
-    contain: layout paint style;
+    contain: layout style;
+    overflow: visible;
   }
 
   @keyframes balloon-sway {
@@ -131,7 +132,8 @@ const GAME_STYLES = `
     animation: balloon-sway var(--sway-duration) ease-in-out infinite;
     animation-play-state: var(--play-state, running);
     will-change: transform;
-    contain: layout paint style;
+    contain: layout style;
+    overflow: visible;
   }
 `;
 
