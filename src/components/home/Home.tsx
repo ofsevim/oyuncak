@@ -25,7 +25,7 @@ const QUICK = [
     action: "games" as const,
     emoji: "🎮",
     title: "Oyunlar",
-    sub: "18 oyun",
+    sub: "21 oyun",
     color: "hsl(258 88% 66% / 0.12)",
     border: "hsl(258 88% 66% / 0.2)",
     glow: "hsl(258 88% 66%)",

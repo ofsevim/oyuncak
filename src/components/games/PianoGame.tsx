@@ -16,6 +16,8 @@ const WHITE_NOTES = [
   { note: 'A', freq: 440.0, label: 'La', key: 'h' },
   { note: 'B', freq: 493.88, label: 'Si', key: 'j' },
   { note: 'C2', freq: 523.25, label: 'Do²', key: 'k' },
+  { note: 'D2', freq: 587.33, label: 'Re²', key: 'l' },
+  { note: 'E2', freq: 659.25, label: 'Mi²', key: ';' },
 ];
 
 const BLACK_NOTES = [
@@ -24,152 +26,122 @@ const BLACK_NOTES = [
   { note: 'F#', freq: 369.99, label: 'Fa#', position: 3, key: 't' },
   { note: 'G#', freq: 415.3, label: 'Sol#', position: 4, key: 'y' },
   { note: 'A#', freq: 466.16, label: 'La#', position: 5, key: 'u' },
+  { note: 'C#2', freq: 554.37, label: 'Do#²', position: 7, key: 'o' },
+  { note: 'D#2', freq: 622.25, label: 'Re#²', position: 8, key: 'p' },
 ];
 
 const ALL_NOTES = [...WHITE_NOTES, ...BLACK_NOTES];
 
-const MELODIES = [
+type MelodyDifficulty = 'Çok Kolay' | 'Kolay' | 'Orta' | 'Zor';
+
+interface Melody {
+  name: string;
+  difficulty: MelodyDifficulty;
+  tempo: number;
+  notes: string[];
+  beats: number[];
+}
+
+/**
+ * Okunabilir nota yazımı: `G:2` iki vuruş, `G:0.5` yarım vuruş,
+ * `-:1` ise bir vuruş sus anlamına gelir. `|` yalnızca ölçü ayırıcıdır.
+ */
+function createMelody(
+  name: string,
+  difficulty: MelodyDifficulty,
+  tempo: number,
+  score: string,
+): Melody {
+  const validNotes = new Set(ALL_NOTES.map((entry) => entry.note));
+  const events = score.trim().split(/\s+/).filter((token) => token !== '|').map((token) => {
+    const [note, rawBeats = '1'] = token.split(':');
+    const beats = Number(rawBeats);
+    if ((note !== '-' && !validNotes.has(note)) || !Number.isFinite(beats) || beats <= 0) {
+      throw new Error(`Geçersiz piyano notası: ${token}`);
+    }
+    return { note, beats };
+  });
+
+  return {
+    name,
+    difficulty,
+    tempo,
+    notes: events.map((event) => event.note),
+    beats: events.map((event) => event.beats),
+  };
+}
+
+const MELODIES: Melody[] = [
   // ── ÇOK KOLAY ─────────────────────────────────────────────
-  {
-    name: '🎵 Do Re Mi',
-    difficulty: 'Çok Kolay',
-    notes: ['C', 'D', 'E', 'C', '-', 'C', 'D', 'E', 'C', '-', 'E', 'F', 'G', '-', 'E', 'F', 'G'],
-  },
-  {
-    name: '🐥 Baby Shark',
-    difficulty: 'Çok Kolay',
-    notes: ['D', 'D', 'D', 'D', 'D', 'E', '-', 'D', 'D', 'D', 'D', 'D', 'E', '-', 'D', 'D', 'D', 'D', 'D', 'E', 'D'],
-  },
-  {
-    name: '🌙 Ay Işığı',
-    difficulty: 'Çok Kolay',
-    notes: ['E', 'E', 'E', '-', 'C', 'E', '-', 'G', '-', '-', 'G'],
-  },
+  createMelody('🔔 Kardeş John', 'Çok Kolay', 100, `
+    C D E C:2 | C D E C:2 |
+    E F G:2 | E F G:2 |
+    G:0.5 A:0.5 G:0.5 F:0.5 E C:2 | G:0.5 A:0.5 G:0.5 F:0.5 E C:2 |
+    C G C:2 | C G C:2
+  `),
+  createMelody('🐥 Baby Shark (Nakarat)', 'Çok Kolay', 112, `
+    D:0.5 E:0.5 G:0.5 G:0.5 G:0.5 G:0.25 G:0.25 G:0.5 G:0.5
+  `),
+  createMelody('🥯 Hot Cross Buns', 'Çok Kolay', 96, `
+    E D C:2 | E D C:2 |
+    C:0.5 C:0.5 C:0.5 C:0.5 D:0.5 D:0.5 D:0.5 D:0.5 |
+    E D C:2
+  `),
 
   // ── KOLAY ──────────────────────────────────────────────────
-  {
-    name: '⭐ Twinkle Twinkle',
-    difficulty: 'Kolay',
-    notes: [
-      'C', 'C', 'G', 'G', 'A', 'A', 'G', '-',
-      'F', 'F', 'E', 'E', 'D', 'D', 'C', '-',
-      'G', 'G', 'F', 'F', 'E', 'E', 'D', '-',
-      'G', 'G', 'F', 'F', 'E', 'E', 'D', '-',
-      'C', 'C', 'G', 'G', 'A', 'A', 'G', '-',
-      'F', 'F', 'E', 'E', 'D', 'D', 'C',
-    ],
-  },
-  {
-    name: '🎶 Mary Had a Lamb',
-    difficulty: 'Kolay',
-    notes: [
-      'E', 'D', 'C', 'D', 'E', 'E', 'E', '-',
-      'D', 'D', 'D', '-',
-      'E', 'G', 'G', '-',
-      'E', 'D', 'C', 'D', 'E', 'E', 'E', '-',
-      'E', 'D', 'D', 'E', 'D', 'C',
-    ],
-  },
-  {
-    name: '🐸 Küçük Kurbağa',
-    difficulty: 'Kolay',
-    notes: [
-      'C', 'D', 'E', 'C', '-',
-      'C', 'D', 'E', 'C', '-',
-      'E', 'F', 'G', '-',
-      'E', 'F', 'G', '-',
-      'G', 'A', 'G', 'F', 'E', 'C', '-',
-      'C', 'G', 'C',
-    ],
-  },
-  {
-    name: '🌉 London Bridge',
-    difficulty: 'Kolay',
-    notes: [
-      'G', 'A', 'G', 'F', 'E', 'F', 'G', '-',
-      'D', 'E', 'F', '-',
-      'E', 'F', 'G', '-',
-      'G', 'A', 'G', 'F', 'E', 'F', 'G', '-',
-      'D', 'G', 'E', 'C',
-    ],
-  },
+  createMelody('⭐ Twinkle Twinkle', 'Kolay', 92, `
+    C C G G A A G:2 | F F E E D D C:2 |
+    G G F F E E D:2 | G G F F E E D:2 |
+    C C G G A A G:2 | F F E E D D C:2
+  `),
+  createMelody('🐑 Mary Had a Little Lamb', 'Kolay', 104, `
+    E D C D | E E E:2 | D D D:2 | E G G:2 |
+    E D C D | E E E E | D D E D C:2
+  `),
+  createMelody('🚣 Row Row Row Your Boat', 'Kolay', 104, `
+    C:1.5 C:0.5 C:1.5 D:0.5 E:2 |
+    E:1.5 D:0.5 E:1.5 F:0.5 G:4 |
+    C2:0.5 C2:0.5 C2:0.5 G:0.5 G:0.5 G:0.5 E:0.5 E:0.5 E:0.5 C:0.5 C:0.5 C:0.5 |
+    G:1.5 F:0.5 E:1.5 D:0.5 C:4
+  `),
+  createMelody('🌉 London Bridge', 'Kolay', 108, `
+    G A G F E F G:2 | D E F:2 | E F G:2 |
+    G A G F E F G:2 | D:2 G:2 E C:2
+  `),
 
   // ── ORTA ───────────────────────────────────────────────────
-  {
-    name: '🎂 Happy Birthday',
-    difficulty: 'Orta',
-    notes: [
-      'C', 'C', 'D', 'C', 'F', 'E', '-',
-      'C', 'C', 'D', 'C', 'G', 'F', '-',
-      'C', 'C', 'C2', 'A', 'F', 'E', 'D', '-',
-      'B', 'B', 'A', 'F', 'G', 'F',
-    ],
-  },
-  {
-    name: '🎄 Jingle Bells',
-    difficulty: 'Orta',
-    notes: [
-      'E', 'E', 'E', '-',
-      'E', 'E', 'E', '-',
-      'E', 'G', 'C', 'D', 'E', '-',
-      'F', 'F', 'F', 'F', 'F', 'E', 'E', '-',
-      'E', 'D', 'D', 'E', 'D', '-',
-      'G', '-',
-      'E', 'E', 'E', '-',
-      'E', 'E', 'E', '-',
-      'E', 'G', 'C', 'D', 'E', '-',
-      'F', 'F', 'F', 'F', 'E', 'D', 'C',
-    ],
-  },
-  {
-    name: '🎻 Neşeye Övgü',
-    difficulty: 'Orta',
-    notes: [
-      'E', 'E', 'F', 'G', 'G', 'F', 'E', 'D', 'C', 'C', 'D', 'E', 'E', 'D', 'D', '-',
-      'E', 'E', 'F', 'G', 'G', 'F', 'E', 'D', 'C', 'C', 'D', 'E', 'D', 'C', 'C',
-    ],
-  },
-  {
-    name: '🎺 Ölümsüz Oyun',
-    difficulty: 'Orta',
-    notes: [
-      'E', 'B', 'C', 'D', 'C', 'B', 'A', '-',
-      'A', 'C', 'E', 'A', '-',
-      'B', '-', 'C', 'D', '-',
-      'E', 'C', '-', 'B', '-',
-      'A', '-', 'A', 'C', 'E', '-',
-      'D', 'C', 'B', '-', 'C', '-',
-      'D', '-', 'E', '-', 'C', '-',
-      'A', '-', 'A',
-    ],
-  },
+  createMelody('🎂 Happy Birthday', 'Orta', 92, `
+    C:0.75 C:0.25 D C F E:2 |
+    C:0.75 C:0.25 D C G F:2 |
+    C:0.75 C:0.25 C2 A F E D:2 |
+    A#:0.75 A#:0.25 A F G F:2
+  `),
+  createMelody('🎄 Jingle Bells', 'Orta', 112, `
+    E E E:2 | E E E:2 | E G C D E:4 |
+    F F F:1.5 F:0.5 F E E:0.75 E:0.25 | E D D E D:2 G:2 |
+    E E E:2 | E E E:2 | E G C D E:4 |
+    F F F F F E E:0.75 E:0.25 | G G F D C:4
+  `),
+  createMelody('🎻 Neşeye Övgü', 'Orta', 108, `
+    E E F G | G F E D | C C D E | E:1.5 D:0.5 D:2 |
+    E E F G | G F E D | C C D E | D:1.5 C:0.5 C:2
+  `),
+  createMelody('🎺 Azizler Yürürken', 'Orta', 116, `
+    - C:0.5 E:0.5 F:0.5 G:3 |
+    - C:0.5 E:0.5 F:0.5 G:3 |
+    - C:0.5 E:0.5 F:0.5 G:1.5 E:0.5 C E D:3 |
+    - E:0.5 E:0.5 D:0.5 C:3 |
+    - C:0.5 E:0.5 G:0.5 G:1.5 F:0.5 |
+    E F G E C D C:3
+  `),
 
   // ── ZOR ────────────────────────────────────────────────────
-  {
-    name: '💃 Can Can',
-    difficulty: 'Zor',
-    notes: [
-      'C', 'D', 'E', 'F', 'G', '-', 'G', '-',
-      'A', 'G', 'F', 'E', 'D', 'C', '-',
-      'E', 'F', 'G', 'A', 'B', 'C2', '-',
-      'G', 'E', 'C', '-',
-      'C', 'D', 'E', 'F', 'G', '-', 'G', '-',
-      'A', 'G', 'F', 'E', 'D', 'C', '-',
-      'E', 'D', 'C',
-    ],
-  },
-  {
-    name: '🦋 Für Elise',
-    difficulty: 'Zor',
-    notes: [
-      'E', 'D#', 'E', 'D#', 'E', 'B', 'D', 'C', 'A', '-',
-      'C', 'E', 'A', 'B', '-',
-      'E', 'G#', 'B', 'C', '-',
-      'E', 'D#', 'E', 'D#', 'E', 'B', 'D', 'C', 'A', '-',
-      'C', 'E', 'A', 'B', '-',
-      'E', 'C', 'B', 'A',
-    ],
-  },
+  createMelody('🦋 Für Elise (Giriş)', 'Zor', 84, `
+    E2:0.5 D#2:0.5 E2:0.5 D#2:0.5 E2:0.5 B:0.5 D2:0.5 C2:0.5 A:1.5 |
+    C:0.5 E:0.5 A:0.5 B:1.5 | E:0.5 G#:0.5 B:0.5 C2:1.5 |
+    E:0.5 E2:0.5 D#2:0.5 E2:0.5 D#2:0.5 E2:0.5 B:0.5 D2:0.5 C2:0.5 A:1.5 |
+    C:0.5 E:0.5 A:0.5 B:1.5 | E:0.5 C2:0.5 B:0.5 A:2
+  `),
 ];
 
 const COLORS: Record<string, string> = {
@@ -181,14 +153,18 @@ const COLORS: Record<string, string> = {
   A: '#8B2BE2',
   B: '#E8006A',
   C2: '#F72C3A',
+  D2: '#FF7600',
+  E2: '#F5C800',
   'C#': '#B5001D',
   'D#': '#C45500',
   'F#': '#007A30',
   'G#': '#006BA0',
   'A#': '#5C0BA5',
+  'C#2': '#B5001D',
+  'D#2': '#C45500',
 };
 
-const MOBILE_PIANO_MIN_WIDTH = 336;
+const MOBILE_PIANO_MIN_WIDTH = 420;
 
 /* ═══════════════════════════════════════════════════════════
    YARDIMCI: melodyIndex → ilk gerçek nota indexini bul
@@ -206,7 +182,7 @@ const PianoGame = () => {
   /* ── State ─────────────────────────────────────────────── */
   const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentMelody, setCurrentMelody] = useState<(typeof MELODIES)[0] | null>(null);
+  const [currentMelody, setCurrentMelody] = useState<Melody | null>(null);
   const [melodyIndex, setMelodyIndex] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -217,7 +193,7 @@ const PianoGame = () => {
   const comboRef = useRef(0);
   const scoreRef = useRef(0);
   const melodyIndexRef = useRef(0);
-  const currentMelodyRef = useRef<(typeof MELODIES)[0] | null>(null);
+  const currentMelodyRef = useRef<Melody | null>(null);
   const isPlayingRef = useRef(false);
   const isRecordingRef = useRef(false);
   const abortRef = useRef(false);
@@ -260,8 +236,9 @@ const PianoGame = () => {
 
   /* ── Nota çalma (oscillator + cleanup) ─────────────────── */
   const playNote = useCallback(
-    (freq: number, note: string) => {
+    (freq: number, note: string, durationMs = 1200) => {
       const ctx = getAudioContext();
+      const durationSeconds = Math.max(0.12, Math.min(durationMs / 1000, 1.2));
 
       const osc1 = ctx.createOscillator();
       const osc2 = ctx.createOscillator();
@@ -273,16 +250,16 @@ const PianoGame = () => {
       osc2.frequency.setValueAtTime(freq * 2, ctx.currentTime);
 
       gain.gain.setValueAtTime(0.5, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.1);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+      gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + Math.min(0.1, durationSeconds / 3));
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + durationSeconds);
 
       osc1.connect(gain);
       osc2.connect(gain);
       gain.connect(ctx.destination);
       osc1.start();
       osc2.start();
-      osc1.stop(ctx.currentTime + 1.2);
-      osc2.stop(ctx.currentTime + 1.2);
+      osc1.stop(ctx.currentTime + durationSeconds);
+      osc2.stop(ctx.currentTime + durationSeconds);
 
       /* Ses grafiği temizliği */
       osc1.onended = () => {
@@ -387,21 +364,24 @@ const PianoGame = () => {
 
   /* ── Melodi dinletme (iptal edilebilir) ────────────────── */
   const playMelody = useCallback(
-    async (melody: (typeof MELODIES)[0]) => {
+    async (melody: Melody) => {
       if (isPlayingRef.current) return;
       abortRef.current = false;
       setIsPlaying(true);
       isPlayingRef.current = true;
 
-      for (const note of melody.notes) {
+      const beatMs = 60_000 / melody.tempo;
+      for (let index = 0; index < melody.notes.length; index += 1) {
         if (abortRef.current) break;
+        const note = melody.notes[index];
+        const durationMs = beatMs * melody.beats[index];
         if (note === '-') {
-          await new Promise((r) => safeTimeout(() => r(undefined), 350));
+          await new Promise((r) => safeTimeout(() => r(undefined), durationMs));
         } else {
           const nd = ALL_NOTES.find((n) => n.note === note);
           if (nd) {
-            playNote(nd.freq, nd.note);
-            await new Promise((r) => safeTimeout(() => r(undefined), 450));
+            playNote(nd.freq, nd.note, durationMs * 0.9);
+            await new Promise((r) => safeTimeout(() => r(undefined), durationMs));
           }
         }
       }
@@ -413,15 +393,13 @@ const PianoGame = () => {
   );
 
   /* ── Melodi modunu başlat ──────────────────────────────── */
-  const startMelodyMode = useCallback((melody: (typeof MELODIES)[0]) => {
+  const startMelodyMode = useCallback((melody: Melody) => {
     setCurrentMelody(melody);
     currentMelodyRef.current = melody;
     melodyIndexRef.current = 0;
     setMelodyIndex(0);
     scoreRef.current = 0;
-    setScore(0);
     comboRef.current = 0;
-    setCombo(0);
   }, []);
 
   /* ── Kaydı çal (iptal edilebilir) ──────────────────────── */
@@ -523,7 +501,7 @@ const PianoGame = () => {
       </div>
 
       <p className="text-sm text-muted-foreground font-medium text-center">
-        Tuşlara tıkla veya klavyeden çal (A-K beyaz, W-E-T-Y-U siyah)
+        Tuşlara dokun veya klavyeden çal (A–; beyaz, W–P siyah)
       </p>
 
       
@@ -670,6 +648,9 @@ const PianoGame = () => {
           </div>
         </div>
       </div>
+      <p className="-mt-3 text-[11px] text-muted-foreground/70 sm:hidden">
+        Daha yüksek notalar için piyanoyu yana kaydırabilirsin.
+      </p>
 
       {/* Kayıt kontrolleri */}
       <div className="flex gap-2 items-center flex-wrap justify-center">
@@ -718,7 +699,7 @@ const PianoGame = () => {
               <div>
                 <p className="font-bold text-sm">{melody.name}</p>
                 <span className="text-xs text-muted-foreground">
-                  {melody.difficulty} • {melody.notes.filter((n) => n !== '-').length} nota
+                  {melody.difficulty} • {melody.notes.filter((n) => n !== '-').length} nota • ♩ {melody.tempo}
                 </span>
               </div>
               <div className="flex gap-1.5">
@@ -749,9 +730,7 @@ const PianoGame = () => {
               melodyIndexRef.current = 0;
               setMelodyIndex(0);
               comboRef.current = 0;
-              setCombo(0);
               scoreRef.current = 0;
-              setScore(0);
             }}
             className="w-full px-4 py-2 glass-card text-muted-foreground rounded-xl font-bold text-sm"
           >

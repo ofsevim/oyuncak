@@ -18,6 +18,9 @@ export const GAME_ROUTE_IDS = [
   'codingturtle',
   'comparison',
   'spaceshooter',
+  'connect-four',
+  'word-search',
+  'color-sort',
 ] as const;
 
 export type GameRouteId = typeof GAME_ROUTE_IDS[number];
@@ -53,6 +56,9 @@ export const SCORE_GAME_IDS = [
   'memory-4x4',
   'memory-5x5',
   'memory-6x6',
+  'connect-four',
+  'word-search',
+  'color-sort',
 ] as const;
 
 export const ALL_GAME_IDS = SCORE_GAME_IDS;

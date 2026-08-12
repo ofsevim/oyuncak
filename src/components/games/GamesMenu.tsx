@@ -24,6 +24,9 @@ const SimonSaysGame = lazy(() => import('./SimonSaysGame'));
 const CodingTurtleGame = lazy(() => import('./CodingTurtleGame'));
 const ComparisonGame = lazy(() => import('./ComparisonGame'));
 const SpaceShooterGame = lazy(() => import('./SpaceShooterGame'));
+const ConnectFourGame = lazy(() => import('./ConnectFourGame'));
+const WordSearchGame = lazy(() => import('./WordSearchGame'));
+const ColorSortGame = lazy(() => import('./ColorSortGame'));
 
 type GameType = 'menu' | GameRouteId;
 type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
@@ -60,6 +63,9 @@ const games: GameDef[] = [
   { id: 'codingturtle', title: 'Tavşan Kodlama', emoji: '🐇', icon: Brain, color: 'hsl(140 70% 50%)', colorSoft: 'hsl(140 70% 50% / 0.1)', description: 'Tavşanı komutlarla havuca ulaştır!', category: ['learn'] },
   { id: 'comparison', title: 'Karşılaştırma', emoji: '⚖️', icon: Calculator, color: 'hsl(30 80% 60%)', colorSoft: 'hsl(30 80% 60% / 0.1)', description: 'Hangisi daha büyük veya daha ağır?', category: ['learn'] },
   { id: 'spaceshooter', title: 'Uzay Savaşçısı', emoji: '🚀', icon: Zap, color: 'hsl(195 100% 50%)', colorSoft: 'hsl(195 100% 50% / 0.1)', description: 'Düşman uzaylıları yok et, galaksiyi koru!', category: ['action'], badge: 'Yeni', badgeColor: 'hsl(195 100% 50%)' },
+  { id: 'connect-four', title: 'Dört Sıra', emoji: '🔴', icon: Brain, color: 'hsl(350 82% 58%)', colorSoft: 'hsl(350 82% 58% / 0.1)', description: 'Bilgisayarı yen, dört taşı birleştir!', category: ['brain'], badge: 'Yeni', badgeColor: 'hsl(350 82% 58%)' },
+  { id: 'word-search', title: 'Kelime Avı', emoji: '🔎', icon: Search, color: 'hsl(158 65% 44%)', colorSoft: 'hsl(158 65% 44% / 0.1)', description: 'Gizli Türkçe kelimeleri bul!', category: ['brain', 'learn'], badge: 'Yeni', badgeColor: 'hsl(158 65% 44%)' },
+  { id: 'color-sort', title: 'Renk Sırala', emoji: '🧪', icon: Brain, color: 'hsl(272 78% 60%)', colorSoft: 'hsl(272 78% 60% / 0.1)', description: 'Renkleri ayır, tüpleri tamamla!', category: ['brain'], badge: 'Yeni', badgeColor: 'hsl(272 78% 60%)' },
 ];
 
 const CATEGORIES: { id: GameCategory; label: string; icon: typeof Flame }[] = [
@@ -167,6 +173,9 @@ const GamesMenu = () => {
       case 'codingturtle': return <CodingTurtleGame />;
       case 'comparison': return <ComparisonGame />;
       case 'spaceshooter': return <SpaceShooterGame />;
+      case 'connect-four': return <ConnectFourGame />;
+      case 'word-search': return <WordSearchGame />;
+      case 'color-sort': return <ColorSortGame />;
       default: return null;
     }
   };

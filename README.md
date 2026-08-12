@@ -78,7 +78,7 @@ Keystore değişkenleri:
 ```
 src/
 ├── components/      # UI bileşenleri + oyunlar
-│   ├── games/       # 18 oyun (Canvas + DOM)
+│   ├── games/       # 21 oyun (Canvas + DOM)
 │   ├── story/       # İnteraktif hikayeler
 │   └── ui/          # shadcn/Radix bileşenleri
 ├── contexts/        # React Context (Theme, Profile)
