@@ -51,7 +51,7 @@ export interface TrailPt { x: number; y: number }
 export interface FloatMsg { x: number; y: number; text: string; color: string; life: number }
 
 /* ═══════════════ BACKGROUND HELPERS ═══════════════ */
-const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number | number[]) => {
+export const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number | number[]) => {
     if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
     else ctx.rect(x, y, w, h);
 };

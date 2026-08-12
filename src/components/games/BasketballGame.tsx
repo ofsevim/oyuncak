@@ -7,7 +7,8 @@ import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 import { alignRenderTimestamp, planPhysicsFrame, shouldRenderFrame } from './runner/runnerTiming';
 
-import { BALLS_PER_ROUND, BALL_R, BALL_TYPES, CANVAS_DPR_CAP, CH, CW, GRAVITY, HOOP_X, HOOP_Y, MAX_DRAG, MAX_SPEED, RIM_W, SHOT_POSITIONS, drawBall, drawBg, drawHoop, drawHoopFront, getTargetScore, isMobileDev, perspFloorY, type FloatMsg, type Phase, type TrailPt } from './basketball/basketballRuntime';
+import { BALLS_PER_ROUND, BALL_R, BALL_TYPES, CANVAS_DPR_CAP, CH, CW, GRAVITY, HOOP_X, HOOP_Y, MAX_DRAG, MAX_SPEED, RIM_W, SHOT_POSITIONS, drawBall, drawBg, drawHoop, drawHoopFront, getTargetScore, isMobileDev, perspFloorY, safeRoundRect, type FloatMsg, type Phase, type TrailPt } from './basketball/basketballRuntime';
+import { getTrajectoryGuideSteps } from './basketball/basketballTrajectory';
 
 const MAX_RENDER_FPS = 60;
 
@@ -355,16 +356,8 @@ const BasketballGame = () => {
                 const spd = power * MAX_SPEED;
 
                 // ── Trajectory dots (perspektif zemin bounce simulasyonu ile) ──
-                // Seviyeye göre gösterge uzunluğu (Daha kademeli geçiş)
-                let guideDots = 60;
                 const lvl = levelRef.current;
-                if (lvl === 2) guideDots = 45;
-                else if (lvl === 3) guideDots = 30;
-                else if (lvl === 4) guideDots = 18;
-                else if (lvl === 5) guideDots = 8;
-                else if (lvl >= 6) guideDots = 0;
-
-                if (isMobileDev) guideDots = Math.min(guideDots, 36);
+                const guideDots = getTrajectoryGuideSteps(lvl, isMobileDev);
                 const trajectoryKey = `${Math.round(dc.x * 2)}:${Math.round(dc.y * 2)}:${lvl}`;
                 if (trajectoryCacheRef.current.key !== trajectoryKey) {
                     let px = currentPosRef.current.x, py = currentPosRef.current.y;
@@ -414,6 +407,7 @@ const BasketballGame = () => {
                     ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.7})`;
                     ctx.stroke();
                 }
+
                 // Arrow at drag start position
                 ctx.strokeStyle = `rgba(255,200,80,${0.6 * power})`;
                 ctx.lineWidth = 3;
@@ -551,7 +545,7 @@ const BasketballGame = () => {
     }, []);
 
     /* ── Pointer helpers ── */
-    const toCanvas = (e: React.PointerEvent) => {
+    const toCanvas = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current; if (!canvas) return { x: 0, y: 0 };
         const rect = canvas.getBoundingClientRect();
         const cx = e.clientX;
@@ -559,9 +553,9 @@ const BasketballGame = () => {
         return { x: (cx - rect.left) * (CW / rect.width), y: (cy - rect.top) * (CH / rect.height) };
     };
 
-    const onDown = (e: React.PointerEvent) => {
+    const onDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (phaseRef.current !== 'aim') return;
-        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        e.currentTarget.setPointerCapture(e.pointerId);
         e.preventDefault();
         const pos = toCanvas(e);
         dragging.current = true;
@@ -569,14 +563,14 @@ const BasketballGame = () => {
         trajectoryCacheRef.current.key = '';
     };
 
-    const onMove = (e: React.PointerEvent) => {
+    const onMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (!dragging.current) return;
         e.preventDefault();
         dragCur.current = toCanvas(e);
     };
 
-    const onUp = (e: React.PointerEvent) => {
-        if ((e.target as HTMLElement).hasPointerCapture?.(e.pointerId)) (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    const onUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
         if (!dragging.current || phaseRef.current !== 'aim') return;
         e.preventDefault();
         const ds = dragStart.current, dc = dragCur.current;
@@ -593,9 +587,9 @@ const BasketballGame = () => {
         phaseRef.current = 'fly'; setPhase('fly');
     };
 
-    const onCancel = (e: React.PointerEvent) => {
-        if ((e.target as HTMLElement).hasPointerCapture?.(e.pointerId)) {
-            (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    const onCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
         }
         dragging.current = false;
         trajectoryCacheRef.current.key = '';
@@ -654,12 +648,12 @@ const BasketballGame = () => {
             </div>
 
             {/* Canvas */}
-            <div ref={containerRef} className="relative w-full select-none" style={{ touchAction: 'none' }}
-                onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}>
+            <div ref={containerRef} className="relative w-full select-none">
                 <canvas ref={canvasRef} width={CW} height={CH}
                     role="application" aria-label="Basketbol Sahası"
                     className="block rounded-2xl"
-                    style={{ cursor: phase === 'aim' ? 'crosshair' : 'default', boxShadow: '0 8px 32px hsl(224 28% 3% / 0.5)' }} />
+                    onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}
+                    style={{ cursor: phase === 'aim' ? 'crosshair' : 'default', touchAction: 'none', boxShadow: '0 8px 32px hsl(224 28% 3% / 0.5)' }} />
 
                 <AnimatePresence>
                     {phase === 'scored' && (
