@@ -21,6 +21,7 @@ export const GAME_ROUTE_IDS = [
   'connect-four',
   'word-search',
   'color-sort',
+  'makeup-studio',
 ] as const;
 
 export type GameRouteId = typeof GAME_ROUTE_IDS[number];
