@@ -279,36 +279,6 @@ export const playBasketballMissSound = () => {
   playTone(ctx, { frequency: 180, endFrequency: 135, duration: 0.12, delay: 0.055, gain: 0.035, type: 'sine' });
 };
 
-export type MakeupTool = 'skin' | 'eyes' | 'blush' | 'lips' | 'hair' | 'accessory';
-
-/** Makyaj aracına göre fırça, kapak ve takı tınılarını birbirinden ayırır. */
-export const playMakeupToolSound = (tool: MakeupTool) => {
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-
-  if (tool === 'hair') {
-    playNoise(ctx, { duration: 0.22, frequency: 1550, endFrequency: 520, gain: 0.055, attack: 0.018 });
-    playTone(ctx, { frequency: 330, endFrequency: 440, duration: 0.18, gain: 0.035, type: 'sine' });
-    return;
-  }
-
-  if (tool === 'accessory') {
-    [1, 1.35, 1.8].forEach((ratio, index) => {
-      playTone(ctx, { frequency: 690 * ratio, duration: 0.18, delay: index * 0.045, gain: 0.045, type: 'sine' });
-    });
-    return;
-  }
-
-  if (tool === 'lips') {
-    playTone(ctx, { frequency: 410, endFrequency: 610, duration: 0.13, gain: 0.045, type: 'sine' });
-    playTone(ctx, { frequency: 820, endFrequency: 690, duration: 0.09, delay: 0.035, gain: 0.02, type: 'triangle' });
-    return;
-  }
-
-  const startFrequency = tool === 'eyes' ? 2300 : tool === 'blush' ? 1350 : 920;
-  playNoise(ctx, { duration: tool === 'skin' ? 0.18 : 0.13, frequency: startFrequency, endFrequency: 480, gain: 0.04, attack: 0.015 });
-  playTone(ctx, { frequency: tool === 'eyes' ? 720 : 520, endFrequency: 610, duration: 0.1, delay: 0.025, gain: 0.022, type: 'sine' });
-};
 
 /** Menü geçişlerinde minik bir cam/balon dokunuşu. */
 export const playNavSound = () => {
