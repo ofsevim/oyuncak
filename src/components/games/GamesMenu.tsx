@@ -1,8 +1,8 @@
-import { forwardRef, lazy, Suspense, useState, memo } from 'react';
+import { forwardRef, lazy, Suspense, useEffect, useState, memo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Search, Brain, Hash, Wind, Piano, Calculator, Gamepad2, Rat, ArrowLeft, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { isMuted, toggleMute } from '@/utils/soundEffects';
+import { isMuted, setSoundProfile, toggleMute } from '@/utils/soundEffects';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { isGameRouteId, type GameRouteId } from '@/constants/gameIds';
 
@@ -141,6 +141,11 @@ const GamesMenu = () => {
   const navigate = useNavigate();
   const { gameId } = useParams();
   const activeGame: GameType = gameId && isGameRouteId(gameId) ? gameId : 'menu';
+
+  useEffect(() => {
+    setSoundProfile(activeGame === 'menu' ? undefined : activeGame);
+    return () => setSoundProfile(undefined);
+  }, [activeGame]);
 
   const [activeCategory, setActiveCategory] = useState<GameCategory>('all');
   const [muted, setMutedState] = useState(isMuted());

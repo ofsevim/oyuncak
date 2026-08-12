@@ -1,7 +1,10 @@
 // Hafif, dosyasız ve mobil uyumlu prosedürel oyun sesleri — Web Audio API.
+import { getGameSoundProfile, type GameSoundProfileId } from './gameSoundProfiles';
+
 let audioCtx: AudioContext | null = null;
 let masterBus: GainNode | null = null;
 let resumeListenersInstalled = false;
+let activeSoundProfile: GameSoundProfileId | undefined;
 
 let _muted = false;
 try { _muted = typeof window !== 'undefined' && localStorage.getItem('oyuncak.muted') === 'true'; } catch { /* ignore */ }
@@ -21,6 +24,12 @@ export const toggleMute = (): boolean => {
   setMuted(!_muted);
   return _muted;
 };
+
+export const setSoundProfile = (profile?: GameSoundProfileId) => {
+  activeSoundProfile = profile;
+};
+
+const currentSoundProfile = () => getGameSoundProfile(activeSoundProfile);
 
 type WebkitAudioContextWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
 
@@ -146,16 +155,19 @@ const playNoise = (
 export const playPopSound = () => {
   const ctx = getAudioCtx();
   if (!ctx) return;
-  playTone(ctx, { frequency: 620, endFrequency: 470, duration: 0.075, gain: 0.14, type: 'triangle' });
-  playTone(ctx, { frequency: 1240, endFrequency: 940, duration: 0.045, gain: 0.035, type: 'sine' });
+  const profile = currentSoundProfile();
+  playTone(ctx, { frequency: profile.root * 1.42, endFrequency: profile.root * 0.96, duration: 0.075, gain: 0.14 * profile.gain, type: profile.wave });
+  playTone(ctx, { frequency: profile.root * profile.accent * profile.brightness, endFrequency: profile.root * profile.accent * 0.76, duration: 0.045, gain: 0.035 * profile.gain, type: 'sine' });
 };
 
 /** Kısa ve sıcak bir doğru cevap melodisi. */
 export const playSuccessSound = () => {
   const ctx = getAudioCtx();
   if (!ctx) return;
-  [659.25, 783.99, 1046.5].forEach((frequency, index) => {
-    playTone(ctx, { frequency, duration: index === 2 ? 0.28 : 0.16, delay: index * 0.07, gain: index === 2 ? 0.13 : 0.1, type: 'triangle' });
+  const profile = currentSoundProfile();
+  [1, 1.25, 1.5].forEach((ratio, index) => {
+    const frequency = profile.root * ratio;
+    playTone(ctx, { frequency, duration: index === 2 ? 0.28 : 0.16, delay: index * 0.07, gain: (index === 2 ? 0.13 : 0.1) * profile.gain, type: profile.wave });
     playTone(ctx, { frequency: frequency * 2, duration: 0.1, delay: index * 0.07, gain: 0.018, type: 'sine' });
   });
 };
@@ -164,19 +176,21 @@ export const playSuccessSound = () => {
 export const playErrorSound = () => {
   const ctx = getAudioCtx();
   if (!ctx) return;
-  playTone(ctx, { frequency: 260, endFrequency: 185, duration: 0.17, gain: 0.12, type: 'triangle' });
-  playTone(ctx, { frequency: 390, endFrequency: 278, duration: 0.13, delay: 0.015, gain: 0.045, type: 'sine' });
-  playNoise(ctx, { duration: 0.065, frequency: 340, endFrequency: 190, gain: 0.025 });
+  const profile = currentSoundProfile();
+  playTone(ctx, { frequency: profile.root * 0.62, endFrequency: profile.root * 0.42, duration: 0.17, gain: 0.12 * profile.gain, type: profile.wave });
+  playTone(ctx, { frequency: profile.root * 0.94, endFrequency: profile.root * 0.63, duration: 0.13, delay: 0.015, gain: 0.045 * profile.gain, type: 'sine' });
+  playNoise(ctx, { duration: 0.065, frequency: profile.root * profile.brightness, endFrequency: profile.root * 0.45, gain: 0.025 * profile.gain });
 };
 
 /** Seri büyüdükçe tizleşen, fakat kulak tırmalamayan kombo sesi. */
 export const playComboSound = (comboLevel: number) => {
   const ctx = getAudioCtx();
   if (!ctx) return;
+  const profile = currentSoundProfile();
   const step = Math.min(Math.max(comboLevel, 1), 12);
-  const base = 440 * (2 ** (step / 18));
+  const base = profile.root * (2 ** (step / 18));
   [1, 1.25, 1.5].forEach((ratio, index) => {
-    playTone(ctx, { frequency: base * ratio, endFrequency: base * ratio * 1.08, duration: 0.16 + index * 0.04, delay: index * 0.045, gain: 0.09, type: index === 2 ? 'sine' : 'triangle' });
+    playTone(ctx, { frequency: base * ratio, endFrequency: base * ratio * 1.08, duration: 0.16 + index * 0.04, delay: index * 0.045, gain: 0.09 * profile.gain, type: index === 2 ? 'sine' : profile.wave });
   });
 };
 
@@ -184,21 +198,24 @@ export const playComboSound = (comboLevel: number) => {
 export const playLevelUpSound = () => {
   const ctx = getAudioCtx();
   if (!ctx) return;
-  [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
-    playTone(ctx, { frequency, duration: index === 3 ? 0.42 : 0.2, delay: index * 0.085, gain: index === 3 ? 0.14 : 0.1, type: 'triangle' });
+  const profile = currentSoundProfile();
+  [1, 1.25, 1.5, 2].forEach((ratio, index) => {
+    playTone(ctx, { frequency: profile.root * ratio, duration: index === 3 ? 0.42 : 0.2, delay: index * 0.085, gain: (index === 3 ? 0.14 : 0.1) * profile.gain, type: profile.wave });
   });
-  playTone(ctx, { frequency: 2093, endFrequency: 2349, duration: 0.34, delay: 0.29, gain: 0.025, type: 'sine' });
+  playTone(ctx, { frequency: profile.root * profile.accent * 2, endFrequency: profile.root * profile.accent * 2.24, duration: 0.34, delay: 0.29, gain: 0.025 * profile.gain, type: 'sine' });
 };
 
 /** Rekor için parlak ama kısa bir kutlama melodisi. */
 export const playNewRecordSound = () => {
   const ctx = getAudioCtx();
   if (!ctx) return;
-  [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((frequency, index) => {
-    playTone(ctx, { frequency, duration: index === 4 ? 0.5 : 0.2, delay: index * 0.075, gain: index === 4 ? 0.14 : 0.085, type: 'triangle' });
+  const profile = currentSoundProfile();
+  [1, 1.25, 1.5, 2, 2.5].forEach((ratio, index) => {
+    playTone(ctx, { frequency: profile.root * ratio, duration: index === 4 ? 0.5 : 0.2, delay: index * 0.075, gain: (index === 4 ? 0.14 : 0.085) * profile.gain, type: profile.wave });
   });
   [0.3, 0.38, 0.46].forEach((delay, index) => {
-    playTone(ctx, { frequency: 1900 + index * 360, endFrequency: 2300 + index * 420, duration: 0.22, delay, gain: 0.025, type: 'sine' });
+    const frequency = profile.root * profile.accent * (2 + index * 0.35) * profile.brightness;
+    playTone(ctx, { frequency, endFrequency: frequency * 1.18, duration: 0.22, delay, gain: 0.025 * profile.gain, type: 'sine' });
   });
 };
 
@@ -206,7 +223,8 @@ export const playNewRecordSound = () => {
 export const playTickSound = () => {
   const ctx = getAudioCtx();
   if (!ctx) return;
-  playTone(ctx, { frequency: 1080, endFrequency: 820, duration: 0.035, gain: 0.045, type: 'sine' });
+  const profile = currentSoundProfile();
+  playTone(ctx, { frequency: profile.root * profile.accent * profile.brightness, endFrequency: profile.root * profile.accent * 0.76, duration: 0.035, gain: 0.045 * profile.gain, type: profile.wave });
 };
 
 /** Basketbol filesinden geçen top için hava ve ip sürtünmesi. */
