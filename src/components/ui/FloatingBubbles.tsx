@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { getPlayerPreferences, PREFERENCES_EVENT } from '@/utils/playerPreferences';
 
 /**
  * Premium ambient background
@@ -12,10 +13,11 @@ const FloatingBubbles = () => {
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    const handler = () => setReducedMotion(mq.matches || getPlayerPreferences().reducedMotion);
+    handler();
     mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    window.addEventListener(PREFERENCES_EVENT, handler);
+    return () => { mq.removeEventListener('change', handler); window.removeEventListener(PREFERENCES_EVENT, handler); };
   }, []);
   const particles = useMemo(() => {
     const colors = [

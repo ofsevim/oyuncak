@@ -1,5 +1,4 @@
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
 import "./index.css";
 import { initErrorTracking, logger } from "./lib/logger";
 import { SERVICE_WORKER_UPDATE_EVENT, watchForServiceWorkerUpdate } from "./utils/serviceWorkerUpdate";
@@ -28,7 +27,11 @@ function showFatalError(message: string) {
   const detail = document.createElement("p");
   detail.style.cssText = "font-size:0.9rem;color:#cbd5e1;line-height:1.6";
   detail.textContent = message;
-  container.append(icon, title, detail);
+  const retry = document.createElement('button');
+  retry.textContent = 'Yeniden dene';
+  retry.style.cssText = 'margin-top:1rem;padding:0.75rem 1.25rem;border-radius:12px;cursor:pointer';
+  retry.onclick = () => window.location.reload();
+  container.append(icon, title, detail, retry);
 
   (loader ?? document.body).replaceChildren(container);
 }
@@ -36,6 +39,9 @@ function showFatalError(message: string) {
 async function bootstrap() {
   try {
     initErrorTracking();
+    // Module evaluation errors must be caught before mounting React.
+    await import("./lib/env");
+    const { default: App } = await import("./App");
 
     if (window.__appLoadTimer) {
       clearTimeout(window.__appLoadTimer);
@@ -47,8 +53,8 @@ async function bootstrap() {
     createRoot(document.getElementById("root")!).render(<App />);
     warmFirebaseInBackground();
 
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
+    if (import.meta.env.PROD && "serviceWorker" in navigator) {
+      const registerServiceWorker = () => {
         navigator.serviceWorker
           .register(`${import.meta.env.BASE_URL}sw.js`, {
             // SW dosyasını her zaman ağdan çek, HTTP cache'i bypass et
@@ -61,7 +67,7 @@ async function bootstrap() {
               () => window.dispatchEvent(new Event(SERVICE_WORKER_UPDATE_EVENT)),
             );
             // Her 30 dakikada bir güncelleme kontrolü yap
-            setInterval(() => registration.update(), 30 * 60 * 1000);
+            setInterval(() => void registration.update().catch(() => {}), 30 * 60 * 1000);
           })
           .catch((err) => logger.warn("Service worker register failed", { err: String(err) }));
 
@@ -77,9 +83,12 @@ async function bootstrap() {
           reloading = true;
           window.location.reload();
         });
-      });
+      };
+      if (document.readyState === "complete") registerServiceWorker();
+      else window.addEventListener("load", registerServiceWorker, { once: true });
     }
   } catch (err) {
+    if (window.__appLoadTimer) clearTimeout(window.__appLoadTimer);
     const msg = err instanceof Error ? err.message : "Bilinmeyen başlatma hatası";
     showFatalError(msg);
     logger.error("Bootstrap failed", err);
@@ -98,7 +107,7 @@ function warmFirebaseInBackground() {
   };
 
   // İlk oyun etkileşimiyle ağ/JS ayrıştırma işinin çakışmasını önle.
-  if ("requestIdleCallback" in window) {
+  if (typeof window.requestIdleCallback === "function") {
     window.requestIdleCallback(() => void syncScores(), { timeout: 10_000 });
   } else {
     window.setTimeout(() => void syncScores(), 5_000);

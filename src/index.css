@@ -623,3 +623,21 @@
   initial-value: 0deg;
   inherits: false;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *:not(.balloon-rise-animate), *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+.reduced-motion *:not(.balloon-rise-animate), .reduced-motion *::before, .reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+.game-paused *, .game-paused *::before, .game-paused *::after {
+  animation-play-state: paused !important;
+}

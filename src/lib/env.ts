@@ -4,22 +4,9 @@
  * ve kullanıcıya görsel bir uyarı yansıtır (main.tsx tarafında yakalanır).
  */
 
-type EnvKey =
-  | "VITE_FIREBASE_API_KEY"
-  | "VITE_FIREBASE_AUTH_DOMAIN"
-  | "VITE_FIREBASE_PROJECT_ID"
-  | "VITE_FIREBASE_STORAGE_BUCKET"
-  | "VITE_FIREBASE_MESSAGING_SENDER_ID"
-  | "VITE_FIREBASE_APP_ID";
-
-const REQUIRED: EnvKey[] = [
-  "VITE_FIREBASE_API_KEY",
-  "VITE_FIREBASE_AUTH_DOMAIN",
-  "VITE_FIREBASE_PROJECT_ID",
-  "VITE_FIREBASE_STORAGE_BUCKET",
-  "VITE_FIREBASE_MESSAGING_SENDER_ID",
-  "VITE_FIREBASE_APP_ID",
-];
+import { REQUIRED_FIREBASE_KEYS } from './envKeys';
+type EnvKey = typeof REQUIRED_FIREBASE_KEYS[number];
+const REQUIRED = REQUIRED_FIREBASE_KEYS;
 
 export interface AppEnv {
   firebase: {

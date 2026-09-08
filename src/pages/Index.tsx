@@ -6,6 +6,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import Home from '@/components/home/Home';
 import PWAInstall from '@/components/PWAInstall';
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
+import { isGameRouteId } from '@/constants/gameIds';
 
 type Tab = 'home' | 'draw' | 'games' | 'story';
 
@@ -24,7 +25,7 @@ const Index = () => {
   else if (pathname.startsWith('/games')) activeTab = 'games';
   else if (pathname.startsWith('/story')) activeTab = 'story';
 
-  const isGameActive = activeTab === 'games' && !!gameId;
+  const isGameActive = activeTab === 'games' && !!gameId && isGameRouteId(gameId);
 
   const setActiveTab = useCallback((tab: Tab) => {
     if (tab === 'home') navigate('/');

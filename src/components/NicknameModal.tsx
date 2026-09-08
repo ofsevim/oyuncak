@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  getNicknameFromExistingScores,
-  updateNicknameInScores,
-} from '@/services/scoreService';
+import { toast } from 'sonner';
 import { sanitizeNickname, MAX_NICKNAME_LENGTH } from '@/lib/utils';
 
 const NICKNAME_KEY = 'oyuncak.nickname';
@@ -18,7 +15,7 @@ export default function NicknameModal() {
 
   useEffect(() => {
     let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let timer: number | undefined;
 
     const initialize = async () => {
       try {
@@ -30,21 +27,9 @@ export default function NicknameModal() {
         }
         if (alreadyAsked) return;
       } catch {
-        // Try cloud recovery even when local storage is unavailable.
+        // The prompt stays local; Firebase is loaded only after an explicit action.
       }
 
-      const recoveredNickname = await getNicknameFromExistingScores();
-      if (cancelled || recoveredNickname) {
-        if (recoveredNickname) {
-          try {
-            localStorage.setItem(NICKNAME_KEY, recoveredNickname);
-            localStorage.setItem(ASKED_KEY, '1');
-          } catch {
-            // Do not show the modal again during this session.
-          }
-        }
-        return;
-      }
       timer = window.setTimeout(() => {
         if (!cancelled) setOpen(true);
       }, 1500);
@@ -64,7 +49,7 @@ export default function NicknameModal() {
 
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        localStorage.setItem(ASKED_KEY, '1');
+        try { localStorage.setItem(ASKED_KEY, '1'); } catch { /* session only */ }
         setOpen(false);
         return;
       }
@@ -94,25 +79,40 @@ export default function NicknameModal() {
 
   useEffect(() => {
     const handleOpenRequest = () => {
-      const saved = localStorage.getItem(NICKNAME_KEY) || '';
-      setName(saved);
+      try { setName(localStorage.getItem(NICKNAME_KEY) || ''); } catch { setName(''); }
       setOpen(true);
     };
     window.addEventListener('oyuncak:open-nickname-modal', handleOpenRequest);
     return () => window.removeEventListener('oyuncak:open-nickname-modal', handleOpenRequest);
   }, []);
 
+  const syncName = async (safeName: string) => {
+    try {
+      const { updateNicknameInScores } = await import('@/services/scoreService');
+      await updateNicknameInScores(safeName);
+    } catch {
+      toast.error('Takma adın cihazda kaydedildi; bulut güncellenemedi.', {
+        action: { label: 'Tekrar dene', onClick: () => void syncName(safeName) },
+      });
+    }
+  };
+
   const handleSave = async () => {
     const safeName = sanitizeNickname(name);
-    localStorage.setItem(NICKNAME_KEY, safeName);
-    localStorage.setItem(ASKED_KEY, '1');
+    try {
+      localStorage.setItem(NICKNAME_KEY, safeName);
+      localStorage.setItem(ASKED_KEY, '1');
+    } catch {
+      toast.error('Takma ad kaydedilemedi. Tarayıcı depolama iznini kontrol edebilirsin.');
+      return;
+    }
     window.dispatchEvent(new CustomEvent('oyuncak:nickname-changed', { detail: safeName }));
     setOpen(false);
-    await updateNicknameInScores(safeName);
+    await syncName(safeName);
   };
 
   const handleSkip = () => {
-    localStorage.setItem(ASKED_KEY, '1');
+    try { localStorage.setItem(ASKED_KEY, '1'); } catch { /* session only */ }
     setOpen(false);
   };
 
@@ -149,7 +149,7 @@ export default function NicknameModal() {
           >
             <span className="text-5xl block mb-3" aria-hidden="true">🎮</span>
             <h2 id="nickname-title" className="text-xl font-black text-white mb-1">Takma Adını Seç!</h2>
-            <p id="nickname-desc" className="text-sm text-white/50 mb-5">Liderlik tablosunda bu isimle görüneceksin</p>
+            <p id="nickname-desc" className="text-sm text-white/50 mb-5">Gerçek adın yerine eğlenceli bir takma ad seç. Skor paylaşımı açıksa bu ad herkese görünür.</p>
             <input
               ref={inputRef}
               type="text"

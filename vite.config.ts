@@ -1,8 +1,38 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import fs from "fs";
 import legacy from "@vitejs/plugin-legacy";
+import { PAGE_ROUTES, getPageMetadata } from './src/data/pageMetadata';
+import { REQUIRED_FIREBASE_KEYS } from './src/lib/envKeys';
+
+function routeMetadataPlugin(publicUrl: string): Plugin {
+  let basePath = '/';
+  const escape = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]!));
+  return {
+    name: 'route-metadata',
+    apply: 'build',
+    configResolved(config) { basePath = config.base.replace(/\/$/, ''); },
+    closeBundle() {
+      const root = path.resolve(__dirname, 'dist');
+      const template = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+      for (const route of PAGE_ROUTES) {
+        const metadata = getPageMetadata(route);
+        const canonical = publicUrl + basePath + route;
+        const html = template.replace(/<title>[^<]*<\/title>/, `<title>${escape(metadata.title)}</title>`)
+          .replace(/(<meta\s+(?:name="(?:description|twitter:description)"|property="og:description")\s+content=")[^"]*("\s*\/?>)/g, `$1${escape(metadata.description)}$2`)
+          .replace(/(<meta\s+(?:property="og:title"|name="twitter:title")\s+content=")[^"]*("\s*\/?>)/g, `$1${escape(metadata.title)}$2`)
+          .replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${escape(canonical)}$2`)
+          .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${escape(canonical)}$2`);
+        const directory = path.join(root, route.slice(1));
+        fs.mkdirSync(directory, { recursive: true });
+        fs.writeFileSync(path.join(directory, 'index.html'), html);
+      }
+      fs.writeFileSync(path.join(root, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${PAGE_ROUTES.map((route) => `  <url><loc>${escape(publicUrl + basePath + route)}</loc></url>`).join('\n')}\n</urlset>\n`);
+      fs.writeFileSync(path.join(root, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${publicUrl + basePath}/sitemap.xml\n`);
+    },
+  };
+}
 
 /**
  * Build sırasında sw.js içindeki __SW_VERSION__ placeholder'ını benzersiz
@@ -45,11 +75,23 @@ function precacheManifestPlugin(): Plugin {
       const assets = fs
         .readdirSync(assetsDir)
         .filter((f) => /\.(js|css|woff2?)$/.test(f))
-        // Legacy/polyfill chunk'ları hariç tut: modern tarayıcılar kullanmaz,
-        // eski tarayıcılar stale-while-revalidate ile yüklenir → install boyutu yarıya iner
-        .filter((f) => !/-legacy-|polyfills/.test(f))
         .map((f) => `${basePath}assets/${f}`)
         .sort();
+
+      const addPublicAssets = (relative: string) => {
+        const directory = path.join(distDir, relative);
+        if (!fs.existsSync(directory)) return;
+        for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+          const child = `${relative}/${entry.name}`;
+          if (entry.isDirectory()) {
+            if (!entry.name.startsWith('jasmine')) addPublicAssets(child);
+          } else if (/\.(?:html|js|css|png|webp|ogg|ttf)$/.test(entry.name)) {
+            assets.push(`${basePath}${child}`);
+          }
+        }
+      };
+      addPublicAssets('games/battlecity');
+      addPublicAssets('coloring');
 
       fs.writeFileSync(
         path.join(distDir, "precache-manifest.json"),
@@ -60,7 +102,15 @@ function precacheManifestPlugin(): Plugin {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(() => ({
+export default defineConfig(({ mode, command }) => {
+  const values = { ...loadEnv(mode, process.cwd(), 'VITE_'), ...process.env };
+  if (command === 'build' && mode !== 'development') {
+    const missing = REQUIRED_FIREBASE_KEYS.filter((key) => !values[key]?.trim());
+    if (missing.length) throw new Error(`Eksik üretim ayarları: ${missing.join(', ')}. .env dosyasını veya dağıtım ortamını kontrol edin.`);
+  }
+  const publicUrl = (values.VITE_PUBLIC_URL || 'https://oyuncak.app').replace(/\/$/, '');
+  if (!/^https?:\/\//.test(publicUrl)) throw new Error('VITE_PUBLIC_URL http veya https ile başlamalıdır.');
+  return ({
   server: {
     host: "::",
     port: 8080,
@@ -119,6 +169,7 @@ export default defineConfig(() => ({
     react(),
     swVersionPlugin(),
     precacheManifestPlugin(),
+    routeMetadataPlugin(publicUrl),
     legacy({
       targets: [
         "defaults",
@@ -147,4 +198,5 @@ export default defineConfig(() => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+});
+});

@@ -51,12 +51,14 @@ export interface TrailPt { x: number; y: number }
 export interface FloatMsg { x: number; y: number; text: string; color: string; life: number }
 
 /* ═══════════════ BACKGROUND HELPERS ═══════════════ */
-export const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number | number[]) => {
+type DrawingContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
+export const safeRoundRect = (ctx: DrawingContext, x: number, y: number, w: number, h: number, r: number | number[]) => {
     if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
     else ctx.rect(x, y, w, h);
 };
 
-export function drawBg(ctx: CanvasRenderingContext2D, tick: number) {
+export function drawBg(ctx: DrawingContext, tick: number) {
     // Sky
     const skyGrad = ctx.createLinearGradient(0, 0, 0, CH * 0.62);
     skyGrad.addColorStop(0, '#5BA8D0'); skyGrad.addColorStop(0.6, '#9AD4F0'); skyGrad.addColorStop(1, '#C8EBF8');

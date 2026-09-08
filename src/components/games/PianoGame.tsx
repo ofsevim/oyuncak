@@ -1,3 +1,5 @@
+import { GAME_ACTIVITY_EVENT, isGamePaused } from '@/utils/gameActivity';
+import { isMuted } from '@/utils/soundEffects';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { saveHighScoreObj } from '@/utils/highScores';
@@ -198,7 +200,7 @@ const PianoGame = () => {
   const isRecordingRef = useRef(false);
   const abortRef = useRef(false);
   const pointerHandledRef = useRef(false);
-  const { safeTimeout } = useSafeTimeouts();
+  const { safeTimeout, clearSafeTimeout } = useSafeTimeouts();
   const noteTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -211,14 +213,26 @@ const PianoGame = () => {
   /* ── Init & Cleanup ────────────────────────────────────── */
   useEffect(() => {
     const noteTimeouts = noteTimeoutsRef.current;
+    const updateAudio = () => {
+      const context = audioCtxRef.current;
+      if (!context || context.state === 'closed') return;
+      if (isGamePaused() || isMuted()) void context.suspend().catch(() => {});
+      else void context.resume().catch(() => {});
+    };
+    window.addEventListener(GAME_ACTIVITY_EVENT, updateAudio);
+    window.addEventListener('oyuncak:mute-changed', updateAudio);
+    document.addEventListener('visibilitychange', updateAudio);
     return () => {
+      window.removeEventListener(GAME_ACTIVITY_EVENT, updateAudio);
+      window.removeEventListener('oyuncak:mute-changed', updateAudio);
+      document.removeEventListener('visibilitychange', updateAudio);
       abortRef.current = true;
-      noteTimeouts.forEach(clearTimeout);
+      noteTimeouts.forEach(clearSafeTimeout);
       noteTimeouts.clear();
-      if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
+      if (successTimeoutRef.current) clearSafeTimeout(successTimeoutRef.current);
       audioCtxRef.current?.close().catch(() => {});
     };
-  }, []);
+  }, [clearSafeTimeout]);
 
   /* ── AudioContext (iOS Safari resume desteği) ──────────── */
   const getAudioContext = useCallback(() => {
@@ -228,7 +242,7 @@ const PianoGame = () => {
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
       )();
     }
-    if (audioCtxRef.current.state === 'suspended') {
+    if (audioCtxRef.current.state === 'suspended' && !isMuted() && !isGamePaused()) {
       audioCtxRef.current.resume().catch(() => {});
     }
     return audioCtxRef.current;
@@ -237,6 +251,8 @@ const PianoGame = () => {
   /* ── Nota çalma (oscillator + cleanup) ─────────────────── */
   const playNote = useCallback(
     (freq: number, note: string, durationMs = 1200) => {
+      if (isGamePaused()) return;
+      if (!isMuted()) {
       const ctx = getAudioContext();
       const durationSeconds = Math.max(0.12, Math.min(durationMs / 1000, 1.2));
 
@@ -268,11 +284,13 @@ const PianoGame = () => {
         gain.disconnect();
       };
 
+      }
+
       /* Görsel vurgu */
       setActiveNotes((prev) => new Set(prev).add(note));
 
       const prevT = noteTimeoutsRef.current.get(note);
-      if (prevT) clearTimeout(prevT);
+      if (prevT) clearSafeTimeout(prevT);
 
       const t = safeTimeout(() => {
         setActiveNotes((prev) => {
@@ -284,7 +302,7 @@ const PianoGame = () => {
       }, 200);
       noteTimeoutsRef.current.set(note, t);
     },
-    [getAudioContext, safeTimeout],
+    [getAudioContext, safeTimeout, clearSafeTimeout],
   );
 
   /* ── Tuş tıklama / basma mantığı ──────────────────────── */
@@ -327,7 +345,7 @@ const PianoGame = () => {
 
           saveHighScoreObj('piano', scoreRef.current);
 
-          if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
+          if (successTimeoutRef.current) clearSafeTimeout(successTimeoutRef.current);
           successTimeoutRef.current = safeTimeout(() => {
             setShowSuccess(false);
             setCurrentMelody(null);
@@ -342,7 +360,7 @@ const PianoGame = () => {
         comboRef.current = 0;
       }
     },
-    [playNote, safeTimeout],
+    [playNote, safeTimeout, clearSafeTimeout],
   );
 
   /* Klavye listener'ı için güncel ref */

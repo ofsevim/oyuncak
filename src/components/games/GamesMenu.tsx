@@ -1,72 +1,23 @@
-import { forwardRef, lazy, Suspense, useEffect, useState, memo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Search, Brain, Hash, Wind, Piano, Calculator, Gamepad2, Rat, ArrowLeft, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
+import { forwardRef, lazy, Suspense, useEffect, useState, memo, type ComponentType, type LazyExoticComponent } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Brain, Gamepad2, ArrowLeft, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isMuted, setSoundProfile, toggleMute } from '@/utils/soundEffects';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import NotFound from '@/pages/NotFound';
+import { GAME_CATALOG, type GameDefinition, type GameCategory } from '@/data/gameCatalog';
+import { useGameLibrary } from '@/hooks/useGameLibrary';
+import GameControls from '@/components/GameControls';
 import { isGameRouteId, type GameRouteId } from '@/constants/gameIds';
 
-const OddOneOutGame = lazy(() => import('./OddOneOutGame'));
-const MemoryFlipGame = lazy(() => import('./MemoryFlipGame'));
-const WhackAMoleGame = lazy(() => import('./WhackAMoleGame'));
-const BattleCityGame = lazy(() => import('./BattleCityGame'));
-const CountingGame = lazy(() => import('./CountingGame'));
-const BalloonPopGame = lazy(() => import('./BalloonPopGame'));
-const PianoGame = lazy(() => import('./PianoGame'));
-const MathGame = lazy(() => import('./MathGame'));
-const RunnerGame = lazy(() => import('./RunnerGame'));
-const TetrisGame = lazy(() => import('./TetrisGame'));
-const SnakeGame = lazy(() => import('./SnakeGame'));
-const Game2048 = lazy(() => import('./Game2048'));
-const BasketballGame = lazy(() => import('./BasketballGame'));
-const ShapeMatchGame = lazy(() => import('./ShapeMatchGame'));
-const SimonSaysGame = lazy(() => import('./SimonSaysGame'));
-const CodingTurtleGame = lazy(() => import('./CodingTurtleGame'));
-const ComparisonGame = lazy(() => import('./ComparisonGame'));
-const SpaceShooterGame = lazy(() => import('./SpaceShooterGame'));
-const ConnectFourGame = lazy(() => import('./ConnectFourGame'));
-const WordSearchGame = lazy(() => import('./WordSearchGame'));
-const ColorSortGame = lazy(() => import('./ColorSortGame'));
-
+const modules = import.meta.glob('./*.tsx');
+const gameComponents = Object.fromEntries(GAME_CATALOG.map((game) => [
+  game.id, lazy(modules['./' + game.component + '.tsx'] as () => Promise<{ default: ComponentType }>),
+])) as Record<GameRouteId, LazyExoticComponent<ComponentType>>;
 type GameType = 'menu' | GameRouteId;
-type GameCategory = 'all' | 'action' | 'brain' | 'creative' | 'learn';
+type GameDef = GameDefinition;
+const games = GAME_CATALOG;
 
-interface GameDef {
-  id: GameType;
-  title: string;
-  emoji: string;
-  icon: typeof Wind;
-  color: string;     // solid hsl for icon bg
-  colorSoft: string; // low-opacity for hover
-  description: string;
-  category: GameCategory[];
-  badge?: string;
-  badgeColor?: string;
-}
-
-const games: GameDef[] = [
-  { id: 'balloon', title: 'Balon Patlat', emoji: '🎈', icon: Wind, color: 'hsl(198 85% 50%)', colorSoft: 'hsl(198 85% 50% / 0.1)', description: 'Doğru renkli balonları yakala!', category: ['action'], badge: 'Popüler', badgeColor: 'hsl(198 85% 50%)' },
-  { id: 'basketball', title: 'Basket At', emoji: '🏀', icon: Gamepad2, color: 'hsl(28 90% 55%)', colorSoft: 'hsl(28 90% 55% / 0.1)', description: 'Çek bırak — topu potaya sok!', category: ['action'], badge: 'Yeni', badgeColor: 'hsl(158 65% 48%)' },
-  { id: 'tank-arena', title: 'Tank Arena', emoji: '🛡️', icon: Gamepad2, color: 'hsl(220 18% 45%)', colorSoft: 'hsl(220 18% 45% / 0.1)', description: 'Üssünü koru, tankları durdur!', category: ['action'], badge: 'Oyuncak', badgeColor: 'hsl(220 18% 55%)' },
-  { id: 'whack', title: 'Köstebek Yakala', emoji: '🐹', icon: Rat, color: 'hsl(28 90% 55%)', colorSoft: 'hsl(28 90% 55% / 0.1)', description: 'Hızlı ol, köstebekleri yakala!', category: ['action'], badge: 'Eğlenceli', badgeColor: 'hsl(28 90% 55%)' },
-  { id: 'runner', title: 'Koşucu', emoji: '🏃', icon: Gamepad2, color: 'hsl(152 65% 45%)', colorSoft: 'hsl(152 65% 45% / 0.1)', description: 'Engelleri atla, yıldız topla!', category: ['action'] },
-  { id: 'tetris', title: 'Tetris', emoji: '🧱', icon: Zap, color: 'hsl(220 85% 58%)', colorSoft: 'hsl(220 85% 58% / 0.1)', description: 'Blokları yerleştir, puanları yakala!', category: ['action', 'brain'], badge: 'Klasik', badgeColor: 'hsl(220 85% 58%)' },
-  { id: 'snake', title: 'Yılan Oyunu', emoji: '🐍', icon: Zap, color: 'hsl(140 60% 45%)', colorSoft: 'hsl(140 60% 45% / 0.1)', description: 'Yemleri ye, büyü, duvarlara çarpma!', category: ['action'], badge: 'Klasik', badgeColor: 'hsl(140 60% 45%)' },
-  { id: 'odd-one-out', title: 'Farklı Olanı Bul', emoji: '🔍', icon: Search, color: 'hsl(338 80% 58%)', colorSoft: 'hsl(338 80% 58% / 0.1)', description: 'Gruba uymayan resmi bul!', category: ['brain'] },
-  { id: 'shapematch', title: 'Şekil Eşleştirme', emoji: '🧩', icon: Brain, color: 'hsl(330 80% 60%)', colorSoft: 'hsl(330 80% 60% / 0.1)', description: 'Gölgelerin sahiplerini bul!', category: ['brain'] },
-  { id: 'simonsays', title: 'Müzikal Hafıza', emoji: '🧠', icon: Brain, color: 'hsl(220 70% 60%)', colorSoft: 'hsl(220 70% 60% / 0.1)', description: 'Renk ve ses kalıplarını ezberle!', category: ['brain'] },
-  { id: 'memory', title: 'Hafıza Oyunu', emoji: '🃏', icon: Brain, color: 'hsl(258 88% 62%)', colorSoft: 'hsl(258 88% 62% / 0.1)', description: 'Kartları çevir, eşleri bul!', category: ['brain'], badge: 'Beyin', badgeColor: 'hsl(258 88% 62%)' },
-  { id: '2048', title: '2048', emoji: '🔢', icon: Brain, color: 'hsl(38 90% 55%)', colorSoft: 'hsl(38 90% 55% / 0.1)', description: "Kaydır, birleştir, 2048'e ulaş!", category: ['brain'], badge: 'Popüler', badgeColor: 'hsl(38 90% 55%)' },
-  { id: 'piano', title: 'Piyano', emoji: '🎹', icon: Piano, color: 'hsl(255 75% 62%)', colorSoft: 'hsl(255 75% 62% / 0.1)', description: 'Melodiler çal, müzik yap!', category: ['creative'] },
-  { id: 'counting', title: 'Sayma Oyunu', emoji: '🔢', icon: Hash, color: 'hsl(278 75% 60%)', colorSoft: 'hsl(278 75% 60% / 0.1)', description: 'Nesneleri say, rakamı bul!', category: ['learn'] },
-  { id: 'math', title: 'Matematik', emoji: '➕', icon: Calculator, color: 'hsl(200 80% 52%)', colorSoft: 'hsl(200 80% 52% / 0.1)', description: 'Toplama ve çıkarma işlemleri!', category: ['learn'] },
-  { id: 'codingturtle', title: 'Tavşan Kodlama', emoji: '🐇', icon: Brain, color: 'hsl(140 70% 50%)', colorSoft: 'hsl(140 70% 50% / 0.1)', description: 'Tavşanı komutlarla havuca ulaştır!', category: ['learn'] },
-  { id: 'comparison', title: 'Karşılaştırma', emoji: '⚖️', icon: Calculator, color: 'hsl(30 80% 60%)', colorSoft: 'hsl(30 80% 60% / 0.1)', description: 'Hangisi daha büyük veya daha ağır?', category: ['learn'] },
-  { id: 'spaceshooter', title: 'Uzay Savaşçısı', emoji: '🚀', icon: Zap, color: 'hsl(195 100% 50%)', colorSoft: 'hsl(195 100% 50% / 0.1)', description: 'Düşman uzaylıları yok et, galaksiyi koru!', category: ['action'], badge: 'Yeni', badgeColor: 'hsl(195 100% 50%)' },
-  { id: 'connect-four', title: 'Dört Sıra', emoji: '🔴', icon: Brain, color: 'hsl(350 82% 58%)', colorSoft: 'hsl(350 82% 58% / 0.1)', description: 'Bilgisayarı yen, dört taşı birleştir!', category: ['brain'], badge: 'Yeni', badgeColor: 'hsl(350 82% 58%)' },
-  { id: 'word-search', title: 'Kelime Avı', emoji: '🔎', icon: Search, color: 'hsl(158 65% 44%)', colorSoft: 'hsl(158 65% 44% / 0.1)', description: 'Gizli Türkçe kelimeleri bul!', category: ['brain', 'learn'], badge: 'Yeni', badgeColor: 'hsl(158 65% 44%)' },
-  { id: 'color-sort', title: 'Renk Sırala', emoji: '🧪', icon: Brain, color: 'hsl(272 78% 60%)', colorSoft: 'hsl(272 78% 60% / 0.1)', description: 'Renkleri ayır, tüpleri tamamla!', category: ['brain'], badge: 'Yeni', badgeColor: 'hsl(272 78% 60%)' },
-];
 
 const CATEGORIES: { id: GameCategory; label: string; icon: typeof Flame }[] = [
   { id: 'all', label: 'Tümü', icon: Gamepad2 },
@@ -83,7 +34,7 @@ interface GameCardProps {
 }
 
 const GameCard = memo(forwardRef<HTMLButtonElement, GameCardProps>(({ game, index, onClick }, ref) => {
-  const Icon = game.icon;
+  const Icon = Gamepad2;
   return (
     <motion.button
       ref={ref}
@@ -124,6 +75,8 @@ const GameCard = memo(forwardRef<HTMLButtonElement, GameCardProps>(({ game, inde
           </div>
         </div>
 
+        <p className="text-xs text-muted-foreground">{game.minAge}+ yaş · {game.duration} · {game.difficulty}</p>
+        <p className="text-xs text-muted-foreground">{game.skill}</p>
         <div className="flex items-center gap-1.5">
           <Icon className="w-3 h-3" style={{ color: game.color }} />
           <span className="text-xs font-semibold" style={{ color: game.color }}>
@@ -141,53 +94,38 @@ const GamesMenu = () => {
   const navigate = useNavigate();
   const { gameId } = useParams();
   const activeGame: GameType = gameId && isGameRouteId(gameId) ? gameId : 'menu';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryParam = searchParams.get('category');
+  const activeCategory = CATEGORIES.find((category) => category.id === categoryParam)?.id ?? 'all';
+  const { favorites, toggleFavorite, remember } = useGameLibrary();
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [age, setAge] = useState('all');
+  useEffect(() => { if (activeGame !== 'menu') remember(activeGame); }, [activeGame, remember]);
 
   useEffect(() => {
     setSoundProfile(activeGame === 'menu' ? undefined : activeGame);
     return () => setSoundProfile(undefined);
   }, [activeGame]);
 
-  const [activeCategory, setActiveCategory] = useState<GameCategory>('all');
   const [muted, setMutedState] = useState(isMuted());
+  useEffect(() => {
+    const updateMute = () => setMutedState(isMuted());
+    window.addEventListener('oyuncak:mute-changed', updateMute);
+    return () => window.removeEventListener('oyuncak:mute-changed', updateMute);
+  }, []);
 
-  const filteredGames = activeCategory === 'all' ? games : games.filter(g => g.category.includes(activeCategory));
+  const filteredGames = games.filter((game) =>
+    (activeCategory === 'all' || game.category.some((category) => category === activeCategory)) &&
+    (!onlyFavorites || favorites.includes(game.id)) &&
+    (age === 'all' || game.minAge <= Number(age)));
 
-  const renderActiveGame = () => {
-    // Provide a generic callback for games that want to handle active state
-    // but we use routing now, so they can navigate away if needed.
-    const onActiveGameChange = (_active: boolean) => {
-      // noop
-    };
-
-    switch (activeGame) {
-      case 'basketball': return <BasketballGame />;
-      case 'odd-one-out': return <OddOneOutGame />;
-      case 'memory': return <MemoryFlipGame onActiveGameChange={onActiveGameChange} />;
-      case 'whack': return <WhackAMoleGame />;
-      case 'tank-arena': return <BattleCityGame onActiveGameChange={onActiveGameChange} />;
-      case 'counting': return <CountingGame />;
-      case 'balloon': return <BalloonPopGame />;
-      case 'piano': return <PianoGame />;
-      case 'math': return <MathGame />;
-      case 'runner': return <RunnerGame />;
-      case 'tetris': return <TetrisGame />;
-      case 'snake': return <SnakeGame />;
-      case '2048': return <Game2048 />;
-      case 'shapematch': return <ShapeMatchGame />;
-      case 'simonsays': return <SimonSaysGame />;
-      case 'codingturtle': return <CodingTurtleGame />;
-      case 'comparison': return <ComparisonGame />;
-      case 'spaceshooter': return <SpaceShooterGame />;
-      case 'connect-four': return <ConnectFourGame />;
-      case 'word-search': return <WordSearchGame />;
-      case 'color-sort': return <ColorSortGame />;
-      default: return null;
-    }
-  };
+  const ActiveGame = activeGame === 'menu' ? null : gameComponents[activeGame];
+  if (gameId && !isGameRouteId(gameId)) return <NotFound />;
 
   if (activeGame !== 'menu') {
     return (
       <div className="pb-12 md:pb-32 w-full flex flex-col items-center relative">
+        <GameControls />
         {/* Runner kendi geri butonunu yönetir, çakışma olmasın */}
         {activeGame !== 'runner' && (
           <div className="w-full px-4 pt-4 pb-3 md:pt-5 md:pb-4">
@@ -221,8 +159,8 @@ const GamesMenu = () => {
               </div>
             </div>
           }>
-            <ErrorBoundary>
-              {renderActiveGame()}
+            <ErrorBoundary key={activeGame}>
+              {ActiveGame && <ActiveGame />}
             </ErrorBoundary>
           </Suspense>
         </div>
@@ -279,7 +217,8 @@ const GamesMenu = () => {
           return (
             <button
               key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
+              onClick={() => setSearchParams(cat.id === 'all' ? {} : { category: cat.id })}
+              aria-pressed={isActive}
               className="relative flex min-h-11 items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{
                 background: isActive ? 'hsl(var(--primary))' : 'hsl(var(--muted) / 0.5)',
@@ -296,17 +235,29 @@ const GamesMenu = () => {
       </motion.div>
 
       {/* Games grid */}
+      <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
+        <label className="flex items-center gap-2">Yaşa göre
+          <select aria-label="Yaşa göre oyunları filtrele" value={age} onChange={(event) => setAge(event.target.value)} className="rounded-xl bg-card border border-border p-3">
+            <option value="all">Tüm yaşlar</option><option value="4">4 yaş</option><option value="5">5 yaş</option><option value="6">6 yaş</option><option value="7">7 yaş</option><option value="8">8 yaş ve üzeri</option>
+          </select>
+        </label>
+        <button aria-pressed={onlyFavorites} onClick={() => setOnlyFavorites((value) => !value)} className="min-h-11 rounded-xl border border-border px-4">{onlyFavorites ? '★' : '☆'} Favorilerim</button>
+      </div>
+      <p className="text-xs text-muted-foreground">Yaş ve süre bilgileri yol göstericidir; çocuğunun ilgisine göre birlikte seçebilirsiniz.</p>
+      {filteredGames.length === 0 && <p role="status">Bu seçimde oyun yok. Filtreleri değiştirebilirsin.</p>}
       <div
         className="grid grid-cols-2 lg:grid-cols-3 gap-3 w-full max-w-5xl"
       >
         <AnimatePresence mode="popLayout">
           {filteredGames.map((game, i) => (
+            <div key={game.id} className="relative flex flex-col gap-1">
             <GameCard
-              key={game.id}
               game={game}
               index={i}
               onClick={() => navigate(`/games/${game.id}`)}
             />
+            <button type="button" aria-pressed={favorites.includes(game.id)} aria-label={`${game.title} ${favorites.includes(game.id) ? 'favorilerden çıkar' : 'favorilere ekle'}`} onClick={() => toggleFavorite(game.id)} className="min-h-11 rounded-xl border border-border text-sm text-muted-foreground hover:text-primary">{favorites.includes(game.id) ? '★ Favorim' : '☆ Favorilere ekle'}</button>
+            </div>
           ))}
         </AnimatePresence>
       </div>

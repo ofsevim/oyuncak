@@ -121,6 +121,12 @@
       requestAnimationFrame(frameLoop);
 
       function frameLoop(timestamp) {
+        if (window.oyuncakPaused || document.hidden) {
+          lastFrameTime = timestamp;
+          accumulator = 0;
+          requestAnimationFrame(frameLoop);
+          return;
+        }
         if (!lastFrameTime) {
           lastFrameTime = timestamp;
         }
@@ -153,8 +159,14 @@
 
       /* ── postMessage bridge: React mobil kontrollerinden gelen tuş olayları ── */
       window.addEventListener('message', function(e) {
-        if (e.origin !== trustedOrigin) return;
+        if (e.origin !== trustedOrigin || e.source !== parent) return;
         var data = e.data;
+        if (data && data.type === 'oyuncak:activity' && typeof data.paused === 'boolean' && typeof data.muted === 'boolean') {
+          window.oyuncakPaused = data.paused;
+          window.oyuncakMuted = data.muted;
+          if (data.paused || data.muted) SoundManager.stopAll();
+          return;
+        }
         if (!data || (data.type !== 'keydown' && data.type !== 'keyup')) return;
         if (data.keyCode !== 13 && data.keyCode !== 32 && data.keyCode !== 37 && data.keyCode !== 38 && data.keyCode !== 39 && data.keyCode !== 40) return;
         var ev = $.Event(data.type);

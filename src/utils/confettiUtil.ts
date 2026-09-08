@@ -1,4 +1,5 @@
 import confetti from 'canvas-confetti';
+import { getPlayerPreferences } from './playerPreferences';
 
 /**
  * Mobil cihazlarda parçacık sayısını otomatik azaltır.
@@ -16,7 +17,7 @@ const prefersReducedMotion = () =>
 type ConfettiOptions = Parameters<typeof confetti>[0];
 
 export function fireConfetti(opts: ConfettiOptions = {}) {
-  if (prefersReducedMotion()) return;
+  if (prefersReducedMotion() || getPlayerPreferences().reducedMotion) return;
 
   const mobile = isMobile();
   const rawCount = opts.particleCount ?? 50;

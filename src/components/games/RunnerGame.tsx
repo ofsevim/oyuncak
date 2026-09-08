@@ -1,3 +1,4 @@
+import { isGamePaused } from '@/utils/gameActivity';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -726,6 +727,7 @@ const RunnerGame = () => {
   }, [spawnP, addFloat, safeTimeout]);
 
   const gameLoop = useCallback((timestamp: number) => {
+    if (isGamePaused()) { lastTimeRef.current = 0; rafRef.current = requestAnimationFrame(gameLoop); return; }
     if (phaseRef.current !== 'playing') return;
     const ctx = ctxRef.current;
     if (!ctx) return;

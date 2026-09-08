@@ -1,5 +1,6 @@
 // Hafif, dosyasız ve mobil uyumlu prosedürel oyun sesleri — Web Audio API.
 import { getGameSoundProfile, type GameSoundProfileId } from './gameSoundProfiles';
+import { isGamePaused, GAME_ACTIVITY_EVENT } from './gameActivity';
 
 let audioCtx: AudioContext | null = null;
 let masterBus: GainNode | null = null;
@@ -18,6 +19,7 @@ export const setMuted = (value: boolean) => {
     masterBus.gain.setTargetAtTime(value ? 0 : 0.72, audioCtx.currentTime, 0.015);
   }
   try { localStorage.setItem('oyuncak.muted', String(value)); } catch { /* ignore */ }
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('oyuncak:mute-changed'));
 };
 
 export const toggleMute = (): boolean => {
@@ -58,7 +60,7 @@ const installResumeListenersOnce = () => {
   resumeListenersInstalled = true;
 
   const tryResume = () => {
-    if (_muted) return;
+    if (_muted || isGamePaused()) return;
     const context = createContext();
     if (context?.state === 'suspended') context.resume().catch(() => { /* ignore */ });
   };
@@ -68,14 +70,19 @@ const installResumeListenersOnce = () => {
   window.addEventListener('touchstart', tryResume, options);
   window.addEventListener('keydown', tryResume, options);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') tryResume();
+    if (document.visibilityState === 'visible' && !isGamePaused()) tryResume();
+    else audioCtx?.suspend().catch(() => {});
+  });
+  window.addEventListener(GAME_ACTIVITY_EVENT, () => {
+    if (isGamePaused()) audioCtx?.suspend().catch(() => {});
+    else tryResume();
   });
 };
 
 if (typeof window !== 'undefined') installResumeListenersOnce();
 
 const getAudioCtx = () => {
-  if (_muted) return null;
+  if (_muted || isGamePaused()) return null;
   const context = createContext();
   if (context?.state === 'suspended') context.resume().catch(() => { /* ignore */ });
   return context;

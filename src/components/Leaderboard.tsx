@@ -14,6 +14,8 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState('');
+  const [refresh, setRefresh] = useState(0);
 
   const fetchData = useCallback(async () => {
     // firebase/firestore (~370kB) yalnızca liderlik tablosu gerçekten
@@ -26,14 +28,22 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
   useEffect(() => {
     if (!open && !compact) return;
     let cancelled = false;
+    let requestId = 0;
     
     const load = () => {
+      const currentRequest = ++requestId;
       setLoading(true);
+      setError('');
       fetchData().then((data) => {
-        if (!cancelled) {
+        if (!cancelled && currentRequest === requestId) {
           setEntries(data);
-          setLoading(false);
         }
+      }).catch(() => {
+        if (!cancelled && currentRequest === requestId) setError(navigator.onLine
+          ? 'Liderlik tablosu yüklenemedi. Tekrar deneyebilirsin.'
+          : 'Çevrimdışısın. Yerel rekorların cihazında saklanıyor.');
+      }).finally(() => {
+        if (!cancelled && currentRequest === requestId) setLoading(false);
       });
     };
 
@@ -58,11 +68,12 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
       window.removeEventListener('oyuncak:score-updated', onScoreUpdated);
       window.removeEventListener('oyuncak:nickname-changed', onNicknameChanged);
     };
-  }, [gameId, open, compact, fetchData]);
+  }, [gameId, open, compact, fetchData, refresh]);
 
   /* ── Compact mod: sadece top 3 satır ── */
   if (compact) {
     if (loading) return <div className="text-xs text-white/30 text-center py-2">Yükleniyor…</div>;
+    if (error) return <p role="status" className="text-xs text-amber-300 text-center py-2">{error} <button onClick={() => setRefresh((value) => value + 1)} className="underline">Tekrar dene</button></p>;
     if (entries.length === 0) return null;
 
     return (
@@ -133,7 +144,7 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
                 <div className="flex items-center justify-center py-6">
                   <div className="w-6 h-6 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
                 </div>
-              ) : entries.length === 0 ? (
+              ) : error ? (<p role="status" className="text-center text-sm text-amber-300 py-4">{error}</p>) : entries.length === 0 ? (
                 <p className="text-center text-sm text-white/30 py-4">Henüz skor yok — ilk rekoru sen kır!</p>
               ) : (
                 <>
@@ -176,12 +187,7 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
 
               {/* Refresh button */}
               <button
-                onClick={async () => {
-                  setLoading(true);
-                  const data = await fetchData();
-                  setEntries(data);
-                  setLoading(false);
-                }}
+                onClick={() => setRefresh((value) => value + 1)}
                 className="mt-1 text-[10px] text-white/25 hover:text-white/50 transition-colors text-center"
               >
                 ↻ Yenile

@@ -9,11 +9,12 @@ import path from "node:path";
 export async function run() {
   const root = process.cwd();
   const example = await readFile(path.join(root, ".env.example"), "utf8");
-  const envSource = await readFile(path.join(root, "src/lib/env.ts"), "utf8");
+  const envSource = await readFile(path.join(root, "src/lib/envKeys.ts"), "utf8");
 
-  const required = [...envSource.matchAll(/"(VITE_[A-Z0-9_]+)"/g)].map((m) => m[1]);
+  const required = [...envSource.matchAll(/['"](VITE_[A-Z0-9_]+)['"]/g)].map((m) => m[1]);
   const uniqueRequired = Array.from(new Set(required));
 
+  assert.equal(uniqueRequired.length, 6);
   for (const key of uniqueRequired) {
     assert.match(
       example,

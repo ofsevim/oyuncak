@@ -1,5 +1,6 @@
 import { SCORE_GAME_IDS } from '@/constants/gameIds';
 import { enqueueScoreSync, flushScoreSyncQueue } from './scoreSyncQueue';
+import { getPlayerPreferences } from './playerPreferences';
 
 /** localStorage + Firebase tabanlı highscore sistemi */
 const PREFIX = 'oyuncak.hs.';
@@ -15,6 +16,7 @@ const SYNC_KEY = 'oyuncak.firebase.synced.v2';
  * Sadece bir kez çalışır (ilk Firebase kurulumunda).
  */
 export async function syncExistingScores(): Promise<void> {
+  if (!getPlayerPreferences().shareScores) return;
   try {
     if (localStorage.getItem(SYNC_KEY)) return;
     const pending = SCORE_GAME_IDS

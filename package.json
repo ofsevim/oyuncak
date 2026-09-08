@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "test": "node tests/run-tests.mjs",
     "functions:check": "node --check functions/index.js && node --check functions/scoreValidation.js",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "check": "npm run lint && npm run functions:check && npm run test && npm run typecheck && npm run build",
     "icons:generate": "node scripts/generate-maskable-icon.mjs",
     "preview": "vite preview",
@@ -18,7 +18,12 @@
     "cap:open": "npx cap open android",
     "cap:build": "npm run build && npx cap sync android",
     "apk:debug": "npm run cap:build && cd android && gradlew assembleDebug",
-    "apk:release": "npm run cap:build && cd android && gradlew assembleRelease"
+    "apk:release": "npm run cap:build && cd android && gradlew assembleRelease",
+    "test:e2e": "playwright test",
+    "test:rules": "npx --yes firebase-tools@15.29.0 emulators:exec --config firebase.emulator.json --project demo-oyuncak --only firestore \"node tests/rules/firestore.mjs\""
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",
@@ -34,7 +39,7 @@
     "lucide-react": "^0.462.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.30.1",
+    "react-router-dom": "^7.18.3",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7"
@@ -53,18 +58,22 @@
   "devDependencies": {
     "@capacitor/cli": "^8.2.0",
     "@eslint/js": "^9.32.0",
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-legacy": "^6.1.1",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.21",
+    "esbuild": "^0.28.2",
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "fake-indexeddb": "^6.2.5",
     "globals": "^15.15.0",
     "postcss": "^8.5.6",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.4",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",

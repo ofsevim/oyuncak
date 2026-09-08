@@ -3,6 +3,9 @@ import { motion } from "framer-motion";
 import { BookOpen, Gamepad2, Pencil, ArrowRight, ChevronRight } from "lucide-react";
 import { FEATURED } from "@/data/featured";
 import type { FeaturedGameRouteId } from "@/constants/gameIds";
+import { Link, useNavigate } from 'react-router-dom';
+import { GAME_CATALOG } from '@/data/gameCatalog';
+import { useGameLibrary } from '@/hooks/useGameLibrary';
 
 type Props = {
   onGoDraw: () => void;
@@ -25,7 +28,7 @@ const QUICK = [
     action: "games" as const,
     emoji: "🎮",
     title: "Oyunlar",
-    sub: "21 oyun",
+    sub: `${GAME_CATALOG.length} oyun`,
     color: "hsl(258 88% 66% / 0.12)",
     border: "hsl(258 88% 66% / 0.2)",
     glow: "hsl(258 88% 66%)",
@@ -51,6 +54,8 @@ const QUICK = [
 ];
 
 export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGame }: Props) {
+  const navigate = useNavigate();
+  const { recent } = useGameLibrary();
   const [time, setTime] = useState(new Date());
   const [nickname, setNickname] = useState<string>(() => {
     try { return localStorage.getItem('oyuncak.nickname') || ''; }
@@ -248,6 +253,14 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
         ))}
       </motion.section>
 
+      {recent.length > 0 && <section className="mt-8" aria-label="Son oynanan oyunlar">
+        <h2 className="text-lg font-black mb-3">Son oynadıkların</h2>
+        <div className="flex flex-wrap gap-3">{recent.map((id) => {
+          const game = GAME_CATALOG.find((entry) => entry.id === id)!;
+          return <Link key={id} to={`/games/${id}`} className="rounded-xl border border-border bg-card px-4 py-3 text-sm font-bold">{game.emoji} {game.title}</Link>;
+        })}</div>
+      </section>}
+
       {/* ── FEATURED ── */}
       <motion.section variants={fadeUp} className="mt-10">
         <div className="flex items-center justify-between mb-5">
@@ -320,7 +333,7 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
           ].map((cat) => (
             <motion.button
               key={cat.title}
-              onClick={onGoGames}
+              onClick={() => navigate(cat.title === 'Yaratıcı' ? '/draw' : `/games?category=${cat.title === 'Aksiyon' ? 'action' : cat.title === 'Zeka' ? 'brain' : 'learn'}`)}
               whileHover={{ y: -3, scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               className="rounded-2xl p-4 text-left transition-all duration-300"
@@ -336,6 +349,11 @@ export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGam
 
       {/* ── FOOTER ── */}
       <motion.div variants={fadeUp} className="mt-14 text-center">
+        <nav aria-label="Bilgilendirme" className="flex flex-wrap justify-center gap-4 mb-4 text-sm text-muted-foreground">
+          <Link className="py-3 hover:text-primary" to="/parents">Ebeveyn Alanı</Link>
+          <Link className="py-3 hover:text-primary" to="/privacy">Gizlilik</Link>
+          <Link className="py-3 hover:text-primary" to="/terms">Kullanım Bilgileri</Link>
+        </nav>
         <p className="text-xs text-muted-foreground/40 font-medium tracking-wide">
           🛡️ Reklamsız · Güvenli · Tamamen Ücretsiz
         </p>

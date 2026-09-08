@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import useHighScore from '@/hooks/useHighScore';
 import Leaderboard from '@/components/Leaderboard';
+import { GAME_ACTIVITY_EVENT, isGamePaused } from '@/utils/gameActivity';
+import { isMuted } from '@/utils/soundEffects';
 
 interface BattleCityGameProps {
     onActiveGameChange?: (active: boolean) => void;
@@ -13,7 +15,7 @@ const GAME_ID = 'tank-arena';
 /* Oyunun native canvas boyutu: UNIT_SIZE(32) × 16 = 512w, × 14 = 448h */
 const NATIVE_W = 512;
 const NATIVE_H = 448;
-type TouchSafeStyle = CSSProperties & { WebkitTouchCallout?: 'none' };
+type TouchSafeStyle = CSSProperties & { WebkitTouchCallout?: 'none'; WebkitUserDrag?: 'none' };
 
 const touchSafeStyle = {
     WebkitTapHighlightColor: 'transparent',
@@ -135,6 +137,26 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
         sendKey(key, 'keyup');
     }, [sendKey]);
 
+    const syncActivity = useCallback(() => {
+        const paused = isGamePaused();
+        if (paused) {
+            Object.keys(holdTimers.current).forEach(stopHold);
+            ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Enter'].forEach((key) => sendKey(key, 'keyup'));
+        }
+        iframeRef.current?.contentWindow?.postMessage({ type: 'oyuncak:activity', paused, muted: isMuted() }, getBattleCityOrigin());
+    }, [sendKey, stopHold]);
+
+    useEffect(() => {
+        window.addEventListener(GAME_ACTIVITY_EVENT, syncActivity);
+        window.addEventListener('oyuncak:mute-changed', syncActivity);
+        document.addEventListener('visibilitychange', syncActivity);
+        return () => {
+            window.removeEventListener(GAME_ACTIVITY_EVENT, syncActivity);
+            window.removeEventListener('oyuncak:mute-changed', syncActivity);
+            document.removeEventListener('visibilitychange', syncActivity);
+        };
+    }, [syncActivity]);
+
     useEffect(() => {
         const timers = holdTimers.current;
         const presses = pressTimers.current;
@@ -233,7 +255,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                     sandbox="allow-scripts allow-same-origin"
                     scrolling="no"
                     tabIndex={0}
-                    onLoad={focusIframe}
+                    onLoad={() => { focusIframe(); syncActivity(); }}
                     style={{
                         width: NATIVE_W,
                         height: NATIVE_H,

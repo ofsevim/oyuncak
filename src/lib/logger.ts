@@ -7,7 +7,8 @@
  * (örn. Sentry: `setExternalCapture(Sentry.captureException)`).
  */
 
-import { env } from "./env";
+// Logging must remain available even when Firebase configuration is invalid.
+const env = { isProd: import.meta.env.PROD, sentryDsn: import.meta.env.VITE_SENTRY_DSN };
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 

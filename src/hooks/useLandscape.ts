@@ -12,7 +12,9 @@ export function useLandscape() {
 
     const lock = async () => {
       try {
-        const orientation = screen.orientation;
+        const orientation = screen.orientation as ScreenOrientation & {
+          lock?: (orientation: 'landscape') => Promise<void>;
+        };
         if (orientation?.lock) {
           await orientation.lock('landscape');
           if (aborted) {

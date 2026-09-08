@@ -1,3 +1,4 @@
+import { isGamePaused } from '@/utils/gameActivity';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playBasketballImpactSound, playBasketballMissSound, playBasketballReleaseSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound, playSwishSound, playLevelUpSound } from '@/utils/soundEffects';
@@ -54,7 +55,7 @@ const BasketballGame = () => {
     const flashRef = useRef(0);
     const scoredFramesRef = useRef(0);
     const prevBallY = useRef(SHOT_POSITIONS[0].y);
-    const currentPosRef = useRef<ShotPos>(SHOT_POSITIONS[0]);
+    const currentPosRef = useRef<(typeof SHOT_POSITIONS)[number]>(SHOT_POSITIONS[0]);
     const selectedBallRef = useRef('basketball');
 
     // React State
@@ -148,6 +149,7 @@ const BasketballGame = () => {
 
     /* ── GAME LOOP ── */
     const loop = useCallback((timestamp: number) => {
+    if (isGamePaused()) { lastTimeRef.current = 0; rafRef.current = requestAnimationFrame(loop); return; }
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
         if (!ctx || !canvas) return;

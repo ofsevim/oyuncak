@@ -23,7 +23,14 @@ export async function run() {
   assert.ok(Array.isArray(FEATURED_GAME_ROUTE_IDS), "FEATURED_GAME_ROUTE_IDS tanımlı olmalı");
   assert.ok(Array.isArray(ALL_GAME_IDS), "ALL_GAME_IDS tanımlı olmalı");
 
-  const menuRouteIds = extractMatches(gamesMenuSource, /\{\s*id:\s*'([^']+)',\s*title:/g);
+  const { GAME_CATALOG } = await loadTsModule('src/data/gameCatalog.ts');
+  const menuRouteIds = GAME_CATALOG.map((game) => game.id);
+  assert.match(gamesMenuSource, /GAME_CATALOG/);
+  assert.equal(new Set(menuRouteIds).size, menuRouteIds.length);
+  for (const game of GAME_CATALOG) {
+    await readFile(path.join(root, 'src/components/games', `${game.component}.tsx`));
+    assert.ok(game.minAge >= 4 && game.duration && game.skill);
+  }
   const featuredRouteIds = extractMatches(featuredSource, /gameId:\s*"([^"]+)"/g);
 
   assert.deepEqual(

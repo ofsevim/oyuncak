@@ -34,9 +34,11 @@ const QUESTION_TEMPLATES = [
   { hint: 'Hangisi oyuncak değil?', category: 'toys' }
 ];
 
-function generateDynamicRounds(isHardMode: boolean) {
+interface Round { items: { id: string; emoji: string }[]; oddOne: string; hint: string }
+
+function generateDynamicRounds(isHardMode: boolean): Round[] {
   const templates = shuffleArray([...QUESTION_TEMPLATES]);
-  const generatedRounds = [];
+  const generatedRounds: Round[] = [];
 
   // Sabit sayıda (örn. 15) soru oynatalım
   const roundCount = Math.min(15, templates.length);

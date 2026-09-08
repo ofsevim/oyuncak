@@ -29,7 +29,9 @@ export function ensureAuth(): Promise<User> {
   if (currentUser) return Promise.resolve(currentUser);
 
   if (!authPromise) {
-    authPromise = withTimeout(signInAnonymously(auth), 8000)
+    authPromise = withTimeout(auth.authStateReady().then(() => auth.currentUser
+      ? { user: auth.currentUser }
+      : signInAnonymously(auth)), 8000)
       .then((cred) => {
         currentUser = cred.user;
         authPromise = null;
@@ -45,6 +47,12 @@ export function ensureAuth(): Promise<User> {
   }
 
   return authPromise;
+}
+
+/** Restore an existing session without creating an anonymous account. */
+export async function getExistingUser(): Promise<User | null> {
+  await withTimeout(auth.authStateReady(), 8000);
+  return auth.currentUser;
 }
 
 /** Senkron UID getter — auth henüz hazır değilse null döner */

@@ -51,13 +51,14 @@ export const getNextRandom = <T,>(array: T[], lastItem: T | null, key?: keyof T)
     if (array.length === 1) return array[0];
 
     const filtered = array.filter(item => {
-        if (lastItem === null) return true;
+        if (lastItem == null) return true;
         const currentVal = key ? item[key] : item;
         const lastVal = key ? lastItem[key] : lastItem;
         return currentVal !== lastVal;
     });
 
-    return filtered[Math.floor(Math.random() * filtered.length)];
+    const candidates = filtered.length > 0 ? filtered : array;
+    return candidates[Math.floor(Math.random() * candidates.length)];
 };
 
 /**

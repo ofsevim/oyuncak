@@ -8,15 +8,23 @@ import {
   query,
   runTransaction,
   serverTimestamp,
+  setDoc,
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { ensureAuth, getUid } from './authService';
+import { ensureAuth, getExistingUser } from './authService';
+import { getPlayerPreferences } from '@/utils/playerPreferences';
 import { SCORE_GAME_IDS } from '@/constants/gameIds';
 import { logger } from '@/lib/logger';
 import { sanitizeNickname } from '@/lib/utils';
+import { withTimeout } from '@/utils/promiseTimeout';
 
 const NICKNAME_KEY = 'oyuncak.nickname';
+let pendingDeletion: Promise<void> | null = null;
+
+function checkPendingDeletion(): void {
+  if (pendingDeletion) throw new Error('Önceki skor silme isteğinin tamamlanması bekleniyor.');
+}
 
 function getNickname(): string {
   try {
@@ -37,10 +45,15 @@ export interface LeaderboardEntry {
 /** Saves only a new personal best; Firestore rules enforce ownership and shape. */
 export async function syncScore(gameId: string, score: number): Promise<boolean> {
   try {
-    if (!SCORE_GAME_IDS.includes(gameId)) throw new Error('Geçersiz oyun kimliği');
+    if (!SCORE_GAME_IDS.some((id) => id === gameId)) throw new Error('Geçersiz oyun kimliği');
+    if (!Number.isSafeInteger(score) || score < 0 || score > 9_999_999) throw new Error('Geçersiz skor');
+    if (!getPlayerPreferences().shareScores) return false;
+    checkPendingDeletion();
     const user = await ensureAuth();
     const scoreRef = doc(db, 'scores', gameId, 'leaderboard', user.uid);
     const updated = await runTransaction(db, async (transaction) => {
+      if (!getPlayerPreferences().shareScores) return false;
+      checkPendingDeletion();
       const existing = await transaction.get(scoreRef);
       const existingScore = existing.exists() && Number.isSafeInteger(existing.data().score)
         ? existing.data().score as number
@@ -72,11 +85,11 @@ export async function syncScore(gameId: string, score: number): Promise<boolean>
 /** Returns the top scores for a game. */
 export async function getLeaderboard(gameId: string, max = 10): Promise<LeaderboardEntry[]> {
   try {
-    await ensureAuth();
-    const uid = getUid();
+    if (!navigator.onLine) throw new Error('offline');
+    const uid = (await getExistingUser())?.uid;
     const colRef = collection(db, 'scores', gameId, 'leaderboard');
     const scoreQuery = query(colRef, orderBy('score', 'desc'), limit(max));
-    const snap = await getDocs(scoreQuery);
+    const snap = await withTimeout(getDocs(scoreQuery));
 
     return snap.docs.map((entry) => {
       const data = entry.data();
@@ -90,7 +103,7 @@ export async function getLeaderboard(gameId: string, max = 10): Promise<Leaderbo
     });
   } catch (err) {
     logger.warn('Firebase leaderboard read failed', { gameId, err: String(err) });
-    return [];
+    throw err;
   }
 }
 
@@ -109,7 +122,10 @@ export async function getUserScore(gameId: string): Promise<number> {
 /** Restores a nickname from previously saved scores. */
 export async function getNicknameFromExistingScores(): Promise<string | null> {
   try {
-    const user = await ensureAuth();
+    const user = await getExistingUser();
+    if (!user) return null;
+    const profile = await getDoc(doc(db, 'profiles', user.uid));
+    if (profile.exists() && typeof profile.data().name === 'string') return sanitizeNickname(profile.data().name);
     const snapshots = await Promise.all(
       SCORE_GAME_IDS.map((gameId) => getDoc(doc(db, 'scores', gameId, 'leaderboard', user.uid))),
     );
@@ -129,8 +145,14 @@ export async function getNicknameFromExistingScores(): Promise<string | null> {
 /** Updates the signed-in player's displayed name on existing scores. */
 export async function updateNicknameInScores(newName: string): Promise<void> {
   try {
-    const user = await ensureAuth();
+    if (!getPlayerPreferences().shareScores) return;
+    checkPendingDeletion();
+    if (!navigator.onLine) throw new Error('Takma adı güncellemek için internet bağlantısı gerekli.');
+    const user = await getExistingUser();
+    if (!user) return;
+    checkPendingDeletion();
     const safeName = sanitizeNickname(newName);
+    await setDoc(doc(db, 'profiles', user.uid), { name: safeName, updatedAt: serverTimestamp() });
     const refs = SCORE_GAME_IDS.map((gameId) =>
       doc(db, 'scores', gameId, 'leaderboard', user.uid),
     );
@@ -148,5 +170,23 @@ export async function updateNicknameInScores(newName: string): Promise<void> {
     window.dispatchEvent(new Event('oyuncak:nickname-changed'));
   } catch (err) {
     logger.warn('Nickname update failed', { err: String(err) });
+    throw err;
   }
+}
+
+/** Deletes only the currently authenticated player's documents, on request. */
+export function deleteCloudScores(): Promise<void> {
+  // Retrying after a UI timeout waits for the same write instead of submitting another batch.
+  if (pendingDeletion) return pendingDeletion;
+  pendingDeletion = (async () => {
+    if (!navigator.onLine) throw new Error('Global skorları silmek için internet bağlantısı gerekli.');
+    const user = await getExistingUser();
+    if (!user) return;
+    const batch = writeBatch(db);
+    SCORE_GAME_IDS.forEach((gameId) => batch.delete(doc(db, 'scores', gameId, 'leaderboard', user.uid)));
+    batch.delete(doc(db, 'profiles', user.uid));
+    await batch.commit();
+    window.dispatchEvent(new Event('oyuncak:nickname-changed'));
+  })().finally(() => { pendingDeletion = null; });
+  return pendingDeletion;
 }

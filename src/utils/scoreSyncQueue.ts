@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { getPlayerPreferences, PREFERENCES_EVENT } from './playerPreferences';
 import {
   completeScoreSyncJob,
   markScoreSyncFailure,
@@ -49,7 +50,7 @@ function announce(status: ScoreSyncStatus): void {
 function scheduleNextAttempt(jobs: readonly ScoreSyncJob[]): void {
   if (retryTimer) clearTimeout(retryTimer);
   retryTimer = null;
-  if (jobs.length === 0 || !navigator.onLine) return;
+  if (jobs.length === 0 || !navigator.onLine || !getPlayerPreferences().shareScores) return;
 
   const nextAttemptAt = Math.min(...jobs.map((job) => job.nextAttemptAt));
   const delay = Math.max(0, Math.min(nextAttemptAt - Date.now(), 5 * 60_000));
@@ -57,6 +58,7 @@ function scheduleNextAttempt(jobs: readonly ScoreSyncJob[]): void {
 }
 
 export function enqueueScoreSync(gameId: string, score: number): void {
+  if (!getPlayerPreferences().shareScores) return;
   if (!Number.isSafeInteger(score) || score <= 0) return;
   const jobs = mergeScoreSyncJob(readQueue(), gameId, score, Date.now());
   writeQueue(jobs);
@@ -69,6 +71,7 @@ export function getPendingScoreSyncCount(): number {
 }
 
 export function flushScoreSyncQueue(force = false): Promise<void> {
+  if (!getPlayerPreferences().shareScores) return Promise.resolve();
   if (flushPromise) return flushPromise;
 
   flushPromise = (async () => {
@@ -83,6 +86,7 @@ export function flushScoreSyncQueue(force = false): Promise<void> {
     const { syncScore } = await import('@/services/scoreService');
 
     for (const queuedJob of [...jobs]) {
+      if (!getPlayerPreferences().shareScores) break;
       const job = jobs.find((candidate) => candidate.gameId === queuedJob.gameId);
       if (!job || (!force && job.nextAttemptAt > Date.now())) continue;
 
@@ -109,7 +113,9 @@ export function flushScoreSyncQueue(force = false): Promise<void> {
     scheduleNextAttempt(jobs);
   })()
     .catch((err) => {
-      const jobs = readQueue();
+      let jobs = readQueue();
+      for (const job of jobs) jobs = markScoreSyncFailure(jobs, job.gameId, Date.now());
+      writeQueue(jobs);
       if (jobs.length > 0) {
         announce({ state: navigator.onLine ? 'retry_scheduled' : 'offline', pending: jobs.length });
       }
@@ -124,6 +130,19 @@ export function flushScoreSyncQueue(force = false): Promise<void> {
 }
 
 if (typeof window !== 'undefined') {
+  window.addEventListener(PREFERENCES_EVENT, () => {
+    if (!getPlayerPreferences().shareScores) {
+      if (retryTimer) clearTimeout(retryTimer);
+      retryTimer = null;
+      writeQueue([]);
+      announce({ state: 'synced', pending: 0 });
+    }
+  });
   window.addEventListener('online', () => void flushScoreSyncQueue(true));
   window.setTimeout(() => void flushScoreSyncQueue(), 1_500);
+}
+
+/** Wait for an already submitted write before removing cloud data. */
+export async function settleScoreSync(): Promise<void> {
+  await flushPromise;
 }

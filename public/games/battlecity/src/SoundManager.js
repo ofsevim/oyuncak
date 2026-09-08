@@ -20,7 +20,11 @@ var SoundManager = (function () {
   }
 
   return {
+    stopAll: function () {
+      for (var name in sounds) sounds[name].pause();
+    },
     play: function (sound) {
+      if (window.oyuncakPaused || window.oyuncakMuted || document.hidden) return;
       var s = sounds[sound];
       if (!s) return;
       // Eğer ses zaten çalıyorsa başa sar

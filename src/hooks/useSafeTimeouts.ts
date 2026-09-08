@@ -1,80 +1,30 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { createPausableTimers } from '@/utils/pausableTimers';
+import { GAME_ACTIVITY_EVENT, isGamePaused } from '@/utils/gameActivity';
 
-/**
- * Safe timeout management hook
- * Prevents memory leaks by automatically cleaning up timeouts on unmount
- * Returns safe timeout/setInterval functions and auto-cleanup
- */
+/** Game timers preserve their remaining duration during pauses and clean up on exit. */
 export function useSafeTimeouts() {
-  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const intervalsRef = useRef<ReturnType<typeof setInterval>[]>([]);
-
-  const safeTimeout = useCallback((fn: () => void, ms: number) => {
-    const id = setTimeout(() => {
-      fn();
-      // Execute after fn so id is removed from tracking
-      const arr = timeoutsRef.current;
-      const idx = arr.indexOf(id);
-      if (idx !== -1) arr.splice(idx, 1);
-    }, ms);
-    timeoutsRef.current.push(id);
-    return id;
-  }, []);
-
-  const safeInterval = useCallback((fn: () => void, ms: number) => {
-    const id = setInterval(fn, ms);
-    intervalsRef.current.push(id);
-    return id;
-  }, []);
-
-  // Hem zamanlayıcıyı durdurur hem de tracking listesinden çıkarır.
-  // Effect cleanup'larında "clearInterval(id)" yerine bunu kullanın ki
-  // hook bellekte ölü id'leri biriktirmesin.
-  const clearSafeTimeout = useCallback((id: ReturnType<typeof setTimeout>) => {
-    clearTimeout(id);
-    const arr = timeoutsRef.current;
-    const idx = arr.indexOf(id);
-    if (idx !== -1) arr.splice(idx, 1);
-  }, []);
-
-  const clearSafeInterval = useCallback((id: ReturnType<typeof setInterval>) => {
-    clearInterval(id);
-    const arr = intervalsRef.current;
-    const idx = arr.indexOf(id);
-    if (idx !== -1) arr.splice(idx, 1);
-  }, []);
-
-  const clearAllTimeouts = useCallback(() => {
-    timeoutsRef.current.forEach(clearTimeout);
-    timeoutsRef.current = [];
-  }, []);
-
-  const clearAllIntervals = useCallback(() => {
-    intervalsRef.current.forEach(clearInterval);
-    intervalsRef.current = [];
-  }, []);
-
-  const clearAll = useCallback(() => {
-    clearAllTimeouts();
-    clearAllIntervals();
-  }, [clearAllTimeouts, clearAllIntervals]);
-
-  // Auto-cleanup on unmount
+  const ref = useRef<ReturnType<typeof createPausableTimers>>();
+  if (!ref.current) { ref.current = createPausableTimers(); ref.current.setPaused(isGamePaused()); }
+  const timers = ref.current;
+  const safeTimeout = timers.timeout;
+  const safeInterval = timers.interval;
+  const clearSafeTimeout = timers.clear;
+  const clearSafeInterval = clearSafeTimeout;
+  const clearAllTimeouts = useCallback(() => timers.clearAll(false), [timers]);
+  const clearAllIntervals = useCallback(() => timers.clearAll(true), [timers]);
+  const clearAll = useCallback(() => timers.clearAll(), [timers]);
   useEffect(() => {
+    const update = () => timers.setPaused(isGamePaused());
+    window.addEventListener(GAME_ACTIVITY_EVENT, update);
+    document.addEventListener('visibilitychange', update);
+    update();
     return () => {
-      clearAll();
+      window.removeEventListener(GAME_ACTIVITY_EVENT, update);
+      document.removeEventListener('visibilitychange', update);
+      timers.clearAll();
     };
-  }, [clearAll]);
-
-  return {
-    safeTimeout,
-    safeInterval,
-    clearSafeTimeout,
-    clearSafeInterval,
-    clearAllTimeouts,
-    clearAllIntervals,
-    clearAll,
-  };
+  }, [timers]);
+  return { safeTimeout, safeInterval, clearSafeTimeout, clearSafeInterval, clearAllTimeouts, clearAllIntervals, clearAll };
 }
-
 export default useSafeTimeouts;

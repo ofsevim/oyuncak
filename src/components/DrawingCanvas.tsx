@@ -3,7 +3,8 @@ import { Canvas as FabricCanvas, FabricText } from 'fabric';
 import { Trash2, Undo, Download, Image, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
-import DrawingGallery, { saveDrawing } from './DrawingGallery';
+import DrawingGallery from './DrawingGallery';
+import { saveDrawing } from '@/utils/drawingStore';
 import { fireConfetti } from '@/utils/confettiUtil';
 import { toast } from 'sonner';
 import { BRUSHES, COLORS, RAINBOW, SPACING, STAMP_FN, STICKERS, type BrushId } from './drawing/brushes';
@@ -421,10 +422,10 @@ const DrawingCanvas = () => {
     return mergeCanvas.toDataURL('image/png', 1);
   }, [canvasW, canvasH, fabricCanvas]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     try {
       const dataUrl = getMergedDataUrl();
-      saveDrawing(dataUrl, `Çizim ${new Date().toLocaleDateString('tr-TR')}`);
+      await saveDrawing(dataUrl, `Çizim ${new Date().toLocaleDateString('tr-TR')}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Çizim kaydedilemedi.');
       return;

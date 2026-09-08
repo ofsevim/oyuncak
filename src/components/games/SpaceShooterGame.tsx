@@ -1,3 +1,4 @@
+import { isGamePaused } from '@/utils/gameActivity';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playNewRecordSound } from '@/utils/soundEffects';
@@ -353,6 +354,7 @@ const SpaceShooterGame = () => {
 
     /* ── Game loop ── */
     const gameLoop = useCallback((timestamp: number) => {
+    if (isGamePaused()) { lastTimeRef.current = 0; rafRef.current = requestAnimationFrame(gameLoop); return; }
         if (livesRef.current <= 0) return;
         const canvas = canvasRef.current;
         if (!canvas) return;
