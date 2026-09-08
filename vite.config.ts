@@ -15,7 +15,8 @@ function routeMetadataPlugin(publicUrl: string): Plugin {
     configResolved(config) { basePath = config.base.replace(/\/$/, ''); },
     closeBundle() {
       const root = path.resolve(__dirname, 'dist');
-      const template = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+      const template = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
+        .replaceAll('https://oyuncak.app', publicUrl);
       for (const route of PAGE_ROUTES) {
         const metadata = getPageMetadata(route);
         const canonical = publicUrl + basePath + route;
