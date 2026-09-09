@@ -585,7 +585,7 @@ const SnakeGame = () => {
       </div>
 
       {/* ── Mobile D-pad ── */}
-      <div className="grid grid-cols-3 gap-3 w-56 md:hidden mt-2" role="group" aria-label="Game Controls">
+      <div className="touch-controls-grid grid grid-cols-3 gap-3 w-56 md:hidden mt-2" role="group" aria-label="Game Controls">
         <div />
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'DOWN') inputQueueRef.current.push('UP'); }}
           className="flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Up">⬆️</motion.button>

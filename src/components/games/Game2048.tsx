@@ -294,7 +294,7 @@ const Game2048 = () => {
       </div>
 
       {/* Mobile controls */}
-      <div className="grid grid-cols-3 gap-2 w-44 md:hidden">
+      <div className="touch-controls-grid grid grid-cols-3 gap-2 w-44 md:hidden">
         <div />
         <button onClick={() => handleMove('up')} className="glass-card p-3 text-xl active:scale-90 transition-transform touch-manipulation">⬆️</button>
         <div />

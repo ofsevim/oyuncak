@@ -50,7 +50,9 @@ const SimonSaysGame = () => {
 
     const getAudioContext = useCallback(() => {
         if (!audioCtxRef.current) {
-            audioCtxRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+            const Context = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+            if (!Context) return null;
+            try { audioCtxRef.current = new Context(); } catch { return null; }
         }
         if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume().catch(() => {});
         return audioCtxRef.current;
@@ -58,6 +60,7 @@ const SimonSaysGame = () => {
 
     const playNote = useCallback((freq: number) => {
         const ctx = getAudioContext();
+        if (!ctx) return;
         const osc1 = ctx.createOscillator();
         const osc2 = ctx.createOscillator();
         const gain = ctx.createGain();

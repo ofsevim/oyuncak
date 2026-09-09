@@ -47,4 +47,18 @@ export async function run() {
   context.fetch = async () => opaque;
   assert.equal(await request('/games/battlecity/BattleCity.html', 'navigate'), opaque,
     'A fresh opaque redirect must reach the browser instead of falling back to an older cached document');
+
+  const stored = new Map();
+  context.caches.open = async () => ({ addAll: async () => {}, put: async (key, value) => stored.set(key, value) });
+  context.fetch = async (url) => {
+    if (url === '/precache-manifest.json') return new Response(JSON.stringify({ assets:['/games/battlecity/BattleCity.html'] }));
+    const document = redirected();
+    Object.defineProperty(document, 'url', { value:'https://example.test/games/battlecity/battlecity' });
+    return document;
+  };
+  let installation;
+  listeners.install({ waitUntil: promise => { installation = promise; } });
+  await installation;
+  assert.ok(stored.has('/games/battlecity/BattleCity.html'));
+  assert.ok(stored.has('https://example.test/games/battlecity/battlecity'), 'Remembered browser redirects must resolve to a precached destination offline');
 }

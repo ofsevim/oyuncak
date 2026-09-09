@@ -1253,7 +1253,8 @@ const RunnerGame = () => {
         {phase === 'playing' && (
           <motion.button
             onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); jump(); }}
-            className="md:hidden fixed bottom-6 right-6 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shadow-2xl z-[60] touch-manipulation select-none"
+            aria-label="Zıpla"
+            className="touch-controls-flex md:hidden fixed bottom-6 right-6 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shadow-2xl z-[60] touch-manipulation select-none"
             style={{
               touchAction: 'none',
               background: 'linear-gradient(135deg, #ef4444, #f97316)',

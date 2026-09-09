@@ -40,7 +40,19 @@ self.addEventListener('install', (event) => {
         // Bound concurrency on mobile and fail the installation if any required
         // asset is missing. The previous worker remains available on updates.
         for (let start = 0; start < data.assets.length; start += 6) {
-            await Promise.all(data.assets.slice(start, start + 6).map((asset) => cache.add(asset)));
+            await Promise.all(data.assets.slice(start, start + 6).map(async (asset) => {
+                const response = await fetch(asset);
+                if (!response.ok) throw new Error('Offline asset unavailable: ' + asset);
+                await cache.put(asset, response.clone());
+                // Browsers may remember the HTML redirect even while offline.
+                // Cache its same-origin destination as well as the original URL.
+                if (response.redirected && response.url) {
+                    const destination = new URL(response.url);
+                    if (destination.origin === new URL(BASE).origin && destination.pathname.startsWith(new URL(BASE).pathname)) {
+                        await cache.put(destination.href, response.clone());
+                    }
+                }
+            }));
         }
     })());
 });

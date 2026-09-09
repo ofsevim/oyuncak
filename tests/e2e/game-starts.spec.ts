@@ -15,6 +15,7 @@ for (const game of GAME_CATALOG) {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(`/games/${game.id}`);
     await expect(page.getByRole('button', { name: 'Oyunlara Dön', exact: true })).toBeVisible();
+    await expect(page.getByText('Yükleniyor…', { exact: true })).toHaveCount(0);
     // Some games start immediately; others expose a start screen.
     const start = page.getByRole('button', { name: /BAŞLA|Başla|Başlat|Oyna/ }).first();
     if (await start.count()) await start.click();

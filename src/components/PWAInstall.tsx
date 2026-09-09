@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, X, Share, PlusSquare } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -21,6 +22,7 @@ function wasDismissed(): boolean {
 }
 
 const PWAInstall = () => {
+  const { pathname } = useLocation();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -70,7 +72,7 @@ const PWAInstall = () => {
     if (outcome === 'accepted' || outcome === 'dismissed') dismissBanner();
   };
 
-  if (isStandalone || !showBanner) return null;
+  if (isStandalone || !showBanner || pathname !== '/') return null;
 
   return (
     <AnimatePresence>

@@ -6,6 +6,7 @@ let audioCtx: AudioContext | null = null;
 let masterBus: GainNode | null = null;
 let resumeListenersInstalled = false;
 let activeSoundProfile: GameSoundProfileId | undefined;
+let userActivatedAudio = false;
 
 let _muted = false;
 try { _muted = typeof window !== 'undefined' && localStorage.getItem('oyuncak.muted') === 'true'; } catch { /* ignore */ }
@@ -37,6 +38,7 @@ type WebkitAudioContextWindow = Window & typeof globalThis & { webkitAudioContex
 
 const createContext = () => {
   if (audioCtx || typeof window === 'undefined') return audioCtx;
+  if (!userActivatedAudio && !navigator.userActivation?.hasBeenActive) return null;
   const Context = window.AudioContext || (window as WebkitAudioContextWindow).webkitAudioContext;
   if (!Context) return null;
   audioCtx = new Context();
@@ -66,9 +68,14 @@ const installResumeListenersOnce = () => {
   };
 
   const options: AddEventListenerOptions = { once: true, capture: true, passive: true };
-  window.addEventListener('pointerdown', tryResume, options);
-  window.addEventListener('touchstart', tryResume, options);
-  window.addEventListener('keydown', tryResume, options);
+  const unlock = (event: Event) => {
+    if (!event.isTrusted) return;
+    userActivatedAudio = true;
+    tryResume();
+  };
+  window.addEventListener('pointerdown', unlock, options);
+  window.addEventListener('touchstart', unlock, options);
+  window.addEventListener('keydown', unlock, options);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && !isGamePaused()) tryResume();
     else audioCtx?.suspend().catch(() => {});

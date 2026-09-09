@@ -641,3 +641,10 @@
 .game-paused *, .game-paused *::before, .game-paused *::after {
   animation-play-state: paused !important;
 }
+
+/* Wide phones and tablets still need touch controls in landscape orientation. */
+@media (any-pointer: coarse) {
+  html .touch-controls-flex { display: flex; }
+  html .touch-controls-grid { display: grid; }
+  html .keyboard-controls-help { display: none; }
+}

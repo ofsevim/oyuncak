@@ -74,13 +74,19 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
             container.style.height = `${Math.round(NATIVE_H * s)}px`;
         };
 
+        let resizeFrame = 0;
+        let previousWidth = -1;
         const ro = new ResizeObserver(([entry]) => {
-            applyScale(entry.contentRect.width);
+            const width = entry.contentRect.width;
+            if (Math.abs(width - previousWidth) < 0.1) return;
+            previousWidth = width;
+            cancelAnimationFrame(resizeFrame);
+            resizeFrame = requestAnimationFrame(() => applyScale(width));
         });
         ro.observe(container);
         /* İlk render için hemen uygula */
         applyScale(container.getBoundingClientRect().width);
-        return () => ro.disconnect();
+        return () => { ro.disconnect(); cancelAnimationFrame(resizeFrame); };
     }, []);
 
     /* Focus iframe */
@@ -277,7 +283,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
 
             {/* ── Mobile controls (md+'da gizli) ── */}
             <motion.div
-                className="w-full mt-4 flex flex-col items-center gap-3 md:hidden"
+                className="touch-controls-flex w-full mt-4 flex flex-col items-center gap-3 md:hidden"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
@@ -367,7 +373,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
 
             {/* ── Klavye kısayolları — sadece desktop ── */}
             <motion.div
-                className="w-full mt-3 hidden md:flex flex-wrap justify-center gap-x-5 gap-y-1.5"
+                className="keyboard-controls-help w-full mt-3 hidden md:flex flex-wrap justify-center gap-x-5 gap-y-1.5"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.25 }}

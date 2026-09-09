@@ -177,20 +177,30 @@ export default function ColorSortGame() {
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-600 dark:text-violet-300">Renk • Mantık</p>
             <h1 className="text-2xl font-black sm:text-3xl">Renk Sırala</h1>
           </div>
-          <div className="rounded-2xl bg-white/70 px-3 py-2 text-right shadow-sm dark:bg-white/10">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Rekor</p>
+          <div className="rounded-2xl border border-violet-100/60 bg-white/70 px-3 py-2 text-right shadow-sm dark:border-white/10 dark:bg-white/10">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground dark:text-slate-400">Rekor</p>
             <p className="font-black text-violet-600 dark:text-violet-300">{highScore}</p>
           </div>
         </div>
 
         {phase === 'menu' ? (
-          <div className="rounded-3xl bg-white/75 p-5 text-center shadow-sm dark:bg-white/5 sm:p-7">
+          <div className="rounded-3xl border border-violet-100/60 bg-white/75 p-5 text-center shadow-sm dark:border-white/10 dark:bg-white/5 sm:p-7">
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-rose-400 text-4xl shadow-lg">🧪</div>
             <h2 className="text-xl font-black">Aynı renkleri aynı tüpte topla</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Önce alınacak tüpe, sonra dökülecek tüpe dokun. Yalnızca aynı rengin üstüne dökebilirsin.</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground dark:text-slate-300">Önce alınacak tüpe, sonra dökülecek tüpe dokun. Yalnızca aynı rengin üstüne dökebilirsin.</p>
             <div className="mt-6 grid grid-cols-3 gap-2">
               {(Object.entries(SETTINGS) as [Difficulty, (typeof SETTINGS)[Difficulty]][]).map(([id, item]) => (
-                <button key={id} type="button" onClick={() => setDifficulty(id)} aria-pressed={difficulty === id} className={`min-h-16 rounded-2xl border p-2 transition ${difficulty === id ? 'border-violet-500 bg-violet-500 text-white' : 'border-border bg-background/60 hover:bg-background'}`}>
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setDifficulty(id)}
+                  aria-pressed={difficulty === id}
+                  className={`min-h-16 rounded-2xl border p-2 transition ${
+                    difficulty === id
+                      ? 'border-violet-500 bg-violet-500 text-white shadow-md shadow-violet-500/25'
+                      : 'border-border bg-background/60 hover:bg-background dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10'
+                  }`}
+                >
                   <span className="block text-sm font-black">{item.label}</span>
                   <span className="text-[10px] opacity-75">{item.colors} renk</span>
                 </button>
@@ -200,32 +210,82 @@ export default function ColorSortGame() {
           </div>
         ) : (
           <>
-            <div className="mb-4 flex items-center justify-between gap-2 rounded-2xl bg-white/70 px-3 py-2 shadow-sm dark:bg-white/5">
-              <span className="text-sm font-black">{moves} hamle</span>
+            <div className="mb-4 flex items-center justify-between gap-2 rounded-2xl border border-violet-100/60 bg-white/70 px-3 py-2 shadow-sm dark:border-white/10 dark:bg-white/5">
+              <span className="text-sm font-black text-slate-800 dark:text-slate-100">{moves} hamle</span>
               <span className="text-xs font-bold text-violet-600 dark:text-violet-300">{completedTubes}/{settings.colors} tamamlandı</span>
               <div className="flex gap-1">
-                <button type="button" onClick={undo} disabled={!history.length || phase !== 'playing'} aria-label="Son hamleyi geri al" className="flex min-h-11 min-w-11 items-center justify-center rounded-xl transition hover:bg-violet-100 disabled:opacity-30 dark:hover:bg-white/10"><Undo2 className="h-4 w-4" /></button>
-                <button type="button" onClick={resetGame} aria-label="Bulmacayı baştan başlat" className="flex min-h-11 min-w-11 items-center justify-center rounded-xl transition hover:bg-rose-100 dark:hover:bg-white/10"><RotateCcw className="h-4 w-4" /></button>
+                <button
+                  type="button"
+                  onClick={undo}
+                  disabled={!history.length || phase !== 'playing'}
+                  aria-label="Son hamleyi geri al"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-700 transition hover:bg-violet-100 disabled:opacity-30 dark:text-slate-200 dark:hover:bg-white/10"
+                >
+                  <Undo2 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={resetGame}
+                  aria-label="Bulmacayı baştan başlat"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-700 transition hover:bg-rose-100 dark:text-slate-200 dark:hover:bg-white/10"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
-            <div className={`mx-auto grid max-w-lg gap-x-3 gap-y-5 rounded-3xl bg-white/50 p-4 shadow-inner dark:bg-slate-950/30 ${tubes.length <= 6 ? 'grid-cols-3 sm:grid-cols-6' : tubes.length === 7 ? 'grid-cols-4 sm:grid-cols-7' : 'grid-cols-4'}`}>
+            <div className={`mx-auto grid max-w-lg gap-x-3 gap-y-5 rounded-3xl border border-violet-100/60 bg-white/50 p-4 shadow-inner dark:border-white/10 dark:bg-slate-950/40 ${tubes.length <= 6 ? 'grid-cols-3 sm:grid-cols-6' : tubes.length === 7 ? 'grid-cols-4 sm:grid-cols-7' : 'grid-cols-4'}`}>
               {tubes.map((tube, tubeIndex) => {
                 const completed = tube.length === CAPACITY && tube.every((color) => color === tube[0]);
                 const displaySlots = [...Array<number | null>(CAPACITY - tube.length).fill(null), ...[...tube].reverse()];
                 return (
-                  <motion.button key={tubeIndex} type="button" onClick={() => chooseTube(tubeIndex)} whileTap={{ scale: 0.94 }} animate={{ y: selectedTube === tubeIndex ? -9 : 0 }} aria-label={`${tubeIndex + 1}. tüp: ${tube.length ? tube.slice().reverse().map((color) => COLOR_NAMES[color]).join(', ') : 'boş'}`} className={`relative mx-auto flex h-36 w-full min-w-12 max-w-16 flex-col gap-1 overflow-hidden rounded-b-[1.7rem] rounded-t-lg border-4 border-t-0 p-1.5 pt-3 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${completed ? 'border-emerald-400 bg-emerald-100/50' : selectedTube === tubeIndex ? 'border-violet-500 bg-violet-100/70' : 'border-white/90 bg-white/40 dark:border-white/30 dark:bg-white/5'}`}>
-                    {displaySlots.map((color, slot) => (
-                      <motion.span key={`${slot}-${color ?? 'empty'}`} initial={color !== null ? { scale: 0.7 } : false} animate={{ scale: 1 }} className="flex-1 rounded-full border border-white/30 shadow-inner" style={{ background: color === null ? 'rgba(148,163,184,0.12)' : COLORS[color] }} />
-                    ))}
+                  <motion.button
+                    key={tubeIndex}
+                    type="button"
+                    onClick={() => chooseTube(tubeIndex)}
+                    whileTap={{ scale: 0.94 }}
+                    animate={{ y: selectedTube === tubeIndex ? -9 : 0 }}
+                    aria-label={`${tubeIndex + 1}. tüp: ${tube.length ? tube.slice().reverse().map((color) => COLOR_NAMES[color]).join(', ') : 'boş'}`}
+                    className={`relative mx-auto flex h-36 w-full min-w-12 max-w-16 flex-col gap-1 overflow-hidden rounded-b-[1.7rem] rounded-t-lg border-4 border-t-0 p-1.5 pt-3 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+                      completed
+                        ? 'border-emerald-400 bg-emerald-100/50 shadow-emerald-500/20 dark:border-emerald-400 dark:bg-emerald-500/20 dark:shadow-[0_0_16px_rgba(52,211,153,0.3)]'
+                        : selectedTube === tubeIndex
+                          ? 'border-violet-500 bg-violet-100/70 shadow-violet-500/20 dark:border-violet-400 dark:bg-violet-500/25 dark:shadow-[0_0_16px_rgba(167,139,250,0.35)]'
+                          : 'border-white/90 bg-white/40 dark:border-white/20 dark:bg-white/[0.05] dark:hover:border-white/30 dark:hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    {displaySlots.map((color, slot) => {
+                      if (color === null) {
+                        return (
+                          <span
+                            key={`${slot}-empty`}
+                            className="flex-1 rounded-full border border-transparent"
+                          />
+                        );
+                      }
+                      return (
+                        <motion.span
+                          key={`${slot}-${color}`}
+                          initial={{ scale: 0.7 }}
+                          animate={{ scale: 1 }}
+                          className="relative flex-1 rounded-full border border-white/30 shadow-inner overflow-hidden"
+                          style={{
+                            background: COLORS[color],
+                            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15)',
+                          }}
+                        >
+                          <span className="pointer-events-none absolute inset-x-1.5 top-0.5 h-1 rounded-full bg-white/40 blur-[0.5px]" />
+                        </motion.span>
+                      );
+                    })}
                   </motion.button>
                 );
               })}
             </div>
-            <p className="mt-4 text-center text-xs font-medium text-muted-foreground">{selectedTube === null ? 'Taşımak istediğin tüpe dokun.' : 'Şimdi hedef tüpü seç.'}</p>
+            <p className="mt-4 text-center text-xs font-medium text-muted-foreground dark:text-slate-400">{selectedTube === null ? 'Taşımak istediğin tüpe dokun.' : 'Şimdi hedef tüpü seç.'}</p>
 
             {phase === 'finished' && (
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-5 rounded-3xl bg-white/80 p-5 text-center shadow-sm dark:bg-white/5">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-5 rounded-3xl border border-violet-100/60 bg-white/80 p-5 text-center shadow-sm dark:border-white/10 dark:bg-white/5">
                 <Trophy className="mx-auto h-9 w-9 text-amber-500" />
                 <h2 className="mt-2 text-xl font-black">Renkler kusursuz sıralandı!</h2>
                 <p className="mt-1 font-bold text-violet-600 dark:text-violet-300">{score} puan {isNewRecord && '• Yeni rekor!'}</p>

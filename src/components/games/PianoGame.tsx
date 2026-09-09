@@ -237,10 +237,9 @@ const PianoGame = () => {
   /* ── AudioContext (iOS Safari resume desteği) ──────────── */
   const getAudioContext = useCallback(() => {
     if (!audioCtxRef.current) {
-      audioCtxRef.current = new (
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-      )();
+      const Context = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Context) return null;
+      try { audioCtxRef.current = new Context(); } catch { return null; }
     }
     if (audioCtxRef.current.state === 'suspended' && !isMuted() && !isGamePaused()) {
       audioCtxRef.current.resume().catch(() => {});
@@ -254,6 +253,7 @@ const PianoGame = () => {
       if (isGamePaused()) return;
       if (!isMuted()) {
       const ctx = getAudioContext();
+      if (ctx) {
       const durationSeconds = Math.max(0.12, Math.min(durationMs / 1000, 1.2));
 
       const osc1 = ctx.createOscillator();
@@ -286,6 +286,7 @@ const PianoGame = () => {
 
       }
 
+      }
       /* Görsel vurgu */
       setActiveNotes((prev) => new Set(prev).add(note));
 
