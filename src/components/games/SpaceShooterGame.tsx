@@ -765,12 +765,33 @@ const SpaceShooterGame = () => {
 
             {/* Mobile controls */}
             <div className="touch-controls-flex flex gap-4 mt-2 md:hidden">
-                <button type="button" aria-label="Sola git" onTouchStart={() => keysRef.current.add('ArrowLeft')} onTouchEnd={() => keysRef.current.delete('ArrowLeft')} onTouchCancel={() => keysRef.current.delete('ArrowLeft')}
-                    className="w-16 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform" style={pill}>⬅️</button>
-                <button type="button" aria-label="Ateş et" onTouchStart={() => keysRef.current.add(' ')} onTouchEnd={() => keysRef.current.delete(' ')} onTouchCancel={() => keysRef.current.delete(' ')}
-                    className="w-20 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform" style={{ ...pill, background: 'rgba(0,212,255,0.3)' }}>🔥</button>
-                <button type="button" aria-label="Sağa git" onTouchStart={() => keysRef.current.add('ArrowRight')} onTouchEnd={() => keysRef.current.delete('ArrowRight')} onTouchCancel={() => keysRef.current.delete('ArrowRight')}
-                    className="w-16 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform" style={pill}>➡️</button>
+                <button type="button" aria-label="Sola git"
+                    onPointerDown={(e) => { e.preventDefault(); keysRef.current.add('ArrowLeft'); }}
+                    onPointerUp={(e) => { e.preventDefault(); keysRef.current.delete('ArrowLeft'); }}
+                    onPointerCancel={() => keysRef.current.delete('ArrowLeft')}
+                    onPointerLeave={() => keysRef.current.delete('ArrowLeft')}
+                    onTouchStart={(e) => { e.preventDefault(); keysRef.current.add('ArrowLeft'); }}
+                    onTouchEnd={(e) => { e.preventDefault(); keysRef.current.delete('ArrowLeft'); }}
+                    onTouchCancel={() => keysRef.current.delete('ArrowLeft')}
+                    className="w-16 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform touch-none select-none" style={pill}>⬅️</button>
+                <button type="button" aria-label="Ateş et"
+                    onPointerDown={(e) => { e.preventDefault(); keysRef.current.add(' '); }}
+                    onPointerUp={(e) => { e.preventDefault(); keysRef.current.delete(' '); }}
+                    onPointerCancel={() => keysRef.current.delete(' ')}
+                    onPointerLeave={() => keysRef.current.delete(' ')}
+                    onTouchStart={(e) => { e.preventDefault(); keysRef.current.add(' '); }}
+                    onTouchEnd={(e) => { e.preventDefault(); keysRef.current.delete(' '); }}
+                    onTouchCancel={() => keysRef.current.delete(' ')}
+                    className="w-20 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform touch-none select-none" style={{ ...pill, background: 'rgba(0,212,255,0.3)' }}>🔥</button>
+                <button type="button" aria-label="Sağa git"
+                    onPointerDown={(e) => { e.preventDefault(); keysRef.current.add('ArrowRight'); }}
+                    onPointerUp={(e) => { e.preventDefault(); keysRef.current.delete('ArrowRight'); }}
+                    onPointerCancel={() => keysRef.current.delete('ArrowRight')}
+                    onPointerLeave={() => keysRef.current.delete('ArrowRight')}
+                    onTouchStart={(e) => { e.preventDefault(); keysRef.current.add('ArrowRight'); }}
+                    onTouchEnd={(e) => { e.preventDefault(); keysRef.current.delete('ArrowRight'); }}
+                    onTouchCancel={() => keysRef.current.delete('ArrowRight')}
+                    className="w-16 h-16 rounded-2xl text-2xl flex items-center justify-center active:scale-95 transition-transform touch-none select-none" style={pill}>➡️</button>
             </div>
 
             {/* Bottom controls */}

@@ -49,7 +49,13 @@ export default function GameControls() {
     return () => clearInterval(timer);
   }, [preferences.breakMinutes]);
   return <>
-    <div className="fixed right-3 top-3 z-[70] flex gap-2 rounded-2xl bg-slate-950/90 p-2 shadow-lg">
+    <div
+      className="fixed right-3 top-3 z-[70] flex gap-2 rounded-2xl bg-slate-950/90 p-2 shadow-lg"
+      style={{
+        top: 'max(0.75rem, calc(env(safe-area-inset-top, 0px) + 0.5rem))',
+        right: 'max(0.75rem, calc(env(safe-area-inset-right, 0px) + 0.5rem))',
+      }}
+    >
       <button aria-label="Oyunu duraklat" onClick={() => setGamePaused(true)} className="min-h-11 px-3 rounded-xl text-white hover:bg-white/10">⏸<span className="hidden sm:inline"> Duraklat</span></button>
       <button aria-label={muted ? 'Oyun sesini aç' : 'Oyun sesini kapat'} aria-pressed={muted} onClick={() => { toggleMute(); setMuted(isMuted()); }} className="min-h-11 px-3 rounded-xl text-white hover:bg-white/10">{muted ? '🔇' : '🔊'}</button>
     </div>

@@ -460,7 +460,7 @@ const TetrisGame = () => {
      RENDER
      ═══════════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col items-center gap-3 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" style={{ touchAction: 'none' }}>
+    <div className="flex flex-col items-center gap-3 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" style={{ touchAction: 'pan-y' }}>
       {/* ── Skor paneli ──────────────────────────────────── */}
       <div
         className="flex flex-wrap gap-2 justify-between w-full items-center glass-card p-3"

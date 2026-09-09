@@ -43,6 +43,7 @@ const RunnerGame = () => {
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef(1);
+  const lastPointerJumpRef = useRef(0);
 
   const playerRef = useRef({ x: 90, y: GROUND_Y, vy: 0, w: 46, h: 54, grounded: true, jumps: 0, squash: 1, stretch: 1, landTimer: 0 });
   const obstaclesRef = useRef<Obstacle[]>([]);
@@ -1084,9 +1085,15 @@ const RunnerGame = () => {
         {/* Canvas container — tüm alanı doldurur */}
         <div
           ref={containerRef}
-          className="w-full h-full relative touch-none overflow-hidden flex items-center justify-center"
+          className="w-full h-full relative touch-none overflow-hidden flex items-center justify-center select-none"
+          onPointerDown={(e) => {
+            if ((e.target as HTMLElement).closest('button')) return;
+            lastPointerJumpRef.current = Date.now();
+            jump();
+          }}
           onClick={(e) => {
             if ((e.target as HTMLElement).closest('button')) return;
+            if (Date.now() - lastPointerJumpRef.current < 400) return;
             jump();
           }}
         >

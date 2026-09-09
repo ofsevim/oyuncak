@@ -49,6 +49,7 @@ export default function PWAUpdatePrompt() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}
           className="fixed bottom-24 left-4 right-4 z-50 mx-auto max-w-sm rounded-2xl border border-white/10 bg-slate-900/95 p-4 shadow-2xl backdrop-blur-xl md:bottom-8 md:left-auto md:right-8"
+          style={{ bottom: 'max(6rem, calc(env(safe-area-inset-bottom, 0px) + 5.5rem))' }}
         >
           <button
             type="button"

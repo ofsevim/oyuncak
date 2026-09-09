@@ -32,7 +32,10 @@ export default function ScoreSyncNotice() {
   const isOffline = status.state === 'offline';
 
   return (
-    <aside className="fixed left-4 right-4 top-4 z-50 mx-auto max-w-sm rounded-2xl border border-amber-400/20 bg-slate-900/95 p-3 shadow-xl backdrop-blur-xl">
+    <aside
+      className="fixed left-4 right-4 top-4 z-50 mx-auto max-w-sm rounded-2xl border border-amber-400/20 bg-slate-900/95 p-3 shadow-xl backdrop-blur-xl"
+      style={{ top: 'max(1rem, calc(env(safe-area-inset-top, 0px) + 0.5rem))' }}
+    >
       <button
         type="button"
         onClick={() => setDismissed(true)}

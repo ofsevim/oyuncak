@@ -234,7 +234,7 @@ export default function ColorSortGame() {
               </div>
             </div>
 
-            <div className={`mx-auto grid max-w-lg gap-x-3 gap-y-5 rounded-3xl border border-violet-100/60 bg-white/50 p-4 shadow-inner dark:border-white/10 dark:bg-slate-950/40 ${tubes.length <= 6 ? 'grid-cols-3 sm:grid-cols-6' : tubes.length === 7 ? 'grid-cols-4 sm:grid-cols-7' : 'grid-cols-4'}`}>
+            <div className={`mx-auto grid max-w-lg gap-x-2 sm:gap-x-3 gap-y-4 sm:gap-y-5 rounded-3xl border border-violet-100/60 bg-white/50 p-2.5 sm:p-4 shadow-inner dark:border-white/10 dark:bg-slate-950/40 ${tubes.length <= 6 ? 'grid-cols-3 sm:grid-cols-6' : tubes.length === 7 ? 'grid-cols-4 sm:grid-cols-7' : 'grid-cols-4'}`}>
               {tubes.map((tube, tubeIndex) => {
                 const completed = tube.length === CAPACITY && tube.every((color) => color === tube[0]);
                 const displaySlots = [...Array<number | null>(CAPACITY - tube.length).fill(null), ...[...tube].reverse()];
@@ -246,7 +246,7 @@ export default function ColorSortGame() {
                     whileTap={{ scale: 0.94 }}
                     animate={{ y: selectedTube === tubeIndex ? -10 : 0 }}
                     aria-label={`${tubeIndex + 1}. tüp: ${tube.length ? tube.slice().reverse().map((color) => COLOR_NAMES[color]).join(', ') : 'boş'}`}
-                    className="group relative mx-auto flex h-40 w-full min-w-12 max-w-16 flex-col items-center pt-2 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                    className="group relative mx-auto flex h-40 w-full min-w-10 max-w-16 flex-col items-center pt-2 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                   >
                     {/* Tüpün ağzı / cam dudak halkası (rim) */}
                     <div

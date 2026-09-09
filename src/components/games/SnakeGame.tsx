@@ -167,6 +167,32 @@ const SnakeGame = () => {
 
   /* ── Particle animation loop (delta-time ile FPS bağımsız) ── */
 
+  /* ── Mobile swipe gesture controls ── */
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleBoardTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length > 0) {
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }, []);
+
+  const handleBoardTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.changedTouches.length === 0) return;
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+    const minSwipe = 24;
+    if (Math.abs(dx) < minSwipe && Math.abs(dy) < minSwipe) return;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0 && dirRef.current !== 'LEFT') inputQueueRef.current.push('RIGHT');
+      else if (dx < 0 && dirRef.current !== 'RIGHT') inputQueueRef.current.push('LEFT');
+    } else {
+      if (dy > 0 && dirRef.current !== 'UP') inputQueueRef.current.push('DOWN');
+      else if (dy < 0 && dirRef.current !== 'DOWN') inputQueueRef.current.push('UP');
+    }
+  }, []);
+
   /* ── Start game ── */
   const startGame = useCallback(() => {
     const center = Math.floor(GRID / 2);
@@ -438,10 +464,12 @@ const SnakeGame = () => {
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
       }}>
-        <div className="relative overflow-hidden"
+        <div className="relative overflow-hidden touch-none"
           ref={boardRef}
           role="application"
           aria-label="Snake Game Board"
+          onTouchStart={handleBoardTouchStart}
+          onTouchEnd={handleBoardTouchEnd}
           style={{
             width: FIELD + 8, height: FIELD + 8, padding: 4,
             borderRadius: 20,
