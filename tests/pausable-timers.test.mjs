@@ -32,4 +32,32 @@ export async function run() {
   advance(100); assert.equal(calls, 4);
   timers.timeout(() => calls++, 5); timers.interval(() => calls++, 5);
   timers.clearAll(); advance(100); assert.equal(calls, 4);
+
+  // Browser timers reject calls whose receiver is a plain clock object.
+  const originalSet = globalThis.setTimeout;
+  const originalClear = globalThis.clearTimeout;
+  const handles = new Set();
+  try {
+    globalThis.setTimeout = function () {
+      assert.equal(this, globalThis, 'Default setTimeout must retain its global receiver');
+      const handle = ++id;
+      handles.add(handle);
+      return handle;
+    };
+    globalThis.clearTimeout = function (handle) {
+      assert.equal(this, globalThis, 'Default clearTimeout must retain its global receiver');
+      handles.delete(handle);
+    };
+    const nativeTimers = createPausableTimers();
+    nativeTimers.interval(() => {}, 100);
+    nativeTimers.setPaused(true);
+    assert.equal(handles.size, 0);
+    nativeTimers.setPaused(false);
+    assert.equal(handles.size, 1);
+    nativeTimers.clearAll();
+    assert.equal(handles.size, 0);
+  } finally {
+    globalThis.setTimeout = originalSet;
+    globalThis.clearTimeout = originalClear;
+  }
 }

@@ -11,6 +11,7 @@ export default defineConfig({
     command: 'npm run build -- --mode test && npm run preview -- --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173', reuseExistingServer: false, timeout: 180_000,
     env: {
+      VITE_PUBLIC_URL: 'https://oyuncak.app',
       VITE_FIREBASE_API_KEY: 'test-api-key', VITE_FIREBASE_AUTH_DOMAIN: 'demo-oyuncak.firebaseapp.com',
       VITE_FIREBASE_PROJECT_ID: 'demo-oyuncak', VITE_FIREBASE_STORAGE_BUCKET: 'demo-oyuncak.appspot.com',
       VITE_FIREBASE_MESSAGING_SENDER_ID: '123456789', VITE_FIREBASE_APP_ID: '1:123456789:web:test',

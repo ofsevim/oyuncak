@@ -2,7 +2,12 @@ type Handle = ReturnType<typeof setTimeout>;
 interface Job { handle: Handle; startedAt: number; remaining: number; delay: number; repeat: boolean; callback: () => void }
 
 /** Stable handles allow callers to cancel a timer even after a pause/resume. */
-export function createPausableTimers(clock = { now: () => performance.now(), set: setTimeout, clear: clearTimeout }) {
+export function createPausableTimers(clock = {
+  now: () => performance.now(),
+  // Browser timer functions require their Window receiver, not the clock object.
+  set: (callback: () => void, delay: number) => globalThis.setTimeout(callback, delay),
+  clear: (handle: Handle) => globalThis.clearTimeout(handle),
+}) {
   const jobs = new Map<Handle, Job>();
   let paused = false;
   const clear = (key: Handle) => {
