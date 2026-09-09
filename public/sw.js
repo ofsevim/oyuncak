@@ -81,6 +81,8 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(
             fetchWithTimeout(event.request)
                 .then((response) => {
+                    // Let the browser follow a network navigation redirect itself.
+                    if (response.type === 'opaqueredirect') return response;
                     if (!response.ok) throw new Error('Navigation unavailable');
                     return response;
                 })
@@ -95,6 +97,7 @@ self.addEventListener('fetch', (event) => {
                     const offline = await matchCurrentCache(OFFLINE_URL);
                     return offline || new Response('Offline', { status: 503 });
                 })
+                .then(navigationResponse)
         );
         return;
     }
@@ -126,6 +129,18 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
+function navigationResponse(response) {
+    // Precache fetches follow redirects (e.g. Netlify's HTML URL normalization).
+    // Navigation requests may use redirect:"manual" and reject a cached response
+    // with redirected:true. Preserve the document, but not its fetch redirect history.
+    if (!response.redirected) return response;
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+    });
+}
 
 async function fetchWithTimeout(request) {
     const controller = new AbortController();
