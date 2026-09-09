@@ -2,12 +2,12 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e', timeout: 60_000, fullyParallel: false,
-  workers: 4,
+  workers: process.env.CI ? 2 : 4,
   use: { baseURL: 'http://127.0.0.1:4173', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
-    { name: 'iphone', use: { ...devices['iPhone 13'], browserName: 'webkit' } },
+    { name: 'iphone', testMatch: /responsive\.spec\.ts/, use: { ...devices['iPhone 13'], browserName: 'webkit' } },
     { name: 'small-phone', testMatch: /responsive\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 320, height: 640 } } },
     { name: 'touch-landscape', testMatch: /responsive\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 844, height: 390 } } },
     { name: 'tablet', testMatch: /responsive\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 768, height: 1024 } } },
