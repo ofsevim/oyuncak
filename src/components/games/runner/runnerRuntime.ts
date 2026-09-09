@@ -5,18 +5,18 @@ import { IS_MOBILE } from '@/utils/platform';
    ═══════════════════════════════════════════ */
 export interface Obstacle {
   id: number; x: number; w: number; h: number;
-  type: 'rock' | 'cactus' | 'bird' | 'double';
+  type: 'rock' | 'cactus' | 'bird' | 'double' | 'bat' | 'mushroom';
   lane: 'ground' | 'air';
 }
 export interface Collectible {
   id: number; x: number; y: number;
-  type: 'coin' | 'star' | 'heart' | 'magnet' | 'shield' | 'x2';
+  type: 'coin' | 'star' | 'heart' | 'magnet' | 'shield' | 'x2' | 'rocket';
   collected?: boolean; collectAnim?: number;
 }
 export interface Particle {
   id: number; x: number; y: number; vx: number; vy: number;
   life: number; maxLife: number; color: string; size: number;
-  type?: 'dust' | 'sparkle' | 'collect' | 'impact';
+  type?: 'dust' | 'sparkle' | 'collect' | 'impact' | 'rainbow' | 'firefly';
 }
 export interface FloatingText {
   id: number; x: number; y: number; text: string; color: string; vy: number; alpha: number; life: number;
@@ -52,22 +52,176 @@ export const DIFF_CONFIG: Record<Difficulty, { label: string; speedMul: number; 
 };
 
 export const OBS_DEFS = {
-  rock: { w: 44, h: 38, lane: 'ground' as const, weight: 35 },
-  cactus: { w: 32, h: 56, lane: 'ground' as const, weight: 35 },
-  bird: { w: 38, h: 30, lane: 'air' as const, weight: 20 },
+  rock: { w: 44, h: 38, lane: 'ground' as const, weight: 30 },
+  cactus: { w: 32, h: 56, lane: 'ground' as const, weight: 30 },
+  bird: { w: 38, h: 30, lane: 'air' as const, weight: 18 },
   double: { w: 56, h: 62, lane: 'ground' as const, weight: 10 },
+  bat: { w: 38, h: 28, lane: 'air' as const, weight: 16 },
+  mushroom: { w: 34, h: 36, lane: 'ground' as const, weight: 16 },
 };
 
 export const COLLECT_DEFS = {
-  coin: { points: 10, weight: 40 },
+  coin: { points: 10, weight: 38 },
   star: { points: 50, weight: 18 },
   heart: { points: 0, weight: 8 },
   magnet: { points: 0, weight: 5 },
   shield: { points: 0, weight: 5 },
   x2: { points: 0, weight: 4 },
+  rocket: { points: 0, weight: 4 },
 };
 
-export const COLLECTIBLE_EMOJIS: Record<string, string> = { heart: '❤️', magnet: '🧲', shield: '🛡️', x2: '×2' };
+export const COLLECTIBLE_EMOJIS: Record<string, string> = { heart: '❤️', magnet: '🧲', shield: '🛡️', x2: '×2', rocket: '🚀' };
+
+/* ═══════════════════════════════════════════
+   ATMOSPHERE & TIME OF DAY CYCLE
+   ═══════════════════════════════════════════ */
+export const FIXED_STARS = Array.from({ length: 48 }, (_, i) => ({
+  x: ((i * 79 + 31) % (CW - 30)) + 15,
+  y: ((i * 47 + 19) % (GROUND_Y - 55)) + 12,
+  size: (i % 3 === 0 ? 2.2 : i % 2 === 0 ? 1.6 : 1.0),
+  phase: (i * 1.83) % (Math.PI * 2),
+  speed: 0.03 + (i % 4) * 0.015,
+}));
+
+export const FIXED_FIREFLIES = Array.from({ length: 16 }, (_, i) => ({
+  baseX: ((i * 61 + 23) % (CW - 40)) + 20,
+  baseY: GROUND_Y - 18 - (i % 5) * 11,
+  size: 2.2 + (i % 3) * 0.7,
+  speedX: 0.018 + (i % 4) * 0.008,
+  speedY: 0.035 + (i % 3) * 0.012,
+  phase: (i * 2.2) % (Math.PI * 2),
+}));
+
+export type TimeOfDay = 'day' | 'sunset' | 'night' | 'dawn';
+
+export interface AtmosphereState {
+  timeOfDay: TimeOfDay;
+  skyTop: string;
+  skyBottom: string;
+  groundTop: string;
+  groundBottom: string;
+  sunAlpha: number;
+  sunY: number;
+  moonAlpha: number;
+  moonY: number;
+  starsAlpha: number;
+  firefliesAlpha: number;
+  mountainDarken: number;
+}
+
+type RGB = [number, number, number];
+
+export function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * Math.max(0, Math.min(1, t));
+}
+
+export function lerpColor(c1: RGB, c2: RGB, t: number): string {
+  const r = Math.round(lerp(c1[0], c2[0], t));
+  const g = Math.round(lerp(c1[1], c2[1], t));
+  const b = Math.round(lerp(c1[2], c2[2], t));
+  return `rgb(${r},${g},${b})`;
+}
+
+const PALETTES = {
+  day: {
+    skyTop: [79, 172, 254] as RGB,
+    skyBottom: [0, 242, 254] as RGB,
+    groundTop: [245, 158, 11] as RGB,
+    groundBottom: [146, 64, 14] as RGB,
+    sunAlpha: 1.0,
+    sunY: GROUND_Y * 0.32,
+    moonAlpha: 0.0,
+    moonY: GROUND_Y * 0.85,
+    starsAlpha: 0.0,
+    firefliesAlpha: 0.0,
+    mountainDarken: 0.0,
+  },
+  sunset: {
+    skyTop: [225, 29, 72] as RGB,
+    skyBottom: [251, 146, 60] as RGB,
+    groundTop: [194, 65, 12] as RGB,
+    groundBottom: [88, 28, 135] as RGB,
+    sunAlpha: 0.85,
+    sunY: GROUND_Y * 0.65,
+    moonAlpha: 0.1,
+    moonY: GROUND_Y * 0.7,
+    starsAlpha: 0.25,
+    firefliesAlpha: 0.4,
+    mountainDarken: 0.3,
+  },
+  night: {
+    skyTop: [10, 15, 36] as RGB,
+    skyBottom: [30, 27, 75] as RGB,
+    groundTop: [30, 41, 59] as RGB,
+    groundBottom: [15, 23, 42] as RGB,
+    sunAlpha: 0.0,
+    sunY: GROUND_Y * 0.9,
+    moonAlpha: 1.0,
+    moonY: GROUND_Y * 0.26,
+    starsAlpha: 1.0,
+    firefliesAlpha: 1.0,
+    mountainDarken: 0.72,
+  },
+  dawn: {
+    skyTop: [99, 102, 241] as RGB,
+    skyBottom: [244, 114, 182] as RGB,
+    groundTop: [180, 83, 9] as RGB,
+    groundBottom: [120, 53, 15] as RGB,
+    sunAlpha: 0.75,
+    sunY: GROUND_Y * 0.52,
+    moonAlpha: 0.35,
+    moonY: GROUND_Y * 0.58,
+    starsAlpha: 0.2,
+    firefliesAlpha: 0.2,
+    mountainDarken: 0.25,
+  },
+};
+
+export function getAtmosphere(distance: number): AtmosphereState {
+  const CYCLE = 1600;
+  const mod = ((distance % CYCLE) + CYCLE) % CYCLE;
+
+  let from: keyof typeof PALETTES;
+  let to: keyof typeof PALETTES;
+  let t = 0;
+  let timeOfDay: TimeOfDay = 'day';
+
+  if (mod < 350) {
+    from = 'day'; to = 'day'; t = 0; timeOfDay = 'day';
+  } else if (mod < 480) {
+    from = 'day'; to = 'sunset'; t = (mod - 350) / 130; timeOfDay = t < 0.5 ? 'day' : 'sunset';
+  } else if (mod < 720) {
+    from = 'sunset'; to = 'sunset'; t = 0; timeOfDay = 'sunset';
+  } else if (mod < 850) {
+    from = 'sunset'; to = 'night'; t = (mod - 720) / 130; timeOfDay = t < 0.5 ? 'sunset' : 'night';
+  } else if (mod < 1200) {
+    from = 'night'; to = 'night'; t = 0; timeOfDay = 'night';
+  } else if (mod < 1320) {
+    from = 'night'; to = 'dawn'; t = (mod - 1200) / 120; timeOfDay = t < 0.5 ? 'night' : 'dawn';
+  } else if (mod < 1480) {
+    from = 'dawn'; to = 'dawn'; t = 0; timeOfDay = 'dawn';
+  } else {
+    from = 'dawn'; to = 'day'; t = (mod - 1480) / 120; timeOfDay = t < 0.5 ? 'dawn' : 'day';
+  }
+
+  const p1 = PALETTES[from];
+  const p2 = PALETTES[to];
+
+  return {
+    timeOfDay,
+    skyTop: lerpColor(p1.skyTop, p2.skyTop, t),
+    skyBottom: lerpColor(p1.skyBottom, p2.skyBottom, t),
+    groundTop: lerpColor(p1.groundTop, p2.groundTop, t),
+    groundBottom: lerpColor(p1.groundBottom, p2.groundBottom, t),
+    sunAlpha: lerp(p1.sunAlpha, p2.sunAlpha, t),
+    sunY: lerp(p1.sunY, p2.sunY, t),
+    moonAlpha: lerp(p1.moonAlpha, p2.moonAlpha, t),
+    moonY: lerp(p1.moonY, p2.moonY, t),
+    starsAlpha: lerp(p1.starsAlpha, p2.starsAlpha, t),
+    firefliesAlpha: lerp(p1.firefliesAlpha, p2.firefliesAlpha, t),
+    mountainDarken: lerp(p1.mountainDarken, p2.mountainDarken, t),
+  };
+}
 
 /* ═══════════════════════════════════════════
    HELPERS
