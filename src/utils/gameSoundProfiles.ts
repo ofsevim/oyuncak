@@ -32,7 +32,6 @@ export const GAME_SOUND_PROFILES = {
   counting: { root: 480, wave: 'triangle', accent: 1.6, brightness: 1.04, gain: 0.9 },
   math: { root: 330, wave: 'square', accent: 1.88, brightness: 0.96, gain: 0.56 },
   codingturtle: { root: 415, wave: 'square', accent: 2.4, brightness: 1.02, gain: 0.56 },
-  comparison: { root: 294, wave: 'triangle', accent: 1.72, brightness: 0.76, gain: 0.9 },
   spaceshooter: { root: 760, wave: 'sawtooth', accent: 1.44, brightness: 1.42, gain: 0.46 },
   'connect-four': { root: 262, wave: 'triangle', accent: 1.52, brightness: 0.7, gain: 0.9 },
   'word-search': { root: 587, wave: 'sine', accent: 2.22, brightness: 1.16, gain: 0.86 },

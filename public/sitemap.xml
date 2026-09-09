@@ -102,11 +102,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://oyuncak.app/games/comparison</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://oyuncak.app/games/spaceshooter</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

@@ -65,7 +65,6 @@ export async function run() {
       "src/components/games/PianoGame.tsx",
       "src/components/games/MathGame.tsx",
       "src/components/games/CountingGame.tsx",
-      "src/components/games/ComparisonGame.tsx",
       "src/components/games/ShapeMatchGame.tsx",
       "src/components/games/SimonSaysGame.tsx",
       "src/components/games/CodingTurtleGame.tsx",

@@ -48,7 +48,7 @@ export async function run() {
     assert.equal(service.deleteCloudScores(), first, 'Retries reuse the pending deletion');
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(commits, 1);
-    assert.equal(deleted.length, 25, 'All 24 game documents and the private profile are deleted');
+    assert.equal(deleted.length, 24, 'All 23 game documents and the private profile are deleted');
     assert.ok(deleted.every((ref) => ref.endsWith('/test-player')));
     await assert.rejects(service.syncScore('basketball', 100), /silme isteğinin/);
     await assert.rejects(service.updateNicknameInScores('Yeni ad'), /silme isteğinin/);

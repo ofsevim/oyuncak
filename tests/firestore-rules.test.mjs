@@ -17,7 +17,7 @@ export async function run() {
     /request\.auth\.uid\s*==\s*userId/,
     "Kullanıcı yalnızca kendi skor belgesini yazabilmeli",
   );
-  assert.equal(SCORE_GAME_IDS.length, 24, "Skor oyun kimlikleri beklenmedik şekilde değişti");
+  assert.equal(SCORE_GAME_IDS.length, 23, "Skor oyun kimlikleri beklenmedik şekilde değişti");
   for (const gameId of SCORE_GAME_IDS) {
     assert.ok(rules.includes(`'${gameId}'`), `Firestore kurallarında oyun kimliği eksik: ${gameId}`);
   }
