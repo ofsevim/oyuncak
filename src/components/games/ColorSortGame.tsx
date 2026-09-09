@@ -244,40 +244,59 @@ export default function ColorSortGame() {
                     type="button"
                     onClick={() => chooseTube(tubeIndex)}
                     whileTap={{ scale: 0.94 }}
-                    animate={{ y: selectedTube === tubeIndex ? -9 : 0 }}
+                    animate={{ y: selectedTube === tubeIndex ? -10 : 0 }}
                     aria-label={`${tubeIndex + 1}. tüp: ${tube.length ? tube.slice().reverse().map((color) => COLOR_NAMES[color]).join(', ') : 'boş'}`}
-                    className={`relative mx-auto flex h-36 w-full min-w-12 max-w-16 flex-col gap-1 overflow-hidden rounded-b-[1.7rem] rounded-t-lg border-4 border-t-0 p-1.5 pt-3 shadow-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
-                      completed
-                        ? 'border-emerald-400 bg-emerald-100/50 shadow-emerald-500/20 dark:border-emerald-400 dark:bg-emerald-500/20 dark:shadow-[0_0_16px_rgba(52,211,153,0.3)]'
-                        : selectedTube === tubeIndex
-                          ? 'border-violet-500 bg-violet-100/70 shadow-violet-500/20 dark:border-violet-400 dark:bg-violet-500/25 dark:shadow-[0_0_16px_rgba(167,139,250,0.35)]'
-                          : 'border-white/90 bg-white/40 dark:border-white/20 dark:bg-white/[0.05] dark:hover:border-white/30 dark:hover:bg-white/[0.08]'
-                    }`}
+                    className="group relative mx-auto flex h-40 w-full min-w-12 max-w-16 flex-col items-center pt-2 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                   >
-                    {displaySlots.map((color, slot) => {
-                      if (color === null) {
+                    {/* Tüpün ağzı / cam dudak halkası (rim) */}
+                    <div
+                      className={`relative z-10 h-2.5 w-[calc(100%+6px)] rounded-full border-2 transition-all duration-200 shadow-sm ${
+                        completed
+                          ? 'border-emerald-400 bg-emerald-200/60 shadow-emerald-500/20 dark:border-emerald-400 dark:bg-emerald-400/30'
+                          : selectedTube === tubeIndex
+                            ? 'border-violet-400 bg-violet-200/70 ring-2 ring-violet-400/50 shadow-violet-500/25 dark:border-violet-400 dark:bg-violet-400/30'
+                            : 'border-white/80 bg-white/60 dark:border-white/30 dark:bg-white/20'
+                      }`}
+                    />
+
+                    {/* Tüp gövdesi */}
+                    <div
+                      className={`relative -mt-1 flex h-36 w-full flex-col gap-1 overflow-hidden rounded-b-[1.75rem] rounded-t-sm border-4 border-t-0 p-1.5 pt-2.5 shadow-lg transition-all duration-200 ${
+                        completed
+                          ? 'border-emerald-400 bg-emerald-100/50 shadow-emerald-500/20 dark:border-emerald-400 dark:bg-emerald-500/20 dark:shadow-[0_0_16px_rgba(52,211,153,0.3)]'
+                          : selectedTube === tubeIndex
+                            ? 'border-violet-500 bg-violet-100/70 shadow-violet-500/20 dark:border-violet-400 dark:bg-violet-500/25 dark:shadow-[0_0_16px_rgba(167,139,250,0.35)]'
+                            : 'border-white/90 bg-white/40 dark:border-white/20 dark:bg-white/[0.05] dark:hover:border-white/30 dark:hover:bg-white/[0.08]'
+                      }`}
+                    >
+                      {/* Cam dikey yansıma parlaması */}
+                      <span className="pointer-events-none absolute left-1 top-1 bottom-4 w-0.5 rounded-full bg-white/35 dark:bg-white/15" />
+
+                      {displaySlots.map((color, slot) => {
+                        if (color === null) {
+                          return (
+                            <span
+                              key={`${slot}-empty`}
+                              className="flex-1 rounded-full border border-transparent"
+                            />
+                          );
+                        }
                         return (
-                          <span
-                            key={`${slot}-empty`}
-                            className="flex-1 rounded-full border border-transparent"
-                          />
+                          <motion.span
+                            key={`${slot}-${color}`}
+                            initial={{ scale: 0.7 }}
+                            animate={{ scale: 1 }}
+                            className="relative flex-1 rounded-full border border-white/30 shadow-inner overflow-hidden"
+                            style={{
+                              background: COLORS[color],
+                              boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15)',
+                            }}
+                          >
+                            <span className="pointer-events-none absolute inset-x-1.5 top-0.5 h-1 rounded-full bg-white/40 blur-[0.5px]" />
+                          </motion.span>
                         );
-                      }
-                      return (
-                        <motion.span
-                          key={`${slot}-${color}`}
-                          initial={{ scale: 0.7 }}
-                          animate={{ scale: 1 }}
-                          className="relative flex-1 rounded-full border border-white/30 shadow-inner overflow-hidden"
-                          style={{
-                            background: COLORS[color],
-                            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15)',
-                          }}
-                        >
-                          <span className="pointer-events-none absolute inset-x-1.5 top-0.5 h-1 rounded-full bg-white/40 blur-[0.5px]" />
-                        </motion.span>
-                      );
-                    })}
+                      })}
+                    </div>
                   </motion.button>
                 );
               })}
