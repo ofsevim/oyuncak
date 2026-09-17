@@ -144,7 +144,7 @@ const RunnerGame = () => {
 
     ctx.clearRect(0, 0, W, H);
 
-    const atmos = getAtmosphere(distanceRef.current);
+    const atmos = getAtmosphere(frameRef.current / 60);
 
     /* ── 1. SKY ── (dynamic day/sunset/night/dawn gradient) */
     const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
@@ -224,12 +224,14 @@ const RunnerGame = () => {
     }
 
     /* ── 3. CLOUDS ── */
-    const cloudTint = atmos.timeOfDay === 'sunset' ? 'rgba(254, 205, 211, ' : atmos.timeOfDay === 'night' ? 'rgba(148, 163, 184, ' : 'rgba(255,255,255, ';
     const drawCloud = (bx: number, by: number, sc: number, alpha: number) => {
-      ctx.fillStyle = `${cloudTint}${alpha})`;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = atmos.cloudColor;
       ctx.beginPath(); ctx.ellipse(bx, by, 44 * sc, 14 * sc, 0, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.ellipse(bx - 24 * sc, by + 4 * sc, 28 * sc, 10 * sc, 0, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.ellipse(bx + 26 * sc, by + 2 * sc, 32 * sc, 12 * sc, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
     };
     [[120, 40, 0.8, 0.04, 0.5], [380, 65, 0.6, 0.025, 0.35], [600, 30, 0.9, 0.035, 0.45], [820, 55, 0.7, 0.02, 0.3]].forEach(([bx, by, sc, sp, al]) => {
       const cx = (((bx as number) - gOff * (sp as number)) % (W + 160));
@@ -244,6 +246,7 @@ const RunnerGame = () => {
       ctx.drawImage(m.img as CanvasImageSource, -off, m.topY);
       ctx.drawImage(m.img as CanvasImageSource, m.totalW - off, m.topY);
     }
+    ctx.globalAlpha = 1;
     if (atmos.mountainDarken > 0.05) {
       ctx.fillStyle = `rgba(10, 15, 36, ${atmos.mountainDarken * 0.6})`;
       ctx.fillRect(0, 0, W, GROUND_Y);
@@ -360,8 +363,12 @@ const RunnerGame = () => {
         ctx.beginPath(); ctx.moveTo(-3, 3); ctx.lineTo(-1.5, 6); ctx.lineTo(0, 3); ctx.closePath(); ctx.fill();
         ctx.beginPath(); ctx.moveTo(0, 3); ctx.lineTo(1.5, 6); ctx.lineTo(3, 3); ctx.closePath(); ctx.fill();
       } else if (obs.type === 'mushroom') {
-        ctx.fillStyle = '#f8fafc';
-        ctx.beginPath(); drawRoundRect(ctx, -7, -obs.h * 0.4, 14, obs.h * 0.45, 5); ctx.fill();
+        // Ground obstacles are center-origin; anchor the stem at the feet.
+        ctx.translate(0, obs.h / 2);
+        const stem = ctx.createLinearGradient(-7, 0, 7, 0);
+        stem.addColorStop(0, '#c5ae8e'); stem.addColorStop(0.45, '#fff4da'); stem.addColorStop(1, '#d8c4a4');
+        ctx.fillStyle = stem;
+        ctx.beginPath(); drawRoundRect(ctx, -7, -obs.h * 0.4, 14, obs.h * 0.4, 4); ctx.fill();
         ctx.fillStyle = '#1e293b';
         ctx.beginPath(); ctx.arc(-3, -obs.h * 0.2, 1.5, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc(3, -obs.h * 0.2, 1.5, 0, Math.PI * 2); ctx.fill();
@@ -915,7 +922,7 @@ const RunnerGame = () => {
       const mb = milestoneBannerRef.current;
       const progress = mb.life / 100;
       const alpha = Math.min(1, Math.sin(progress * Math.PI) * 1.5);
-      const bannerY = 82;
+      const bannerY = 78;
 
       ctx.save();
       ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
@@ -923,23 +930,23 @@ const RunnerGame = () => {
 
       ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
       ctx.strokeStyle = 'rgba(251, 191, 36, 0.7)';
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      drawRoundRect(ctx, -150, -28, 300, 56, 18);
+      drawRoundRect(ctx, -94, -19, 188, 38, 12);
       ctx.fill();
       ctx.stroke();
 
-      ctx.font = '900 18px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
       ctx.fillStyle = '#fde047';
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(234, 179, 8, 0.7)';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 0;
       ctx.fillText(mb.text, 0, -3);
 
-      ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '500 9px "Plus Jakarta Sans", sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.shadowBlur = 0;
-      ctx.fillText(mb.sub, 0, 15);
+      ctx.fillText(mb.sub, 0, 11);
 
       ctx.restore();
     }
@@ -1145,9 +1152,9 @@ const RunnerGame = () => {
     const MILESTONES = [
       { m: 250, title: '🎉 250 METRE!', sub: 'Harika Başlangıç! +100 Bonus', pts: 100 },
       { m: 500, title: '🔥 500 METRE!', sub: 'Süper Koşucu! +150 Bonus', pts: 150 },
-      { m: 750, title: '🌇 GÜN BATIMI!', sub: 'Akşam Oluyor! +200 Bonus', pts: 200 },
-      { m: 1000, title: '🌙 1000 METRE!', sub: 'Gece Şampiyonu! +250 Bonus', pts: 250 },
-      { m: 1250, title: '✨ 1250 METRE!', sub: 'Yıldızlar Altında! +250 Bonus', pts: 250 },
+      { m: 750, title: '🌿 750 METRE!', sub: 'Yola Devam! +200 Bonus', pts: 200 },
+      { m: 1000, title: '🌙 1000 METRE!', sub: 'Harika İlerleyiş! +250 Bonus', pts: 250 },
+      { m: 1250, title: '✨ 1250 METRE!', sub: 'Yeni Bir Rekor! +250 Bonus', pts: 250 },
       { m: 1500, title: '👑 1500 METRE!', sub: 'Efsanevi Koşucu! +300 Bonus', pts: 300 },
       { m: 2000, title: '🚀 2000 METRE!', sub: 'Durdurulamaz! +500 Bonus', pts: 500 },
     ];
@@ -1158,7 +1165,7 @@ const RunnerGame = () => {
         scoreRef.current += ms.pts;
         milestoneBannerRef.current = { text: ms.title, sub: ms.sub, life: 100 };
         happyTimerRef.current = 60;
-        addFloat(p.x + 30, p.y - 30, `+${ms.pts} MILESTONE!`, '#facc15');
+        addFloat(p.x + 30, p.y - 30, `+${ms.pts}`, '#facc15');
         playSuccessSound();
         spawnP(p.x + p.w / 2, p.y - p.h / 2, 20, '#fbbf24', 'sparkle');
         break;
@@ -1595,7 +1602,7 @@ const RunnerGame = () => {
           />
 
           {/* ── HUD overlay ── */}
-          <div className="absolute md:top-3 left-[120px] sm:left-[140px] md:left-[170px] right-2 md:right-3 flex items-center justify-between pointer-events-none" style={{ top: 'calc(env(safe-area-inset-top, 8px) + 8px)', zIndex: 10 }}>
+          <div className="absolute top-[calc(env(safe-area-inset-top,0px)+64px)] sm:top-[calc(env(safe-area-inset-top,0px)+8px)] left-3 right-3 sm:left-[150px] sm:right-[195px] flex items-center justify-between gap-2 pointer-events-none" style={{ zIndex: 10 }}>
             {/* Lives */}
             <div className="flex items-center gap-0.5 md:gap-1 px-2 md:px-3 py-1 md:py-2 rounded-xl md:rounded-2xl"
               style={{

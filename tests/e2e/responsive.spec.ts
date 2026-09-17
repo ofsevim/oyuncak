@@ -45,3 +45,28 @@ test('tank controls remain available on touch screens after rotation', async ({ 
   await page.setViewportSize({ width:844, height:390 });
   await expect(page.getByRole('button', { name:/BAŞLAT/ })).toBeVisible();
 });
+
+test('runner HUD stays clear of pause controls during play', async ({ page, isMobile }) => {
+  if (isMobile) await page.setViewportSize({ width:844, height:390 });
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/games/runner');
+  await page.getByRole('button', { name:/BAŞLA/ }).first().click();
+  const distance = page.getByText(/📏 \d+m/, { exact:true }).first();
+  await expect(distance).toBeVisible();
+  const pause = page.getByRole('button', { name:'Oyunu duraklat' });
+  await expect(pause).toBeVisible();
+  const distanceBox = await distance.boundingBox();
+  const pauseBox = await pause.boundingBox();
+  expect(distanceBox).not.toBeNull();
+  expect(pauseBox).not.toBeNull();
+  expect(distanceBox!.x + distanceBox!.width).toBeLessThan(pauseBox!.x);
+  await page.screenshot({ path:test.info().outputPath('runner.png') });
+  await pause.click();
+  const pausedDistance = await distance.textContent();
+  await page.waitForTimeout(500);
+  await expect(distance).toHaveText(pausedDistance!);
+  await page.getByRole('button', { name:'Devam et', exact:true }).click();
+  await expect(distance).not.toHaveText(pausedDistance!);
+  expect(errors).toEqual([]);
+});

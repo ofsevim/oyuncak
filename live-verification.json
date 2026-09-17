@@ -1,0 +1,260 @@
+{
+  "checkedAt": "2026-09-16T21:19:20.951Z",
+  "origin": "https://adenerva.netlify.app",
+  "routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "html": true,
+      "title": "Oyuncak - Oyun Dünyası",
+      "canonical": "https://adenerva.netlify.app/"
+    },
+    {
+      "path": "/draw",
+      "status": 200,
+      "html": true,
+      "title": "Çizim Atölyesi | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/draw"
+    },
+    {
+      "path": "/games",
+      "status": 200,
+      "html": true,
+      "title": "Ücretsiz Çocuk Oyunları | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games"
+    },
+    {
+      "path": "/story",
+      "status": 200,
+      "html": true,
+      "title": "İnteraktif Hikâyeler | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/story"
+    },
+    {
+      "path": "/parents",
+      "status": 200,
+      "html": true,
+      "title": "Ebeveyn Alanı | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/parents"
+    },
+    {
+      "path": "/terms",
+      "status": 200,
+      "html": true,
+      "title": "Kullanım Bilgileri | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/terms"
+    },
+    {
+      "path": "/privacy",
+      "status": 200,
+      "html": true,
+      "title": "Gizlilik ve Veri Kullanımı | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/privacy"
+    },
+    {
+      "path": "/games/balloon",
+      "status": 200,
+      "html": true,
+      "title": "Balon Patlat | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/balloon"
+    },
+    {
+      "path": "/games/whack",
+      "status": 200,
+      "html": true,
+      "title": "Köstebek Yakala | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/whack"
+    },
+    {
+      "path": "/games/tank-arena",
+      "status": 200,
+      "html": true,
+      "title": "Tank Arena | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/tank-arena"
+    },
+    {
+      "path": "/games/basketball",
+      "status": 200,
+      "html": true,
+      "title": "Basket At | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/basketball"
+    },
+    {
+      "path": "/games/runner",
+      "status": 200,
+      "html": true,
+      "title": "Koşucu | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/runner"
+    },
+    {
+      "path": "/games/snake",
+      "status": 200,
+      "html": true,
+      "title": "Yılan Oyunu | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/snake"
+    },
+    {
+      "path": "/games/tetris",
+      "status": 200,
+      "html": true,
+      "title": "Tetris | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/tetris"
+    },
+    {
+      "path": "/games/shapematch",
+      "status": 200,
+      "html": true,
+      "title": "Şekil Eşleştirme | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/shapematch"
+    },
+    {
+      "path": "/games/odd-one-out",
+      "status": 200,
+      "html": true,
+      "title": "Farklı Olanı Bul | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/odd-one-out"
+    },
+    {
+      "path": "/games/simonsays",
+      "status": 200,
+      "html": true,
+      "title": "Müzikal Hafıza | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/simonsays"
+    },
+    {
+      "path": "/games/memory",
+      "status": 200,
+      "html": true,
+      "title": "Hafıza Oyunu | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/memory"
+    },
+    {
+      "path": "/games/2048",
+      "status": 200,
+      "html": true,
+      "title": "2048 | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/2048"
+    },
+    {
+      "path": "/games/piano",
+      "status": 200,
+      "html": true,
+      "title": "Piyano | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/piano"
+    },
+    {
+      "path": "/games/math",
+      "status": 200,
+      "html": true,
+      "title": "Matematik | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/math"
+    },
+    {
+      "path": "/games/codingturtle",
+      "status": 200,
+      "html": true,
+      "title": "Tavşan Kodlama | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/codingturtle"
+    },
+    {
+      "path": "/games/spaceshooter",
+      "status": 200,
+      "html": true,
+      "title": "Uzay Savaşçısı | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/spaceshooter"
+    },
+    {
+      "path": "/games/counting",
+      "status": 200,
+      "html": true,
+      "title": "Sayma Oyunu | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/counting"
+    },
+    {
+      "path": "/games/connect-four",
+      "status": 200,
+      "html": true,
+      "title": "Dört Sıra | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/connect-four"
+    },
+    {
+      "path": "/games/color-sort",
+      "status": 200,
+      "html": true,
+      "title": "Renk Sırala | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/color-sort"
+    },
+    {
+      "path": "/games/word-search",
+      "status": 200,
+      "html": true,
+      "title": "Kelime Avı | Oyuncak",
+      "canonical": "https://adenerva.netlify.app/games/word-search"
+    }
+  ],
+  "assets": [
+    {
+      "path": "/icon-192.png",
+      "status": 200,
+      "type": "image/png"
+    },
+    {
+      "path": "/manifest.json",
+      "status": 200,
+      "type": "application/json"
+    },
+    {
+      "path": "/assets/index-BGWHYt8A.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8"
+    },
+    {
+      "path": "/assets/react-vendor-DYHYvNGH.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8"
+    },
+    {
+      "path": "/assets/index-CM3PhyAh.css",
+      "status": 200,
+      "type": "text/css; charset=UTF-8"
+    },
+    {
+      "path": "/assets/polyfills-legacy-jXgU5fWS.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8"
+    },
+    {
+      "path": "/assets/index-legacy-BRu3b15Z.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8"
+    },
+    {
+      "path": "/sw.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8"
+    },
+    {
+      "path": "/sitemap.xml",
+      "status": 200,
+      "type": "application/xml"
+    },
+    {
+      "path": "/robots.txt",
+      "status": 200,
+      "type": "text/plain; charset=UTF-8"
+    }
+  ],
+  "firebase": {
+    "anonymousSignIn": 200,
+    "scoreWrite": 200,
+    "scoreRead": 200,
+    "scoreReadMatches": true,
+    "invalidScoreRejected": true,
+    "profileWrite": 200,
+    "profileOwnerRead": 200,
+    "privateProfileProtected": true,
+    "testDocumentsCleanup": 200,
+    "scoreDeletionVerified": true,
+    "testAccountCleanup": 200
+  }
+}

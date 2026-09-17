@@ -96,6 +96,7 @@ export type TimeOfDay = 'day' | 'sunset' | 'night' | 'dawn';
 
 export interface AtmosphereState {
   timeOfDay: TimeOfDay;
+  cloudColor: string;
   skyTop: string;
   skyBottom: string;
   groundTop: string;
@@ -124,10 +125,11 @@ export function lerpColor(c1: RGB, c2: RGB, t: number): string {
 
 const PALETTES = {
   day: {
-    skyTop: [79, 172, 254] as RGB,
-    skyBottom: [0, 242, 254] as RGB,
-    groundTop: [245, 158, 11] as RGB,
-    groundBottom: [146, 64, 14] as RGB,
+    cloudColor: [250, 252, 255] as RGB,
+    skyTop: [87, 158, 210] as RGB,
+    skyBottom: [210, 235, 218] as RGB,
+    groundTop: [127, 146, 75] as RGB,
+    groundBottom: [70, 66, 48] as RGB,
     sunAlpha: 1.0,
     sunY: GROUND_Y * 0.32,
     moonAlpha: 0.0,
@@ -137,10 +139,11 @@ const PALETTES = {
     mountainDarken: 0.0,
   },
   sunset: {
-    skyTop: [225, 29, 72] as RGB,
-    skyBottom: [251, 146, 60] as RGB,
-    groundTop: [194, 65, 12] as RGB,
-    groundBottom: [88, 28, 135] as RGB,
+    cloudColor: [251, 218, 189] as RGB,
+    skyTop: [133, 128, 173] as RGB,
+    skyBottom: [245, 186, 136] as RGB,
+    groundTop: [140, 118, 68] as RGB,
+    groundBottom: [74, 59, 57] as RGB,
     sunAlpha: 0.85,
     sunY: GROUND_Y * 0.65,
     moonAlpha: 0.1,
@@ -150,6 +153,7 @@ const PALETTES = {
     mountainDarken: 0.3,
   },
   night: {
+    cloudColor: [112, 133, 167] as RGB,
     skyTop: [10, 15, 36] as RGB,
     skyBottom: [30, 27, 75] as RGB,
     groundTop: [30, 41, 59] as RGB,
@@ -163,8 +167,9 @@ const PALETTES = {
     mountainDarken: 0.72,
   },
   dawn: {
-    skyTop: [99, 102, 241] as RGB,
-    skyBottom: [244, 114, 182] as RGB,
+    cloudColor: [228, 215, 236] as RGB,
+    skyTop: [128, 144, 186] as RGB,
+    skyBottom: [242, 206, 181] as RGB,
     groundTop: [180, 83, 9] as RGB,
     groundBottom: [120, 53, 15] as RGB,
     sunAlpha: 0.75,
@@ -177,38 +182,40 @@ const PALETTES = {
   },
 };
 
-export function getAtmosphere(distance: number): AtmosphereState {
-  const CYCLE = 1600;
-  const mod = ((distance % CYCLE) + CYCLE) % CYCLE;
+// Active simulation time keeps the light cycle independent of speed and difficulty.
+export const ATMOSPHERE_CYCLE_SECONDS = 480;
+const LIGHT_PHASES = [
+  { until: 90, from: 'day', to: 'day' },
+  { until: 135, from: 'day', to: 'sunset' },
+  { until: 180, from: 'sunset', to: 'sunset' },
+  { until: 225, from: 'sunset', to: 'night' },
+  { until: 330, from: 'night', to: 'night' },
+  { until: 390, from: 'night', to: 'dawn' },
+  { until: 420, from: 'dawn', to: 'dawn' },
+  { until: ATMOSPHERE_CYCLE_SECONDS, from: 'dawn', to: 'day' },
+] as const;
 
-  let from: keyof typeof PALETTES;
-  let to: keyof typeof PALETTES;
-  let t = 0;
-  let timeOfDay: TimeOfDay = 'day';
-
-  if (mod < 350) {
-    from = 'day'; to = 'day'; t = 0; timeOfDay = 'day';
-  } else if (mod < 480) {
-    from = 'day'; to = 'sunset'; t = (mod - 350) / 130; timeOfDay = t < 0.5 ? 'day' : 'sunset';
-  } else if (mod < 720) {
-    from = 'sunset'; to = 'sunset'; t = 0; timeOfDay = 'sunset';
-  } else if (mod < 850) {
-    from = 'sunset'; to = 'night'; t = (mod - 720) / 130; timeOfDay = t < 0.5 ? 'sunset' : 'night';
-  } else if (mod < 1200) {
-    from = 'night'; to = 'night'; t = 0; timeOfDay = 'night';
-  } else if (mod < 1320) {
-    from = 'night'; to = 'dawn'; t = (mod - 1200) / 120; timeOfDay = t < 0.5 ? 'night' : 'dawn';
-  } else if (mod < 1480) {
-    from = 'dawn'; to = 'dawn'; t = 0; timeOfDay = 'dawn';
-  } else {
-    from = 'dawn'; to = 'day'; t = (mod - 1480) / 120; timeOfDay = t < 0.5 ? 'dawn' : 'day';
+export function getAtmosphere(elapsedSeconds: number): AtmosphereState {
+  const seconds = Number.isFinite(elapsedSeconds) ? Math.max(0, elapsedSeconds) : 0;
+  const mod = seconds % ATMOSPHERE_CYCLE_SECONDS;
+  let phaseStart = 0;
+  let phase: typeof LIGHT_PHASES[number] = LIGHT_PHASES[0];
+  for (const candidate of LIGHT_PHASES) {
+    phase = candidate;
+    if (mod < candidate.until) break;
+    phaseStart = candidate.until;
   }
+  const { from, to } = phase;
+  const progress = (mod - phaseStart) / (phase.until - phaseStart);
+  const t = progress * progress * (3 - 2 * progress);
+  const timeOfDay: TimeOfDay = t < 0.5 ? from : to;
 
   const p1 = PALETTES[from];
   const p2 = PALETTES[to];
 
   return {
     timeOfDay,
+    cloudColor: lerpColor(p1.cloudColor, p2.cloudColor, t),
     skyTop: lerpColor(p1.skyTop, p2.skyTop, t),
     skyBottom: lerpColor(p1.skyBottom, p2.skyBottom, t),
     groundTop: lerpColor(p1.groundTop, p2.groundTop, t),
@@ -369,14 +376,20 @@ function buildGrass(stepX: number): AnyCanvas {
   const ctx = get2D(c);
   if (!ctx) return c;
   for (let x = 0; x < TILE_W; x += stepX) {
-    const h = 7 + Math.sin(x * 0.4) * 4 + Math.cos(x * 0.7) * 2;
-    const hue = 120 + Math.sin(x * 0.2) * 15;
-    ctx.strokeStyle = `hsla(${hue}, 70%, 55%, 0.7)`;
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(x, TILE_H);
-    ctx.quadraticCurveTo(x, TILE_H - h * 0.6, x, TILE_H - h);
-    ctx.stroke();
+    const h = 5 + Math.sin(x * 0.4) * 2 + Math.cos(x * 0.7) * 2;
+    const lean = Math.sin(x * 1.7) * 3;
+    ctx.strokeStyle = x % 3 === 0 ? '#90ab65' : '#638948';
+    ctx.lineWidth = 1.3;
+    for (const direction of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(x, TILE_H);
+      ctx.quadraticCurveTo(x + lean, TILE_H - h * 0.6, x + lean + direction * 3, TILE_H - h);
+      ctx.stroke();
+    }
+    if (x % (stepX * 9) === 0) {
+      ctx.fillStyle = '#e6d7a0';
+      ctx.beginPath(); ctx.ellipse(x + lean + 3, TILE_H - h, 1.7, 1.2, 0, 0, Math.PI * 2); ctx.fill();
+    }
   }
   return c;
 }
@@ -413,6 +426,33 @@ function buildMountainLayer(
   return { img: c, totalW, baseY, speed, alpha, topY };
 }
 
+function buildWoodlandLayer(): MountainLayer {
+  const totalW = CW + 200, height = 130;
+  const c = makeCanvas(totalW, height);
+  const ctx = get2D(c);
+  if (ctx) {
+    for (let i = 0; i < 17; i++) {
+      const x = i * 67 + 20;
+      const base = height - 5 - Math.sin(i * 2.4) * 5;
+      const h = 32 + (i * 37 % 65);
+      ctx.fillStyle = '#426d59';
+      ctx.fillRect(x - 2, base - h * 0.65, 4, h * 0.65);
+      for (let crown = 0; crown < 3; crown++) {
+        const y = base - h + crown * h * 0.21;
+        const radius = h * (0.19 + crown * 0.045);
+        ctx.fillStyle = crown === 1 ? '#527f65' : '#608c70';
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.quadraticCurveTo(x + radius * 0.7, y + h * 0.2, x + radius, y + h * 0.38);
+        ctx.quadraticCurveTo(x, y + h * 0.43, x - radius, y + h * 0.38);
+        ctx.quadraticCurveTo(x - radius * 0.7, y + h * 0.2, x, y);
+        ctx.fill();
+      }
+    }
+  }
+  return { img: c, totalW, baseY: GROUND_Y, speed: 0.22, alpha: 0.85, topY: GROUND_Y - height };
+}
+
 function buildBodyGradient(ctx: CanvasRenderingContext2D, char: typeof CHARACTERS[number], w: number, h: number): CanvasGradient {
   const g = ctx.createLinearGradient(-w / 2, -h, w / 2, -h + h * 0.68);
   g.addColorStop(0, char.bodyH);
@@ -444,9 +484,10 @@ export function buildRenderCache(ctx: CanvasRenderingContext2D): RenderCache {
   }
 
   const mountains: MountainLayer[] = [
-    buildMountainLayer(MTN_FAR, GROUND_Y + 5, 0.02, '#6366f1', '#818cf8', 0.25),
-    buildMountainLayer(MTN_MID, GROUND_Y + 3, 0.05, '#7c3aed', '#a78bfa', 0.3),
-    buildMountainLayer(MTN_NEAR, GROUND_Y + 1, 0.1, '#6d28d9', '#8b5cf6', 0.35),
+    buildMountainLayer(MTN_FAR.map(h => h * 2.2), GROUND_Y + 5, 0.02, '#6b91a4', '#aac9c4', 0.65),
+    buildMountainLayer(MTN_MID.map(h => h * 1.6), GROUND_Y + 3, 0.05, '#568e88', '#8bb3a0', 0.8),
+    buildMountainLayer(MTN_NEAR, GROUND_Y + 1, 0.1, '#447d68', '#6c995e', 0.95),
+    buildWoodlandLayer(),
   ];
 
   return {

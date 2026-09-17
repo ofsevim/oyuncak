@@ -8,6 +8,8 @@ export default tseslint.config(
   {
     ignores: [
       "dist/**",
+      "test-results/**",
+      "playwright-report/**",
       "android/app/build/**",
       "public/games/battlecity/**",
     ],
