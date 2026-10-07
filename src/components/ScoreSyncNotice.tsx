@@ -10,7 +10,7 @@ import {
 export default function ScoreSyncNotice() {
   const initialPending = getPendingScoreSyncCount();
   const [status, setStatus] = useState<ScoreSyncStatus>(() => ({
-    state: navigator.onLine ? 'retry_scheduled' : 'offline',
+    state: navigator.onLine ? 'syncing' : 'offline',
     pending: initialPending,
   }));
   const [retrying, setRetrying] = useState(false);
@@ -27,7 +27,7 @@ export default function ScoreSyncNotice() {
     return () => window.removeEventListener(SCORE_SYNC_STATUS_EVENT, onStatus);
   }, []);
 
-  if (status.pending === 0 || dismissed) return null;
+  if (status.pending === 0 || dismissed || status.state === 'syncing' || status.state === 'waiting') return null;
 
   const isOffline = status.state === 'offline';
 

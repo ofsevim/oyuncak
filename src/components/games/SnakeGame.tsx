@@ -1,6 +1,5 @@
 import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
-import {  } from 'lucide-react';
-import { planSnakeStep } from './snakeLogic';
+import { planSnakeStep, queueSnakeTurn } from './snakeLogic';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
@@ -97,6 +96,10 @@ const SnakeGame = () => {
   useEffect(() => { setHighScore(getHighScore('snake')); }, []);
 
   const cfg = DIFFS[diff];
+  const requestTurn = useCallback((next: Dir) => {
+    if (gameState !== 'playing') return;
+    inputQueueRef.current = queueSnakeTurn(inputQueueRef.current, dirRef.current, next);
+  }, [gameState]);
 
   /* ── Spawn helpers ── */
   const spawnFood = useCallback((s: Pos[], obs: Pos[] = []): Pos & { type: FoodKind } => {
@@ -169,32 +172,6 @@ const SnakeGame = () => {
   }, [safeTimeout]);
 
   /* ── Particle animation loop (delta-time ile FPS bağımsız) ── */
-
-  /* ── Mobile swipe gesture controls ── */
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-
-  const handleBoardTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length > 0) {
-      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-  }, []);
-
-  const handleBoardTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!touchStartRef.current || e.changedTouches.length === 0) return;
-    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
-    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
-    touchStartRef.current = null;
-    const minSwipe = 24;
-    if (Math.abs(dx) < minSwipe && Math.abs(dy) < minSwipe) return;
-
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 0 && dirRef.current !== 'LEFT') inputQueueRef.current.push('RIGHT');
-      else if (dx < 0 && dirRef.current !== 'RIGHT') inputQueueRef.current.push('LEFT');
-    } else {
-      if (dy > 0 && dirRef.current !== 'UP') inputQueueRef.current.push('DOWN');
-      else if (dy < 0 && dirRef.current !== 'DOWN') inputQueueRef.current.push('UP');
-    }
-  }, []);
 
   /* ── Start game ── */
   const startGame = useCallback(() => {
@@ -293,22 +270,20 @@ const SnakeGame = () => {
     const handle = (e: KeyboardEvent) => {
       if (gameState !== 'playing') return;
 
-      const lastDir = inputQueueRef.current.length > 0 ? inputQueueRef.current[inputQueueRef.current.length - 1] : dirRef.current;
-
       const map: Record<string, [Dir, Dir]> = {
         ArrowUp: ['UP', 'DOWN'], w: ['UP', 'DOWN'], ArrowDown: ['DOWN', 'UP'], s: ['DOWN', 'UP'],
         ArrowLeft: ['LEFT', 'RIGHT'], a: ['LEFT', 'RIGHT'], ArrowRight: ['RIGHT', 'LEFT'], d: ['RIGHT', 'LEFT'],
       };
 
       const entry = map[e.key];
-      if (entry && lastDir !== entry[1] && lastDir !== entry[0]) {
+      if (entry) {
         e.preventDefault();
-        if (inputQueueRef.current.length < 3) inputQueueRef.current.push(entry[0]);
+        requestTurn(entry[0]);
       }
     };
     window.addEventListener('keydown', handle);
     return () => window.removeEventListener('keydown', handle);
-  }, [gameState]);
+  }, [gameState, requestTurn]);
 
   /* ── Touch event listeners directly on board for passive: false ── */
   const boardRef = useRef<HTMLDivElement>(null);
@@ -328,14 +303,12 @@ const SnakeGame = () => {
       const dx = e.changedTouches[0].clientX - touchStart.current.x;
       const dy = e.changedTouches[0].clientY - touchStart.current.y;
 
-      const lastDir = inputQueueRef.current.length > 0 ? inputQueueRef.current[inputQueueRef.current.length - 1] : dirRef.current;
-
       if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 20 && lastDir !== 'LEFT' && lastDir !== 'RIGHT') inputQueueRef.current.push('RIGHT');
-        if (dx < -20 && lastDir !== 'RIGHT' && lastDir !== 'LEFT') inputQueueRef.current.push('LEFT');
+        if (dx > 20) requestTurn('RIGHT');
+        if (dx < -20) requestTurn('LEFT');
       } else {
-        if (dy > 20 && lastDir !== 'UP' && lastDir !== 'DOWN') inputQueueRef.current.push('DOWN');
-        if (dy < -20 && lastDir !== 'DOWN' && lastDir !== 'UP') inputQueueRef.current.push('UP');
+        if (dy > 20) requestTurn('DOWN');
+        if (dy < -20) requestTurn('UP');
       }
       touchStart.current = null;
     };
@@ -347,7 +320,7 @@ const SnakeGame = () => {
       board.removeEventListener('touchstart', handleTouchStart);
       board.removeEventListener('touchend', handleTouchEnd);
     }
-  }, [gameState]);
+  }, [gameState, requestTurn]);
 
   /* ── Snake color gradient ── */
   const segColor = (i: number, total: number) => {
@@ -456,15 +429,14 @@ const SnakeGame = () => {
           ref={boardRef}
           role="application"
           aria-label="Snake Game Board"
-          onTouchStart={handleBoardTouchStart}
-          onTouchEnd={handleBoardTouchEnd}
           style={{
             width: FIELD + 8, height: FIELD + 8, padding: 4,
+            flexShrink: 0,
             borderRadius: 20,
             boxShadow: '0 8px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.06)',
             transform: `scale(${boardScale})`,
-            transformOrigin: 'top center',
+            transformOrigin: 'top left',
           }}>
 
           {/* Grass texture background */}
@@ -603,14 +575,14 @@ const SnakeGame = () => {
       {/* ── Mobile D-pad ── */}
       <div className="touch-controls-grid grid grid-cols-3 gap-3 w-56 md:hidden mt-2" role="group" aria-label="Game Controls">
         <div />
-        <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'DOWN') inputQueueRef.current.push('UP'); }}
+        <motion.button whileTap={{ scale: 0.85 }} onClick={() => requestTurn('UP')}
           className="garden-action-secondary flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Up">↑</motion.button>
         <div />
-        <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'RIGHT') inputQueueRef.current.push('LEFT'); }}
+        <motion.button whileTap={{ scale: 0.85 }} onClick={() => requestTurn('LEFT')}
           className="garden-action-secondary flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Left">←</motion.button>
-        <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'UP') inputQueueRef.current.push('DOWN'); }}
+        <motion.button whileTap={{ scale: 0.85 }} onClick={() => requestTurn('DOWN')}
           className="garden-action-secondary flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Down">↓</motion.button>
-        <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'LEFT') inputQueueRef.current.push('RIGHT'); }}
+        <motion.button whileTap={{ scale: 0.85 }} onClick={() => requestTurn('RIGHT')}
           className="garden-action-secondary flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Right">→</motion.button>
       </div>
     </motion.div>

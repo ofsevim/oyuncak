@@ -8,13 +8,17 @@ import { REQUIRED_FIREBASE_KEYS } from './src/lib/envKeys.ts';
 
 function routeMetadataPlugin(publicUrl: string): Plugin {
   let basePath = '/';
+  let outputDir = '';
   const escape = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]!));
   return {
     name: 'route-metadata',
     apply: 'build',
-    configResolved(config) { basePath = config.base.replace(/\/$/, ''); },
+    configResolved(config) {
+      basePath = config.base.replace(/\/$/, '');
+      outputDir = path.resolve(config.root, config.build.outDir);
+    },
     closeBundle() {
-      const root = path.resolve(import.meta.dirname, 'dist');
+      const root = outputDir;
       const template = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
         .replaceAll('https://oyuncak.app', publicUrl);
       for (const route of PAGE_ROUTES) {
@@ -40,11 +44,13 @@ function routeMetadataPlugin(publicUrl: string): Plugin {
  * build hash'iyle değiştirir → her deploy'da tarayıcı yeni SW tespit eder.
  */
 function swVersionPlugin(): Plugin {
+  let outputDir = '';
   return {
     name: "sw-version",
     apply: "build",
+    configResolved(config) { outputDir = path.resolve(config.root, config.build.outDir); },
     closeBundle() {
-      const swPath = path.resolve(import.meta.dirname, "dist", "sw.js");
+      const swPath = path.join(outputDir, "sw.js");
       if (!fs.existsSync(swPath)) return;
 
       const buildHash = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
@@ -62,14 +68,16 @@ function swVersionPlugin(): Plugin {
  */
 function precacheManifestPlugin(): Plugin {
   let basePath = "/";
+  let outputDir = '';
   return {
     name: "precache-manifest",
     apply: "build",
     configResolved(config) {
       basePath = config.base.endsWith("/") ? config.base : `${config.base}/`;
+      outputDir = path.resolve(config.root, config.build.outDir);
     },
     closeBundle() {
-      const distDir = path.resolve(import.meta.dirname, "dist");
+      const distDir = outputDir;
       const assetsDir = path.join(distDir, "assets");
       if (!fs.existsSync(assetsDir)) return;
 

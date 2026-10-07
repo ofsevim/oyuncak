@@ -1,5 +1,18 @@
 import { test, expect } from '@playwright/test';
 import { GAME_CATALOG } from '../../src/data/gameCatalog';
+test.use({ serviceWorkers:'block' });
+
+const activeSelectors: Record<string,string> = {
+  balloon:'button[aria-label$=" balon"]', basketball:'[aria-label="Basketbol Sahası"]',
+  'tank-arena':'iframe[title="Tank Arena"]', whack:'.garden-game-content .grid',
+  runner:'[data-game-area]', tetris:'button[aria-label="Sert düşüş"]', snake:'[aria-label="Snake Game Board"]',
+  'odd-one-out':'.garden-game-content .grid button', shapematch:'.garden-game-content button.w-20',
+  simonsays:'button[aria-label$="düğme"]', memory:'.garden-memory-card',
+  '2048':'button[aria-label="Yeniden başlat"]', piano:'button[aria-label="Do notası"]',
+  counting:'.garden-game-content button.relative.touch-manipulation', math:'.garden-answer', codingturtle:'.garden-game-content button.w-14',
+  spaceshooter:'.garden-game-content canvas', 'connect-four':'button[aria-label="1. sütuna taş bırak"]',
+  'word-search':'button[aria-label^="1. satır"]', 'color-sort':'button[aria-label^="1. tüp:"]',
+};
 
 test.beforeEach(async ({ context }) => {
   await context.addInitScript(() => {
@@ -16,10 +29,19 @@ for (const game of GAME_CATALOG) {
     await page.goto(`/games/${game.id}`);
     await expect(page.getByRole('button', { name: 'Oyunlara Dön', exact: true })).toBeVisible();
     await expect(page.getByText('Yükleniyor…', { exact: true })).toHaveCount(0);
-    // Some games start immediately; others expose a start screen.
+    // Immediate-play games are explicit; a missing/late start button is a failure.
     const start = page.getByRole('button', { name: /BAŞLA|Başla|Başlat|Oyna/ }).first();
-    if (await start.count()) await start.click();
-    await page.waitForTimeout(1500);
+    if (!['memory','piano','basketball','tank-arena'].includes(game.id)) {
+      await expect(start).toBeVisible();
+      await start.click();
+      await expect(start).toHaveCount(0);
+    }
+    await expect(page.locator(activeSelectors[game.id]).first()).toBeVisible();
+    if (game.id === 'tank-arena') await expect(page.frameLocator('iframe[title="Tank Arena"]').locator('canvas')).toBeVisible();
+    const emptyControls = await page.locator('.garden-game-content button:visible').evaluateAll(buttons =>
+      buttons.filter(button => !(button.getAttribute('aria-label') || button.getAttribute('title') || (button as HTMLElement).innerText.trim()))
+        .map(button => button.outerHTML.slice(0,200)));
+    expect(emptyControls,'play controls must carry visible content or an accessible name').toEqual([]);
     await expect(page.getByText('Bir şeyler yanlış gitti', { exact: true })).toHaveCount(0);
     expect(errors).toEqual([]);
   });

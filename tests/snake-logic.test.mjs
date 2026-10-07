@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { loadTsModule } from "./helpers/load-ts-module.mjs";
 export async function run() {
-  const { planSnakeStep } = await loadTsModule(
+  const { planSnakeStep, queueSnakeTurn } = await loadTsModule(
     "src/components/games/snakeLogic.ts",
   );
   const snake = [
@@ -60,4 +60,17 @@ export async function run() {
     true,
   );
   assert.deepEqual(snake[0], { x: 1, y: 1 }, "input remains unchanged");
+  assert.deepEqual(queueSnakeTurn(['UP'], 'RIGHT', 'LEFT'), ['UP','LEFT'], 'rapid turns are validated against the last accepted turn');
+  assert.deepEqual(queueSnakeTurn(['UP'], 'RIGHT', 'DOWN'), ['UP'], 'a queued turn cannot reverse into the body');
+  assert.deepEqual(queueSnakeTurn(['UP'], 'RIGHT', 'UP'), ['UP'], 'duplicate native/React events do not spend another tick');
+  assert.deepEqual(queueSnakeTurn(['UP','LEFT','DOWN'], 'RIGHT', 'RIGHT'), ['UP','LEFT','DOWN'], 'input backlog is bounded');
+  for (const [direction, head, expected] of [
+    ['RIGHT',{x:9,y:4},{x:0,y:4}], ['LEFT',{x:0,y:4},{x:9,y:4}],
+    ['UP',{x:4,y:0},{x:4,y:9}], ['DOWN',{x:4,y:9},{x:4,y:0}],
+  ]) {
+    const wrapped=planSnakeStep([head],direction,{x:2,y:2},[],10,true);
+    assert.deepEqual(wrapped.snake[0],expected);
+    assert.equal(wrapped.collision,false);
+    assert.equal(planSnakeStep([head],direction,{x:2,y:2},[],10,false).collision,true);
+  }
 }

@@ -3,6 +3,12 @@ export interface SnakePoint {
   y: number;
 }
 export type SnakeDirection = "UP" | "DOWN" | "LEFT" | "RIGHT";
+export function queueSnakeTurn(queue: SnakeDirection[], current: SnakeDirection, next: SnakeDirection): SnakeDirection[] {
+  const last = queue[queue.length - 1] ?? current;
+  const opposite: Record<SnakeDirection, SnakeDirection> = { UP:'DOWN', DOWN:'UP', LEFT:'RIGHT', RIGHT:'LEFT' };
+  if (queue.length >= 3 || next === last || next === opposite[last]) return queue;
+  return [...queue, next];
+}
 export function planSnakeStep(
   snake: SnakePoint[],
   direction: SnakeDirection,

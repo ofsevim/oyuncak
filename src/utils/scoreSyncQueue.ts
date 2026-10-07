@@ -11,7 +11,7 @@ const STORAGE_KEY = 'oyuncak.score-sync-queue.v1';
 export const SCORE_SYNC_STATUS_EVENT = 'oyuncak:score-sync-status';
 
 export interface ScoreSyncStatus {
-  state: 'offline' | 'retry_scheduled' | 'synced';
+  state: 'offline' | 'syncing' | 'waiting' | 'retry_scheduled' | 'synced';
   pending: number;
 }
 
@@ -83,6 +83,7 @@ export function flushScoreSyncQueue(force = false): Promise<void> {
 
     let jobs = readQueue();
     if (jobs.length === 0) return;
+    announce({ state: 'syncing', pending: jobs.length });
     const { syncScore } = await import('@/services/scoreService');
 
     for (const queuedJob of [...jobs]) {
@@ -91,8 +92,14 @@ export function flushScoreSyncQueue(force = false): Promise<void> {
       if (!job || (!force && job.nextAttemptAt > Date.now())) continue;
 
       try {
-        await syncScore(job.gameId, job.score);
+        const result = await syncScore(job.gameId, job.score);
         const latestJobs = readQueue();
+        if (typeof result === 'object') {
+          jobs = latestJobs.map(candidate => candidate.gameId === job.gameId
+            ? { ...candidate, nextAttemptAt: result.retryAt } : candidate);
+          writeQueue(jobs);
+          continue;
+        }
         jobs = completeScoreSyncJob(latestJobs, job.gameId, job.score);
         writeQueue(jobs);
       } catch (err) {
@@ -109,7 +116,7 @@ export function flushScoreSyncQueue(force = false): Promise<void> {
     jobs = readQueue();
     announce(jobs.length === 0
       ? { state: 'synced', pending: 0 }
-      : { state: navigator.onLine ? 'retry_scheduled' : 'offline', pending: jobs.length });
+      : { state: !navigator.onLine ? 'offline' : jobs.some(job => job.attempts > 0) ? 'retry_scheduled' : 'waiting', pending: jobs.length });
     scheduleNextAttempt(jobs);
   })()
     .catch((err) => {

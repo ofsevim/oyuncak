@@ -43,7 +43,7 @@ export interface LeaderboardEntry {
 }
 
 /** Saves only a new personal best; Firestore rules enforce ownership and shape. */
-export async function syncScore(gameId: string, score: number): Promise<boolean> {
+export async function syncScore(gameId: string, score: number): Promise<boolean | { retryAt: number }> {
   try {
     if (!SCORE_GAME_IDS.some((id) => id === gameId)) throw new Error('Geçersiz oyun kimliği');
     if (!Number.isSafeInteger(score) || score < 0 || score > 9_999_999) throw new Error('Geçersiz skor');
@@ -61,6 +61,14 @@ export async function syncScore(gameId: string, score: number): Promise<boolean>
 
       if (existingScore >= score) return false;
 
+      // Math/counting can improve the record every answer. Wait for the rules'
+      // write window rather than sending a transaction known to be rejected.
+      const previousUpdate = existing.exists() ? existing.data().updatedAt : undefined;
+      if (previousUpdate && typeof previousUpdate.toMillis === 'function') {
+        const retryAt = previousUpdate.toMillis() + 10_250;
+        if (retryAt > Date.now()) return { retryAt };
+      }
+
       transaction.set(scoreRef, {
         uid: user.uid,
         gameId,
@@ -72,7 +80,7 @@ export async function syncScore(gameId: string, score: number): Promise<boolean>
       return true;
     });
 
-    if (updated) {
+    if (updated === true) {
       window.dispatchEvent(new CustomEvent('oyuncak:score-updated', { detail: { gameId } }));
     }
     return updated;

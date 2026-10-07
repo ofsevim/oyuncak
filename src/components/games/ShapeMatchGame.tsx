@@ -454,7 +454,7 @@ const ShapeMatchGame = () => {
                                         initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                                     />
                                 )}
-                                <span className={`garden-legacy-decoration text-5xl sm:text-6xl drop-shadow-lg z-10 ${isCorrect && !isTarget ? 'opacity-30 grayscale' : ''}`}>
+                                <span className={`text-5xl sm:text-6xl drop-shadow-lg z-10 ${isCorrect && !isTarget ? 'opacity-30 grayscale' : ''}`}>
                                     {opt}
                                 </span>
                             </motion.button>

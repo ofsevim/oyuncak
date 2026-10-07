@@ -62,3 +62,19 @@ Değişiklikler oyun mekaniği ve Firebase kurallarını değiştirmez. Üretim 
 Son doğrulama: lint, TypeScript, 26 birim/regresyon test dosyası, Functions kontrolü ve üretim derlemesi geçti. Altı tarayıcı/ekran profilindeki 216 senaryonun 214'ü geçti; mevcut iki beklenen atlama korundu. Son CSS ve erişilebilirlik düzeltmeleri üretim önizlemesinde ayrıca 16 masaüstü/mobil senaryoyla doğrulandı; tamamı geçti.
 
 Bağımsız incelemede 2048 yeniden başlat kontrolünün panel stili nedeniyle düşük kontrast taşıdığı görüldü. Panel seçicisi eylem butonlarını dışlayacak biçimde düzeltildi. Fare üzerine gelmeden okunabilirliği ölçen regresyon testi RED (1.02 kontrast) → GREEN (en az 4.5) olarak doğrulandı.
+
+## Skor ve yılan hataları; davranış testlerinin güçlendirilmesi
+
+Matematikte ardışık doğru cevaplar, Firestore'un aynı rekor için uyguladığı 10 saniyelik yazma aralığına çarpıyordu. Gerçek emülatörde servis üzerinden ikinci hızlı yazmanın reddedildiği doğrulandı. Servis artık kayıt zamanına göre bekleme döndürür; kalıcı kuyruk en yüksek rekoru koruyup zamanlayıcıyla yeniden gönderir. Normal bekleme başarısızlık bildirimi üretmez. Gerçek izin/ağ hataları, yerel skor kaybolmadan yeniden deneme durumunda kalır. Güvenlik kuralları gevşetilmedi.
+
+Yılanın dar ekranlarda kaybolmasının nedeni, sabit oyun alanının önce flex tarafından daraltılıp sonra ikinci kez ölçeklenmesiydi. Alanın doğal boyutu korunur ve görsel ölçek sol üstten uygulanır. Klavye, dokunmatik yön tuşları ve kaydırma aynı yön kuyruğunu kullanır; son bekleyen yöne göre ters dönüş ve yinelenen giriş reddedilir. İki ayrı kaydırma dinleyicisinin aynı hareketi tekrar kuyruğa eklemesi kaldırıldı. Oyunun mevcut kenardan sarma davranışı korunur.
+
+Yeni testler ayrıca şekil eşleştirme seçeneklerinin dekorasyon CSS'iyle gizlendiğini ve çizim tuvali içinde ikinci bir `main` oluştuğunu yakaladı. İşlevsel seçenek görselleri görünür hale getirildi; çizim tuvali adlandırılmış bir `section` kullanır. Testler tuval hazır olduktan sonra tek ana içerik alanı bulunduğunu denetler.
+
+Test derlemesi üretim önizlemesinden ayrıldı. Rota, servis çalışanı ve önbellek eklentileri Vite'ın seçilen çıktı klasörünü kullanır. Temiz özel çıktı klasöründeki gerçek eklentilerle yapılan test, önce yanlış `dist/index.html` erişiminde başarısız oldu ve düzeltmeden sonra geçti.
+
+Yeni kapsam, hata öncesi/sonrası kanıtları ve tekrar çalıştırma komutları [test kalitesi belgesinde](test-quality.md) yer alır. Firestore emülatöründe 23 oyun kimliğinin sahiplik kuralları ve üretim skor servisiyle ilk yazma, düşük skor koruması, hızlı rekorlar, otomatik en yüksek rekor teslimatı, paylaşım kapatma, çevrimdışı kayıt ve gerçek izin hatası sonrası kurtarma geçti. Entegrasyonun kimlik sınırında emülatör test kullanıcısı kullanılır; canlı veritabanına test verisi yazılmaz.
+
+Son kod setinde lint, TypeScript, 27 birim/regresyon dosyası, Functions sözdizimi ve üretim derlemesi geçti. Üretim ve Functions bağımlılık taramalarında açık sayısı sıfırdır; yukarıdaki geliştirme bağımlılığı uyarısı korunur.
+
+Son tarayıcı doğrulaması: geniş 279 senaryoluk koşuda 266 geçti, 11 başarısızlık ve 2 mevcut atlama çıktı. Çizim düzeltmesi ve servis çalışanı/test sunucusu izolasyonundan sonra güncel üretim sürümündeki 63 senaryonun 62'si geçti, yalnızca mevcut Windows WebKit çevrimdışı senaryosu atlandı; başarısız ve flaky sonuç sayısı sıfırdır. İlk 11 başarısız senaryonun tamamının bu son başarılı koşuda bulunduğu raporlar karşılaştırılarak doğrulandı. Dört yeni skor bildirimi kontrolü dahil toplam **281 benzersiz senaryo doğrulandı**, 2 mevcut atlama korunur. Son doğrulamanın kendi sunucusu koşucu tarafından yönetildi; açık önizleme yeniden başlatıldı ve güncel sürüme geçirildi.

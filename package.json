@@ -20,7 +20,8 @@
     "apk:debug": "npm run cap:build && cd android && gradlew assembleDebug",
     "apk:release": "npm run cap:build && cd android && gradlew assembleRelease",
     "test:e2e": "playwright test",
-    "test:rules": "npx --yes firebase-tools@15.32.1 emulators:exec --config firebase.emulator.json --project demo-oyuncak --only firestore \"node tests/rules/firestore.mjs\""
+    "test:rules": "npx --yes firebase-tools@15.32.1 emulators:exec --config firebase.emulator.json --project demo-oyuncak --only firestore \"node tests/rules/firestore.mjs\"",
+    "test:integration": "npx --yes firebase-tools@15.32.1 emulators:exec --config firebase.emulator.json --project demo-oyuncak --only firestore \"node tests/integration/run.mjs\""
   },
   "engines": {
     "node": "^22.13.0 || >=24"

@@ -766,7 +766,7 @@ const DrawingCanvas = () => {
       {/* ══════════════════════════
          ANA ALAN — Canvas
          ══════════════════════════ */}
-      <main className="relative z-10 flex-1 w-full flex flex-col items-center gap-6 order-2">
+      <section aria-label="Çizim alanı" className="relative z-10 flex-1 w-full flex flex-col items-center gap-6 order-2">
         <motion.div
           ref={containerRef}
           className="w-full flex justify-center relative touch-none"
@@ -838,7 +838,7 @@ const DrawingCanvas = () => {
             </motion.div>
           )}
         </AnimatePresence>
-      </main>
+      </section>
 
       {/* Galeri Modal */}
       {showGallery && <DrawingGallery onClose={() => setShowGallery(false)} />}

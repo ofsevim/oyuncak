@@ -1,7 +1,7 @@
 import http from 'node:http';
 import path from 'node:path';
 import { readFile, stat } from 'node:fs/promises';
-const root = path.resolve('dist');
+const root = path.resolve(process.env.PREVIEW_ROOT || 'dist');
 const mime = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.json':'application/json', '.png':'image/png', '.webp':'image/webp', '.svg':'image/svg+xml', '.ico':'image/x-icon', '.ogg':'audio/ogg', '.ttf':'font/ttf', '.woff2':'font/woff2' };
 http.createServer(async (req, res) => {
   try {

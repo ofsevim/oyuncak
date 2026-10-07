@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { loadTsModule } from '../helpers/load-ts-module.mjs';
 
 const env = await initializeTestEnvironment({ projectId: 'demo-oyuncak', firestore: {
   rules: await readFile('firestore.rules', 'utf8'), host: '127.0.0.1', port: 8181,
@@ -11,6 +12,14 @@ const guest = env.unauthenticatedContext().firestore();
 const score = (db, game = 'math') => doc(db, 'scores', game, 'leaderboard', 'owner');
 const valid = { uid: 'owner', gameId: 'math', name: 'Mavi Yıldız', score: 50, date: '2026-09-08', updatedAt: serverTimestamp() };
 try {
+  await env.clearFirestore();
+  const { SCORE_GAME_IDS } = await loadTsModule('src/constants/gameIds.ts');
+  for (const gameId of SCORE_GAME_IDS) {
+    const gameScore = { ...valid, gameId };
+    await assertSucceeds(setDoc(score(owner,gameId),gameScore));
+    await assertFails(setDoc(score(stranger,gameId),gameScore));
+    await assertSucceeds(deleteDoc(score(owner,gameId)));
+  }
   await assertFails(setDoc(score(guest), valid));
   await assertFails(setDoc(score(stranger), valid));
   for (const invalid of [-1, 0.5, 10_000_000, '50']) await assertFails(setDoc(score(owner), { ...valid, score: invalid }));
