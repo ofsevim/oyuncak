@@ -459,34 +459,13 @@ const DrawingCanvas = () => {
      ═══════════════════════════════════════════ */
 
   return (
-    <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 p-4 pb-44 max-w-[1400px] mx-auto relative transition-opacity duration-300">
-      {/* ── Masa arkaplanı ── */}
-      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `
-              repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(139,90,43,0.04) 20px, rgba(139,90,43,0.04) 21px),
-              repeating-linear-gradient(0deg, transparent, transparent 45px, rgba(139,90,43,0.02) 45px, rgba(139,90,43,0.02) 46px),
-              linear-gradient(160deg, hsl(30 25% 14%) 0%, hsl(25 20% 11%) 50%, hsl(30 25% 13%) 100%)
-            `,
-          }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(0,0,0,0.15) 100%)',
-          }}
-        />
-      </div>
-
+    <div className="garden-studio flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 p-4 pb-44 max-w-[1400px] mx-auto relative transition-opacity duration-300">
       {/* ══════════════════════════
          ARAÇ PANELİ (sol kenar)
          ══════════════════════════ */}
       <aside className="relative z-30 w-full lg:w-80 flex flex-col gap-3 lg:gap-6 lg:sticky lg:top-8 order-1">
         {/* Başlık — Mobilde gizli */}
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <motion.div
             initial={{ rotate: -10 }}
             animate={{ rotate: 10 }}
@@ -515,8 +494,8 @@ const DrawingCanvas = () => {
             </svg>
           </motion.div>
           <div className="flex flex-col">
-            <h2 className="text-2xl md:text-3xl font-black text-gradient leading-none">
-              Resim Çiz
+            <h2 className="garden-studio-heading">
+              Renkleri özgür bırak.
             </h2>
             <span className="text-[10px] font-bold text-muted-foreground/50 tracking-widest uppercase mt-1">
               Yaratıcı Atölye

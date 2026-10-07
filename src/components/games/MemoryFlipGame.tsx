@@ -160,7 +160,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <motion.div className="flex flex-col items-center gap-4 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ touchAction: 'manipulation' }}>
+    <motion.div className="garden-memory flex flex-col items-center gap-4 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ touchAction: 'manipulation' }}>
       <h2 className="text-2xl md:text-3xl font-black text-gradient">🃏 Hafıza Oyunu</h2>
 
       <Leaderboard gameId={`memory-${gridSize}x${gridSize}`} />
@@ -194,7 +194,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
 
       {/* Game grid */}
       <div className="relative w-full flex flex-col items-center">
-        <div className="grid gap-1 sm:gap-1.5 p-1.5 sm:p-2 glass-card neon-border rounded-[32px] w-full"
+        <div className="garden-memory-board grid gap-2 p-3 w-full"
           style={{
             gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
             maxWidth: gridSize === 6 ? '480px' : gridSize === 5 ? '440px' : gridSize === 4 ? '400px' : '360px',
@@ -206,7 +206,8 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
             const emojiSize = gridSize <= 3 ? 'text-3xl' : gridSize === 4 ? 'text-2xl' : gridSize === 5 ? 'text-xl' : 'text-base sm:text-lg';
             return (
               <button key={card.id} onClick={() => handleCardClick(card.id)} disabled={card.isMatched || card.isFlipped}
-                className={`${cardSize} rounded-xl transition-all duration-300 flex items-center justify-center relative overflow-hidden touch-manipulation ${isRevealed ? 'glass-card border border-white/10' : 'bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/20 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:scale-95 active:border-primary/50'
+                aria-label={isRevealed ? card.emoji : `Kart ${card.id + 1}`} aria-pressed={isRevealed}
+                className={`${cardSize} garden-memory-card rounded-xl transition-all duration-300 flex items-center justify-center relative overflow-hidden touch-manipulation ${isRevealed ? 'glass-card border border-white/10' : 'bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/20 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:scale-95 active:border-primary/50'
                   } ${card.isMatched ? 'ring-2 ring-green-400/50 shadow-lg shadow-green-400/20' : ''}`}
                 style={{ touchAction: 'manipulation' }}>
                 {isRevealed ? (
@@ -214,7 +215,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
                     {card.emoji}
                   </motion.span>
                 ) : (
-                  <span className="text-primary/30 text-lg md:text-xl font-bold">?</span>
+                  <span className="text-primary text-2xl md:text-3xl font-bold">✳</span>
                 )}
                 {card.isMatched && <div className="absolute inset-0 bg-green-400/5 rounded-xl" />}
               </button>

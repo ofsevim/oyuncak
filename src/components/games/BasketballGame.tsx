@@ -1,5 +1,5 @@
 import { isGamePaused } from '@/utils/gameActivity';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playBasketballImpactSound, playBasketballMissSound, playBasketballReleaseSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound, playSwishSound, playLevelUpSound } from '@/utils/soundEffects';
 import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
@@ -529,8 +529,8 @@ const BasketballGame = () => {
 
 
 
-    /* Responsive canvas */
-    useEffect(() => {
+    /* Size the canvas before paint; CSS also bounds the intrinsic first frame. */
+    useLayoutEffect(() => {
         const resize = () => {
             const el = containerRef.current, canvas = canvasRef.current;
             if (!el || !canvas) return;
@@ -656,7 +656,7 @@ const BasketballGame = () => {
             <div ref={containerRef} className="relative w-full select-none">
                 <canvas ref={canvasRef} width={CW} height={CH}
                     role="application" aria-label="Basketbol Sahası"
-                    className="block rounded-2xl"
+                    className="block w-full max-w-full rounded-2xl"
                     onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}
                     style={{ cursor: phase === 'aim' ? 'crosshair' : 'default', touchAction: 'none', boxShadow: '0 8px 32px hsl(224 28% 3% / 0.5)' }} />
 

@@ -1,4 +1,4 @@
-import { GAME_CATALOG } from './gameCatalog';
+import { GAME_CATALOG } from './gameCatalog.ts';
 
 const STATIC_PAGES: Record<string, { title: string; description: string }> = {
   '/': { title: 'Oyuncak - Oyun Dünyası', description: '21 ücretsiz oyun, çizim atölyesi ve interaktif hikâyeler. Reklamsız oyun ve yaratıcılık alanı.' },

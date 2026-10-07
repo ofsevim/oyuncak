@@ -1,9 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const port = Number(process.env.PLAYWRIGHT_PORT || 4173);
+const baseURL = `http://127.0.0.1:${port}`;
+
 export default defineConfig({
   testDir: './tests/e2e', timeout: 60_000, fullyParallel: false,
-  workers: process.env.CI ? 2 : 4,
-  use: { baseURL: 'http://127.0.0.1:4173', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
+  workers: process.env.CI ? 2 : 1,
+  use: { baseURL, trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
@@ -13,9 +16,10 @@ export default defineConfig({
     { name: 'tablet', testMatch: /responsive\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 768, height: 1024 } } },
   ],
   webServer: {
-    command: 'npm run build -- --mode test && node tests/server/preview.mjs',
-    url: 'http://127.0.0.1:4173', reuseExistingServer: false, timeout: 180_000,
+    command: 'node --max-old-space-size=2048 node_modules/vite/bin/vite.js build --mode test && node --max-old-space-size=256 tests/server/preview.mjs',
+    url: baseURL, reuseExistingServer: false, timeout: 180_000,
     env: {
+      PORT: String(port),
       VITE_PUBLIC_URL: 'https://oyuncak.app',
       VITE_FIREBASE_API_KEY: 'test-api-key', VITE_FIREBASE_AUTH_DOMAIN: 'demo-oyuncak.firebaseapp.com',
       VITE_FIREBASE_PROJECT_ID: 'demo-oyuncak', VITE_FIREBASE_STORAGE_BUCKET: 'demo-oyuncak.appspot.com',

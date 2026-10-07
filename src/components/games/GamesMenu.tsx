@@ -8,6 +8,7 @@ import NotFound from '@/pages/NotFound';
 import { GAME_CATALOG, type GameDefinition, type GameCategory } from '@/data/gameCatalog';
 import { useGameLibrary } from '@/hooks/useGameLibrary';
 import GameControls from '@/components/GameControls';
+import GameArtwork from './GameArtwork';
 import { isGameRouteId, type GameRouteId } from '@/constants/gameIds';
 
 const modules = import.meta.glob('./*.tsx');
@@ -34,55 +35,16 @@ interface GameCardProps {
 }
 
 const GameCard = memo(forwardRef<HTMLButtonElement, GameCardProps>(({ game, index, onClick }, ref) => {
-  const Icon = Gamepad2;
   return (
-    <motion.button
-      ref={ref}
-      layout
-      initial={{ opacity: 0, scale: 0.92, y: 16 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ delay: index * 0.035, duration: 0.3, type: 'spring', stiffness: 220, damping: 26 }}
-      onClick={onClick}
-      className="game-card group text-left p-4 md:p-5 relative w-full"
-    >
-      {/* Badge */}
-      {game.badge && (
-        <span
-          className="absolute top-3 right-3 hidden sm:inline text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white"
-          style={{ background: game.badgeColor ?? game.color, opacity: 0.9 }}
-        >
-          {game.badge}
-        </span>
-      )}
-
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          {/* Icon container */}
-          <div
-            className="w-12 h-12 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-            style={{ background: game.colorSoft, border: `1px solid ${game.color.replace(')', ' / 0.25)')}` }}
-          >
-            {game.emoji}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm md:text-base font-bold text-foreground truncate">
-              {game.title}
-            </h3>
-            <p className="text-[11px] md:text-xs text-muted-foreground font-medium mt-0.5 hidden sm:block leading-relaxed">
-              {game.description}
-            </p>
-          </div>
-        </div>
-
-        <p className="text-xs text-muted-foreground">{game.minAge}+ yaş · {game.duration} · {game.difficulty}</p>
-        <p className="text-xs text-muted-foreground">{game.skill}</p>
-        <div className="flex items-center gap-1.5">
-          <Icon className="w-3 h-3" style={{ color: game.color }} />
-          <span className="text-xs font-semibold" style={{ color: game.color }}>
-            Oyna →
-          </span>
-        </div>
+    <motion.button ref={ref} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index, 8) * 0.025, duration: 0.2 }}
+      onClick={onClick} className="garden-library-card">
+      <GameArtwork id={game.id}/>
+      <div className="garden-library-copy">
+        <h3>{game.title}<span aria-hidden="true">↗</span></h3>
+        <p>{game.description}</p>
+        <div className="garden-library-meta"><span>{game.minAge}+ yaş · {game.duration}</span><span>{game.difficulty}</span></div>
+        <small>{game.skill}</small>
       </div>
     </motion.button>
   );
@@ -124,7 +86,7 @@ const GamesMenu = () => {
 
   if (activeGame !== 'menu') {
     return (
-      <div className="pb-12 md:pb-32 w-full flex flex-col items-center relative">
+      <div className="garden-game-stage pb-12 md:pb-32 w-full flex flex-col items-center relative">
         <GameControls />
         {/* Runner kendi geri butonunu yönetir, çakışma olmasın */}
         {activeGame !== 'runner' && (
@@ -169,7 +131,7 @@ const GamesMenu = () => {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6 p-4 pb-36 animate-fade-in">
+    <div className="garden-library flex flex-col items-center gap-6 p-4 pb-36 animate-fade-in">
       {/* Header */}
       <motion.div
         className="text-center space-y-2"
@@ -185,7 +147,7 @@ const GamesMenu = () => {
             <Gamepad2 className="w-6 h-6 text-primary" />
           </div>
           <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
-            Oyun <span className="text-gradient">Merkezi</span>
+            Küçük oyunlar.<br/><span className="garden-library-em">Büyük keşifler.</span>
           </h2>
           <button
             type="button"
@@ -246,17 +208,17 @@ const GamesMenu = () => {
       <p className="text-xs text-muted-foreground">Yaş ve süre bilgileri yol göstericidir; çocuğunun ilgisine göre birlikte seçebilirsiniz.</p>
       {filteredGames.length === 0 && <p role="status">Bu seçimde oyun yok. Filtreleri değiştirebilirsin.</p>}
       <div
-        className="grid grid-cols-2 lg:grid-cols-3 gap-3 w-full max-w-5xl"
+        className="garden-library-grid"
       >
         <AnimatePresence mode="popLayout">
           {filteredGames.map((game, i) => (
-            <div key={game.id} className="relative flex flex-col gap-1">
+            <div key={game.id} className="garden-library-item">
             <GameCard
               game={game}
               index={i}
               onClick={() => navigate(`/games/${game.id}`)}
             />
-            <button type="button" aria-pressed={favorites.includes(game.id)} aria-label={`${game.title} ${favorites.includes(game.id) ? 'favorilerden çıkar' : 'favorilere ekle'}`} onClick={() => toggleFavorite(game.id)} className="min-h-11 rounded-xl border border-border text-sm text-muted-foreground hover:text-primary">{favorites.includes(game.id) ? '★ Favorim' : '☆ Favorilere ekle'}</button>
+            <button type="button" aria-pressed={favorites.includes(game.id)} aria-label={`${game.title} ${favorites.includes(game.id) ? 'favorilerden çıkar' : 'favorilere ekle'}`} onClick={() => toggleFavorite(game.id)} className="garden-favorite">{favorites.includes(game.id) ? '★ Favorim' : '☆ Favorilere ekle'}</button>
             </div>
           ))}
         </AnimatePresence>

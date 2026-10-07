@@ -20,4 +20,4 @@ http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
     res.end(body);
   } catch { res.writeHead(500); res.end(); }
-}).listen(4173, '127.0.0.1');
+}).listen(Number(process.env.PORT || 4173), '127.0.0.1');

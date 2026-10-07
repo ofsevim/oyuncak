@@ -1,366 +1,180 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { BookOpen, Gamepad2, Pencil, ArrowRight, ChevronRight } from "lucide-react";
-import { FEATURED } from "@/data/featured";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BookOpen,
+  Pencil,
+  Sparkles,
+} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { GAME_CATALOG } from "@/data/gameCatalog";
+import { STORIES } from "@/data/stories";
 import type { FeaturedGameRouteId } from "@/constants/gameIds";
-import { Link, useNavigate } from 'react-router-dom';
-import { GAME_CATALOG } from '@/data/gameCatalog';
-import { useGameLibrary } from '@/hooks/useGameLibrary';
+import { useGameLibrary } from "@/hooks/useGameLibrary";
+import GardenCharacter from "@/components/GardenCharacter";
+import GameArtwork from "@/components/games/GameArtwork";
 
 type Props = {
   onGoDraw: () => void;
   onGoGames: () => void;
   onGoStories: () => void;
-  onGoFeaturedGame?: (gameId: FeaturedGameRouteId) => void;
+  onGoFeaturedGame?: (id: FeaturedGameRouteId) => void;
 };
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
-};
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, damping: 24 } },
-};
-
-const QUICK = [
-  {
-    action: "games" as const,
-    emoji: "🎮",
-    title: "Oyunlar",
-    sub: `${GAME_CATALOG.length} oyun`,
-    color: "hsl(258 88% 66% / 0.12)",
-    border: "hsl(258 88% 66% / 0.2)",
-    glow: "hsl(258 88% 66%)",
-  },
-  {
-    action: "draw" as const,
-    emoji: "🎨",
-    title: "Çizim",
-    sub: "Serbest",
-    color: "hsl(338 80% 62% / 0.12)",
-    border: "hsl(338 80% 62% / 0.2)",
-    glow: "hsl(338 80% 62%)",
-  },
-  {
-    action: "story" as const,
-    emoji: "📚",
-    title: "Hikayeler",
-    sub: "20+ hikaye",
-    color: "hsl(158 65% 48% / 0.12)",
-    border: "hsl(158 65% 48% / 0.2)",
-    glow: "hsl(158 65% 48%)",
-  },
-];
-
-export default function Home({ onGoDraw, onGoGames, onGoStories, onGoFeaturedGame }: Props) {
+export default function Home({ onGoDraw, onGoGames, onGoStories }: Props) {
   const navigate = useNavigate();
   const { recent } = useGameLibrary();
-  const [time, setTime] = useState(new Date());
-  const [nickname, setNickname] = useState<string>(() => {
-    try { return localStorage.getItem('oyuncak.nickname') || ''; }
-    catch { return ''; }
+  const [nickname, setNickname] = useState(() => {
+    try {
+      return localStorage.getItem("oyuncak.nickname") || "";
+    } catch {
+      return "";
+    }
   });
-
   useEffect(() => {
-    const handleNickChange = (e: Event) => {
-      const customEvent = e as CustomEvent<string>;
-      if (customEvent.detail) setNickname(customEvent.detail);
-      else {
-        try { setNickname(localStorage.getItem('oyuncak.nickname') || ''); } catch { /* ignore */ }
+    const update = () => {
+      try {
+        setNickname(localStorage.getItem("oyuncak.nickname") || "");
+      } catch {
+        /* storage may be unavailable */
       }
     };
-    window.addEventListener('oyuncak:nickname-changed', handleNickChange);
-    return () => window.removeEventListener('oyuncak:nickname-changed', handleNickChange);
+    window.addEventListener("oyuncak:nickname-changed", update);
+    return () => window.removeEventListener("oyuncak:nickname-changed", update);
   }, []);
-
-  useEffect(() => {
-    const id = setInterval(() => setTime(new Date()), 60_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const hour = time.getHours();
-  const greeting = hour < 12 ? "Günaydın" : hour < 18 ? "İyi günler" : "İyi akşamlar";
-  const greetEmoji = hour < 12 ? "🌅" : hour < 18 ? "☀️" : "🌙";
-
-  const actFn = (a: "games" | "draw" | "story") =>
-    a === "games" ? onGoGames : a === "draw" ? onGoDraw : onGoStories;
-
+  const picks = ["memory", "runner", "basketball"] as const;
   return (
-    <motion.div
-      className="mx-auto w-full max-w-5xl px-4 pt-8 pb-36"
-      variants={stagger}
-      initial="hidden"
-      animate="show"
-    >
-      {/* ── HERO ── */}
-      <motion.section variants={fadeUp}>
-        <div
-          className="relative overflow-hidden rounded-3xl p-8 md:p-12"
-          style={{
-            background: `
-              radial-gradient(ellipse at 0% 100%, hsl(258 88% 66% / 0.18) 0%, transparent 60%),
-              radial-gradient(ellipse at 100% 0%, hsl(338 80% 62% / 0.14) 0%, transparent 55%),
-              hsl(224 28% 8%)
-            `,
-            border: '1px solid hsl(220 20% 100% / 0.06)',
-            boxShadow: '0 24px 80px hsl(258 88% 66% / 0.08), inset 0 1px 0 hsl(220 20% 100% / 0.05)',
-          }}
-        >
-          {/* Ambient orbs */}
-          <div
-            className="absolute -top-16 -right-16 w-72 h-72 rounded-full pointer-events-none"
-            style={{
-              background: 'hsl(258 88% 66% / 0.08)',
-              filter: 'blur(60px)',
-            }}
-          />
-          <div
-            className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full pointer-events-none"
-            style={{
-              background: 'hsl(338 80% 62% / 0.07)',
-              filter: 'blur(60px)',
-            }}
-          />
-
-          <div className="relative flex flex-col gap-5">
-            {/* Greeting & Profile chip container */}
-            <div className="flex items-center justify-between gap-3 w-full flex-wrap">
-              <span
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold"
-                style={{
-                  background: 'hsl(var(--muted) / 0.6)',
-                  border: '1px solid hsl(220 20% 100% / 0.06)',
-                  color: 'hsl(var(--muted-foreground))',
-                }}
-              >
-                <span>{greetEmoji}</span>
-                <span>{greeting}{nickname ? `, ${nickname}` : ''}! Eğlenceye hazır mısın?</span>
-              </span>
-
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent('oyuncak:open-nickname-modal'))}
-                className="flex min-h-11 items-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-white/90 transition-all hover:bg-white/10 active:scale-95 cursor-pointer backdrop-blur-md"
-                style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
-                }}
-                title="Rumuzunu Değiştir"
-              >
-                <span className="text-sm">👤</span>
-                <span>{nickname ? nickname : 'Rumuz Belirle'}</span>
-                <span className="text-white/40 text-[11px] ml-0.5">✏️</span>
-              </button>
-            </div>
-
-            {/* Title */}
-            <div className="space-y-1">
-              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black leading-[1.08] tracking-tight">
-                <span
-                  style={{
-                    background: 'linear-gradient(135deg, hsl(258 88% 72%), hsl(338 80% 68%))',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  Oyna
-                </span>
-                <span className="text-foreground/20 mx-2">&</span>
-                <span
-                  style={{
-                    background: 'linear-gradient(135deg, hsl(38 95% 62%), hsl(158 65% 52%))',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  Keşfet
-                </span>
-              </h1>
-              <p className="text-base md:text-lg text-muted-foreground font-medium max-w-md leading-relaxed">
-                Eğlenceli oyunlar oyna, kendi resimlerini çiz ve harika masallara dal! Hepsi senin için ve tamamen ücretsiz.
-              </p>
-            </div>
-
-            {/* CTAs */}
-            <div className="flex flex-wrap gap-3 pt-1">
-              <motion.button
-                onClick={onGoGames}
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm"
-                style={{
-                  background: 'hsl(var(--primary))',
-                  color: 'hsl(var(--primary-foreground))',
-                  boxShadow: '0 4px 24px hsl(var(--primary) / 0.35), inset 0 1px 0 hsl(0 0% 100% / 0.15)',
-                }}
-              >
-                <Gamepad2 className="w-4 h-4" />
-                Hemen Oyna
-                <ArrowRight className="w-4 h-4" />
-              </motion.button>
-              <motion.button
-                onClick={onGoDraw}
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm"
-                style={{
-                  background: 'hsl(220 20% 100% / 0.06)',
-                  color: 'hsl(var(--foreground))',
-                  border: '1px solid hsl(220 20% 100% / 0.1)',
-                }}
-              >
-                <Pencil className="w-4 h-4" />
-                Resim Çiz
-              </motion.button>
-              <motion.button
-                onClick={onGoStories}
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm"
-                style={{
-                  background: 'hsl(220 20% 100% / 0.06)',
-                  color: 'hsl(var(--foreground))',
-                  border: '1px solid hsl(220 20% 100% / 0.1)',
-                }}
-              >
-                <BookOpen className="w-4 h-4" />
-                Masal Oku
-              </motion.button>
-            </div>
+    <div className="garden-home">
+      <section className="garden-hero">
+        <GardenCharacter />
+        <div className="garden-hero-copy">
+          <p className="garden-eyebrow">
+            <span /> MERAK ET. DENE. BİR DAHA OYNA.
+          </p>
+          <h1>
+            Bir dünya
+            <br />
+            <em>hayal et.</em>
+          </h1>
+          <p className="garden-intro">
+            Oyunlar, renkler ve masallar.
+            <br />
+            İçindeki kocaman hayal gücüne <br />
+            küçük bir oyun alanı.
+          </p>
+          <div className="garden-actions">
+            <button className="garden-button" onClick={onGoGames}>
+              Oyunları keşfet <ArrowUpRight size={18} />
+            </button>
+            <button
+              className="garden-button garden-button-soft"
+              onClick={onGoDraw}
+            >
+              Bir şeyler çiz <Pencil size={16} />
+            </button>
           </div>
         </div>
-      </motion.section>
-
-      {/* ── QUICK ACCESS ── */}
-      <motion.section variants={fadeUp} className="mt-6 grid grid-cols-3 gap-3">
-        {QUICK.map((q) => (
-          <motion.button
-            key={q.title}
-            onClick={actFn(q.action)}
-            whileHover={{ y: -3, scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            className="group relative overflow-hidden rounded-2xl p-4 text-left transition-all duration-300"
-            style={{
-              background: q.color,
-              border: `1px solid ${q.border}`,
-            }}
-          >
-            <span className="text-2xl md:text-3xl block mb-2">{q.emoji}</span>
-            <p className="font-bold text-sm text-foreground">{q.title}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{q.sub}</p>
-          </motion.button>
-        ))}
-      </motion.section>
-
-      {recent.length > 0 && <section className="mt-8" aria-label="Son oynanan oyunlar">
-        <h2 className="text-lg font-black mb-3">Son oynadıkların</h2>
-        <div className="flex flex-wrap gap-3">{recent.map((id) => {
-          const game = GAME_CATALOG.find((entry) => entry.id === id)!;
-          return <Link key={id} to={`/games/${id}`} className="rounded-xl border border-border bg-card px-4 py-3 text-sm font-bold">{game.emoji} {game.title}</Link>;
-        })}</div>
-      </section>}
-
-      {/* ── FEATURED ── */}
-      <motion.section variants={fadeUp} className="mt-10">
-        <div className="flex items-center justify-between mb-5">
+      </section>
+      <div className="garden-promise">
+        <span>{GAME_CATALOG.length} OYUN · SONSUZ MERAK</span>
+        <span>REKLAMSIZ</span>
+        <span>TAMAMEN ÜCRETSİZ</span>
+      </div>
+      {recent.length > 0 && (
+        <section className="garden-recent" aria-label="Son oynanan oyunlar">
+          <span>Kaldığın yerden</span>
+          {recent.map((id) => {
+            const game = GAME_CATALOG.find((g) => g.id === id);
+            return game ? (
+              <Link key={id} to={"/games/" + id}>
+                {game.title}
+                <ArrowUpRight size={14} />
+              </Link>
+            ) : null;
+          })}
+        </section>
+      )}
+      <section className="garden-featured">
+        <div className="garden-section-heading">
           <div>
-            <p className="section-label mb-1">Öne Çıkanlar</p>
-            <h2 className="text-lg font-black tracking-tight text-foreground">En Popüler İçerikler</h2>
+            <p className="garden-eyebrow">BUGÜNÜN KÜÇÜK MACERALARI</p>
+            <h2>Bugün ne oynasak?</h2>
           </div>
-          <button
-            onClick={onGoGames}
-            className="flex min-h-11 items-center gap-1 px-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            Tümü <ChevronRight className="w-3.5 h-3.5" />
+          <button onClick={onGoGames} className="garden-text-link">
+            Tüm oyunlar <ArrowRight size={16} />
           </button>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {FEATURED.map((item) => (
-            <motion.button
-              key={item.id}
-              variants={fadeUp}
-              whileHover={{ y: -3 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => {
-                if (item.tab === "games" && item.gameId && onGoFeaturedGame) return onGoFeaturedGame(item.gameId);
-                if (item.tab === "games") return onGoGames();
-                if (item.tab === "draw") return onGoDraw();
-                return onGoStories();
-              }}
-              className="group relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300"
-              style={{
-                background: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                boxShadow: '0 2px 8px hsl(224 28% 3% / 0.3)',
-              }}
-            >
-              {/* Gradient bg */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-60 transition-opacity duration-300 group-hover:opacity-90`}
-              />
-              <div className="relative flex items-start gap-4">
-                <span className="text-4xl md:text-5xl select-none">{item.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-base text-foreground">{item.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.subtitle}</p>
-                  <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    {item.badges.map((b) => (
-                      <span key={b} className="badge">{b}</span>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-1 mt-3 text-primary text-xs font-bold">
-                    <span>{item.cta}</span>
-                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                  </div>
-                </div>
-              </div>
-            </motion.button>
-          ))}
+        <div className="garden-feature-grid">
+          {picks.map((id) => {
+            const game = GAME_CATALOG.find((g) => g.id === id)!;
+            return (
+              <button
+                key={id}
+                className="garden-feature"
+                onClick={() => navigate("/games/" + id)}
+              >
+                <GameArtwork id={id} />
+                <span className="garden-feature-title">
+                  {game.title}
+                  <ArrowUpRight size={19} />
+                </span>
+                <span className="garden-feature-meta">
+                  {game.minAge}+ yaş · {game.skill}
+                </span>
+              </button>
+            );
+          })}
         </div>
-      </motion.section>
-
-      {/* ── CATEGORIES ── */}
-      <motion.section variants={fadeUp} className="mt-10">
-        <p className="section-label mb-4">Kategoriler</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { emoji: "⚡", title: "Aksiyon", desc: "Balon, Koşucu,\nKöstebek", color: "hsl(38 95% 58% / 0.1)", border: "hsl(38 95% 58% / 0.2)" },
-            { emoji: "🧠", title: "Zeka", desc: "Hafıza, 2048,\nTetris", color: "hsl(258 88% 66% / 0.1)", border: "hsl(258 88% 66% / 0.2)" },
-            { emoji: "🎨", title: "Yaratıcı", desc: "Boyama, Piyano,\nÇizim", color: "hsl(338 80% 62% / 0.1)", border: "hsl(338 80% 62% / 0.2)" },
-            { emoji: "📖", title: "Öğren", desc: "Sayma, Matematik", color: "hsl(158 65% 48% / 0.1)", border: "hsl(158 65% 48% / 0.2)" },
-          ].map((cat) => (
-            <motion.button
-              key={cat.title}
-              onClick={() => navigate(cat.title === 'Yaratıcı' ? '/draw' : `/games?category=${cat.title === 'Aksiyon' ? 'action' : cat.title === 'Zeka' ? 'brain' : 'learn'}`)}
-              whileHover={{ y: -3, scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              className="rounded-2xl p-4 text-left transition-all duration-300"
-              style={{ background: cat.color, border: `1px solid ${cat.border}` }}
-            >
-              <span className="text-2xl block mb-2">{cat.emoji}</span>
-              <p className="font-bold text-sm text-foreground">{cat.title}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed whitespace-pre">{cat.desc}</p>
-            </motion.button>
-          ))}
+      </section>
+      <section className="garden-explore" aria-label="Keşif alanları">
+        <button
+          onClick={() => navigate("/games?category=brain")}
+          aria-label="Zeka Hafıza, 2048 ve Tetris"
+        >
+          <Sparkles />
+          <span>
+            <strong>Biraz düşünelim.</strong>
+            <small>Zeka oyunları</small>
+          </span>
+          <ArrowUpRight />
+        </button>
+        <button onClick={onGoDraw}>
+          <Pencil />
+          <span>
+            <strong>Renkleri özgür bırak.</strong>
+            <small>Çizim atölyesi</small>
+          </span>
+          <ArrowUpRight />
+        </button>
+        <button onClick={onGoStories}>
+          <BookOpen />
+          <span>
+            <strong>Bir varmış, bir hayal varmış.</strong>
+            <small>{STORIES.length} hikâye</small>
+          </span>
+          <ArrowUpRight />
+        </button>
+      </section>
+      <footer className="garden-footer">
+        <div>
+          <Link to="/" className="garden-wordmark">
+            oyuncak<span>✳</span>
+          </Link>
+          <p>Küçük insanlar. Kocaman hayaller.</p>
         </div>
-      </motion.section>
-
-      {/* ── FOOTER ── */}
-      <motion.div variants={fadeUp} className="mt-14 text-center">
-        <nav aria-label="Bilgilendirme" className="flex flex-wrap justify-center gap-4 mb-4 text-sm text-muted-foreground">
-          <Link className="py-3 hover:text-primary" to="/parents">Ebeveyn Alanı</Link>
-          <Link className="py-3 hover:text-primary" to="/privacy">Gizlilik</Link>
-          <Link className="py-3 hover:text-primary" to="/terms">Kullanım Bilgileri</Link>
+        <nav aria-label="Bilgilendirme">
+          <Link to="/parents">Ebeveyn alanı</Link>
+          <Link to="/privacy">Gizlilik</Link>
+          <Link to="/terms">Kullanım bilgileri</Link>
         </nav>
-        <p className="text-xs text-muted-foreground/40 font-medium tracking-wide">
-          🛡️ Reklamsız · Güvenli · Tamamen Ücretsiz
-        </p>
-        <p className="text-xs text-muted-foreground/40 font-medium tracking-wide mt-2">
-          Geliştirici <a href="https://omersevim.com.tr" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Osoft</a>
-        </p>
-      </motion.div>
-    </motion.div>
+        <button
+          className="garden-profile"
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent("oyuncak:open-nickname-modal"))
+          }
+        >
+          {nickname || "Rumuzunu seç"} <ArrowUpRight size={14} />
+        </button>
+      </footer>
+    </div>
   );
 }

@@ -50,7 +50,8 @@ function validateScore(score) {
 }
 
 /**
- * The only score write path. Admin SDK bypasses Firestore rules after the
+ * Optional Blaze-plan score endpoint; the Spark web app writes directly to Firestore.
+ * Admin SDK bypasses Firestore rules after the
  * authenticated caller, game id, score shape, ownership and update cadence
  * have been validated on the server.
  */

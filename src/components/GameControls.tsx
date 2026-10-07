@@ -50,7 +50,7 @@ export default function GameControls() {
   }, [preferences.breakMinutes]);
   return <>
     <div
-      className="fixed right-3 top-3 z-[70] flex gap-2 rounded-2xl bg-slate-950/90 p-2 shadow-lg"
+      className="garden-game-controls fixed right-3 top-3 z-[70] flex gap-2 rounded-2xl p-2 shadow-lg"
       style={{
         top: 'max(0.75rem, calc(env(safe-area-inset-top, 0px) + 0.5rem))',
         right: 'max(0.75rem, calc(env(safe-area-inset-right, 0px) + 0.5rem))',

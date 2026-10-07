@@ -42,3 +42,12 @@ android/app/src/main/assets/capacitor.config.json
 
 # MiMoCode
 .mimocode
+
+# Local tooling and verification artifacts
+.cache/
+.npm-cache/
+.superpowers/
+firebase-debug.log
+firestore-debug.log
+
+firebase-accounts.json

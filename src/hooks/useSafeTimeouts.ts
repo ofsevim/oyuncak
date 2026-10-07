@@ -4,7 +4,7 @@ import { GAME_ACTIVITY_EVENT, isGamePaused } from '@/utils/gameActivity';
 
 /** Game timers preserve their remaining duration during pauses and clean up on exit. */
 export function useSafeTimeouts() {
-  const ref = useRef<ReturnType<typeof createPausableTimers>>();
+  const ref = useRef<ReturnType<typeof createPausableTimers> | undefined>(undefined);
   if (!ref.current) { ref.current = createPausableTimers(); ref.current.setPaused(isGamePaused()); }
   const timers = ref.current;
   const safeTimeout = timers.timeout;

@@ -3,13 +3,13 @@ import { BookOpen, Shuffle } from "lucide-react";
 import { STORIES, STORY_CATEGORIES } from "@/data/stories";
 import { loadStoryProgress } from "./storyProgress";
 import StoryReader from "./StoryReader";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 const stagger = {
   hidden: {},
   show: { transition: { staggerChildren: 0.05 } },
 };
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 16 },
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 220, damping: 26 } },
 };
@@ -54,7 +54,7 @@ export default function StoryLibrary() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pb-36 animate-fade-in">
+    <div className="garden-stories mx-auto w-full max-w-5xl px-4 pb-36 animate-fade-in">
       {/* ── Header ── */}
       <div className="flex flex-col items-center gap-4 text-center pt-2">
         <div
@@ -66,7 +66,7 @@ export default function StoryLibrary() {
 
         <div>
           <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
-            Hikaye <span className="text-gradient">Kitaplığı</span>
+            Bir varmış,<br/><em>bir hayal varmış.</em>
           </h2>
           <p className="text-sm text-muted-foreground mt-1 font-medium">
             <span className="text-foreground font-bold">{STORIES.length}</span> hikaye seni bekliyor. Kapağı seç, sayfa sayfa oku.
@@ -83,8 +83,8 @@ export default function StoryLibrary() {
                 onClick={() => setActiveCategory(cat.id)}
                 className="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
                 style={{
-                  background: isActive ? 'hsl(158 65% 48%)' : 'hsl(var(--muted) / 0.5)',
-                  color: isActive ? '#fff' : 'hsl(var(--muted-foreground))',
+                  background: isActive ? 'hsl(var(--primary))' : 'hsl(var(--muted) / 0.5)',
+                  color: isActive ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
                   border: isActive ? '1px solid hsl(158 65% 48% / 0.5)' : '1px solid hsl(var(--border))',
                   boxShadow: isActive ? '0 4px 16px hsl(158 65% 48% / 0.25)' : 'none',
                   transform: isActive ? 'scale(1.03)' : 'scale(1)',
@@ -100,7 +100,7 @@ export default function StoryLibrary() {
         <div className="flex items-center gap-3">
           <button
             onClick={openRandom}
-            className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 font-bold text-sm text-white transition-all hover:opacity-90 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 font-bold text-sm text-primary-foreground transition-all hover:opacity-90 active:scale-95"
             style={{
               background: 'hsl(var(--primary))',
               boxShadow: '0 4px 16px hsl(var(--primary) / 0.3)',
@@ -142,7 +142,7 @@ export default function StoryLibrary() {
               >
                 {/* Gradient overlay */}
                 <div
-                  className={`absolute inset-0 bg-gradient-to-br ${s.coverGradient} opacity-70 transition-opacity group-hover:opacity-100`}
+                  className={`absolute inset-0 bg-gradient-to-br ${s.coverGradient} opacity-20 transition-opacity group-hover:opacity-100`}
                   aria-hidden="true"
                 />
 

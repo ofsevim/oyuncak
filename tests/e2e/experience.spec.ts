@@ -14,7 +14,7 @@ test('home, discovery and parent links work without bootstrap errors', async ({ 
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Oyna.*Keşfet/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Bir dünya hayal et.' })).toBeVisible();
   await page.getByRole('button', { name: /Zeka Hafıza/ }).click();
   await expect(page).toHaveURL(/category=brain/);
   await expect(page.getByRole('heading', { name: 'Hafıza Oyunu' })).toBeVisible();

@@ -8,6 +8,9 @@ export default tseslint.config(
   {
     ignores: [
       "dist/**",
+      ".cache/**",
+      ".superpowers/**",
+      ".npm-cache/**",
       "test-results/**",
       "playwright-report/**",
       "android/app/build/**",
@@ -26,7 +29,10 @@ export default tseslint.config(
       "react-refresh": reactRefresh,
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
+      // Canvas games use imperative refs; React Compiler is not enabled.
+      // Preserve hook ordering and dependency checks independently of compiler diagnostics.
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": [
         "warn",

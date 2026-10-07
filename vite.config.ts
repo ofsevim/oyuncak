@@ -3,8 +3,8 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import fs from "fs";
 import legacy from "@vitejs/plugin-legacy";
-import { PAGE_ROUTES, getPageMetadata } from './src/data/pageMetadata';
-import { REQUIRED_FIREBASE_KEYS } from './src/lib/envKeys';
+import { PAGE_ROUTES, getPageMetadata } from './src/data/pageMetadata.ts';
+import { REQUIRED_FIREBASE_KEYS } from './src/lib/envKeys.ts';
 
 function routeMetadataPlugin(publicUrl: string): Plugin {
   let basePath = '/';
@@ -14,7 +14,7 @@ function routeMetadataPlugin(publicUrl: string): Plugin {
     apply: 'build',
     configResolved(config) { basePath = config.base.replace(/\/$/, ''); },
     closeBundle() {
-      const root = path.resolve(__dirname, 'dist');
+      const root = path.resolve(import.meta.dirname, 'dist');
       const template = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
         .replaceAll('https://oyuncak.app', publicUrl);
       for (const route of PAGE_ROUTES) {
@@ -44,7 +44,7 @@ function swVersionPlugin(): Plugin {
     name: "sw-version",
     apply: "build",
     closeBundle() {
-      const swPath = path.resolve(__dirname, "dist", "sw.js");
+      const swPath = path.resolve(import.meta.dirname, "dist", "sw.js");
       if (!fs.existsSync(swPath)) return;
 
       const buildHash = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
@@ -69,7 +69,7 @@ function precacheManifestPlugin(): Plugin {
       basePath = config.base.endsWith("/") ? config.base : `${config.base}/`;
     },
     closeBundle() {
-      const distDir = path.resolve(__dirname, "dist");
+      const distDir = path.resolve(import.meta.dirname, "dist");
       const assetsDir = path.join(distDir, "assets");
       if (!fs.existsSync(assetsDir)) return;
 
@@ -196,7 +196,7 @@ export default defineConfig(({ mode, command }) => {
   ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 });

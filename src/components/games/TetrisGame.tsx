@@ -1,3 +1,4 @@
+import { collides, planHoldTransition } from './tetrisLogic';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -134,20 +135,8 @@ const TetrisGame = () => {
 
   /* ── Çarpışma kontrolü ─────────────────────────────────── */
   const checkCollision = useCallback(
-    (x: number, y: number, shape: number[][], customGrid?: (string | null)[][]) => {
-      const g = customGrid ?? gridRef.current;
-      for (let r = 0; r < shape.length; r++) {
-        for (let c = 0; c < shape[r].length; c++) {
-          if (shape[r][c] !== 0) {
-            const nx = x + c;
-            const ny = y + r;
-            if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
-            if (ny >= 0 && g[ny][nx] !== null) return true;
-          }
-        }
-      }
-      return false;
-    },
+    (x: number, y: number, shape: number[][], customGrid?: (string | null)[][]) =>
+      collides(customGrid ?? gridRef.current, x, y, shape),
     [],
   );
 
@@ -312,23 +301,21 @@ const TetrisGame = () => {
   /* ── Parça tutma ───────────────────────────────────────── */
   const holdCurrentPiece = useCallback(() => {
     const piece = activePieceRef.current;
-    if (!piece || !canHoldRef.current || gameStateRef.current !== 'playing') return;
-
+    if (!piece || gameStateRef.current !== 'playing') return;
+    const transition = planHoldTransition({
+      currentType: piece.type, heldType: holdPieceTypeRef.current,
+      nextType: nextPieceTypeRef.current ?? randomTetromino(),
+      canHold: canHoldRef.current, board: gridRef.current,
+      shapes: Object.fromEntries(Object.entries(TETROMINOS).map(([type, def]) => [type, def.shape])) as Record<TetrominoKey, number[][]>,
+    });
+    if (!transition) return;
     updateCanHold(false);
-    const currentType = piece.type;
-    const held = holdPieceTypeRef.current;
-
-    if (held) {
-      const shape = TETROMINOS[held].shape;
-      const startX = Math.floor(COLS / 2) - Math.floor(shape[0].length / 2);
-      updateActivePiece({ pos: { x: startX, y: 0 }, type: held, shape });
-    } else {
-      spawnNextPiece();
-    }
-
-    updateHoldPieceType(currentType);
+    if (transition.blocked) { handleGameOver(); return; }
+    updateActivePiece(transition.active);
+    updateHoldPieceType(transition.heldType);
+    if (transition.consumeNext) updateNextPieceType(randomTetromino());
     playPopSound();
-  }, [updateCanHold, updateActivePiece, updateHoldPieceType, spawnNextPiece]);
+  }, [updateCanHold, updateActivePiece, updateHoldPieceType, updateNextPieceType, handleGameOver]);
 
   /* ── Duraklat / Devam ──────────────────────────────────── */
   const togglePause = useCallback(() => {

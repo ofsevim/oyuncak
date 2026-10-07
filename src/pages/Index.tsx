@@ -1,6 +1,5 @@
 import { Suspense, lazy, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import FloatingBubbles from '@/components/ui/FloatingBubbles';
 import Navigation from '@/components/Navigation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Home from '@/components/home/Home';
@@ -61,12 +60,9 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Subtle grid pattern */}
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
-      {/* Mesh gradient ambient */}
-      <div className="fixed inset-0 mesh-gradient pointer-events-none" />
-      <FloatingBubbles />
+    <div className={'garden-app min-h-screen relative ' + (isGameActive ? 'garden-playing' : '')}>
+      <div className="garden-sky" aria-hidden="true" />
+      {!isGameActive && <Navigation activeTab={activeTab} onTabChange={setActiveTab} />}
       <main className="relative z-10">
         <Suspense
           fallback={
@@ -78,7 +74,6 @@ const Index = () => {
           {renderContent()}
         </Suspense>
       </main>
-      {!isGameActive && <Navigation activeTab={activeTab} onTabChange={setActiveTab} />}
       <PWAInstall />
     </div>
   );

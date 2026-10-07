@@ -1,3 +1,4 @@
+import { planSnakeStep } from './snakeLogic';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
@@ -229,7 +230,6 @@ const SnakeGame = () => {
 
     safeInterval(() => {
       const cur = [...snakeRef.current];
-      const head = { ...cur[0] };
       const currentFood = foodRef.current;
       const currentObs = obstaclesRef.current;
 
@@ -240,23 +240,11 @@ const SnakeGame = () => {
         setDir(nextDir);
       }
 
-      if (nextDir === 'UP') head.y -= 1;
-      if (nextDir === 'DOWN') head.y += 1;
-      if (nextDir === 'LEFT') head.x -= 1;
-      if (nextDir === 'RIGHT') head.x += 1;
+      const step = planSnakeStep(cur, nextDir, currentFood, currentObs, GRID, cfg.wrap);
+      if (step.collision) { endGame(); return; }
+      const ns = step.snake;
 
-      if (cfg.wrap) {
-        head.x = (head.x + GRID) % GRID;
-        head.y = (head.y + GRID) % GRID;
-      } else if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) {
-        endGame(); return;
-      }
-      if (cur.some(s => s.x === head.x && s.y === head.y)) { endGame(); return; }
-      if (currentObs.some(o => o.x === head.x && o.y === head.y)) { endGame(); return; }
-
-      const ns = [head, ...cur];
-
-      if (head.x === currentFood.x && head.y === currentFood.y) {
+      if (step.ate) {
         comboRef.current += 1;
         const nc = comboRef.current;
         setCombo(nc);
@@ -292,8 +280,6 @@ const SnakeGame = () => {
         }
         if (eatenType === 'shrink' && ns.length > 4) { ns.pop(); ns.pop(); }
         if (eatenType === 'golden') fireConfetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
-      } else {
-        ns.pop();
       }
 
       setSnake(ns); snakeRef.current = ns;
