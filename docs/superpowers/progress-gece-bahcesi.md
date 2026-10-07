@@ -30,3 +30,5 @@ Final: artifact trace collision corrected by isolating helper outputDirs; both f
 Task5: all238 E2E cases accounted for:234 broad pass,2 expected skips,2 failures fixed/cleanly rerun in10/10 targeted checks.236 unique successful checks.26/26 unit files pass; lint/typecheck/functions syntax/npm tree pass. Production build pending.
 
 Task5: production build passes with live local web config. Final review findings addressed and verified; no deferred minors. Source ready for local integration.
+
+Game UI follow-up: all 20 games share the approved garden frame, action/choice/HUD/pause styling; palettes and icons refined without changing gameplay callbacks. Independent review contrast finding fixed with RED 1.02 → GREEN >=4.5 browser regression. Broad 216 cases:214 passed,2 expected skips; final production checks16/16 passed. Lint/typecheck/26 unit files/functions/npm tree and production build pass. Production and Functions audits0; documented dev-only braces advisory remains.

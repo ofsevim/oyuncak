@@ -1,3 +1,5 @@
+import { Play as GardenPlay } from 'lucide-react';
+import {  } from 'lucide-react';
 import { GAME_ACTIVITY_EVENT, isGamePaused } from '@/utils/gameActivity';
 import { isMuted } from '@/utils/soundEffects';
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -147,23 +149,23 @@ const MELODIES: Melody[] = [
 ];
 
 const COLORS: Record<string, string> = {
-  C: '#F72C3A',
-  D: '#FF7600',
-  E: '#F5C800',
-  F: '#00C04B',
-  G: '#009BDE',
-  A: '#8B2BE2',
-  B: '#E8006A',
-  C2: '#F72C3A',
-  D2: '#FF7600',
-  E2: '#F5C800',
-  'C#': '#B5001D',
-  'D#': '#C45500',
-  'F#': '#007A30',
-  'G#': '#006BA0',
-  'A#': '#5C0BA5',
-  'C#2': '#B5001D',
-  'D#2': '#C45500',
+  C: '#E4A5B2',
+  D: '#E7BE9E',
+  E: '#E1D3A4',
+  F: '#A7CFB8',
+  G: '#A6C5DD',
+  A: '#BEADD9',
+  B: '#D9B4C6',
+  C2: '#E4A5B2',
+  D2: '#E7BE9E',
+  E2: '#E1D3A4',
+  'C#': '#825266',
+  'D#': '#916C54',
+  'F#': '#4F7768',
+  'G#': '#4F738A',
+  'A#': '#70608C',
+  'C#2': '#825266',
+  'D#2': '#916C54',
 };
 
 const MOBILE_PIANO_MIN_WIDTH = 420;
@@ -501,7 +503,7 @@ const PianoGame = () => {
       <div className="flex items-center gap-3">
         <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="38" height="38" rx="8" fill="#1e1b4b" />
-          {['#F72C3A', '#FF7600', '#F5C800', '#00C04B', '#009BDE', '#8B2BE2', '#E8006A'].map((c, i) => (
+          {['#E4A5B2', '#E7BE9E', '#E1D3A4', '#A7CFB8', '#A6C5DD', '#BEADD9', '#D9B4C6'].map((c, i) => (
             <rect key={i} x={2 + i * 5} y="8" width="4" height="22" rx="1" fill={c} />
           ))}
           {[0, 1, 3, 4, 5].map((pos, i) => (
@@ -512,11 +514,11 @@ const PianoGame = () => {
               width="3"
               height="13"
               rx="0.8"
-              fill={['#B5001D', '#C45500', '#007A30', '#006BA0', '#5C0BA5'][i]}
+              fill={['#825266', '#916C54', '#4F7768', '#4F738A', '#70608C'][i]}
             />
           ))}
         </svg>
-        <h2 className="text-3xl font-black text-gradient">Renkli Piyano</h2>
+        <h2 className="garden-entry-title text-3xl font-black text-gradient">Renkli Piyano</h2>
       </div>
 
       <p className="text-sm text-muted-foreground font-medium text-center">
@@ -598,7 +600,7 @@ const PianoGame = () => {
                     aria-label={`${note.label} notası`}
                     onClick={onClick(note.note)}
                     onPointerDown={onPointerDown(note.note)}
-                    className={`relative rounded-b-xl transition-all touch-manipulation select-none flex-1 ${isActive ? 'brightness-110 scale-[0.98]' : ''
+                    className={`garden-piano-key relative rounded-b-xl transition-all touch-manipulation select-none flex-1 ${isActive ? 'brightness-110 scale-[0.98]' : ''
                       }`}
                     style={{
                       minWidth: 0,
@@ -641,7 +643,7 @@ const PianoGame = () => {
                     aria-label={`${note.label} notası`}
                     onClick={onClick(note.note)}
                     onPointerDown={onPointerDown(note.note)}
-                    className="absolute pointer-events-auto rounded-b-lg touch-manipulation select-none z-10"
+                    className="garden-piano-sharp absolute pointer-events-auto rounded-b-lg touch-manipulation select-none z-10"
                     style={{
                       left: `${leftPos}%`,
                       width: `${whiteKeyWidthPercent * 0.64}%`,
@@ -679,7 +681,7 @@ const PianoGame = () => {
             setIsRecording(!isRecording);
           }}
           disabled={!!currentMelody}
-          className={`px-4 py-2 rounded-xl font-bold text-sm touch-manipulation disabled:opacity-50 ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'glass-card text-muted-foreground'
+          className={`garden-action-secondary px-4 py-2 rounded-xl font-bold text-sm touch-manipulation disabled:opacity-50 ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'glass-card text-muted-foreground'
             }`}
         >
           {isRecording ? '⏹️ Kaydı Durdur' : '⏺️ Kaydet'}
@@ -689,7 +691,7 @@ const PianoGame = () => {
           <button
             onClick={playRecording}
             disabled={isPlaying}
-            className="px-4 py-2 glass-card rounded-xl font-bold text-sm text-primary touch-manipulation disabled:opacity-50"
+            className="garden-action-secondary px-4 py-2 glass-card rounded-xl font-bold text-sm text-primary touch-manipulation disabled:opacity-50"
           >
             ▶️ Kaydı Çal ({recordedNotes.length} nota)
           </button>
@@ -698,7 +700,7 @@ const PianoGame = () => {
         {isPlaying && (
           <button
             onClick={stopPlayback}
-            className="px-4 py-2 glass-card rounded-xl font-bold text-sm text-red-400 touch-manipulation"
+            className="garden-action-secondary px-4 py-2 glass-card rounded-xl font-bold text-sm text-red-400 touch-manipulation"
           >
             ⏹️ Durdur
           </button>
@@ -725,16 +727,16 @@ const PianoGame = () => {
                 <button
                   onClick={() => playMelody(melody)}
                   disabled={isPlaying || currentMelody !== null}
-                  className="px-3 py-1.5 glass-card rounded-lg font-bold text-xs touch-manipulation disabled:opacity-50"
+                  className="garden-action-secondary px-3 py-1.5 glass-card rounded-lg font-bold text-xs touch-manipulation disabled:opacity-50"
                 >
                   🔊 Dinle
                 </button>
                 <button
                   onClick={() => startMelodyMode(melody)}
                   disabled={isPlaying || currentMelody !== null}
-                  className="px-3 py-1.5 btn-gaming rounded-lg font-bold text-xs touch-manipulation disabled:opacity-50"
-                >
-                  🎮 Çal
+                  className="garden-action-primary px-3 py-1.5 btn-gaming rounded-lg font-bold text-xs touch-manipulation disabled:opacity-50"
+                ><GardenPlay size={16} aria-hidden="true" />
+                  Çal
                 </button>
               </div>
             </div>
@@ -751,7 +753,7 @@ const PianoGame = () => {
               comboRef.current = 0;
               scoreRef.current = 0;
             }}
-            className="w-full px-4 py-2 glass-card text-muted-foreground rounded-xl font-bold text-sm"
+            className="garden-action-secondary w-full px-4 py-2 glass-card text-muted-foreground rounded-xl font-bold text-sm"
           >
             ❌ İptal
           </button>

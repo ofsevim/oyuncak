@@ -1,3 +1,5 @@
+import { Play as GardenPlay } from 'lucide-react';
+import {  } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SuccessPopup from '@/components/SuccessPopup';
@@ -384,15 +386,15 @@ const WhackAMoleGame = () => {
   if (gamePhase === 'start') {
     return (
       <motion.div className="flex flex-col items-center gap-5 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <motion.span className="text-6xl block" animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}>🐹</motion.span>
-        <h2 className="text-3xl md:text-4xl font-black text-gradient">Köstebek Yakala!</h2>
+        <motion.span className="garden-legacy-decoration text-6xl block" animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}>🐹</motion.span>
+        <h2 className="garden-entry-title text-3xl md:text-4xl font-black text-gradient">Köstebek Yakala!</h2>
         {highScore > 0 && <div className="glass-card px-4 py-2 neon-border"><span className="font-black text-primary">🏆 Rekor: {highScore}</span></div>}
 
         <div className="flex flex-col gap-2 w-full max-w-xs">
           <p className="text-sm font-bold text-muted-foreground">Zorluk Seç:</p>
           {(Object.entries(DIFFS) as [Difficulty, typeof DIFFS['easy']][]).map(([key, val]) => (
             <button key={key} onClick={() => setDifficulty(key)}
-              className={`px-5 py-3 rounded-xl font-bold transition-all ${difficulty === key ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/5'}`}>
+              className={`garden-choice px-5 py-3 rounded-xl font-bold transition-all ${difficulty === key ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/5'}`} aria-pressed={difficulty === key}>
               {val.label} ({val.holes} delik, {val.time}s)
             </button>
           ))}
@@ -409,7 +411,7 @@ const WhackAMoleGame = () => {
 
         <Leaderboard gameId="whack-a-mole" />
 
-        <button onClick={startGame} className="btn-gaming px-10 py-4 text-lg cursor-pointer">🚀 BAŞLA!</button>
+        <button onClick={startGame} className="garden-action-primary btn-gaming px-10 py-4 text-lg cursor-pointer"><GardenPlay size={16} aria-hidden="true" />BAŞLA!</button>
       </motion.div>
     );
   }

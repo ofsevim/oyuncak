@@ -1,3 +1,4 @@
+import { Trophy, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { LeaderboardEntry } from '@/services/scoreService';
@@ -102,21 +103,21 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
         aria-expanded={open}
         aria-controls={`leaderboard-panel-${gameId}`}
         aria-label="Liderlik tablosunu aç/kapat"
-        className="w-full min-h-11 px-4 py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+        className="garden-action-secondary w-full min-h-11 px-4 py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
         style={{
           background: open ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.05)',
           border: `1px solid ${open ? 'rgba(168,85,247,0.3)' : 'rgba(255,255,255,0.1)'}`,
           color: open ? '#c084fc' : 'rgba(255,255,255,0.6)',
         }}
       >
-        🏆 Liderlik Tablosu
+        <Trophy size={15} aria-hidden="true" /> Liderlik Tablosu
         <motion.span
           aria-hidden="true"
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2 }}
           className="text-xs"
         >
-          ▼
+          <ChevronDown size={14} />
         </motion.span>
       </button>
 
@@ -133,7 +134,7 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
             className="overflow-hidden"
           >
             <div
-              className="mt-2 rounded-2xl p-3 flex flex-col gap-1.5"
+              className="garden-panel mt-2 rounded-2xl p-3 flex flex-col gap-1.5"
               style={{
                 background: 'rgba(0,0,0,0.3)',
                 border: '1px solid rgba(255,255,255,0.08)',
@@ -188,7 +189,7 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
               {/* Refresh button */}
               <button
                 onClick={() => setRefresh((value) => value + 1)}
-                className="mt-1 text-[10px] text-white/25 hover:text-white/50 transition-colors text-center"
+                className="garden-action-secondary mt-1 text-[10px] text-white/25 hover:text-white/50 transition-colors text-center"
               >
                 ↻ Yenile
               </button>

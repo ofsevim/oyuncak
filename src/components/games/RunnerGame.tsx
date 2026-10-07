@@ -1,3 +1,5 @@
+import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
+import {  } from 'lucide-react';
 import { drawRunnerFrame } from './runner/runnerRenderer';
 import { isGamePaused } from '@/utils/gameActivity';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -663,21 +665,9 @@ const RunnerGame = () => {
   if (phase === 'menu') {
     return (
       <motion.div className="flex flex-col items-center gap-5 p-4 pb-12 md:pb-32" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <button
-          onClick={() => navigate('/games')}
-          className="self-start px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-xs transition-all"
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: 'hsl(var(--foreground))',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-          }}
-        >
-          <ArrowLeft className="w-4 h-4" /> Oyunlara Dön
-        </button>
-        <motion.span className="text-6xl block" animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>🏃</motion.span>
-        <h2 className="text-3xl md:text-4xl font-black text-gradient">Koşucu</h2>
+
+        <motion.span className="garden-legacy-decoration text-6xl block" animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}>🏃</motion.span>
+        <h2 className="garden-entry-title text-3xl md:text-4xl font-black text-gradient">Koşucu</h2>
         <p className="text-muted-foreground font-medium text-center text-sm">Engelleri atla, güçleri topla, rekoru kır!</p>
 
         {highScore > 0 && (
@@ -691,7 +681,7 @@ const RunnerGame = () => {
           <div className="flex gap-3">
             {CHARACTERS.map((c) => (
               <button key={c.id} onClick={() => { setCharacter(c); charRef.current = c; playPopSound(); }}
-                className={`p-3 rounded-2xl transition-all flex flex-col items-center gap-1 ${character.id === c.id ? 'ring-2 ring-primary scale-110 glass-card neon-border' : 'glass-card hover:scale-105'}`}>
+                className={`garden-choice p-3 rounded-2xl transition-all flex flex-col items-center gap-1 ${character.id === c.id ? 'ring-2 ring-primary scale-110 glass-card neon-border' : 'glass-card hover:scale-105'}`} aria-pressed={character.id === c.id}>
                 <span className="text-3xl">{c.emoji}</span>
                 <span className="text-xs font-bold">{c.name}</span>
               </button>
@@ -703,7 +693,7 @@ const RunnerGame = () => {
           <p className="text-sm font-bold text-center text-muted-foreground">Zorluk:</p>
           {(Object.entries(DIFF_CONFIG) as [Difficulty, typeof DIFF_CONFIG['normal']][]).map(([key, val]) => (
             <button key={key} onClick={() => { setDifficulty(key); diffRef.current = DIFF_CONFIG[key]; }}
-              className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${difficulty === key ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/5'}`}>
+              className={`garden-choice px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${difficulty === key ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/5'}`} aria-pressed={difficulty === key}>
               {val.label}
             </button>
           ))}
@@ -723,7 +713,7 @@ const RunnerGame = () => {
 
         <Leaderboard gameId="runner" />
 
-        <button onClick={startGame} className="btn-gaming px-10 py-4 text-lg">🚀 BAŞLA!</button>
+        <button onClick={startGame} className="garden-action-primary btn-gaming px-10 py-4 text-lg"><GardenPlay size={16} aria-hidden="true" />BAŞLA!</button>
 
         <div className="text-center text-xs text-muted-foreground space-y-0.5">
           <p>⬆️ / SPACE = Zıpla (2x çift zıplama)</p>
@@ -741,7 +731,7 @@ const RunnerGame = () => {
     <>
       {/* ★ Tam ekran kaplama — fixed inset-0 ile parent padding/margin bypass */}
       <motion.div
-        className="fixed inset-0 z-40 flex flex-col items-center justify-center overflow-hidden"
+        className="garden-board-overlay fixed inset-0 z-40 flex flex-col items-center justify-center overflow-hidden"
         data-game-area
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -760,7 +750,7 @@ const RunnerGame = () => {
         {/* Geri butonu — safe area altında */}
         <button
           onClick={() => navigate('/games')}
-          className="absolute left-2 md:left-3 min-h-11 px-3 py-2 rounded-xl font-bold flex items-center gap-1.5 text-[10px] md:text-xs transition-all"
+          className="garden-action-secondary absolute left-2 md:left-3 min-h-11 px-3 py-2 rounded-xl font-bold flex items-center gap-1.5 text-[10px] md:text-xs transition-all"
           style={{
             top: 'calc(env(safe-area-inset-top, 8px) + 8px)',
             zIndex: 30,
@@ -930,9 +920,9 @@ const RunnerGame = () => {
                   </motion.p>
                 )}
                 <div className="flex gap-3 mt-2">
-                  <motion.button onClick={startGame} className="btn-gaming px-8 py-3 text-lg"
-                    whileHover={{}} whileTap={{}}>
-                    🔄 Tekrar
+                  <motion.button onClick={startGame} className="garden-action-primary btn-gaming px-8 py-3 text-lg"
+                    whileHover={{}} whileTap={{}}><GardenRestart size={16} aria-hidden="true" />
+                    Tekrar
                   </motion.button>
                   <motion.button onClick={() => {
                     setPhase('menu');
@@ -942,7 +932,7 @@ const RunnerGame = () => {
                       if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen().catch(() => { });
                     } catch { /* ignore */ }
                   }}
-                    className="px-8 py-3 glass-card text-foreground rounded-xl font-bold hover:bg-white/[0.06] transition-all"
+                    className="garden-action-secondary px-8 py-3 glass-card text-foreground rounded-xl font-bold hover:bg-white/[0.06] transition-all"
                     whileHover={{}} whileTap={{}}>
                     ← Menü
                   </motion.button>
@@ -959,7 +949,7 @@ const RunnerGame = () => {
           <motion.button
             onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); jump(); }}
             aria-label="Zıpla"
-            className="touch-controls-flex md:hidden fixed bottom-6 right-6 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shadow-2xl z-[60] touch-manipulation select-none"
+            className="garden-action-secondary touch-controls-flex md:hidden fixed bottom-6 right-6 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shadow-2xl z-[60] touch-manipulation select-none"
             style={{
               touchAction: 'none',
               background: 'linear-gradient(135deg, #ef4444, #f97316)',
@@ -977,9 +967,9 @@ const RunnerGame = () => {
       <AnimatePresence>
         {isPortrait && phase === 'playing' && (
           <motion.div
-            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 text-white p-6 text-center"
+            className="garden-board-overlay fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 text-white p-6 text-center"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div animate={{ rotate: 90 }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }} className="text-6xl mb-6">📱</motion.div>
+            <motion.div animate={{ rotate: 90 }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }} className="garden-legacy-decoration text-6xl mb-6">📱</motion.div>
             <h3 className="text-2xl font-black mb-3 text-gradient">Lütfen Cihazı Döndürün</h3>
             <p className="text-muted-foreground font-medium">Bu oyun en iyi yatay (landscape) modda oynanır.</p>
           </motion.div>

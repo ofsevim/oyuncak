@@ -1,3 +1,4 @@
+import { Play as GardenPlay } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { RotateCcw, Trophy, Undo2 } from 'lucide-react';
@@ -171,11 +172,11 @@ export default function ColorSortGame() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-20 text-foreground">
-      <section className="overflow-hidden rounded-[2rem] border border-violet-100/60 bg-gradient-to-b from-violet-50 via-fuchsia-50 to-rose-50 p-4 shadow-xl sm:p-7 dark:border-violet-400/10 dark:from-slate-950 dark:via-violet-950/50 dark:to-slate-950">
+      <section className="garden-board-section overflow-hidden rounded-[2rem] border border-violet-100/60 bg-gradient-to-b from-violet-50 via-fuchsia-50 to-rose-50 p-4 shadow-xl sm:p-7 dark:border-violet-400/10 dark:from-slate-950 dark:via-violet-950/50 dark:to-slate-950">
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-600 dark:text-violet-300">Renk • Mantık</p>
-            <h1 className="text-2xl font-black sm:text-3xl">Renk Sırala</h1>
+            <h1 className="garden-entry-title text-2xl font-black sm:text-3xl">Renk Sırala</h1>
           </div>
           <div className="rounded-2xl border border-violet-100/60 bg-white/70 px-3 py-2 text-right shadow-sm dark:border-white/10 dark:bg-white/10">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground dark:text-slate-400">Rekor</p>
@@ -195,7 +196,7 @@ export default function ColorSortGame() {
                   type="button"
                   onClick={() => setDifficulty(id)}
                   aria-pressed={difficulty === id}
-                  className={`min-h-16 rounded-2xl border p-2 transition ${
+                  className={`garden-choice min-h-16 rounded-2xl border p-2 transition ${
                     difficulty === id
                       ? 'border-violet-500 bg-violet-500 text-white shadow-md shadow-violet-500/25'
                       : 'border-border bg-background/60 hover:bg-background dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10'
@@ -206,7 +207,7 @@ export default function ColorSortGame() {
                 </button>
               ))}
             </div>
-            <button type="button" onClick={startGame} className="mt-6 min-h-12 w-full rounded-2xl bg-gradient-to-r from-violet-500 to-rose-500 px-5 py-3 font-black text-white shadow-lg transition hover:scale-[1.01] active:scale-95">Bulmacayı Başlat</button>
+            <button type="button" onClick={startGame} className="garden-action-primary mt-6 min-h-12 w-full rounded-2xl bg-gradient-to-r from-violet-500 to-rose-500 px-5 py-3 font-black text-white shadow-lg transition hover:scale-[1.01] active:scale-95"><GardenPlay size={16} aria-hidden="true" />Bulmacayı Başlat</button>
           </div>
         ) : (
           <>
@@ -219,7 +220,7 @@ export default function ColorSortGame() {
                   onClick={undo}
                   disabled={!history.length || phase !== 'playing'}
                   aria-label="Son hamleyi geri al"
-                  className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-700 transition hover:bg-violet-100 disabled:opacity-30 dark:text-slate-200 dark:hover:bg-white/10"
+                  className="garden-action-secondary flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-700 transition hover:bg-violet-100 disabled:opacity-30 dark:text-slate-200 dark:hover:bg-white/10"
                 >
                   <Undo2 className="h-4 w-4" />
                 </button>
@@ -308,7 +309,7 @@ export default function ColorSortGame() {
                 <Trophy className="mx-auto h-9 w-9 text-amber-500" />
                 <h2 className="mt-2 text-xl font-black">Renkler kusursuz sıralandı!</h2>
                 <p className="mt-1 font-bold text-violet-600 dark:text-violet-300">{score} puan {isNewRecord && '• Yeni rekor!'}</p>
-                <button type="button" onClick={startGame} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-violet-500 px-5 py-2.5 font-black text-white transition hover:scale-105 active:scale-95"><RotateCcw className="h-4 w-4" /> Yeni Bulmaca</button>
+                <button type="button" onClick={startGame} className="garden-action-primary mt-4 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-violet-500 px-5 py-2.5 font-black text-white transition hover:scale-105 active:scale-95"><RotateCcw className="h-4 w-4" /> Yeni Bulmaca</button>
               </motion.div>
             )}
           </>

@@ -89,3 +89,26 @@ test("game HUD remains readable after choosing the light theme", async ({
   expect(contrast).toBeGreaterThanOrEqual(4.5);
   await expect(page.locator("html")).not.toHaveClass(/dark/);
 });
+
+
+test("2048 restart control stays readable before hovering", async ({ page }) => {
+  await page.goto("/games/2048");
+  await page.getByRole("button", { name: /BAŞLA/ }).click();
+  await page.mouse.move(0, 0);
+  const restart = page.getByRole("button", { name: "Yeniden başlat", exact: true });
+  await expect(restart).toBeVisible();
+  const contrast = await restart.evaluate(element => {
+    const style = getComputedStyle(element);
+    const luminance = (color: string) => {
+      const values = color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map(value => {
+        const v = value / 255;
+        return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
+      });
+      return .2126 * values[0] + .7152 * values[1] + .0722 * values[2];
+    };
+    const fg = luminance(style.color);
+    const bg = luminance(style.backgroundColor);
+    return (Math.max(fg, bg) + .05) / (Math.min(fg, bg) + .05);
+  });
+  expect(contrast).toBeGreaterThanOrEqual(4.5);
+});

@@ -51,3 +51,14 @@ Skorlar istemciden Firestore'a yazılır. Kurallar kimlik/sahiplik ve veri biçi
 - Açık/koyu renkler ve kalıcı tercih gerçek tarayıcıda doğrulandı. JavaScript yüklenmeden önce dört açılış teması kontrolü geçti.
 
 Windows WebKit'in zorunlu çevrimdışı gezinme sınırlaması nedeniyle mevcut bir senaryo Windows'ta atlanır. Gerçek cihazda Safari11 doğrulaması yapılmadı. İlk geniş çalıştırma makine kaynakları/PowerShell çıktı yönlendirmesine takıldı. Son çalışma doğrudan dosya çıktısı ve tek işçi kullanır; başarısız testler başarılı sayılmaz.
+
+## Oyun içi tasarımın tamamlanması
+Ana sayfa ve katalogdan sonra kalan eski oyun arayüzleri de Gece Bahçesi'ne taşındı. 20 oyun ortak başlık, kapak, geri dönüş ve oyun bilgisi çerçevesini kullanır. Başlangıç, zorluk/karakter seçimi, skor yüzeyleri, yön tuşları, yeniden oynama ve mola penceresi ortak bileşen stillerini kullanır. Başlat/tekrar ikonları ve ses/duraklat kontrolleri SVG'dir. Seçim butonları aria-pressed ile durumlarını bildirir; yalnızca ikon taşıyan yeniden başlat kontrolünün erişilebilir adı vardır.
+
+Tetris ve 2048 blokları, piyano tuşları ve müzikal hafıza pedleri daha sakin ve ayırt edilebilir renklerle güncellendi. Basket sahnesinin gökyüzü, denizi ve zemini bahçenin paletine uyarlandı. Oyun parçalarının, notaların ve renk bulmacalarının anlamları korunur. Matematikte doğru cevabın rengi ve halkası ortak buton stili tarafından bastırılmaz.
+
+Değişiklikler oyun mekaniği ve Firebase kurallarını değiştirmez. Üretim derlemesinden masaüstü, mobil, oyun içi ve mola görüntüleri kontrol edildi.
+
+Son doğrulama: lint, TypeScript, 26 birim/regresyon test dosyası, Functions kontrolü ve üretim derlemesi geçti. Altı tarayıcı/ekran profilindeki 216 senaryonun 214'ü geçti; mevcut iki beklenen atlama korundu. Son CSS ve erişilebilirlik düzeltmeleri üretim önizlemesinde ayrıca 16 masaüstü/mobil senaryoyla doğrulandı; tamamı geçti.
+
+Bağımsız incelemede 2048 yeniden başlat kontrolünün panel stili nedeniyle düşük kontrast taşıdığı görüldü. Panel seçicisi eylem butonlarını dışlayacak biçimde düzeltildi. Fare üzerine gelmeden okunabilirliği ölçen regresyon testi RED (1.02 kontrast) → GREEN (en az 4.5) olarak doğrulandı.

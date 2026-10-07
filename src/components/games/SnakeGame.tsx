@@ -1,3 +1,5 @@
+import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
+import {  } from 'lucide-react';
 import { planSnakeStep } from './snakeLogic';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -379,20 +381,20 @@ const SnakeGame = () => {
     return (
       <motion.div className="flex flex-col items-center gap-6 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <motion.div className="text-7xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(52,211,153,0.3))' }}
+        <motion.div className="garden-legacy-decoration text-7xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(52,211,153,0.3))' }}
           animate={{ x: [0, 12, 0, -12, 0], rotate: [0, 3, 0, -3, 0] }}
           transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}>🐍</motion.div>
-        <h2 className="text-4xl md:text-5xl font-black text-gradient">Yılan Oyunu</h2>
+        <h2 className="garden-entry-title text-4xl md:text-5xl font-black text-gradient">Yılan Oyunu</h2>
         {highScore > 0 && (
-          <div className="px-5 py-2.5" style={pill}><span className="font-black text-primary">🏆 Rekor: {highScore}</span></div>
+          <div className="garden-panel px-5 py-2.5" style={pill}><span className="font-black text-primary">🏆 Rekor: {highScore}</span></div>
         )}
         <div className="flex flex-col gap-2.5 w-full max-w-xs">
           <p className="text-xs font-bold text-muted-foreground text-center uppercase tracking-wider">Zorluk Seç</p>
           {(Object.entries(DIFFS) as [Diff, typeof DIFFS['easy']][]).map(([key, val]) => (
             <motion.button key={key} onClick={() => setDiff(key)}
               whileHover={{}} whileTap={{}}
-              className="p-4 text-left touch-manipulation transition-all"
-              style={{ ...pill, background: diff === key ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.03)', border: diff === key ? '1px solid rgba(52,211,153,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
+              className="garden-choice p-4 text-left touch-manipulation transition-all"
+              style={{ ...pill, background: diff === key ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.03)', border: diff === key ? '1px solid rgba(52,211,153,0.3)' : '1px solid rgba(255,255,255,0.08)' }} aria-pressed={diff === key}>
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{val.emoji}</span>
                 <div>
@@ -403,14 +405,14 @@ const SnakeGame = () => {
             </motion.button>
           ))}
         </div>
-        <div className="p-4 text-center text-sm space-y-1" style={pill}>
+        <div className="garden-panel p-4 text-center text-sm space-y-1" style={pill}>
           <p className="font-bold">🎮 Ok tuşları / WASD / Kaydır</p>
           <p className="text-muted-foreground text-xs">⭐ Altın=50 | ⚡ Yavaşlatır | ✂️ Kısalt</p>
         </div>
         <Leaderboard gameId="snake" />
 
-        <motion.button onClick={startGame} className="btn-gaming px-12 py-4 text-lg cursor-pointer"
-          whileHover={{ y: -2 }} whileTap={{}}>🚀 BAŞLA!</motion.button>
+        <motion.button onClick={startGame} className="garden-action-primary btn-gaming px-12 py-4 text-lg cursor-pointer"
+          whileHover={{ y: -2 }} whileTap={{}}><GardenPlay size={16} aria-hidden="true" />BAŞLA!</motion.button>
       </motion.div>
     );
   }
@@ -429,15 +431,15 @@ const SnakeGame = () => {
       {/* ── HUD ── */}
       <motion.div className="flex gap-2 items-center flex-wrap justify-center"
         initial={{ y: -15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-        <div className="px-4 py-2" style={pill}><span className="text-sm font-black text-primary">⭐ {score}</span></div>
-        <div className="px-4 py-2" style={pill}><span className="text-sm font-bold text-muted-foreground">📏 {snake.length}</span></div>
+        <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-black text-primary">⭐ {score}</span></div>
+        <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-bold text-muted-foreground">📏 {snake.length}</span></div>
         {combo > 1 && (
           <motion.div key={combo} initial={{ scale: 0.5 }} animate={{ scale: [0.5, 1.2, 1] }}
-            className="px-4 py-2" style={{ ...pill, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)' }}>
+            className="garden-panel px-4 py-2" style={{ ...pill, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)' }}>
             <span className="text-sm font-black text-yellow-400">🔥 x{combo}</span>
           </motion.div>
         )}
-        <div className="px-4 py-2" style={pill}><span className="text-xs font-bold text-muted-foreground">🏆 {highScore}</span></div>
+        <div className="garden-panel px-4 py-2" style={pill}><span className="text-xs font-bold text-muted-foreground">🏆 {highScore}</span></div>
       </motion.div>
 
       {/* ── Game Field ── */}
@@ -471,7 +473,7 @@ const SnakeGame = () => {
             background: `
             radial-gradient(ellipse at 30% 20%, rgba(52,211,153,0.08) 0%, transparent 50%),
             radial-gradient(ellipse at 70% 80%, rgba(34,197,94,0.06) 0%, transparent 50%),
-            linear-gradient(180deg, hsl(150 20% 10%) 0%, hsl(155 25% 8%) 100%)
+            linear-gradient(180deg, hsl(244 24% 14%) 0%, hsl(244 24% 10%) 100%)
           `,
           }} />
           {/* Grid lines */}
@@ -530,7 +532,7 @@ const SnakeGame = () => {
                   left: seg.x * CELL + 4 + offset, top: seg.y * CELL + 4 + offset,
                   borderRadius: radius,
                   background: isHead
-                    ? `radial-gradient(circle at 35% 35%, ${color}, hsl(145, 80%, 35%))`
+                    ? `radial-gradient(circle at 35% 35%, ${color}, hsl(157, 35%, 44%))`
                     : `radial-gradient(circle at 40% 40%, ${color}, ${segColor(i + 1, snake.length)})`,
                   boxShadow: isHead
                     ? `0 0 12px ${color}80, 0 2px 8px rgba(0,0,0,0.3)`
@@ -569,7 +571,7 @@ const SnakeGame = () => {
           {/* ── GAME OVER OVERLAY ── */}
           <AnimatePresence>
             {gameState === 'gameover' && (
-              <motion.div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3"
+              <motion.div className="garden-board-overlay absolute inset-0 z-40 flex flex-col items-center justify-center gap-3"
                 style={{ borderRadius: 20, background: 'rgba(0,0,0,0.82)' }}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
                 <motion.p className="text-3xl font-black text-gradient"
@@ -588,9 +590,9 @@ const SnakeGame = () => {
                 </motion.div>
                 <motion.div className="flex gap-2 mt-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
                   <motion.button whileTap={{ scale: 0.92 }} onClick={startGame}
-                    className="btn-gaming px-5 py-2 text-sm">🔄 Tekrar</motion.button>
+                    className="garden-action-primary btn-gaming px-5 py-2 text-sm"><GardenRestart size={16} aria-hidden="true" />Tekrar</motion.button>
                   <motion.button whileTap={{ scale: 0.92 }} onClick={() => setGameState('menu')}
-                    className="px-5 py-2 font-bold text-xs text-white/60 touch-manipulation" style={pill}>← Menü</motion.button>
+                    className="garden-action-secondary px-5 py-2 font-bold text-xs text-white/60 touch-manipulation" style={pill}>← Menü</motion.button>
                 </motion.div>
               </motion.div>
             )}
@@ -602,14 +604,14 @@ const SnakeGame = () => {
       <div className="touch-controls-grid grid grid-cols-3 gap-3 w-56 md:hidden mt-2" role="group" aria-label="Game Controls">
         <div />
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'DOWN') inputQueueRef.current.push('UP'); }}
-          className="flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Up">⬆️</motion.button>
+          className="garden-action-secondary flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Up">↑</motion.button>
         <div />
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'RIGHT') inputQueueRef.current.push('LEFT'); }}
-          className="flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Left">⬅️</motion.button>
+          className="garden-action-secondary flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Left">←</motion.button>
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'UP') inputQueueRef.current.push('DOWN'); }}
-          className="flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Down">⬇️</motion.button>
+          className="garden-action-secondary flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Down">↓</motion.button>
         <motion.button whileTap={{ scale: 0.85 }} onClick={() => { if (dirRef.current !== 'LEFT') inputQueueRef.current.push('RIGHT'); }}
-          className="flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Right">➡️</motion.button>
+          className="garden-action-secondary flex items-center justify-center text-3xl touch-manipulation p-3" style={{ ...pill, borderRadius: 16 }} aria-label="Move Right">→</motion.button>
       </div>
     </motion.div>
   );

@@ -161,7 +161,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
 
   return (
     <motion.div className="garden-memory flex flex-col items-center gap-4 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ touchAction: 'manipulation' }}>
-      <h2 className="text-2xl md:text-3xl font-black text-gradient">🃏 Hafıza Oyunu</h2>
+      <h2 className="garden-entry-title text-2xl md:text-3xl font-black text-gradient">🃏 Hafıza Oyunu</h2>
 
       <Leaderboard gameId={`memory-${gridSize}x${gridSize}`} />
 
@@ -169,7 +169,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
       <div className="flex gap-1.5 p-1 rounded-xl glass-card border border-white/10">
         {([3, 4, 5, 6] as GridSize[]).map((size) => (
           <button key={size} onClick={() => { setGridSize(size); initializeGame(size); }}
-            className={`px-3 py-1.5 rounded-lg font-bold text-sm transition-all ${gridSize === size ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'text-muted-foreground hover:text-foreground hover:bg-white/5 active:text-foreground active:bg-white/5'}`}>
+            className={`garden-choice px-3 py-1.5 rounded-lg font-bold text-sm transition-all ${gridSize === size ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'text-muted-foreground hover:text-foreground hover:bg-white/5 active:text-foreground active:bg-white/5'}`} aria-pressed={gridSize === size}>
             {size}x{size}
           </button>
         ))}
@@ -187,7 +187,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
           <span className="text-sm font-bold text-green-400">✓ {matchedCount}/{totalPairs}</span>
         </div>
         <button onClick={useHint} disabled={hintsLeft <= 0 || showHint}
-          className={`glass-card px-3 py-1.5 rounded-xl text-sm font-bold transition-all ${hintsLeft > 0 ? 'text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/10 active:bg-yellow-500/10' : 'text-muted-foreground/40 border border-white/5'}`}>
+          className={`garden-action-secondary glass-card px-3 py-1.5 rounded-xl text-sm font-bold transition-all ${hintsLeft > 0 ? 'text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/10 active:bg-yellow-500/10' : 'text-muted-foreground/40 border border-white/5'}`}>
           💡 İpucu ({hintsLeft})
         </button>
       </div>
@@ -207,7 +207,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
             return (
               <button key={card.id} onClick={() => handleCardClick(card.id)} disabled={card.isMatched || card.isFlipped}
                 aria-label={isRevealed ? card.emoji : `Kart ${card.id + 1}`} aria-pressed={isRevealed}
-                className={`${cardSize} garden-memory-card rounded-xl transition-all duration-300 flex items-center justify-center relative overflow-hidden touch-manipulation ${isRevealed ? 'glass-card border border-white/10' : 'bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/20 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:scale-95 active:border-primary/50'
+                className={`garden-action-secondary ${cardSize} garden-memory-card rounded-xl transition-all duration-300 flex items-center justify-center relative overflow-hidden touch-manipulation ${isRevealed ? 'glass-card border border-white/10' : 'bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/20 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:scale-95 active:border-primary/50'
                   } ${card.isMatched ? 'ring-2 ring-green-400/50 shadow-lg shadow-green-400/20' : ''}`}
                 style={{ touchAction: 'manipulation' }}>
                 {isRevealed ? (
@@ -223,7 +223,7 @@ const MemoryFlipGame = ({ onActiveGameChange }: MemoryFlipGameProps) => {
           })}
         </div>
         <div className="flex justify-center mt-6">
-          <button onClick={() => initializeGame()} className="px-6 py-2.5 glass-card border border-primary/20 text-primary rounded-full font-bold text-base hover:bg-primary/10 active:bg-primary/10 transition-colors">
+          <button onClick={() => initializeGame()} className="garden-action-secondary px-6 py-2.5 glass-card border border-primary/20 text-primary rounded-full font-bold text-base hover:bg-primary/10 active:bg-primary/10 transition-colors">
             🔄 Yeniden Başla
           </button>
         </div>

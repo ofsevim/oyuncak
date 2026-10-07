@@ -1,3 +1,5 @@
+import { Play as GardenPlay } from 'lucide-react';
+import {  } from 'lucide-react';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playComboSound } from '@/utils/soundEffects';
@@ -152,13 +154,13 @@ const MathGame = () => {
   if (!gameStarted) {
     return (
       <motion.div className="flex flex-col items-center gap-6 p-6 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-3xl font-black text-gradient">➕ Matematik</h2>
+        <h2 className="garden-entry-title text-3xl font-black text-gradient">➕ Matematik</h2>
         {highScore > 0 && <div className="glass-card px-4 py-2 neon-border"><span className="font-black text-primary">🏆 Rekor: {highScore}</span></div>}
         <div className="space-y-2 w-full max-w-sm">
           <p className="font-bold text-center text-sm text-muted-foreground">Zorluk Seç:</p>
           {DIFFICULTIES.map((d) => (
             <button key={d.id} onClick={() => setDifficulty(d.id)}
-              className={`w-full px-5 py-3 rounded-xl font-bold transition-all ${difficulty === d.id ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/5 active:bg-white/5'}`}>
+              className={`garden-choice w-full px-5 py-3 rounded-xl font-bold transition-all ${difficulty === d.id ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'glass-card text-muted-foreground hover:bg-white/5 active:bg-white/5'}`} aria-pressed={difficulty === d.id}>
               {d.label}
             </button>
           ))}
@@ -169,7 +171,7 @@ const MathGame = () => {
           {difficulty !== 'easy' && <p className="text-muted-foreground">❓ Ters sorular: ? + 3 = 7</p>}
         </div>
         <Leaderboard gameId="math" />
-        <button onClick={startGame} className="btn-gaming px-10 py-4 text-lg">🚀 Başla!</button>
+        <button onClick={startGame} className="garden-action-primary btn-gaming px-10 py-4 text-lg"><GardenPlay size={16} aria-hidden="true" />Başla!</button>
       </motion.div>
     );
   }
@@ -194,7 +196,7 @@ const MathGame = () => {
             <div className="grid grid-cols-2 gap-3">
               {options.map((option, i) => (
                 <button key={i} onClick={() => handleAnswer(option)} disabled={showResult !== null}
-                  className={`w-20 h-20 md:w-24 md:h-24 text-2xl md:text-3xl font-black rounded-2xl transition-all touch-manipulation active:scale-90 ${showResult ? (option === question.answer ? 'bg-green-500/20 text-green-400 ring-2 ring-green-400 scale-105' : 'glass-card text-muted-foreground/40')
+                  className={`garden-answer w-20 h-20 md:w-24 md:h-24 text-2xl md:text-3xl font-black rounded-2xl transition-all touch-manipulation active:scale-90 ${showResult ? (option === question.answer ? 'bg-green-500/20 text-green-400 ring-2 ring-green-400 scale-105' : 'glass-card text-muted-foreground/40')
                     : 'glass-card border border-primary/20 hover:bg-primary/10 hover:border-primary/40 active:bg-primary/10 active:border-primary/40'
                     }`} style={{ touchAction: 'manipulation' }}>
                   {option}
@@ -209,7 +211,7 @@ const MathGame = () => {
           </motion.div>
         </AnimatePresence>
       )}
-      <button onClick={() => { clearAllIntervals(); setGameStarted(false); }} className="px-4 py-2 glass-card text-muted-foreground rounded-full font-bold text-sm">← Zorluk Değiştir</button>
+      <button onClick={() => { clearAllIntervals(); setGameStarted(false); }} className="garden-action-secondary px-4 py-2 glass-card text-muted-foreground rounded-full font-bold text-sm">← Zorluk Değiştir</button>
     </motion.div>
   );
 };

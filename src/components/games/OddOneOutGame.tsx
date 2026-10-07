@@ -1,3 +1,5 @@
+import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
+import {  } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
@@ -294,14 +296,14 @@ const OddOneOutGame = () => {
         {Background}
         <motion.div className="relative z-10 flex flex-col items-center gap-6 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <motion.div className="text-7xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(244,114,182,0.3))' }}
+          <motion.div className="garden-legacy-decoration text-7xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(244,114,182,0.3))' }}
             animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.05, 1] }}
             transition={{ repeat: Infinity, duration: 2.5 }}>🔍</motion.div>
-          <h2 className="text-4xl md:text-5xl font-black text-gradient">Farklı Olanı Bul</h2>
+          <h2 className="garden-entry-title text-4xl md:text-5xl font-black text-gradient">Farklı Olanı Bul</h2>
           <p className="text-muted-foreground text-sm">Gruba uymayan nesneyi bul!</p>
 
           {highScore > 0 && (
-            <div className="px-5 py-2.5" style={{ ...pill, border: '1px solid rgba(244,114,182,0.25)' }}>
+            <div className="garden-panel px-5 py-2.5" style={{ ...pill, border: '1px solid rgba(244,114,182,0.25)' }}>
               <span className="font-black text-primary">🏆 Rekor: {highScore}</span>
             </div>
           )}
@@ -309,22 +311,22 @@ const OddOneOutGame = () => {
           <div className="flex gap-3 flex-wrap justify-center">
             <motion.button whileHover={{ }} whileTap={{ }}
               onClick={() => setUseTimer(p => !p)}
-              className="px-5 py-3 touch-manipulation font-bold text-sm"
+              className="garden-action-secondary px-5 py-3 touch-manipulation font-bold text-sm"
               style={{ ...pill, background: useTimer ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.03)', border: useTimer ? '1px solid rgba(249,115,22,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
               ⏱️ Zamanlı {useTimer ? '✓' : ''}
             </motion.button>
             <motion.button whileHover={{ }} whileTap={{ }}
               onClick={() => setUseHardMode(p => !p)}
-              className="px-5 py-3 touch-manipulation font-bold text-sm"
+              className="garden-action-secondary px-5 py-3 touch-manipulation font-bold text-sm"
               style={{ ...pill, background: useHardMode ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.03)', border: useHardMode ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
               🔥 Zor Mod {useHardMode ? '✓' : ''}
             </motion.button>
           </div>
 
           <Leaderboard gameId="oddoneout" />
-          <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg"
-            whileHover={{ y: -2 }} whileTap={{ }}>
-            🚀 BAŞLA!
+          <motion.button onClick={initGame} className="garden-action-primary btn-gaming px-12 py-4 text-lg"
+            whileHover={{ y: -2 }} whileTap={{ }}><GardenPlay size={16} aria-hidden="true" />
+            BAŞLA!
           </motion.button>
         </motion.div>
       </>
@@ -340,7 +342,7 @@ const OddOneOutGame = () => {
         {Background}
         <motion.div className="relative z-10 flex flex-col items-center gap-5 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
           initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}>
-          <motion.div className="text-8xl"
+          <motion.div className="garden-legacy-decoration text-8xl"
             style={{ filter: 'drop-shadow(0 4px 20px rgba(251,191,36,0.4))' }}
             initial={{ scale: 0, rotate: -20 }}
             animate={{ scale: [0, 1.3, 1], rotate: [0, 10, 0] }}
@@ -361,7 +363,7 @@ const OddOneOutGame = () => {
             </motion.div>
           )}
 
-          <motion.div className="w-full max-w-xs p-6 space-y-3 text-center"
+          <motion.div className="garden-panel w-full max-w-xs p-6 space-y-3 text-center"
             style={{ ...pill, boxShadow: '0 8px 40px rgba(0,0,0,0.12)' }}
             initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
             <p className="text-3xl font-black text-primary">🔍 {score} Puan</p>
@@ -371,10 +373,10 @@ const OddOneOutGame = () => {
 
           <motion.div className="flex gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
             <motion.button whileHover={{ }} whileTap={{ }}
-              onClick={initGame} className="btn-gaming px-8 py-3 text-base">🔄 Tekrar Oyna</motion.button>
+              onClick={initGame} className="garden-action-primary btn-gaming px-8 py-3 text-base"><GardenRestart size={16} aria-hidden="true" />Tekrar Oyna</motion.button>
             <motion.button whileHover={{ }} whileTap={{ }}
               onClick={() => { clearAll(); setGameState('menu'); }}
-              className="px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
+              className="garden-action-secondary px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
           </motion.div>
         </motion.div>
       </>
@@ -396,20 +398,20 @@ const OddOneOutGame = () => {
         {/* ── HUD ── */}
         <motion.div className="flex flex-wrap justify-center gap-2"
           initial={{ y: -15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-          <div className="px-4 py-2" style={pill}><span className="text-sm font-black text-primary">⭐ {score}</span></div>
-          <div className="px-4 py-2" style={pill}>
+          <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-black text-primary">⭐ {score}</span></div>
+          <div className="garden-panel px-4 py-2" style={pill}>
             <span className="text-sm font-bold text-muted-foreground">{currentRoundIndex + 1}/{shuffledRounds.length}</span>
           </div>
           <AnimatePresence>
             {streak >= 3 && (
               <motion.div key={`str-${streak}`} initial={{ scale: 0 }} animate={{ scale: [0.5, 1.2, 1] }} exit={{ scale: 0 }}
-                className="px-4 py-2" style={{ ...pill, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)' }}>
+                className="garden-panel px-4 py-2" style={{ ...pill, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)' }}>
                 <span className="text-sm font-black text-yellow-400">🔥 x{Math.min(streak, 5)}</span>
               </motion.div>
             )}
           </AnimatePresence>
           {useTimer && (
-            <div className="px-4 py-2" style={pill}>
+            <div className="garden-panel px-4 py-2" style={pill}>
               <span className={`text-sm font-black ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-orange-400'}`}>⏱️ {timeLeft}s</span>
             </div>
           )}
@@ -425,7 +427,7 @@ const OddOneOutGame = () => {
         </motion.div>
 
         {/* ── Hint question ── */}
-        <motion.div className="px-6 py-3 text-center"
+        <motion.div className="garden-panel px-6 py-3 text-center"
           style={{ ...pill, background: 'rgba(255,255,255,0.04)' }}
           initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
           key={currentRoundIndex}>
@@ -526,11 +528,11 @@ const OddOneOutGame = () => {
         <motion.div className="flex gap-3 mt-2"
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <motion.button whileHover={{ }} whileTap={{ }}
-            onClick={initGame} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={pill}>
+            onClick={initGame} className="garden-action-secondary px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={pill}>
             🔄 Yeniden
           </motion.button>
           <motion.button whileHover={{ }} whileTap={{ }}
-            onClick={() => { clearAll(); setGameState('menu'); }} className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={pill}>
+            onClick={() => { clearAll(); setGameState('menu'); }} className="garden-action-secondary px-5 py-2.5 font-bold text-muted-foreground touch-manipulation" style={pill}>
             ← Menü
           </motion.button>
         </motion.div>

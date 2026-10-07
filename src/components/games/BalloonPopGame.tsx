@@ -1,3 +1,5 @@
+import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
+import {  } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -492,14 +494,14 @@ const BalloonPopGame = () => {
         animate={{ opacity: 1, scale: 1 }}
       >
         <motion.div
-          className="text-7xl"
+          className="garden-legacy-decoration text-7xl"
           animate={{ y: [0, -15, 0], rotate: [0, 5, -5, 0] }}
           transition={{ repeat: Infinity, duration: 2 }}
         >
           🎈
         </motion.div>
 
-        <h2 className="text-3xl md:text-4xl font-black text-gradient">
+        <h2 className="garden-entry-title text-3xl md:text-4xl font-black text-gradient">
           Balon Patlat!
         </h2>
 
@@ -521,10 +523,10 @@ const BalloonPopGame = () => {
             <button
               key={key}
               onClick={() => setDifficulty(key)}
-              className={`px-5 py-3 rounded-xl font-bold transition-all cursor-pointer ${difficulty === key
+              className={`garden-choice px-5 py-3 rounded-xl font-bold transition-all cursor-pointer ${difficulty === key
                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
                 : 'glass-card text-muted-foreground hover:bg-white/5 active:bg-white/5'
-                }`}
+                }`} aria-pressed={difficulty === key}
             >
               {val.label} ({val.time}s)
             </button>
@@ -544,9 +546,9 @@ const BalloonPopGame = () => {
 
         <button
           onClick={startGame}
-          className="btn-gaming px-10 py-4 text-lg cursor-pointer"
-        >
-          🚀 BAŞLA!
+          className="garden-action-primary btn-gaming px-10 py-4 text-lg cursor-pointer"
+        ><GardenPlay size={16} aria-hidden="true" />
+          BAŞLA!
         </button>
       </motion.div>
     );
@@ -560,7 +562,7 @@ const BalloonPopGame = () => {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
       >
-        <span className="text-7xl">⏰</span>
+        <span className="garden-legacy-decoration text-7xl">⏰</span>
         <h2 className="text-3xl font-black text-gradient">Süre Doldu!</h2>
 
         {isNewRecord && (
@@ -585,9 +587,9 @@ const BalloonPopGame = () => {
 
         <button
           onClick={startGame}
-          className="btn-gaming px-10 py-4 text-lg cursor-pointer"
-        >
-          🔄 Tekrar Oyna
+          className="garden-action-primary btn-gaming px-10 py-4 text-lg cursor-pointer"
+        ><GardenRestart size={16} aria-hidden="true" />
+          Tekrar Oyna
         </button>
       </motion.div>
     );

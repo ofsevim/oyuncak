@@ -1,6 +1,6 @@
 import { forwardRef, lazy, Suspense, useEffect, useState, memo, type ComponentType, type LazyExoticComponent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Brain, Gamepad2, ArrowLeft, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
+import { Brain, Gamepad2, Flame, Star, Zap, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isMuted, setSoundProfile, toggleMute } from '@/utils/soundEffects';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -8,6 +8,7 @@ import NotFound from '@/pages/NotFound';
 import { GAME_CATALOG, type GameDefinition, type GameCategory } from '@/data/gameCatalog';
 import { useGameLibrary } from '@/hooks/useGameLibrary';
 import GameControls from '@/components/GameControls';
+import GameWorkspace from './GameWorkspace';
 import GameArtwork from './GameArtwork';
 import { isGameRouteId, type GameRouteId } from '@/constants/gameIds';
 
@@ -86,33 +87,8 @@ const GamesMenu = () => {
 
   if (activeGame !== 'menu') {
     return (
-      <div className="garden-game-stage pb-12 md:pb-32 w-full flex flex-col items-center relative">
+      <GameWorkspace game={games.find((game) => game.id === activeGame)!} onBack={() => navigate('/games')}>
         <GameControls />
-        {/* Runner kendi geri butonunu yönetir, çakışma olmasın */}
-        {activeGame !== 'runner' && (
-          <div className="w-full px-4 pt-4 pb-3 md:pt-5 md:pb-4">
-            <div className="mx-auto flex w-full max-w-2xl justify-start">
-            <motion.button
-              onClick={() => navigate('/games')}
-              className="px-4 py-2.5 md:px-5 md:py-2.5 rounded-xl md:rounded-2xl font-bold flex items-center gap-2 text-xs transition-all shadow-xl"
-              style={{
-                background: 'rgba(0, 0, 0, 0.6)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.16)',
-                color: '#fff',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
-                minHeight: '44px',
-              }}
-              whileHover={{ x: -2, background: 'rgba(0, 0, 0, 0.72)', scale: 1.02 }}
-              whileTap={{ scale: 0.96 }}
-            >
-              <ArrowLeft className="w-4 h-4" /> Oyunlara Dön
-            </motion.button>
-            </div>
-          </div>
-        )}
-        <div className="w-full">
           <Suspense fallback={
             <div className="flex items-center justify-center py-20 w-full">
               <div className="flex flex-col items-center gap-3">
@@ -125,8 +101,7 @@ const GamesMenu = () => {
               {ActiveGame && <ActiveGame />}
             </ErrorBoundary>
           </Suspense>
-        </div>
-      </div>
+      </GameWorkspace>
     );
   }
 

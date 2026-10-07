@@ -1,3 +1,5 @@
+import { Play as GardenPlay } from 'lucide-react';
+import {  } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playComboSound } from '@/utils/soundEffects';
@@ -237,14 +239,14 @@ const CountingGame = () => {
     return (
       <motion.div className="flex flex-col items-center gap-6 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <motion.div className="text-7xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(167,139,250,0.3))' }}
+        <motion.div className="garden-legacy-decoration text-7xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(167,139,250,0.3))' }}
           animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
           transition={{ repeat: Infinity, duration: 2.5 }}>🔢</motion.div>
-        <h2 className="text-4xl md:text-5xl font-black text-gradient">Sayma Oyunu</h2>
+        <h2 className="garden-entry-title text-4xl md:text-5xl font-black text-gradient">Sayma Oyunu</h2>
         <p className="text-muted-foreground text-sm">Nesneleri say, doğru rakamı bul!</p>
 
         {highScore > 0 && (
-          <div className="px-5 py-2.5" style={{ ...pill, border: '1px solid rgba(167,139,250,0.25)' }}>
+          <div className="garden-panel px-5 py-2.5" style={{ ...pill, border: '1px solid rgba(167,139,250,0.25)' }}>
             <span className="font-black text-primary">🏆 Rekor: {highScore}</span>
           </div>
         )}
@@ -256,12 +258,12 @@ const CountingGame = () => {
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 + i * 0.08 }}
               whileHover={{ }} whileTap={{ }}
-              className="w-full p-4 text-left touch-manipulation transition-all"
+              className="garden-choice w-full p-4 text-left touch-manipulation transition-all"
               style={{
                 ...pill,
                 background: difficulty === key ? 'rgba(167,139,250,0.12)' : 'rgba(255,255,255,0.03)',
                 border: difficulty === key ? '1px solid rgba(167,139,250,0.3)' : '1px solid rgba(255,255,255,0.08)',
-              }}>
+              }} aria-pressed={difficulty === key}>
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{val.emoji}</span>
                 <div>
@@ -274,10 +276,10 @@ const CountingGame = () => {
         </div>
 
         <Leaderboard gameId="counting" />
-        <motion.button onClick={startGame} className="btn-gaming px-12 py-4 text-lg"
+        <motion.button onClick={startGame} className="garden-action-primary btn-gaming px-12 py-4 text-lg"
           whileHover={{ y: -2 }} whileTap={{ }}
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          🚀 BAŞLA!
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}><GardenPlay size={16} aria-hidden="true" />
+          BAŞLA!
         </motion.button>
       </motion.div>
     );
@@ -321,19 +323,19 @@ const CountingGame = () => {
         {/* ── HUD ── */}
         <motion.div className="flex flex-wrap justify-center gap-2"
           initial={{ y: -15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-          <div className="px-4 py-2" style={pill}><span className="text-sm font-black text-primary">⭐ {score}</span></div>
+          <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-black text-primary">⭐ {score}</span></div>
           {streak >= 3 && (
             <motion.div key={streak} initial={{ scale: 0.5 }} animate={{ scale: [0.5, 1.2, 1] }}
-              className="px-4 py-2" style={{ ...pill, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)' }}>
+              className="garden-panel px-4 py-2" style={{ ...pill, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)' }}>
               <span className="text-sm font-black text-yellow-400">🔥 x{Math.min(streak, 5)}</span>
             </motion.div>
           )}
           {config.timer > 0 && (
-            <div className="px-4 py-2" style={pill}>
+            <div className="garden-panel px-4 py-2" style={pill}>
               <span className={`text-sm font-black ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-orange-400'}`}>⏱️ {timeLeft}s</span>
             </div>
           )}
-          <div className="px-4 py-2" style={pill}><span className="text-sm font-bold text-muted-foreground">✓ {total}</span></div>
+          <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-bold text-muted-foreground">✓ {total}</span></div>
         </motion.div>
 
         {/* ── Item Field ── */}
@@ -372,7 +374,7 @@ const CountingGame = () => {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <motion.div initial={{ scale: 0, rotate: -30 }} animate={{ scale: [0, 1.5, 1.2], rotate: [0, 15, 0] }}
                   transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-7xl" style={{ filter: 'drop-shadow(0 0 20px rgba(251,191,36,0.5))' }}>⭐</motion.div>
+                  className="garden-legacy-decoration text-7xl" style={{ filter: 'drop-shadow(0 0 20px rgba(251,191,36,0.5))' }}>⭐</motion.div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -508,7 +510,7 @@ const CountingGame = () => {
         {/* ── Bottom ── */}
         <motion.button onClick={() => { clearAll(); setGameState('menu'); }}
           whileHover={{ }} whileTap={{ }}
-          className="px-5 py-2.5 font-bold text-muted-foreground touch-manipulation mt-2" style={pill}>
+          className="garden-action-secondary px-5 py-2.5 font-bold text-muted-foreground touch-manipulation mt-2" style={pill}>
           ← Menü
         </motion.button>
       </div>

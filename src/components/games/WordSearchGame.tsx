@@ -1,3 +1,4 @@
+import { Play as GardenPlay } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Clock3, Lightbulb, RotateCcw, Trophy } from 'lucide-react';
@@ -178,11 +179,11 @@ export default function WordSearchGame() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-20 text-foreground">
-      <section className="overflow-hidden rounded-[2rem] border border-emerald-100/60 bg-gradient-to-b from-emerald-50 to-cyan-50 p-4 shadow-xl sm:p-7 dark:border-emerald-400/10 dark:from-slate-950 dark:to-emerald-950/40">
+      <section className="garden-board-section overflow-hidden rounded-[2rem] border border-emerald-100/60 bg-gradient-to-b from-emerald-50 to-cyan-50 p-4 shadow-xl sm:p-7 dark:border-emerald-400/10 dark:from-slate-950 dark:to-emerald-950/40">
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-600 dark:text-emerald-300">Türkçe • Dikkat</p>
-            <h1 className="text-2xl font-black sm:text-3xl">Kelime Avı</h1>
+            <h1 className="garden-entry-title text-2xl font-black sm:text-3xl">Kelime Avı</h1>
           </div>
           <div className="rounded-2xl bg-white/70 px-3 py-2 text-right shadow-sm dark:bg-white/10">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Rekor</p>
@@ -197,19 +198,19 @@ export default function WordSearchGame() {
             <p className="mt-2 text-sm text-muted-foreground">Bir kelimenin ilk ve son harfine dokun. Yatay, dikey ve çapraz kelimeleri tamamla.</p>
             <div className="mt-6 grid grid-cols-3 gap-2">
               {(Object.entries(WORD_SETS) as [Category, (typeof WORD_SETS)[Category]][]).map(([id, item]) => (
-                <button key={id} type="button" onClick={() => setCategory(id)} aria-pressed={category === id} className={`min-h-16 rounded-2xl border p-2 font-bold transition ${category === id ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-border bg-background/60 hover:bg-background'}`}>
+                <button key={id} type="button" onClick={() => setCategory(id)} aria-pressed={category === id} className={`garden-choice min-h-16 rounded-2xl border p-2 font-bold transition ${category === id ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-border bg-background/60 hover:bg-background'}`}>
                   <span className="block text-xl">{item.emoji}</span><span className="text-xs sm:text-sm">{item.label}</span>
                 </button>
               ))}
             </div>
-            <button type="button" onClick={startGame} className="mt-6 min-h-12 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-5 py-3 font-black text-white shadow-lg transition hover:scale-[1.01] active:scale-95">Avı Başlat</button>
+            <button type="button" onClick={startGame} className="garden-action-primary mt-6 min-h-12 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-5 py-3 font-black text-white shadow-lg transition hover:scale-[1.01] active:scale-95"><GardenPlay size={16} aria-hidden="true" />Avı Başlat</button>
           </div>
         ) : (
           <>
             <div className="mb-4 flex items-center justify-between gap-2 rounded-2xl bg-white/70 px-3 py-2 shadow-sm dark:bg-white/5">
               <span className="flex items-center gap-2 text-sm font-bold"><Clock3 className="h-4 w-4 text-cyan-500" /> {elapsed} sn</span>
               <span className="text-sm font-black text-emerald-600 dark:text-emerald-300">{foundWords.length}/{puzzle.placements.length} kelime</span>
-              <button type="button" onClick={showHint} disabled={phase !== 'playing'} className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 text-xs font-bold text-amber-600 transition hover:bg-amber-100 disabled:opacity-50 dark:hover:bg-amber-400/10"><Lightbulb className="h-4 w-4" /> İpucu</button>
+              <button type="button" onClick={showHint} disabled={phase !== 'playing'} className="garden-action-secondary inline-flex min-h-11 items-center gap-1 rounded-xl px-3 text-xs font-bold text-amber-600 transition hover:bg-amber-100 disabled:opacity-50 dark:hover:bg-amber-400/10"><Lightbulb className="h-4 w-4" /> İpucu</button>
             </div>
 
             <div className="mx-auto grid w-full max-w-md grid-cols-6 gap-1.5 rounded-3xl bg-white/80 p-2 shadow-lg dark:bg-slate-950/60 sm:gap-2 sm:p-3">
@@ -241,7 +242,7 @@ export default function WordSearchGame() {
                 <Trophy className="mx-auto h-9 w-9 text-amber-500" />
                 <h2 className="mt-2 text-xl font-black">Bütün kelimeleri buldun!</h2>
                 <p className="mt-1 font-bold text-emerald-600 dark:text-emerald-300">{score} puan {isNewRecord && '• Yeni rekor!'}</p>
-                <button type="button" onClick={startGame} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 font-black text-white transition hover:scale-105 active:scale-95"><RotateCcw className="h-4 w-4" /> Yeni Bulmaca</button>
+                <button type="button" onClick={startGame} className="garden-action-primary mt-4 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 font-black text-white transition hover:scale-105 active:scale-95"><RotateCcw className="h-4 w-4" /> Yeni Bulmaca</button>
               </motion.div>
             )}
           </>

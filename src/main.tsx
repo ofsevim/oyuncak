@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import "./styles/game-garden.css";
 import { initErrorTracking, logger } from "./lib/logger";
 import { SERVICE_WORKER_UPDATE_EVENT, watchForServiceWorkerUpdate } from "./utils/serviceWorkerUpdate";
 

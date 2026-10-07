@@ -1,3 +1,5 @@
+import { RotateCcw as GardenRestart } from 'lucide-react';
+import {  } from 'lucide-react';
 import { isGamePaused } from '@/utils/gameActivity';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -603,7 +605,7 @@ const BasketballGame = () => {
     return (
         <div className="flex flex-col items-center w-full max-w-3xl mx-auto px-3 pb-36">
             <motion.div className="text-center py-3" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-                <h2 className="text-2xl font-black text-foreground">🏀 Basket At</h2>
+                <h2 className="garden-entry-title text-2xl font-black text-foreground">🏀 Basket At</h2>
                 <p className="text-xs text-muted-foreground mt-0.5 mb-3">
                     Topun yanından <strong>hoop yönüne doğru</strong> sürükle & bırak
                 </p>
@@ -615,7 +617,7 @@ const BasketballGame = () => {
                             key={ball.id}
                             aria-pressed={selectedBall === ball.id ? 'true' : 'false'}
                             onClick={() => { setSelectedBall(ball.id); selectedBallRef.current = ball.id; }}
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${selectedBall === ball.id ? 'bg-primary ring-2 ring-primary/40 scale-110 shadow-lg' : 'bg-muted hover:bg-muted/80'}`}
+                            className={`garden-choice w-10 h-10 rounded-xl flex items-center justify-center transition-all ${selectedBall === ball.id ? 'bg-primary ring-2 ring-primary/40 scale-110 shadow-lg' : 'bg-muted hover:bg-muted/80'}`}
                             title={ball.name}
                         >
                             <span className="text-xl">{ball.label}</span>
@@ -710,7 +712,7 @@ const BasketballGame = () => {
                             style={{ background: 'hsl(224 24% 10%)', border: '1px solid hsl(220 20% 100% / 0.08)', maxWidth: 320 }}
                             initial={{ scale: 0.8, y: 40 }} animate={{ scale: 1, y: 0 }}
                             transition={{ type: 'spring', stiffness: 260, damping: 24 }}>
-                            <span className="text-6xl">🏀</span>
+                            <span className="garden-legacy-decoration text-6xl">🏀</span>
                             <div>
                                 <h3 className="text-2xl font-black">{isNewRecord ? '🏆 Yeni Rekor!' : 'Oyun Bitti!'}</h3>
                                 <p className="text-muted-foreground text-sm mt-1">{isNewRecord ? 'Muhteşem! 🎉' : 'Tekrar dene!'}</p>
@@ -729,9 +731,9 @@ const BasketballGame = () => {
                             <Leaderboard gameId="basketball" />
                             <motion.button onClick={startNewRound}
                                 whileHover={{ y: -2 }} whileTap={{}}
-                                className="w-full py-3 rounded-2xl font-black text-white text-base"
-                                style={{ background: 'hsl(var(--primary))', boxShadow: '0 4px 20px hsl(var(--primary) / 0.4)' }}>
-                                🏀 Tekrar Oyna
+                                className="garden-action-primary w-full py-3 rounded-2xl font-black text-white text-base"
+                                style={{ background: 'hsl(var(--primary))', boxShadow: '0 4px 20px hsl(var(--primary) / 0.4)' }}><GardenRestart size={16} aria-hidden="true" />
+                                Tekrar Oyna
                             </motion.button>
                         </motion.div>
                     </motion.div>

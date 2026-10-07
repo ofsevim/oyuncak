@@ -1,3 +1,5 @@
+import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
+import {  } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
@@ -9,21 +11,21 @@ const GRID_SIZE = 4;
 type Grid = (number | null)[][];
 
 const TILE_STYLES: Record<number, { bg: string; text: string; glow: string }> = {
-  2: { bg: 'bg-slate-700', text: 'text-slate-200', glow: '' },
-  4: { bg: 'bg-slate-600', text: 'text-slate-100', glow: '' },
-  8: { bg: 'bg-orange-600', text: 'text-white', glow: 'shadow-[0_0_12px_rgba(234,88,12,0.4)]' },
-  16: { bg: 'bg-orange-500', text: 'text-white', glow: 'shadow-[0_0_16px_rgba(249,115,22,0.5)]' },
-  32: { bg: 'bg-red-500', text: 'text-white', glow: 'shadow-[0_0_16px_rgba(239,68,68,0.5)]' },
-  64: { bg: 'bg-red-600', text: 'text-white', glow: 'shadow-[0_0_20px_rgba(220,38,38,0.6)]' },
-  128: { bg: 'bg-yellow-500', text: 'text-yellow-950', glow: 'shadow-[0_0_20px_rgba(234,179,8,0.5)]' },
-  256: { bg: 'bg-yellow-400', text: 'text-yellow-950', glow: 'shadow-[0_0_24px_rgba(250,204,21,0.6)]' },
-  512: { bg: 'bg-purple-500', text: 'text-white', glow: 'shadow-[0_0_24px_rgba(168,85,247,0.6)]' },
-  1024: { bg: 'bg-cyan-500', text: 'text-cyan-950', glow: 'shadow-[0_0_28px_rgba(6,182,212,0.6)]' },
-  2048: { bg: 'bg-gradient-to-br from-cyan-400 to-purple-500', text: 'text-white', glow: 'shadow-[0_0_32px_rgba(6,182,212,0.7)]' },
+  2: { bg: 'bg-[#ddd5eb]', text: 'text-[#292437]', glow: '' },
+  4: { bg: 'bg-[#c5b8dd]', text: 'text-[#292437]', glow: '' },
+  8: { bg: 'bg-[#e9c9b2]', text: 'text-[#292437]', glow: '' },
+  16: { bg: 'bg-[#dcb394]', text: 'text-[#292437]', glow: '' },
+  32: { bg: 'bg-[#e6b8bf]', text: 'text-[#292437]', glow: '' },
+  64: { bg: 'bg-[#d697a4]', text: 'text-[#292437]', glow: '' },
+  128: { bg: 'bg-[#e5d4a5]', text: 'text-[#292437]', glow: '' },
+  256: { bg: 'bg-[#d4bf86]', text: 'text-[#292437]', glow: '' },
+  512: { bg: 'bg-[#b9a5d7]', text: 'text-[#292437]', glow: '' },
+  1024: { bg: 'bg-[#a7d2c0]', text: 'text-[#292437]', glow: '' },
+  2048: { bg: 'bg-[#92bfa9]', text: 'text-[#292437]', glow: '' },
 };
 
 const getTileStyle = (value: number) =>
-  TILE_STYLES[value] || { bg: 'bg-gradient-to-br from-pink-500 to-yellow-400', text: 'text-white', glow: 'shadow-[0_0_32px_rgba(236,72,153,0.7)]' };
+  TILE_STYLES[value] || { bg: 'bg-[#dbc8a0]', text: 'text-[#292437]', glow: '' };
 
 const createEmptyGrid = (): Grid => Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null));
 
@@ -211,7 +213,7 @@ const Game2048 = () => {
         </div>
         <Leaderboard gameId="2048" />
 
-        <button onClick={startGame} className="btn-gaming px-10 py-4 text-lg">🚀 BAŞLA</button>
+        <button onClick={startGame} className="garden-action-primary btn-gaming px-10 py-4 text-lg"><GardenPlay size={16} aria-hidden="true" />BAŞLA</button>
       </motion.div>
     );
   }
@@ -234,8 +236,8 @@ const Game2048 = () => {
         </div>
         <div className="flex gap-1">
           <button onClick={handleUndo} disabled={undoStack.length === 0}
-            className="glass-card px-3 py-3 text-sm font-bold text-muted-foreground hover:text-primary active:text-primary transition-colors touch-manipulation disabled:opacity-30">↩️</button>
-          <button onClick={startGame} className="glass-card px-3 py-3 text-sm font-bold text-muted-foreground hover:text-primary active:text-primary transition-colors touch-manipulation">🔄</button>
+            className="garden-action-secondary glass-card px-3 py-3 text-sm font-bold text-muted-foreground hover:text-primary active:text-primary transition-colors touch-manipulation disabled:opacity-30">↩️</button>
+          <button onClick={startGame} aria-label="Yeniden başlat" className="garden-action-primary glass-card px-3 py-3 text-sm font-bold text-muted-foreground hover:text-primary active:text-primary transition-colors touch-manipulation"><GardenRestart size={16} aria-hidden="true" /></button>
         </div>
       </div>
 
@@ -267,7 +269,7 @@ const Game2048 = () => {
         {/* Overlay */}
         <AnimatePresence>
           {(gameState === 'gameover' || gameState === 'won') && (
-            <motion.div className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center gap-3 z-20"
+            <motion.div className="garden-board-overlay absolute inset-0 rounded-2xl flex flex-col items-center justify-center gap-3 z-20"
               style={{ background: 'hsl(var(--background) / 0.85)', backdropFilter: 'blur(8px)' }}
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               {gameState === 'won' ? (
@@ -275,8 +277,8 @@ const Game2048 = () => {
                   <motion.p className="text-4xl font-black text-gradient" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 10 }}>🎉 2048!</motion.p>
                   <p className="text-lg font-bold text-muted-foreground">Tebrikler! Skor: {score}</p>
                   <div className="flex gap-2">
-                    <button onClick={() => setGameState('playing')} className="btn-gaming px-6 py-3">▶ Devam Et</button>
-                    <button onClick={startGame} className="glass-card px-6 py-3 font-bold text-muted-foreground hover:text-primary transition-colors">🔄 Yeni Oyun</button>
+                    <button onClick={() => setGameState('playing')} className="garden-action-primary btn-gaming px-6 py-3"><GardenPlay size={16} aria-hidden="true" />Devam Et</button>
+                    <button onClick={startGame} aria-label="Yeniden başlat" className="garden-action-primary glass-card px-6 py-3 font-bold text-muted-foreground hover:text-primary transition-colors"><GardenRestart size={16} aria-hidden="true" />Yeni Oyun</button>
                   </div>
                 </>
               ) : (
@@ -285,7 +287,7 @@ const Game2048 = () => {
                   {isNewRecord && <p className="text-yellow-400 font-black animate-pulse">🏆 YENİ REKOR!</p>}
                   <p className="text-lg font-bold text-muted-foreground">Skor: {score}</p>
                   <p className="text-xs text-muted-foreground">{moves} hamle | En büyük: {getMaxTile(grid)}</p>
-                  <button onClick={startGame} className="btn-gaming px-8 py-3">🔄 Tekrar Oyna</button>
+                  <button onClick={startGame} className="garden-action-primary btn-gaming px-8 py-3"><GardenRestart size={16} aria-hidden="true" />Tekrar Oyna</button>
                 </>
               )}
             </motion.div>
@@ -296,11 +298,11 @@ const Game2048 = () => {
       {/* Mobile controls */}
       <div className="touch-controls-grid grid grid-cols-3 gap-2 w-44 md:hidden">
         <div />
-        <button onClick={() => handleMove('up')} className="glass-card p-3 text-xl active:scale-90 transition-transform touch-manipulation">⬆️</button>
+        <button onClick={() => handleMove('up')} className="garden-action-secondary glass-card p-3 text-xl active:scale-90 transition-transform touch-manipulation">⬆️</button>
         <div />
-        <button onClick={() => handleMove('left')} className="glass-card p-3 text-xl active:scale-90 transition-transform touch-manipulation">⬅️</button>
-        <button onClick={() => handleMove('down')} className="glass-card p-3 text-xl active:scale-90 transition-transform touch-manipulation">⬇️</button>
-        <button onClick={() => handleMove('right')} className="glass-card p-3 text-xl active:scale-90 transition-transform touch-manipulation">➡️</button>
+        <button onClick={() => handleMove('left')} className="garden-action-secondary glass-card p-3 text-xl active:scale-90 transition-transform touch-manipulation">⬅️</button>
+        <button onClick={() => handleMove('down')} className="garden-action-secondary glass-card p-3 text-xl active:scale-90 transition-transform touch-manipulation">⬇️</button>
+        <button onClick={() => handleMove('right')} className="garden-action-secondary glass-card p-3 text-xl active:scale-90 transition-transform touch-manipulation">➡️</button>
       </div>
     </motion.div>
   );

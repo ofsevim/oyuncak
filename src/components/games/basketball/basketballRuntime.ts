@@ -61,12 +61,12 @@ export const safeRoundRect = (ctx: DrawingContext, x: number, y: number, w: numb
 export function drawBg(ctx: DrawingContext, tick: number) {
     // Sky
     const skyGrad = ctx.createLinearGradient(0, 0, 0, CH * 0.62);
-    skyGrad.addColorStop(0, '#5BA8D0'); skyGrad.addColorStop(0.6, '#9AD4F0'); skyGrad.addColorStop(1, '#C8EBF8');
+    skyGrad.addColorStop(0, '#77759C'); skyGrad.addColorStop(0.6, '#B4A9CB'); skyGrad.addColorStop(1, '#DDD0DB');
     ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, CW, CH * 0.62);
 
     // Sea
     const seaGrad = ctx.createLinearGradient(0, CH * 0.46, 0, CH * 0.62);
-    seaGrad.addColorStop(0, '#2E9BBF'); seaGrad.addColorStop(1, '#1A7A9C');
+    seaGrad.addColorStop(0, '#729D9C'); seaGrad.addColorStop(1, '#456F78');
     ctx.fillStyle = seaGrad; ctx.fillRect(0, CH * 0.46, CW, CH * 0.16);
 
     // Waves
@@ -104,7 +104,7 @@ export function drawBg(ctx: DrawingContext, tick: number) {
 
     // Court floor
     const floorGrad = ctx.createLinearGradient(0, CH * 0.62, 0, CH);
-    floorGrad.addColorStop(0, '#C8935A'); floorGrad.addColorStop(0.3, '#AE7038'); floorGrad.addColorStop(1, '#8A5428');
+    floorGrad.addColorStop(0, '#D0AC91'); floorGrad.addColorStop(0.3, '#B88E77'); floorGrad.addColorStop(1, '#906E60');
     ctx.fillStyle = floorGrad; ctx.fillRect(0, CH * 0.62, CW, CH * 0.38);
 
     // ── Court markings (2D side-view) ──

@@ -1,3 +1,4 @@
+import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
 import { collides, planHoldTransition } from './tetrisLogic';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,13 +26,13 @@ const MIN_DROP_TIME = 80;
 const GRID_WIDTH = 280;
 
 const TETROMINOS = {
-  I: { shape: [[1, 1, 1, 1]], color: 'from-cyan-400 to-cyan-500', solid: 'bg-cyan-400', glow: 'shadow-[0_0_12px_rgba(34,211,238,0.6)]', hex: '#22d3ee' },
-  J: { shape: [[1, 0, 0], [1, 1, 1]], color: 'from-blue-500 to-blue-600', solid: 'bg-blue-500', glow: 'shadow-[0_0_12px_rgba(59,130,246,0.6)]', hex: '#3b82f6' },
-  L: { shape: [[0, 0, 1], [1, 1, 1]], color: 'from-orange-400 to-orange-500', solid: 'bg-orange-400', glow: 'shadow-[0_0_12px_rgba(251,146,60,0.6)]', hex: '#fb923c' },
-  O: { shape: [[1, 1], [1, 1]], color: 'from-yellow-400 to-yellow-500', solid: 'bg-yellow-400', glow: 'shadow-[0_0_12px_rgba(250,204,21,0.6)]', hex: '#facc15' },
-  S: { shape: [[0, 1, 1], [1, 1, 0]], color: 'from-green-400 to-green-500', solid: 'bg-green-400', glow: 'shadow-[0_0_12px_rgba(74,222,128,0.6)]', hex: '#4ade80' },
-  T: { shape: [[0, 1, 0], [1, 1, 1]], color: 'from-purple-500 to-purple-600', solid: 'bg-purple-500', glow: 'shadow-[0_0_12px_rgba(168,85,247,0.6)]', hex: '#a855f7' },
-  Z: { shape: [[1, 1, 0], [0, 1, 1]], color: 'from-red-500 to-red-600', solid: 'bg-red-500', glow: 'shadow-[0_0_12px_rgba(239,68,68,0.6)]', hex: '#ef4444' },
+  I: { shape: [[1, 1, 1, 1]], color: 'from-cyan-200 to-cyan-300', solid: 'bg-cyan-400', glow: '', hex: '#a5e5ef' },
+  J: { shape: [[1, 0, 0], [1, 1, 1]], color: 'from-blue-300 to-blue-400', solid: 'bg-blue-500', glow: '', hex: '#9dbaf3' },
+  L: { shape: [[0, 0, 1], [1, 1, 1]], color: 'from-orange-200 to-orange-300', solid: 'bg-orange-400', glow: '', hex: '#edb890' },
+  O: { shape: [[1, 1], [1, 1]], color: 'from-amber-200 to-amber-300', solid: 'bg-yellow-400', glow: '', hex: '#e9d7a1' },
+  S: { shape: [[0, 1, 1], [1, 1, 0]], color: 'from-emerald-200 to-emerald-300', solid: 'bg-green-400', glow: '', hex: '#a6d5bf' },
+  T: { shape: [[0, 1, 0], [1, 1, 1]], color: 'from-violet-300 to-violet-400', solid: 'bg-purple-500', glow: '', hex: '#c5b2e6' },
+  Z: { shape: [[1, 1, 0], [0, 1, 1]], color: 'from-rose-300 to-rose-400', solid: 'bg-red-500', glow: '', hex: '#e9a3af' },
 };
 
 type TetrominoKey = keyof typeof TETROMINOS;
@@ -578,14 +579,14 @@ const TetrisGame = () => {
           <AnimatePresence>
             {gameState !== 'playing' && (
               <motion.div
-                className="absolute inset-0 z-20 bg-background/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center"
+                className="garden-board-overlay absolute inset-0 z-20 bg-background/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
                 {gameState === 'menu' && (
                   <>
-                    <h2 className="text-4xl font-black text-gradient mb-2 italic">TETRİS</h2>
+                    <h2 className="text-4xl font-black text-gradient mb-2 italic">Hazır mısın?</h2>
                     <p className="text-muted-foreground font-bold mb-2 text-sm">
                       Blokları yerleştir, satırları tamamla!
                     </p>
@@ -593,7 +594,7 @@ const TetrisGame = () => {
                       <p className="text-primary font-black mb-4">🏆 Rekor: {highScore}</p>
                     )}
                     <Leaderboard gameId="tetris" />
-                    <button onClick={startGame} className="w-full py-3 btn-gaming text-lg">
+                    <button onClick={startGame} className="garden-action-primary w-full py-3 btn-gaming text-lg"><GardenPlay size={16} aria-hidden="true" />
                       OYUNA BAŞLA
                     </button>
                   </>
@@ -603,12 +604,12 @@ const TetrisGame = () => {
                   <>
                     <div className="text-5xl mb-3">⏸️</div>
                     <h2 className="text-2xl font-black text-blue-400 mb-4">DURAKLADI</h2>
-                    <button onClick={togglePause} className="w-full py-3 btn-gaming text-lg">
-                      ▶️ DEVAM ET
+                    <button onClick={togglePause} className="garden-action-primary w-full py-3 btn-gaming text-lg"><GardenPlay size={16} aria-hidden="true" />
+                      DEVAM ET
                     </button>
                     <button
                       onClick={() => updateGameState('menu')}
-                      className="w-full py-2 mt-2 glass-card font-bold text-sm text-muted-foreground"
+                      className="garden-action-secondary w-full py-2 mt-2 glass-card font-bold text-sm text-muted-foreground"
                     >
                       ← Menü
                     </button>
@@ -634,7 +635,7 @@ const TetrisGame = () => {
                     <p className="text-xs text-muted-foreground mb-4">
                       Seviye {level} • {linesClearedTotal} satır
                     </p>
-                    <button onClick={startGame} className="w-full py-3 btn-gaming text-lg">
+                    <button onClick={startGame} className="garden-action-primary w-full py-3 btn-gaming text-lg"><GardenRestart size={16} aria-hidden="true" />
                       TEKRAR DENE
                     </button>
                   </>
@@ -651,18 +652,18 @@ const TetrisGame = () => {
           <div className="grid grid-cols-5 gap-2">
             {(
               [
-                { label: '⬅️', action: () => movePiece(-1, 0), ariaLabel: 'Sola' },
-                { label: '⬇️', action: () => movePiece(0, 1, true), ariaLabel: 'Aşağı (soft drop)' },
-                { label: '⏬', action: hardDrop, ariaLabel: 'Sert düşüş' },
-                { label: '➡️', action: () => movePiece(1, 0), ariaLabel: 'Sağa' },
-                { label: '🔄', action: rotatePiece, ariaLabel: 'Döndür' },
+                { label: '←', action: () => movePiece(-1, 0), ariaLabel: 'Sola' },
+                { label: '↓', action: () => movePiece(0, 1, true), ariaLabel: 'Aşağı (soft drop)' },
+                { label: '⇊', action: hardDrop, ariaLabel: 'Sert düşüş' },
+                { label: '→', action: () => movePiece(1, 0), ariaLabel: 'Sağa' },
+                { label: '↻', action: rotatePiece, ariaLabel: 'Döndür' },
               ] as const
             ).map((btn) => (
               <button
                 key={btn.label}
                 onClick={btn.action}
                 aria-label={btn.ariaLabel}
-                className="p-3 glass-card active:scale-90 active:border-primary/30 transition-transform flex items-center justify-center text-xl border border-white/10 hover:border-primary/30 touch-manipulation"
+                className="garden-action-secondary p-3 glass-card active:scale-90 active:border-primary/30 transition-transform flex items-center justify-center text-xl border border-white/10 hover:border-primary/30 touch-manipulation"
               >
                 {btn.label}
               </button>
@@ -673,14 +674,14 @@ const TetrisGame = () => {
             <button
               onClick={holdCurrentPiece}
               aria-label="Parça tut"
-              className="p-2.5 glass-card active:scale-90 active:border-primary/30 transition-transform flex items-center justify-center text-sm font-bold border border-white/10 hover:border-primary/30 touch-manipulation"
+              className="garden-action-secondary p-2.5 glass-card active:scale-90 active:border-primary/30 transition-transform flex items-center justify-center text-sm font-bold border border-white/10 hover:border-primary/30 touch-manipulation"
             >
               📦 Tut
             </button>
             <button
               onClick={togglePause}
               aria-label="Duraklat"
-              className="p-2.5 glass-card active:scale-90 active:border-primary/30 transition-transform flex items-center justify-center text-sm font-bold border border-white/10 hover:border-primary/30 touch-manipulation"
+              className="garden-action-secondary p-2.5 glass-card active:scale-90 active:border-primary/30 transition-transform flex items-center justify-center text-sm font-bold border border-white/10 hover:border-primary/30 touch-manipulation"
             >
               ⏸️ Duraklat
             </button>

@@ -1,3 +1,5 @@
+import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
+import {  } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playLevelUpSound, playNewRecordSound } from '@/utils/soundEffects';
@@ -311,23 +313,23 @@ const CodingTurtleGame = () => {
                 {Background}
                 <motion.div className="relative z-10 flex flex-col items-center gap-6 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                    <motion.div className="text-7xl drop-shadow-lg"
+                    <motion.div className="garden-legacy-decoration text-7xl drop-shadow-lg"
                         animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>🐇</motion.div>
                     <h2 className="text-4xl md:text-5xl font-black text-gradient" style={{ backgroundImage: 'linear-gradient(to right, #10b981, #d946ef)' }}>Tavşan Kodlama</h2>
                     <p className="text-muted-foreground text-sm text-center">Komutları sıraya diz ve tavşanı havuca ulaştır! Taşlara çarpma!</p>
 
                     {highScore > 0 && (
-                        <div className="px-5 py-2.5" style={{ ...pill, border: '1px solid rgba(16,185,129,0.25)' }}>
+                        <div className="garden-panel px-5 py-2.5" style={{ ...pill, border: '1px solid rgba(16,185,129,0.25)' }}>
                             <span className="font-black text-emerald-400">🏆 Rekor: {highScore}</span>
                         </div>
                     )}
 
                     <Leaderboard gameId="codingturtle" />
 
-                    <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg mt-4"
+                    <motion.button onClick={initGame} className="garden-action-primary btn-gaming px-12 py-4 text-lg mt-4"
                         style={{ background: 'linear-gradient(135deg, #10b981, #d946ef)' }}
-                        whileHover={{ y: -2 }} whileTap={{}}>
-                        🚀 BAŞLA!
+                        whileHover={{ y: -2 }} whileTap={{}}><GardenPlay size={16} aria-hidden="true" />
+                        BAŞLA!
                     </motion.button>
                 </motion.div>
             </>
@@ -341,7 +343,7 @@ const CodingTurtleGame = () => {
                 {Background}
                 <motion.div className="relative z-10 flex flex-col items-center gap-5 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
                     initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                    <motion.div className="text-8xl drop-shadow-xl"
+                    <motion.div className="garden-legacy-decoration text-8xl drop-shadow-xl"
                         initial={{ scale: 0, rotate: -20 }}
                         animate={{ scale: [0, 1.3, 1], rotate: [0, 10, 0] }}
                         transition={{ type: 'spring', stiffness: 200, damping: 12 }}>
@@ -360,7 +362,7 @@ const CodingTurtleGame = () => {
                         </motion.div>
                     )}
 
-                    <motion.div className="w-full max-w-xs p-6 space-y-3 text-center"
+                    <motion.div className="garden-panel w-full max-w-xs p-6 space-y-3 text-center"
                         style={{ ...pill, boxShadow: '0 8px 40px rgba(0,0,0,0.12)' }}
                         initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
                         <p className="text-3xl font-black text-emerald-400">✨ {score} Puan</p>
@@ -369,10 +371,10 @@ const CodingTurtleGame = () => {
                     <motion.div className="flex gap-3 mt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
                         <motion.button whileHover={{}} whileTap={{}}
                             style={{ background: 'linear-gradient(135deg, #10b981, #d946ef)' }}
-                            onClick={initGame} className="btn-gaming px-8 py-3 text-base text-white">🔄 Tekrar Oyna</motion.button>
+                            onClick={initGame} className="garden-action-primary btn-gaming px-8 py-3 text-base text-white"><GardenRestart size={16} aria-hidden="true" />Tekrar Oyna</motion.button>
                         <motion.button whileHover={{}} whileTap={{}}
                             onClick={() => { clearAll(); setGameState('menu'); }}
-                            className="px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
+                            className="garden-action-secondary px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
                     </motion.div>
                 </motion.div>
             </>
@@ -389,9 +391,9 @@ const CodingTurtleGame = () => {
                 {/* HUD */}
                 <motion.div className="flex flex-wrap justify-center gap-2 w-full z-50 mb-2"
                     initial={{ y: -15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-                    <div className="px-4 py-2" style={pill}><span className="text-sm font-black text-emerald-400">⭐ {score}</span></div>
-                    <div className="px-4 py-2" style={pill}><span className="text-sm font-bold text-muted-foreground">Kalan: {roundLeft}</span></div>
-                    <div className="px-4 py-2" style={pill}><span className="text-sm font-bold text-primary">Seviye: {level}</span></div>
+                    <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-black text-emerald-400">⭐ {score}</span></div>
+                    <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-bold text-muted-foreground">Kalan: {roundLeft}</span></div>
+                    <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-bold text-primary">Seviye: {level}</span></div>
                 </motion.div>
 
                 {/* Praise text */}
@@ -446,7 +448,7 @@ const CodingTurtleGame = () => {
                 </div>
 
                 {/* Queue Display */}
-                <div className="w-full max-w-sm mt-4 p-3 min-h-[70px] flex items-center flex-wrap gap-2 rounded-xl border border-white/10 bg-black/20 backdrop-blur" style={pill}>
+                <div className="garden-panel w-full max-w-sm mt-4 p-3 min-h-[70px] flex items-center flex-wrap gap-2 rounded-xl border border-white/10 bg-black/20 backdrop-blur" style={pill}>
                     {commands.length === 0 && <span className="text-muted-foreground/50 text-sm font-bold mx-auto">Komut ekle...</span>}
                     {commands.map((cmd, i) => {
                         const isExecuting = gameState === 'animating' && executingIndex === i;
@@ -505,13 +507,13 @@ const CodingTurtleGame = () => {
                         )}
                         <motion.button whileHover={{}} whileTap={{}}
                             onClick={() => { setCommands([]); resetRun(); generateLevel(level); }}
-                            className="px-4 py-2.5 rounded-xl font-bold text-muted-foreground touch-manipulation text-xs sm:text-sm active:scale-95"
+                            className="garden-action-secondary px-4 py-2.5 rounded-xl font-bold text-muted-foreground touch-manipulation text-xs sm:text-sm active:scale-95"
                             style={{ ...pill, background: 'rgba(0,0,0,0.4)' }}>
                             ↺ Yeni Bölüm
                         </motion.button>
                         <motion.button whileHover={{}} whileTap={{}}
                             onClick={() => { clearAll(); setGameState('menu'); }}
-                            className="px-4 py-2.5 rounded-xl font-bold text-muted-foreground touch-manipulation text-xs sm:text-sm active:scale-95"
+                            className="garden-action-secondary px-4 py-2.5 rounded-xl font-bold text-muted-foreground touch-manipulation text-xs sm:text-sm active:scale-95"
                             style={{ ...pill, background: 'rgba(0,0,0,0.4)' }}>
                             ← Çıkış
                         </motion.button>

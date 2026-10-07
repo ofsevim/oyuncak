@@ -197,7 +197,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
             onContextMenu={(e) => e.preventDefault()}
             onDragStart={preventDefault}
             whileTap={{ scale: 0.85 }}
-            className="flex items-center justify-center select-none active:opacity-70 transition-opacity"
+            className="garden-action-secondary flex items-center justify-center select-none active:opacity-70 transition-opacity"
             style={{
                 width: 'clamp(48px, 13vw, 64px)',
                 height: 'clamp(48px, 13vw, 64px)',
@@ -303,7 +303,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                     onClick={() => pressKey('Enter')}
                     draggable={false}
                     whileTap={{ scale: 0.95 }}
-                    className="w-full py-3 rounded-2xl font-bold text-sm select-none touch-manipulation"
+                    className="garden-action-secondary w-full py-3 rounded-2xl font-bold text-sm select-none touch-manipulation"
                     style={{
                         background: 'hsl(158 65% 48% / 0.15)',
                         border: '1px solid hsl(158 65% 48% / 0.35)',
@@ -354,7 +354,7 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
                         onContextMenu={(e) => e.preventDefault()}
                         onDragStart={preventDefault}
                         whileTap={{ scale: 0.88 }}
-                        className="flex items-center justify-center select-none flex-shrink-0"
+                        className="garden-action-secondary flex items-center justify-center select-none flex-shrink-0"
                         style={{
                             width: 'clamp(68px, 18vw, 88px)',
                             height: 'clamp(68px, 18vw, 88px)',

@@ -1,3 +1,5 @@
+import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
+import {  } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playLevelUpSound, playNewRecordSound } from '@/utils/soundEffects';
@@ -6,10 +8,10 @@ import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
 
 const BUTTONS = [
-    { id: 0, color: '#ef4444', glow: 'rgba(239,68,68,0.6)', note: 'C', freq: 261.63, icon: '🍎' }, // Red
-    { id: 1, color: '#3b82f6', glow: 'rgba(59,130,246,0.6)', note: 'E', freq: 329.63, icon: '🦋' }, // Blue
-    { id: 2, color: '#eab308', glow: 'rgba(234,179,8,0.6)', note: 'G', freq: 392.00, icon: '⭐' }, // Yellow
-    { id: 3, color: '#22c55e', glow: 'rgba(34,197,94,0.6)', note: 'C2', freq: 523.25, icon: '🐸' }, // Green
+    { id: 0, color: '#dca0af', glow: 'rgba(239,68,68,0.6)', note: 'C', freq: 261.63, icon: '🍎' }, // Red
+    { id: 1, color: '#9bb8db', glow: 'rgba(59,130,246,0.6)', note: 'E', freq: 329.63, icon: '🦋' }, // Blue
+    { id: 2, color: '#d6c18d', glow: 'rgba(234,179,8,0.6)', note: 'G', freq: 392.00, icon: '⭐' }, // Yellow
+    { id: 3, color: '#9dcbb3', glow: 'rgba(34,197,94,0.6)', note: 'C2', freq: 523.25, icon: '🐸' }, // Green
 ];
 
 const pill: React.CSSProperties = {
@@ -206,28 +208,28 @@ const SimonSaysGame = () => {
                 {Background}
                 <motion.div className="relative z-10 flex flex-col items-center gap-6 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                    <motion.div className="text-7xl drop-shadow-lg grid grid-cols-2 gap-2"
+                    <motion.div className="garden-legacy-decoration text-7xl drop-shadow-lg grid grid-cols-2 gap-2"
                         animate={{ rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}>
                         <div className="w-12 h-12 rounded-full bg-red-500 shadow-lg"></div>
                         <div className="w-12 h-12 rounded-full bg-blue-500 shadow-lg"></div>
                         <div className="w-12 h-12 rounded-full bg-yellow-400 shadow-lg"></div>
                         <div className="w-12 h-12 rounded-full bg-green-500 shadow-lg"></div>
                     </motion.div>
-                    <h2 className="text-4xl md:text-5xl font-black text-gradient" style={{ backgroundImage: 'linear-gradient(to right, #3b82f6, #10b981)' }}>Müzikal Hafıza</h2>
+                    <h2 className="garden-entry-title text-4xl md:text-5xl font-black text-gradient" style={{ backgroundImage: 'linear-gradient(to right, #9bb8db, #10b981)' }}>Müzikal Hafıza</h2>
                     <p className="text-muted-foreground text-sm text-center">Renklerin ve seslerin sırasını ezberle, aynısını tekrarla!</p>
 
                     {highScore > 0 && (
-                        <div className="px-5 py-2.5" style={{ ...pill, border: '1px solid rgba(59,130,246,0.25)' }}>
+                        <div className="garden-panel px-5 py-2.5" style={{ ...pill, border: '1px solid rgba(59,130,246,0.25)' }}>
                             <span className="font-black text-blue-400">🏆 Rekor: {highScore}</span>
                         </div>
                     )}
 
                     <Leaderboard gameId="simonsays" />
 
-                    <motion.button onClick={initGame} className="btn-gaming px-12 py-4 text-lg mt-4"
-                        style={{ background: 'linear-gradient(135deg, #3b82f6, #10b981)' }}
-                        whileHover={{ y: -2 }} whileTap={{}}>
-                        🚀 BAŞLA!
+                    <motion.button onClick={initGame} className="garden-action-primary btn-gaming px-12 py-4 text-lg mt-4"
+                        style={{ background: 'linear-gradient(135deg, #9bb8db, #10b981)' }}
+                        whileHover={{ y: -2 }} whileTap={{}}><GardenPlay size={16} aria-hidden="true" />
+                        BAŞLA!
                     </motion.button>
                 </motion.div>
             </>
@@ -241,7 +243,7 @@ const SimonSaysGame = () => {
                 {Background}
                 <motion.div className="relative z-10 flex flex-col items-center gap-5 p-5 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] max-w-lg mx-auto"
                     initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                    <motion.div className="text-8xl drop-shadow-xl"
+                    <motion.div className="garden-legacy-decoration text-8xl drop-shadow-xl"
                         initial={{ scale: 0, rotate: -20 }}
                         animate={{ scale: [0, 1.3, 1], rotate: [0, 10, 0] }}
                         transition={{ type: 'spring', stiffness: 200, damping: 12 }}>
@@ -260,7 +262,7 @@ const SimonSaysGame = () => {
                         </motion.div>
                     )}
 
-                    <motion.div className="w-full max-w-xs p-6 space-y-3 text-center"
+                    <motion.div className="garden-panel w-full max-w-xs p-6 space-y-3 text-center"
                         style={{ ...pill, boxShadow: '0 8px 40px rgba(0,0,0,0.12)' }}
                         initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
                         <p className="text-3xl font-black text-blue-400">✨ {score} Puan</p>
@@ -269,11 +271,11 @@ const SimonSaysGame = () => {
 
                     <motion.div className="flex gap-3 mt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
                         <motion.button whileHover={{}} whileTap={{}}
-                            style={{ background: 'linear-gradient(135deg, #3b82f6, #10b981)' }}
-                            onClick={initGame} className="btn-gaming px-8 py-3 text-base text-white">🔄 Tekrar Oyna</motion.button>
+                            style={{ background: 'linear-gradient(135deg, #9bb8db, #10b981)' }}
+                            onClick={initGame} className="garden-action-primary btn-gaming px-8 py-3 text-base text-white"><GardenRestart size={16} aria-hidden="true" />Tekrar Oyna</motion.button>
                         <motion.button whileHover={{}} whileTap={{}}
                             onClick={() => setGameState('menu')}
-                            className="px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
+                            className="garden-action-secondary px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
                     </motion.div>
                 </motion.div>
             </>
@@ -290,13 +292,13 @@ const SimonSaysGame = () => {
                 {/* HUD */}
                 <motion.div className="flex flex-wrap justify-center gap-2 w-full z-50"
                     initial={{ y: -15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-                    <div className="px-4 py-2" style={pill}><span className="text-sm font-black text-blue-400">⭐ {score}</span></div>
-                    <div className="px-4 py-2" style={pill}>
+                    <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-black text-blue-400">⭐ {score}</span></div>
+                    <div className="garden-panel px-4 py-2" style={pill}>
                         <span className="text-sm font-bold text-muted-foreground">
                             {gameState === 'showing' ? '👀 Dinle ve İzle' : '🎮 Sıra Sende'}
                         </span>
                     </div>
-                    <div className="px-4 py-2" style={pill}><span className="text-sm font-bold text-emerald-400">Seviye: {sequence.length}</span></div>
+                    <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-bold text-emerald-400">Seviye: {sequence.length}</span></div>
                 </motion.div>
 
                 {/* Game Buttons */}
@@ -319,8 +321,8 @@ const SimonSaysGame = () => {
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleButtonClick(btn.id); } }}
                                 className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl sm:rounded-3xl border-4 transition-colors flex items-center justify-center text-4xl sm:text-5xl touch-manipulation"
                                 style={{
-                                    backgroundColor: isActive ? btn.color : isWrong ? '#ef4444' : `${btn.color}40`,
-                                    borderColor: isActive ? '#fff' : isWrong ? '#ef4444' : btn.color,
+                                    backgroundColor: isActive ? btn.color : isWrong ? '#dca0af' : `${btn.color}40`,
+                                    borderColor: isActive ? '#fff' : isWrong ? '#dca0af' : btn.color,
                                     boxShadow: isActive ? `0 0 40px ${btn.glow}, inset 0 0 20px rgba(255,255,255,0.5)` : isWrong ? '0 0 30px rgba(239,68,68,0.8)' : `0 4px 15px rgba(0,0,0,0.3), inset 0 2px 5px rgba(255,255,255,0.1)`,
                                     filter: isActive ? 'brightness(1.5)' : isWrong ? 'brightness(1.2)' : 'brightness(0.9)',
                                     transform: isActive ? 'scale(0.95)' : 'scale(1)'
@@ -350,7 +352,7 @@ const SimonSaysGame = () => {
                             whileHover={{}}
                             whileTap={{}}
                             onClick={initGame}
-                            className="min-w-[8.5rem] px-5 py-3 font-bold text-muted-foreground touch-manipulation"
+                            className="garden-action-secondary min-w-[8.5rem] px-5 py-3 font-bold text-muted-foreground touch-manipulation"
                             style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}
                         >
                             🔄 Yeniden
@@ -359,7 +361,7 @@ const SimonSaysGame = () => {
                             whileHover={{}}
                             whileTap={{}}
                             onClick={() => setGameState('menu')}
-                            className="min-w-[8.5rem] px-5 py-3 font-bold text-muted-foreground touch-manipulation"
+                            className="garden-action-secondary min-w-[8.5rem] px-5 py-3 font-bold text-muted-foreground touch-manipulation"
                             style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}
                         >
                             ← Çıkış

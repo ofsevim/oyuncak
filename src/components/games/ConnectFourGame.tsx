@@ -1,3 +1,4 @@
+import { Play as GardenPlay } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, RotateCcw, Sparkles, Trophy } from 'lucide-react';
@@ -173,11 +174,11 @@ export default function ConnectFourGame() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-0 pb-20 text-foreground min-[360px]:px-3 sm:px-4">
-      <section className="overflow-hidden rounded-none border border-white/10 bg-slate-950 p-2 shadow-2xl min-[360px]:rounded-3xl min-[360px]:p-3 sm:rounded-[2rem] sm:p-7">
+      <section className="garden-board-section overflow-hidden rounded-none border border-white/10 bg-slate-950 p-2 shadow-2xl min-[360px]:rounded-3xl min-[360px]:p-3 sm:rounded-[2rem] sm:p-7">
         <div className="mb-3 flex items-center justify-between gap-3 sm:mb-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-rose-300">Strateji oyunu</p>
-            <h1 className="text-2xl font-black text-white sm:text-3xl">Dört Sıra</h1>
+            <h1 className="garden-entry-title text-2xl font-black text-white sm:text-3xl">Dört Sıra</h1>
           </div>
           <div className="rounded-2xl bg-white/10 px-3 py-2 text-right">
             <p className="text-[10px] uppercase tracking-wider text-slate-400">Rekor</p>
@@ -192,13 +193,13 @@ export default function ConnectFourGame() {
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-300">Taşlar aşağı düşer. Yatay, dikey veya çapraz ilk dörtlüyü sen oluştur.</p>
             <div className="mt-6 grid grid-cols-3 gap-2">
               {DIFFICULTIES.map((item) => (
-                <button key={item.id} type="button" onClick={() => setDifficulty(item.id)} aria-pressed={difficulty === item.id} className={`min-h-16 rounded-2xl border p-2 transition ${difficulty === item.id ? 'border-rose-400 bg-rose-400/20 text-white' : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'}`}>
+                <button key={item.id} type="button" onClick={() => setDifficulty(item.id)} aria-pressed={difficulty === item.id} className={`garden-choice min-h-16 rounded-2xl border p-2 transition ${difficulty === item.id ? 'border-rose-400 bg-rose-400/20 text-white' : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'}`}>
                   <span className="block text-sm font-black">{item.label}</span>
                   <span className="mt-1 hidden text-[10px] text-slate-400 sm:block">{item.detail}</span>
                 </button>
               ))}
             </div>
-            <button type="button" onClick={startGame} className="mt-6 min-h-12 w-full rounded-2xl bg-gradient-to-r from-rose-500 to-amber-400 px-5 py-3 font-black text-white shadow-lg transition hover:scale-[1.01] active:scale-95">Oyunu Başlat</button>
+            <button type="button" onClick={startGame} className="garden-action-primary mt-6 min-h-12 w-full rounded-2xl bg-gradient-to-r from-rose-500 to-amber-400 px-5 py-3 font-black text-white shadow-lg transition hover:scale-[1.01] active:scale-95"><GardenPlay size={16} aria-hidden="true" />Oyunu Başlat</button>
           </div>
         ) : (
           <>
@@ -220,7 +221,7 @@ export default function ConnectFourGame() {
                     <p className="mt-0.5 text-xs font-semibold leading-relaxed text-slate-200 sm:text-sm">{winExplanation}</p>
                     {winner === 1 && <p className="mt-1 text-xs font-black text-emerald-300">{score} puan {isNewRecord && '• Yeni rekor!'}</p>}
                   </div>
-                  <button type="button" onClick={startGame} aria-label="Tekrar oyna" className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-white text-slate-900 shadow-lg transition hover:scale-105 active:scale-95 sm:min-w-0 sm:gap-2 sm:px-4">
+                  <button type="button" onClick={startGame} aria-label="Tekrar oyna" className="garden-action-primary flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-white text-slate-900 shadow-lg transition hover:scale-105 active:scale-95 sm:min-w-0 sm:gap-2 sm:px-4">
                     <RotateCcw className="h-4 w-4" /> <span className="hidden text-xs font-black sm:inline">Tekrar Oyna</span>
                   </button>
                 </div>
