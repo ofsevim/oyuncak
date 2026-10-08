@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { build } from 'esbuild';
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 
 const environment = await initializeTestEnvironment({ projectId:'demo-oyuncak', firestore:{ host:'127.0.0.1', port:8181, rules:await readFile('firestore.rules','utf8') } });
 await environment.clearFirestore();
@@ -88,7 +88,46 @@ try {
   assert.equal((await getDoc(ref('counting'))).data().score,80);
   assert.equal(service.getPendingScoreSyncCount(),0);
   console.log('PASS real permission failure preserves local score and later retry delivers it');
+
+  const beforeRename = (await getDoc(ref('counting'))).data();
+  await service.updateNicknameInScores('Gece Oyuncusu');
+  assert.equal((await getDoc(doc(db,'profiles','integration-owner'))).data().name,'Gece Oyuncusu');
+  for (const game of ['math','snake','counting']) {
+    assert.equal((await getDoc(ref(game))).data().name,'Gece Oyuncusu','nickname reaches every existing leaderboard immediately after scoring');
+  }
+  const afterRename = (await getDoc(ref('counting'))).data();
+  for (const key of ['uid','gameId','score','date']) assert.equal(afterRename[key],beforeRename[key],'renaming preserves score metadata');
+  assert.equal((await getDoc(ref('runner'))).exists(),false,'renaming never creates a score');
+  assert.equal(await service.getNicknameFromExistingScores(),'Gece Oyuncusu');
+  console.log('PASS nickname profile, leaderboard propagation and preserved score metadata');
+
+  const legacy = {uid:'integration-owner',name:'Eski Oyuncu',score:123,date:'2025-01-01',updatedAt:Timestamp.fromMillis(0)};
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(),'scores','runner','leaderboard','integration-owner'),legacy);
+  });
+  await service.updateNicknameInScores('Yeni Oyuncu');
+  const migrated = (await getDoc(ref('runner'))).data();
+  assert.equal(migrated.gameId,'runner','legacy leaderboard records acquire the required game identifier');
+  assert.equal(migrated.name,'Yeni Oyuncu');
+  for (const key of ['uid','score','date']) assert.equal(migrated[key],legacy[key],'legacy nickname repair preserves the record');
+  for (const game of ['math','snake','counting']) assert.equal((await getDoc(ref(game))).data().name,'Yeni Oyuncu','a legacy record must not block other games');
+  assert.equal((await getDoc(doc(db,'profiles','integration-owner'))).data().name,'Yeni Oyuncu');
+  console.log('PASS legacy nickname migration without losing scores or blocking other games');
   service.setPlayerPreferences({shareScores:false});
+  await service.updateNicknameInScores('Yalnızca Cihaz');
+  assert.equal((await getDoc(ref('runner'))).data().name,'Yeni Oyuncu','privacy opt-out also prevents nickname writes');
+  service.setPlayerPreferences({shareScores:true});
+  navigator.onLine=false;
+  await assert.rejects(service.updateNicknameInScores('Çevrimdışı'),/internet bağlantısı/);
+  navigator.onLine=true;
+  globalThis.__scoreIntegration.uid='not-the-authenticated-owner';
+  await assert.rejects(service.updateNicknameInScores('Başka Kullanıcı'),error=>error.code==='permission-denied');
+  assert.equal((await getDoc(ref('runner'))).data().name,'Yeni Oyuncu','failed or unauthorized renames never overwrite the owner');
+  globalThis.__scoreIntegration.uid='integration-owner';
+  await service.updateNicknameInScores('Son Oyuncu');
+  assert.equal((await getDoc(ref('runner'))).data().name,'Son Oyuncu','retry after a real failure updates the existing record');
+  service.setPlayerPreferences({shareScores:false});
+  console.log('PASS nickname privacy, offline protection, actual permission rejection and recovery');
 } finally {
   timers.forEach(clearTimeout);
   // Disabling sharing also releases retry timers using the public preference flow.

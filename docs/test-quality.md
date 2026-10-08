@@ -40,6 +40,12 @@ Bu kapsam her oyunun bütün olası durumlarını tüketmez. Kaynak/varlık tuta
 
 Oyun başına doğrulanan davranışlar ve eksik önemli senaryolar [oyun kapsamı tablosunda](gameplay-coverage.md) yer alır.
 
+## Eski skor kayıtlarında takma ad güncelleme
+
+8 Ekim 2026: canlı kuralların yerel kurallarla aynı olduğu doğrulandı. Eski Matematik kayıtlarında `gameId` alanının eksik olması, yalnızca adı değiştiren toplu yazıyı reddediyordu. Gerçek SDK ve Firestore emülatöründeki eski kayıt senaryosu düzeltmeden önce `permission-denied` ile başarısız oldu. Güncelleme artık belge yolundaki oyun kimliğini de ekler; skor, tarih ve kullanıcı kimliği korunur.
+
+`npm run test:integration`, profil kaydını, birden fazla liderlik tablosunun güncellenmesini, eski kayıt dönüşümünü, paylaşım kapalıyken yazılmamasını, çevrimdışı hatayı, gerçek sahiplik ihlalinin reddini ve sonraki başarılı denemeyi doğrular. Bu senaryolar canlı veritabanına test kaydı yazmaz. Güvenlik kuralları gevşetilmedi.
+
 ## WebKit çevrimdışı CI regresyonu
 
 Playwright 1.63.0, `context.setOffline(true)` sonrasında servis çalışanı yanıt verse bile WebKit navigasyonunu `internal error` ile reddediyordu. Önceki Windows atlaması Linux CI'ı kapsamıyordu; CI logunda 281 başarılı senaryo yanında bu test başarısız oldu. Aynı hata yerelde atlama kaldırılarak tekrar üretildi.

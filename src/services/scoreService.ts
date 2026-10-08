@@ -170,7 +170,9 @@ export async function updateNicknameInScores(newName: string): Promise<void> {
 
     snapshots.forEach((snapshot, index) => {
       if (!snapshot.exists()) return;
-      batch.update(refs[index], { name: safeName, updatedAt: serverTimestamp() });
+      // Scores saved before gameId became required must also pass today's rules.
+      // Updating only these fields preserves any concurrent personal-best write.
+      batch.update(refs[index], { gameId: SCORE_GAME_IDS[index], name: safeName, updatedAt: serverTimestamp() });
       updated += 1;
     });
 
