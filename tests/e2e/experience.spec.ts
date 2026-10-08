@@ -35,8 +35,7 @@ test('game pauses, resumes and appears in recent games', async ({ page }) => {
   await expect(page.getByRole('region', { name: 'Son oynanan oyunlar' }).getByRole('link', { name: /Matematik/ })).toBeVisible();
 });
 
-test('deep game route reloads offline after complete installation', async ({ page, context, browserName }) => {
-  test.skip(browserName === 'webkit' && process.platform === 'win32', 'Windows WebKit reports an internal navigation error when forced offline; run in Linux CI.');
+test('deep game route reloads offline after complete installation', async ({ page, context }) => {
   await page.goto('/games/math');
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);

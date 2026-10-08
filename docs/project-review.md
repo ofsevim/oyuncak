@@ -50,7 +50,7 @@ Skorlar istemciden Firestore'a yazılır. Kurallar kimlik/sahiplik ve veri biçi
 - HUD kontrastı gerçek tarayıcıda RED (2.48) → GREEN (en az4.5).
 - Açık/koyu renkler ve kalıcı tercih gerçek tarayıcıda doğrulandı. JavaScript yüklenmeden önce dört açılış teması kontrolü geçti.
 
-Windows WebKit'in zorunlu çevrimdışı gezinme sınırlaması nedeniyle mevcut bir senaryo Windows'ta atlanır. Gerçek cihazda Safari11 doğrulaması yapılmadı. İlk geniş çalıştırma makine kaynakları/PowerShell çıktı yönlendirmesine takıldı. Son çalışma doğrudan dosya çıktısı ve tek işçi kullanır; başarısız testler başarılı sayılmaz.
+Önceki Playwright 1.63 doğrulamasında WebKit'in zorunlu çevrimdışı gezinme sınırlaması nedeniyle bir senaryo Windows'ta atlandı. Gerçek cihazda Safari11 doğrulaması yapılmadı. İlk geniş çalıştırma makine kaynakları/PowerShell çıktı yönlendirmesine takıldı. Bu çalışma doğrudan dosya çıktısı ve tek işçi kullandı; başarısız testler başarılı sayılmadı.
 
 ## Oyun içi tasarımın tamamlanması
 Ana sayfa ve katalogdan sonra kalan eski oyun arayüzleri de Gece Bahçesi'ne taşındı. 20 oyun ortak başlık, kapak, geri dönüş ve oyun bilgisi çerçevesini kullanır. Başlangıç, zorluk/karakter seçimi, skor yüzeyleri, yön tuşları, yeniden oynama ve mola penceresi ortak bileşen stillerini kullanır. Başlat/tekrar ikonları ve ses/duraklat kontrolleri SVG'dir. Seçim butonları aria-pressed ile durumlarını bildirir; yalnızca ikon taşıyan yeniden başlat kontrolünün erişilebilir adı vardır.
@@ -78,3 +78,11 @@ Yeni kapsam, hata öncesi/sonrası kanıtları ve tekrar çalıştırma komutlar
 Son kod setinde lint, TypeScript, 27 birim/regresyon dosyası, Functions sözdizimi ve üretim derlemesi geçti. Üretim ve Functions bağımlılık taramalarında açık sayısı sıfırdır; yukarıdaki geliştirme bağımlılığı uyarısı korunur.
 
 Son tarayıcı doğrulaması: geniş 279 senaryoluk koşuda 266 geçti, 11 başarısızlık ve 2 mevcut atlama çıktı. Çizim düzeltmesi ve servis çalışanı/test sunucusu izolasyonundan sonra güncel üretim sürümündeki 63 senaryonun 62'si geçti, yalnızca mevcut Windows WebKit çevrimdışı senaryosu atlandı; başarısız ve flaky sonuç sayısı sıfırdır. İlk 11 başarısız senaryonun tamamının bu son başarılı koşuda bulunduğu raporlar karşılaştırılarak doğrulandı. Dört yeni skor bildirimi kontrolü dahil toplam **281 benzersiz senaryo doğrulandı**, 2 mevcut atlama korunur. Son doğrulamanın kendi sunucusu koşucu tarafından yönetildi; açık önizleme yeniden başlatıldı ve güncel sürüme geçirildi.
+
+## WebKit çevrimdışı CI hatası
+
+Linux CI'da 281 testin ardından Tank Arena'nın çevrimdışı yeniden yüklemesi `WebKit encountered an internal error` ile başarısız oldu. Windows'ta önceki platform atlaması kaldırılınca aynı hata tekrar üretildi. Playwright'ın [42775 numaralı hata kaydı](https://github.com/microsoft/playwright/issues/42775) ve [42894 numaralı düzeltmesi](https://github.com/microsoft/playwright/pull/42894), WebKit çevrimdışı ağ emülasyonundaki regresyonu doğrular.
+
+Playwright ve iki bağlı paketi 1.63.0'dan 1.64.0'a yükseltildi; kilit dosyası güncellendi. Tank Arena ve derin oyun rotası çevrimdışı testlerindeki Windows atlamaları kaldırıldı. Gerçek ağ kapatma ve önbellekten yeniden yükleme doğrulamaları korunur. Hata veren iPhone senaryosu yeni sürümle geçti.
+
+8 Ekim 2026 son doğrulaması: altı tarayıcı/ekran profilinin tek işçili tam koşusunda **282 başarılı, 1 beklenen masaüstü dokunmatik atlaması, 0 başarısız ve 0 flaky**. İlk iki işçili yerel koşudaki dört süre sınırı hatası ve tekrar doğrulaması [test kalitesi belgesinde](test-quality.md) açıklanır. Lint, TypeScript, 27 birim/regresyon test dosyası, Functions sözdizimi, bağımlılık ağacı ve temiz E2E derlemesi geçti. GitHub CI sonucu ayrıca doğrulanmalıdır.

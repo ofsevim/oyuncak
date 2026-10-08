@@ -32,8 +32,7 @@ for (const route of ['/', '/games', '/draw', '/story', '/parents', ...GAME_CATAL
 
 test.describe('offline installation', () => {
 test.use({ serviceWorkers: 'allow' });
-test('tank iframe loads after redirected precaching and reloads offline', async ({ page, context, browserName }) => {
-  test.skip(browserName === 'webkit' && process.platform === 'win32', 'Windows WebKit reports an internal navigation error when forced offline; run in Linux CI.');
+test('tank iframe loads after redirected precaching and reloads offline', async ({ page, context }) => {
   await page.goto('/games/tank-arena');
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);

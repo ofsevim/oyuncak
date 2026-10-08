@@ -36,4 +36,14 @@ Yerleşim ve giriş testlerinde servis çalışanı kurulumu kapalıdır; her ye
 
 ## Sınırlar
 
-Bu kapsam her oyunun bütün olası durumlarını tüketmez. Kaynak/varlık tutarlılığı testleri davranış testlerinin yerine kullanılmaz. Windows WebKit'in zorunlu çevrimdışı gezinme kısıtı ve masaüstündeki dokunmatik kontrol denemesi açıkça atlanır; atlanan senaryolar başarılı sayılmaz. Gerçek cihazda Safari 11 ve APK bu çalışmanın dışında tutulmuştur.
+Bu kapsam her oyunun bütün olası durumlarını tüketmez. Kaynak/varlık tutarlılığı testleri davranış testlerinin yerine kullanılmaz. Masaüstündeki dokunmatik kontrol denemesi açıkça atlanır; atlanan senaryolar başarılı sayılmaz. Gerçek cihazda Safari 11 ve APK bu çalışmanın dışında tutulmuştur.
+
+## WebKit çevrimdışı CI regresyonu
+
+Playwright 1.63.0, `context.setOffline(true)` sonrasında servis çalışanı yanıt verse bile WebKit navigasyonunu `internal error` ile reddediyordu. Önceki Windows atlaması Linux CI'ı kapsamıyordu; CI logunda 281 başarılı senaryo yanında bu test başarısız oldu. Aynı hata yerelde atlama kaldırılarak tekrar üretildi.
+
+Playwright 1.64.0'a geçildi; paket ve kilit dosyası birlikte güncellendi. Çevrimdışı testlerdeki platform atlamaları kaldırıldı. Gerçek ağı kapatma, servis çalışanının kontrolü ve Tank Arena iframe'inin önbellekten yeniden yüklenmesi aynı testte korunur. Uygulamanın servis çalışanını değiştiren veya hatayı yakalayıp başarılı sayan bir kestirme kullanılmaz. [Playwright hata kaydı](https://github.com/microsoft/playwright/issues/42775), [resmi düzeltme](https://github.com/microsoft/playwright/pull/42894).
+
+8 Ekim 2026 doğrulaması: iPhone çevrimdışı senaryosu tek başına geçti. İlk iki işçili yerel tam koşuda 278 test geçti, dört senaryo yükleme/kontrol süre sınırlarına takıldı. Bu dört senaryo ve ilgili mobil/iPhone kontrolleri tek işçili 10 senaryoluk koşuda geçti. Ardından aynı kaynaklarla ve mevcut süre sınırlarıyla altı profilin tamamı tek işçiyle yeniden çalıştırıldı: **282 geçti, 1 masaüstü dokunmatik kontrolü atlandı; 0 başarısız, 0 flaky**. Yerel Windows sonucu GitHub Linux CI başarısı olarak sayılmaz; CI iki işçi kullanmayı sürdürür.
+
+Lint, TypeScript, 27 birim/regresyon test dosyası, Functions sözdizimi ve bağımlılık ağacı kontrolü geçti. Üretim ve Functions bağımlılık taramalarında açık bulunmadı; mevcut geliştirme bağımlılığı uyarısı sürer. Tam E2E koşusu temiz test derlemesini de tamamladı.
