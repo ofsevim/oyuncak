@@ -1,186 +1,63 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Home, RefreshCw } from "lucide-react";
-import type { Story } from "@/data/stories";
-import { StoryIllustration } from "./StoryIllustration";
-import { clearStoryProgress, saveStoryProgress } from "./storyProgress";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowLeft, ArrowRight, BookOpen, RotateCcw, MessageCircle, Check } from 'lucide-react';
+import type { Story } from '@/data/stories';
+import { StoryArtwork } from './StoryArtwork';
+import { clearStoryProgress, loadStoryJourney, nextStoryPage, saveStoryJourney } from './storyProgress';
 
-type Props = {
-  story: Story;
-  initialPageIndex?: number;
-  onExit: () => void;
-};
+export default function StoryReader({story,onExit}: {story:Story;onExit:()=>void}) {
+  const [path,setPath]=useState(()=>loadStoryJourney(story.id,story.pages));
+  const heading=useRef<HTMLHeadingElement>(null);
+  const choices=useRef<HTMLDivElement>(null);
+  const pageIndex=path[path.length-1];
+  const page=story.pages[pageIndex];
+  const hasChoices=!!page.choices?.length;
+  const next=nextStoryPage(story.pages,pageIndex);
+  const finished=next===null&&!hasChoices;
+  const progress=finished?100:Math.round((pageIndex+1)/story.pages.length*100);
 
-/**
- * Tek bir hikayeyi sayfa sayfa okutan ekran.
- * - Klavye: ← → / ESC
- * - localStorage: ilerleme kaydı
- */
-export default function StoryReader({ story, initialPageIndex = 0, onExit }: Props) {
-  const maxIndex = story.pages.length - 1;
-  const [pageIndex, setPageIndex] = useState(() => Math.min(Math.max(initialPageIndex, 0), maxIndex));
+  useEffect(()=>{
+    saveStoryJourney(story.id,path);
+    heading.current?.focus({preventScroll:true});
+    heading.current?.scrollIntoView({block:'nearest',behavior:'instant'});
+  },[story.id,path]);
 
-  const page = story.pages[pageIndex];
-  const progressPct = useMemo(() => Math.round(((pageIndex + 1) / story.pages.length) * 100), [pageIndex, story.pages.length]);
+  const goBack=useCallback(()=>setPath(current=>current.length>1?current.slice(0,-1):current),[]);
+  const goNext=useCallback(()=>setPath(current=>{
+    const target=nextStoryPage(story.pages,current[current.length-1]);
+    return target===null?current:[...current,target];
+  }),[story.pages]);
+  const restart=()=>{clearStoryProgress(story.id);setPath([0])};
 
-  useEffect(() => {
-    saveStoryProgress(story.id, pageIndex);
-  }, [story.id, pageIndex]);
-
-  const goPrev = useCallback(() => {
-    setPageIndex((p) => Math.max(0, p - 1));
-  }, []);
-  const goNext = useCallback(() => {
-    setPageIndex((p) => {
-      const target = story.pages[p]?.nextPageIndex;
-      return Math.min(maxIndex, typeof target === "number" ? target : p + 1);
-    });
-  }, [maxIndex, story.pages]);
-
-  const restart = useCallback(() => {
-    clearStoryProgress(story.id);
-    setPageIndex(0);
-  }, [story.id]);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onExit();
-      if (e.key === "ArrowLeft") goPrev();
-      if (e.key === "ArrowRight") goNext();
+  useEffect(()=>{
+    const onKey=(event:KeyboardEvent)=>{
+      if(event.key==='Escape'){onExit();return}
+      const target=event.target;
+      if(target instanceof HTMLElement&&target.closest('button,input,textarea,select,[contenteditable="true"]'))return;
+      if(event.key==='ArrowLeft'){event.preventDefault();goBack()}
+      if(event.key==='ArrowRight'){
+        event.preventDefault();
+        if(hasChoices)choices.current?.querySelector('button')?.focus();
+        else goNext();
+      }
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [goNext, goPrev, onExit]);
+    window.addEventListener('keydown',onKey);
+    return ()=>window.removeEventListener('keydown',onKey);
+  },[goBack,goNext,hasChoices,onExit]);
 
-  const hasChoices = !!page.choices?.length;
-
-  const isFinished = pageIndex === maxIndex && !hasChoices;
-
-  return (
-    <div className="mx-auto w-full max-w-4xl px-4 pb-32">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className={`grid place-items-center rounded-2xl bg-gradient-to-br ${story.coverGradient} p-4`}>
-            <span className="text-4xl" aria-hidden="true">
-              {story.coverEmoji}
-            </span>
-          </div>
-          <div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">{story.title}</h2>
-            <p className="text-sm md:text-base text-muted-foreground font-semibold">{story.tagline}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Sayfa {pageIndex + 1}/{story.pages.length} • {progressPct}%
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={onExit}
-            className="inline-flex items-center gap-2 rounded-full bg-muted px-5 py-3 font-bold text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Hikaye kütüphanesine dön"
-          >
-            <Home className="h-5 w-5" /> Kütüphane
-          </button>
-          <button
-            onClick={restart}
-            className="inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-3 font-bold text-secondary-foreground shadow-sm hover:opacity-90 transition-opacity"
-            aria-label="Hikayeyi baştan başlat"
-          >
-            <RefreshCw className="h-5 w-5" /> Baştan
-          </button>
-        </div>
+  return <div className="story-reader">
+    <header className="story-reader-top"><button type="button" className="story-secondary" onClick={onExit} aria-label="Hikâye kütüphanesine dön"><ArrowLeft size={16} aria-hidden="true"/>Kütüphaneye dön</button><h1>{story.title}</h1><button type="button" className="story-secondary" onClick={restart} aria-label="Hikâyeyi baştan başlat"><RotateCcw size={15} aria-hidden="true"/>Baştan oku</button></header>
+    <article className="story-reading-spread" aria-label="Hikâye bölümü">
+      <div className="story-page-art"><StoryArtwork story={story} scene={page.illustration}/><div className="story-art-caption"><BookOpen size={15} aria-hidden="true"/><span>{story.tagline}</span></div></div>
+      <div className="story-page-copy">
+        <p className="story-eyebrow">{String(path.length).padStart(2,'0')} · {story.category==='sleep'?'Uyku zamanı':'Hikâye zamanı'}</p>
+        <h2 ref={heading} tabIndex={-1}>{page.title}</h2>
+        <div className="story-page-text">{page.text.split('\n\n').map((paragraph,index)=><p key={index}>{paragraph}</p>)}</div>
+        {hasChoices&&<div className="story-choices" ref={choices} role="group" aria-label="Hikâyenin yolunu seç"><p>Şimdi hangi yolu seçelim?</p>{page.choices!.map(choice=><button type="button" key={choice.label} className="story-secondary" onClick={()=>setPath(current=>[...current,choice.nextPageIndex])}>{choice.label}<ArrowRight size={17} aria-hidden="true"/></button>)}</div>}
+        {finished&&<section className="story-reflection" aria-label="Birlikte düşünelim"><p><MessageCircle size={17} aria-hidden="true"/>Birlikte düşünelim</p><h3>{story.reflection}</h3><span>İstersen yanında okuyan biriyle konuşabilir ya da cevabını hayal edebilirsin.</span></section>}
+        <div className="story-reader-controls"><button type="button" className="story-secondary" onClick={goBack} disabled={path.length===1} aria-label="Önceki sayfa"><ArrowLeft size={16} aria-hidden="true"/>Geri</button><span className="story-chapter-count" aria-live="polite">{finished?<><Check size={14} aria-hidden="true"/>Hikâye tamamlandı</>:`${path.length}. bölüm`}</span>{!hasChoices&&(finished?<button type="button" className="story-primary" onClick={onExit}>Diğer hikâyeler<ArrowRight size={16} aria-hidden="true"/></button>:<button type="button" className="story-primary" onClick={goNext} aria-label="Sonraki sayfa">Devam<ArrowRight size={16} aria-hidden="true"/></button>)}</div>
+        <div className="story-reading-progress" role="progressbar" aria-label="Okuma ilerlemesi" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><div style={{width:`${progress}%`}}/></div>
       </div>
-
-      {/* Progress bar */}
-      <div className="mt-5 h-3 w-full overflow-hidden rounded-full bg-muted" aria-hidden="true">
-        <div className="h-full bg-primary transition-all" style={{ width: `${progressPct}%` }} />
-      </div>
-
-      {/* Page card */}
-      <div className="mt-6">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${story.id}-${pageIndex}`}
-            className="relative overflow-hidden rounded-[2.5rem] border-4 border-primary/10 bg-card/80 backdrop-blur-sm p-6 md:p-10 shadow-playful"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -18 }}
-            transition={{ type: "spring", stiffness: 260, damping: 22 }}
-          >
-            <div className="flex flex-col items-center gap-6 text-center">
-              <StoryIllustration emoji={page.illustration} />
-              <div className="space-y-3">
-                <h3 className="text-xl md:text-2xl font-black text-foreground">{page.title}</h3>
-                <p className="text-base md:text-lg font-semibold leading-relaxed text-foreground/90">{page.text}</p>
-              </div>
-
-              {/* Choices OR Navigation */}
-              {hasChoices ? (
-                <div className="mt-2 grid w-full grid-cols-1 gap-3 md:grid-cols-3">
-                  {page.choices!.map((c) => (
-                    <button
-                      key={c.label}
-                      onClick={() => {
-                        setPageIndex(Math.min(Math.max(c.nextPageIndex, 0), maxIndex));
-                      }}
-                      className="rounded-2xl bg-primary px-5 py-4 text-left font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-2 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
-                  <button
-                    onClick={goPrev}
-                    disabled={pageIndex === 0}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-muted px-8 py-4 font-black text-muted-foreground disabled:opacity-50"
-                    aria-label="Önceki sayfa"
-                  >
-                    <ArrowLeft className="h-5 w-5" /> Geri
-                  </button>
-                  <button
-                    onClick={goNext}
-                    disabled={pageIndex === maxIndex}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-success px-8 py-4 font-black text-white shadow-lg disabled:opacity-50"
-                    aria-label="Sonraki sayfa"
-                  >
-                    Devam <ArrowRight className="h-5 w-5" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {isFinished && (
-              <motion.div
-                className="mt-6 flex flex-col items-center gap-2"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                <div className="flex items-center gap-1" aria-hidden="true">
-                  {["🎉", "⭐", "🥳", "⭐", "🎉"].map((emoji, i) => (
-                    <motion.span
-                      key={i}
-                      className="text-2xl"
-                      initial={{ y: 0 }}
-                      animate={{ y: [0, -10, 0] }}
-                      transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.12, ease: "easeInOut" }}
-                    >
-                      {emoji}
-                    </motion.span>
-                  ))}
-                </div>
-                <p className="text-sm font-bold text-muted-foreground">
-                  Tebrikler, hikaye bitti! "Baştan" deyip tekrar okuyabilirsin.
-                </p>
-              </motion.div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </div>
-  );
+    </article>
+    <p className="story-reader-hint">Kaldığın yer bu cihazda saklanır. Klavyede ok tuşlarıyla ilerleyebilir, Esc ile kütüphaneye dönebilirsin.</p>
+  </div>;
 }

@@ -96,3 +96,11 @@ Bağımsız inceleme, köstebeğin durum değişiminde basılı Space'i kaybetme
 On yeni davranış senaryosu masaüstü, mobil Chromium ve iPhone/WebKit üzerinde çalışır. [20 oyunun kapsam tablosu](gameplay-coverage.md), test edilmiş davranışlarla henüz sınanmayan önemli durumları ayrı gösterir. Testlerin geçmesi bütün oyunların bütün olası durumlarında hatasız olduğu iddiasına dönüştürülmez.
 
 Son yerel doğrulama: altı profilin tam koşusunda **312 geçti, 1 beklenen atlama, 0 başarısız ve 0 flaky**. On yeni senaryonun 30 tarayıcı örneği tam koşuya dahildir. Lint, TypeScript, 27 birim/regresyon test dosyası, Functions sözdizimi ve üretim derlemesi geçti. Üretim önizlemesi yeniden başlatıldı; 4184'te güncel derlemenin sunulduğu doğrulandı.
+
+
+## Hikâyelerin yenilenmesi
+
+Kütüphane ve okuyucu onaylanan Gece Bahçesi tasarımına geçirildi. 32 metin, 32 çizimli kapak ve 11 sahne manzarası yenilendi; dokuz hikâyede farklı sahneler seçilebilir. Okuyucu seçilen yolu kaydeder, geri dönüşte o yolu izler ve eski kayıtları doğrulayarak taşır. Modern kategori simgeleri, yerel ilerleme, kategori içinde rastgele seçim ve her hikâyede düşünme sorusu eklendi. Klavye odağı ve WebKit tema kontrastı gerçek regresyonlarla düzeltildi. Kapsam ve son doğrulama [test kalitesi belgesindedir](test-quality.md).
+
+
+9 Ekim 2026: tam yerel tarayıcı koşusu **360 başarılı, 1 beklenen atlama, 0 başarısız ve 0 flaky**; yeni hikâye kapsamının 48 örneği dahildir. Lint, tip kontrolü, 29 birim/regresyon dosyası, Functions kontrolü ve üretim derlemesi geçti. Güncel uygulama önizlemesinde hikâye bölümü ve okuyucu telefon/tablet/masaüstünde incelendi.

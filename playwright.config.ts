@@ -10,10 +10,10 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
-    { name: 'iphone', testMatch: /(?:responsive|gameplay)\.spec\.ts/, use: { ...devices['iPhone 13'], browserName: 'webkit' } },
-    { name: 'small-phone', testMatch: /responsive\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 320, height: 640 } } },
-    { name: 'touch-landscape', testMatch: /responsive\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 844, height: 390 } } },
-    { name: 'tablet', testMatch: /responsive\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 768, height: 1024 } } },
+    { name: 'iphone', testMatch: /(?:responsive|gameplay|stories)\.spec\.ts/, use: { ...devices['iPhone 13'], browserName: 'webkit' } },
+    { name: 'small-phone', testMatch: /(?:responsive|stories)\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 320, height: 640 } } },
+    { name: 'touch-landscape', testMatch: /(?:responsive|stories)\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 844, height: 390 } } },
+    { name: 'tablet', testMatch: /(?:responsive|stories)\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 768, height: 1024 } } },
   ],
   webServer: {
     command: 'node --max-old-space-size=2048 node_modules/vite/bin/vite.js build --mode test --outDir .cache/e2e-dist && node --max-old-space-size=256 tests/server/preview.mjs',
