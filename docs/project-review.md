@@ -86,3 +86,13 @@ Linux CI'da 281 testin ardından Tank Arena'nın çevrimdışı yeniden yükleme
 Playwright ve iki bağlı paketi 1.63.0'dan 1.64.0'a yükseltildi; kilit dosyası güncellendi. Tank Arena ve derin oyun rotası çevrimdışı testlerindeki Windows atlamaları kaldırıldı. Gerçek ağ kapatma ve önbellekten yeniden yükleme doğrulamaları korunur. Hata veren iPhone senaryosu yeni sürümle geçti.
 
 8 Ekim 2026 son doğrulaması: altı tarayıcı/ekran profilinin tek işçili tam koşusunda **282 başarılı, 1 beklenen masaüstü dokunmatik atlaması, 0 başarısız ve 0 flaky**. İlk iki işçili yerel koşudaki dört süre sınırı hatası ve tekrar doğrulaması [test kalitesi belgesinde](test-quality.md) açıklanır. Lint, TypeScript, 27 birim/regresyon test dosyası, Functions sözdizimi, bağımlılık ağacı ve temiz E2E derlemesi geçti. GitHub CI sonucu ayrıca doğrulanmalıdır.
+
+## Oyun davranışlarının ek incelemesi
+
+2048 geri almanın hamle sayacını düzeltmesi, müzikal hafızada çıkışın bekleyen diziyi iptal etmesi, köstebekte fare/dokunma/klavye eyleminin ortak click davranışını kullanması ve kodlamada sıfırlamanın bekleyen hareketi iptal etmesi sağlandı. Bu dört sorun gerçek arayüz testlerinde önce başarısız oldu.
+
+Bağımsız inceleme, köstebeğin durum değişiminde basılı Space'i kaybetmesi ve kodlamada ödül sonrası sıfırlamanın tur geçişini iptal etmesi için ek regresyonlar getirdi. Her köstebek görünümünün kimliği sabit kaldı; kodlama ödülü ve bölüm geçişi tek kez işlenir, geçiş sırasında sıfırlama kilitlenir. React state updater içindeki bölüm/oyun bitişi yan etkileri normal geçiş callback'ine taşındı.
+
+On yeni davranış senaryosu masaüstü, mobil Chromium ve iPhone/WebKit üzerinde çalışır. [20 oyunun kapsam tablosu](gameplay-coverage.md), test edilmiş davranışlarla henüz sınanmayan önemli durumları ayrı gösterir. Testlerin geçmesi bütün oyunların bütün olası durumlarında hatasız olduğu iddiasına dönüştürülmez.
+
+Son yerel doğrulama: altı profilin tam koşusunda **312 geçti, 1 beklenen atlama, 0 başarısız ve 0 flaky**. On yeni senaryonun 30 tarayıcı örneği tam koşuya dahildir. Lint, TypeScript, 27 birim/regresyon test dosyası, Functions sözdizimi ve üretim derlemesi geçti. Üretim önizlemesi yeniden başlatıldı; 4184'te güncel derlemenin sunulduğu doğrulandı.

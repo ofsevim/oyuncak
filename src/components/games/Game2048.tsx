@@ -130,6 +130,7 @@ const Game2048 = () => {
     if (undoStack.length === 0) return;
     const last = undoStack[undoStack.length - 1];
     setGrid(last.grid); setScore(last.score);
+    setMoves(previous => Math.max(0, previous - 1));
     setUndoStack(prev => prev.slice(0, -1));
     playPopSound();
   }, [undoStack]);

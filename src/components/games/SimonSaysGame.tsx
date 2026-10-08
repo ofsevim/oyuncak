@@ -140,6 +140,15 @@ const SimonSaysGame = () => {
         nextRound([]);
     }, [clearAll, nextRound]);
 
+    const exitToMenu = useCallback(() => {
+        abortRef.current = true;
+        sequenceIdRef.current++;
+        clearAll();
+        setActiveButton(null);
+        setWrongButton(null);
+        setGameState('menu');
+    }, [clearAll]);
+
     const finishGame = useCallback((finalScore: number) => {
         setGameState('complete');
         const isNew = saveHighScoreObj('simonsays', finalScore);
@@ -274,7 +283,7 @@ const SimonSaysGame = () => {
                             style={{ background: 'linear-gradient(135deg, #9bb8db, #10b981)' }}
                             onClick={initGame} className="garden-action-primary btn-gaming px-8 py-3 text-base text-white"><GardenRestart size={16} aria-hidden="true" />Tekrar Oyna</motion.button>
                         <motion.button whileHover={{}} whileTap={{}}
-                            onClick={() => setGameState('menu')}
+                            onClick={exitToMenu}
                             className="garden-action-secondary px-5 py-2.5 font-bold text-muted-foreground" style={pill}>← Menü</motion.button>
                     </motion.div>
                 </motion.div>
@@ -360,7 +369,7 @@ const SimonSaysGame = () => {
                         <motion.button
                             whileHover={{}}
                             whileTap={{}}
-                            onClick={() => setGameState('menu')}
+                            onClick={exitToMenu}
                             className="garden-action-secondary min-w-[8.5rem] px-5 py-3 font-bold text-muted-foreground touch-manipulation"
                             style={{ ...pill, background: 'rgba(0,0,0,0.5)' }}
                         >

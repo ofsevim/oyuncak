@@ -9,6 +9,203 @@ test.beforeEach(async ({ context }) => {
   await context.route(/googleapis\.com|firebaseio\.com/,route=>route.abort());
 });
 
+// These scenarios exercise public controls, not injected game state.
+test('regression: 2048 ignores an ineffective move and undo restores the move counter', async ({ page }) => {
+  await page.addInitScript(() => { Math.random = () => 0; });
+  await start(page, '2048');
+  const board = page.locator('.garden-game-content .grid[style*="grid-template-columns"]');
+  const tiles = () => board.locator(':scope > div').allTextContents();
+  const initial = await tiles();
+  const moves = page.getByText('Hamle', { exact: true }).locator('..').locator('p').last();
+  await page.keyboard.press('ArrowUp');
+  expect(await tiles()).toEqual(initial);
+  await expect(moves).toHaveText('0');
+  await page.keyboard.press('ArrowLeft');
+  await expect(moves).toHaveText('1');
+  await expect(page.getByText('Skor', { exact: true }).locator('..').locator('p').last()).toHaveText('4');
+  await page.getByRole('button', { name: '↩️', exact: true }).click();
+  await expect.poll(tiles).toEqual(initial);
+  await expect(moves).toHaveText('0');
+  await expect(page.getByText('Skor', { exact: true }).locator('..').locator('p').last()).toHaveText('0');
+});
+
+test('regression: 2048 ignores keyboard moves while the shared pause dialog is open', async ({ page }) => {
+  await page.addInitScript(() => { Math.random = () => 0; });
+  await start(page, '2048');
+  const moves = page.getByText('Hamle', { exact: true }).locator('..').locator('p').last();
+  await page.getByRole('button', { name: 'Oyunu duraklat' }).click();
+  await page.keyboard.press('ArrowLeft');
+  await expect(moves).toHaveText('0');
+  await page.getByRole('button', { name: 'Devam et', exact: true }).click();
+  await page.keyboard.press('ArrowLeft');
+  await expect(moves).toHaveText('1');
+});
+
+test('regression: Tetris ignores soft drop and hold shortcuts during shared pause', async ({ page }) => {
+  await start(page, 'tetris');
+  const score = page.getByText('Puan', { exact: true }).locator('..');
+  const held = page.getByText('Tut (C)', { exact: true }).locator('..');
+  const initialHold = await held.innerHTML();
+  await page.getByRole('button', { name: 'Oyunu duraklat' }).click();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('c');
+  await expect(score).toHaveText(/Puan\s*0$/);
+  expect(await held.innerHTML()).toBe(initialHold);
+  await page.getByRole('button', { name: 'Devam et', exact: true }).click();
+  await page.getByRole('button', { name: 'Sert düşüş', exact: true }).click();
+  await expect(score).not.toHaveText(/Puan\s*0$/);
+});
+
+test('regression: Simon exits during playback without reopening the game', async ({ page }) => {
+  await start(page, 'simonsays');
+  await page.getByRole('button', { name: /Çıkış/ }).click();
+  await expect(page.getByRole('button', { name: /BAŞLA/ })).toBeVisible();
+  // The pending first sequence lasts 1.4 seconds; it must not reopen play.
+  await page.waitForTimeout(2000);
+  await expect(page.getByRole('button', { name: /BAŞLA/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /düğme$/ })).toHaveCount(0);
+});
+
+test('regression: whack keyboard activation scores a mole once', async ({ page }) => {
+  await page.addInitScript(() => { Math.random = () => .5; });
+  await page.goto('/games/whack');
+  await page.getByRole('button', { name: /Kolay/ }).click();
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(Date.now() + 500));
+  await page.getByRole('button', { name: /BAŞLA/ }).click();
+  await page.clock.runFor(850);
+  const mole = page.getByRole('button', { name: /🐹|Hamster yakala/ }).first();
+  await expect(mole).toBeVisible();
+  await mole.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('⚡ 1', { exact: true })).toBeVisible();
+  await expect(mole).toBeDisabled();
+  await page.clock.runFor(100);
+  await mole.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('⚡ 1', { exact: true })).toBeVisible();
+});
+
+test('regression: whack preserves a held Space press across the rising transition', async ({ page }) => {
+  await page.addInitScript(() => { Math.random = () => .5; });
+  await page.goto('/games/whack');
+  await page.getByRole('button', { name: /Kolay/ }).click();
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(Date.now() + 500));
+  await page.getByRole('button', { name: /BAŞLA/ }).click();
+  await page.clock.runFor(750);
+  const mole = page.getByRole('button', { name: /Hamster yakala/ }).first();
+  await expect(mole).toBeVisible();
+  await mole.focus();
+  await page.keyboard.down('Space');
+  await page.clock.runFor(100);
+  await page.keyboard.up('Space');
+  await expect(page.getByText('⚡ 1', { exact: true })).toBeVisible();
+});
+
+test('regression: whack pointer input awards points and penalties never make score negative', async ({ page, isMobile }) => {
+  await page.addInitScript(() => { Math.random = () => .5; });
+  await page.goto('/games/whack');
+  await page.getByRole('button', { name: /Kolay/ }).click();
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(Date.now() + 500));
+  await page.getByRole('button', { name: /BAŞLA/ }).click();
+  await page.clock.runFor(850);
+  const hamster = page.getByRole('button', { name: /Hamster yakala/ }).first();
+  if (isMobile) await hamster.tap(); else await hamster.click();
+  await expect(page.getByText('⚡ 1', { exact: true })).toBeVisible();
+  await expect(hamster).toBeDisabled();
+  await page.evaluate(() => { Math.random = () => 0; });
+  for (let hit = 0; hit < 2; hit++) {
+    await page.clock.runFor(850);
+    const skunk = page.getByRole('button', { name: /Kokarca yakala/ }).filter({ visible: true }).last();
+    if (isMobile) await skunk.tap(); else await skunk.click();
+    await expect(page.getByText('⚡ 0', { exact: true })).toBeVisible();
+  }
+});
+
+test('regression: Simon follows a correct sequence and restarts after a wrong note', async ({ page }) => {
+  await page.addInitScript(() => { Math.random = () => .5; });
+  await start(page, 'simonsays');
+  const yellow = page.getByRole('button', { name: /Sarı düğme/ });
+  await expect(yellow).toBeDisabled();
+  await expect(yellow).toBeEnabled();
+  await yellow.click();
+  await expect(yellow).toBeDisabled();
+  await expect(yellow).toBeEnabled();
+  await page.getByRole('button', { name: /Kırmızı düğme/ }).click();
+  await expect(page.getByRole('heading', { name: 'Oyun Bitti!' })).toBeVisible();
+  await expect(page.getByText('✨ 10 Puan', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Tekrar Oyna/ }).click();
+  await expect(yellow).toBeEnabled();
+  await yellow.click();
+  await expect(yellow).toBeEnabled();
+  await page.getByRole('button', { name: /Kırmızı düğme/ }).click();
+  await expect(page.getByText('✨ 10 Puan', { exact: true })).toBeVisible();
+});
+
+test('regression: coding turtle reset cancels a queued movement', async ({ page }) => {
+  await page.goto('/games/codingturtle');
+  await page.getByRole('button', { name: /BAŞLA/ }).waitFor();
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(Date.now() + 500));
+  await page.getByRole('button', { name: /BAŞLA/ }).click();
+  const board = page.locator('.garden-game-content .grid[style*="grid-template-columns"]');
+  const cells = board.locator(':scope > div');
+  await expect(cells).toHaveCount(25);
+  const initial = await cells.allTextContents();
+  const origin = initial.findIndex(text => text.includes('🐇'));
+  expect(origin).toBeGreaterThanOrEqual(0);
+  const row = Math.floor(origin / 5), column = origin % 5;
+  const directions = [
+    { icon: '⬆️', row: row - 1, column },
+    { icon: '⬇️', row: row + 1, column },
+    { icon: '⬅️', row, column: column - 1 },
+    { icon: '➡️', row, column: column + 1 },
+  ];
+  const direction = directions.find(next => next.row >= 0 && next.row < 5 && next.column >= 0 && next.column < 5 && !initial[next.row * 5 + next.column].includes('🌳'));
+  expect(direction).toBeDefined();
+  await page.locator('.garden-game-content button.w-14').getByText(direction!.icon, { exact: true }).click();
+  await page.getByRole('button', { name: /Çalıştır/ }).click();
+  await page.getByRole('button', { name: /Sıfırla/ }).click();
+  await page.clock.runFor(1500);
+  expect(await cells.allTextContents()).toEqual(initial);
+  await expect(page.getByText('⭐ 0', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Çalıştır/ })).toBeVisible();
+});
+
+test('regression: coding turtle commits a solved level once before allowing another run', async ({ page }) => {
+  await page.addInitScript(() => { Math.random = () => 0; });
+  await page.goto('/games/codingturtle');
+  await page.getByRole('button', { name: /BAŞLA/ }).waitFor();
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(Date.now() + 500));
+  await page.getByRole('button', { name: /BAŞLA/ }).click();
+  const cells = page.locator('.garden-game-content .grid[style*="grid-template-columns"]').locator(':scope > div');
+  await expect(cells).toHaveCount(25);
+  const board = await cells.allTextContents();
+  expect(board[0]).toContain('🐇');
+  expect(board[24]).toContain('🥕');
+  for (const index of [5, 10, 15, 20, 21, 22, 23, 24]) expect(board[index]).not.toContain('🌳');
+  // Eight visible, legal steps: down the left edge, then across the bottom.
+  for (const arrow of ['⬇️', '⬇️', '⬇️', '⬇️', '➡️', '➡️', '➡️', '➡️']) {
+    await page.locator('.garden-game-content button.w-14').getByText(arrow, { exact: true }).click();
+  }
+  await page.getByRole('button', { name: /Çalıştır/ }).click();
+  for (const destination of [5, 10, 15, 20, 21, 22, 23, 24]) {
+    await page.clock.runFor(450);
+    await expect(cells.nth(destination).getByText('🐇', { exact: true })).toHaveCount(1);
+  }
+  await expect(page.getByText('⭐ 17', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Sıfırla/ })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /Yeni Bölüm/ })).toBeDisabled();
+  await page.clock.runFor(1500);
+  await expect(page.getByText('Kalan: 9', { exact: true })).toBeVisible();
+  await expect(page.getByText('Seviye: 2', { exact: true })).toBeVisible();
+  await expect(page.getByText('⭐ 17', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Çalıştır/ })).toBeVisible();
+});
+
 async function start(page: Page, id: string) {
   await page.goto('/games/'+id);
   await page.getByRole('button',{name:/BAŞLA|Başla|Başlat/}).first().click();

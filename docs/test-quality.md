@@ -38,6 +38,8 @@ Yerleşim ve giriş testlerinde servis çalışanı kurulumu kapalıdır; her ye
 
 Bu kapsam her oyunun bütün olası durumlarını tüketmez. Kaynak/varlık tutarlılığı testleri davranış testlerinin yerine kullanılmaz. Masaüstündeki dokunmatik kontrol denemesi açıkça atlanır; atlanan senaryolar başarılı sayılmaz. Gerçek cihazda Safari 11 ve APK bu çalışmanın dışında tutulmuştur.
 
+Oyun başına doğrulanan davranışlar ve eksik önemli senaryolar [oyun kapsamı tablosunda](gameplay-coverage.md) yer alır.
+
 ## WebKit çevrimdışı CI regresyonu
 
 Playwright 1.63.0, `context.setOffline(true)` sonrasında servis çalışanı yanıt verse bile WebKit navigasyonunu `internal error` ile reddediyordu. Önceki Windows atlaması Linux CI'ı kapsamıyordu; CI logunda 281 başarılı senaryo yanında bu test başarısız oldu. Aynı hata yerelde atlama kaldırılarak tekrar üretildi.
@@ -47,3 +49,18 @@ Playwright 1.64.0'a geçildi; paket ve kilit dosyası birlikte güncellendi. Çe
 8 Ekim 2026 doğrulaması: iPhone çevrimdışı senaryosu tek başına geçti. İlk iki işçili yerel tam koşuda 278 test geçti, dört senaryo yükleme/kontrol süre sınırlarına takıldı. Bu dört senaryo ve ilgili mobil/iPhone kontrolleri tek işçili 10 senaryoluk koşuda geçti. Ardından aynı kaynaklarla ve mevcut süre sınırlarıyla altı profilin tamamı tek işçiyle yeniden çalıştırıldı: **282 geçti, 1 masaüstü dokunmatik kontrolü atlandı; 0 başarısız, 0 flaky**. Yerel Windows sonucu GitHub Linux CI başarısı olarak sayılmaz; CI iki işçi kullanmayı sürdürür.
 
 Lint, TypeScript, 27 birim/regresyon test dosyası, Functions sözdizimi ve bağımlılık ağacı kontrolü geçti. Üretim ve Functions bağımlılık taramalarında açık bulunmadı; mevcut geliştirme bağımlılığı uyarısı sürer. Tam E2E koşusu temiz test derlemesini de tamamladı.
+
+## Oyun içi butonlar ve yaşam döngüsü
+
+Yeni gerçek arayüz senaryoları düzeltmelerden önce şu hataları yakaladı:
+
+- 2048 geri alma tahtayı/skoru geri getirdiği halde hamle sayacını 1'de bırakıyordu. Sayaç şimdi geri alınan hamleyi de çıkarır; etkisiz hamle puan veya yeni taş üretmez.
+- Müzikal hafızada gösterim sırasında çıkış, bekleyen diziyi iptal etmiyordu; menü 1.4 saniye sonra tekrar oyun ekranına dönüyordu. Çıkış zamanlayıcıları temizler ve dizi kimliğini geçersiz kılar.
+- Köstebek butonu yalnızca pointer-down dinlediğinden Enter ile etkinleştirme puan vermiyordu. Yerel click davranışı fare, dokunma, Enter ve Space'i aynı eyleme taşır. Her köstebeğin kimliği yükselme/tepe/vuruş boyunca sabittir; vurulan/düşen hedef kilitlenir.
+- Kodlamada sıfırlanan çalıştırmanın bekleyen hareketi 400ms sonra karakteri tekrar oynatıyordu. Sıfırlama bekleyen işleri ve geri bildirimi temizler, başlangıç konumunu geri getirir.
+
+Bağımsız inceleme sonrası, köstebek yükselirken basılı Space'in bırakılması ve kodlamada ödül sonrası sıfırlama için ayrı başarısız regresyonlar üretildi. Kodlama ödülü yalnızca bir kez işlenir; bölüm geçişinde sıfırla/yeni bölüm kilitlenir. Sonraki bölüm ve kalan tur sayısı yan etkili bir React state updater içinden değiştirilmez.
+
+On yeni senaryo masaüstü, mobil Chromium ve iPhone/WebKit projelerine dahildir. Ek kapsam; 2048/Tetris molada klavye, müzikal hafızada doğru/yanlış sıra ve replay, köstebekte 80ms debounce sonrasında hedef kilidi ve iki kokarca cezasının sıfır alt sınırı, kodlamada görünür sekiz yasal adımla 17 puan ve sonraki bölümdür. Kodlama testi her adımın görünen hücresini bekler; yalnızca sanal saati ilerletip React render'ının bittiğini varsaymaz. Üretim koduna özel test erişimleri eklenmedi.
+
+Son doğrulama (8 Ekim 2026): son kaynaklardan üretilmiş izole test derlemesiyle altı profil, tek işçi ve mevcut süre sınırlarında **312 geçti, 1 beklenen masaüstü dokunmatik kontrolü atlandı, 0 başarısız, 0 flaky**. On yeni senaryonun üç profildeki 30 örneği bu tam koşuya dahildir. Lint, TypeScript, 27 birim/regresyon dosyası, Functions sözdizimi ve gerçek üretim derlemesi geçti. 4184 önizleme sunucusunun güncel `dist/index.html` dosyasını sunduğu içerik özetiyle doğrulandı. Yerel sonuç yeni bir GitHub CI koşusu olarak sunulmaz.

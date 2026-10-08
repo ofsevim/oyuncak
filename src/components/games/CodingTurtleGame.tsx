@@ -117,6 +117,7 @@ const CodingTurtleGame = () => {
 
     const { safeTimeout, clearAll } = useSafeTimeouts();
     const scoreRef = useRef(0);
+    const roundResolvedRef = useRef(false);
     const currentPosRef = useRef<Point>({ x: 0, y: 0 });
 
     useEffect(() => { setHighScore(getHighScore('codingturtle')); }, []);
@@ -128,6 +129,7 @@ const CodingTurtleGame = () => {
     })), []);
 
     const generateLevel = useCallback((lvl: number) => {
+        roundResolvedRef.current = false;
         const obsCount = Math.min(lvl, 6);
 
         for (let attempt = 0; attempt < LEVEL_GENERATION_ATTEMPTS; attempt++) {
@@ -210,11 +212,15 @@ const CodingTurtleGame = () => {
     };
 
     const resetRun = useCallback(() => {
+        if (roundResolvedRef.current) return;
+        clearAll();
+        setShakeGrid(false);
+        setShowPraise(false);
         setGameState('playing');
         setCurrentPos(startPos);
         currentPosRef.current = startPos;
         setExecutingIndex(-1);
-    }, [startPos]);
+    }, [startPos, clearAll]);
 
     const executeCommands = useCallback(() => {
         if (commands.length === 0 || gameState !== 'playing') return;
@@ -229,9 +235,11 @@ const CodingTurtleGame = () => {
         if (gameState !== 'animating') return;
 
         if (executingIndex >= commands.length) {
+            if (roundResolvedRef.current) return;
             // Finished execution, check win or lose
             if (currentPosRef.current.x === targetPos.x && currentPosRef.current.y === targetPos.y) {
                 // Win!
+                roundResolvedRef.current = true;
                 playSuccessSound();
                 setPraiseText(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
                 setShowPraise(true);
@@ -243,15 +251,17 @@ const CodingTurtleGame = () => {
 
                 safeTimeout(() => {
                     setShowPraise(false);
-                    setRoundLeft(r => {
-                        if (r <= 1) { finishGame(); return 0; }
+                    const remaining = roundLeft - 1;
+                    setRoundLeft(remaining);
+                    if (remaining <= 0) {
+                        finishGame();
+                    } else {
                         const nextLvl = level + 1;
                         setLevel(nextLvl);
                         if (nextLvl % 3 === 0) playLevelUpSound();
                         generateLevel(nextLvl);
                         setGameState('playing');
-                        return r - 1;
-                    });
+                    }
                 }, 1500);
             } else {
                 // Fail
@@ -292,7 +302,7 @@ const CodingTurtleGame = () => {
             setExecutingIndex(executingIndex + 1);
 
         }, 400);
-    }, [gameState, executingIndex, commands, targetPos, level, obstacles, safeTimeout, finishGame, generateLevel, resetRun]);
+    }, [gameState, executingIndex, commands, targetPos, level, roundLeft, obstacles, safeTimeout, finishGame, generateLevel, resetRun]);
 
 
     const Background = (
@@ -499,6 +509,7 @@ const CodingTurtleGame = () => {
                             <motion.button
                                 whileHover={{}} whileTap={{}}
                                 onClick={resetRun}
+                                disabled={showPraise}
                                 className="px-5 py-3 sm:px-8 sm:py-3 rounded-xl font-black text-white shadow-lg text-sm sm:text-base touch-manipulation active:scale-95"
                                 style={{ background: 'linear-gradient(to right, #f59e0b, #ef4444)' }}
                             >
@@ -506,7 +517,8 @@ const CodingTurtleGame = () => {
                             </motion.button>
                         )}
                         <motion.button whileHover={{}} whileTap={{}}
-                            onClick={() => { setCommands([]); resetRun(); generateLevel(level); }}
+                            disabled={showPraise}
+                            onClick={() => { if (roundResolvedRef.current) return; setCommands([]); resetRun(); generateLevel(level); }}
                             className="garden-action-secondary px-4 py-2.5 rounded-xl font-bold text-muted-foreground touch-manipulation text-xs sm:text-sm active:scale-95"
                             style={{ ...pill, background: 'rgba(0,0,0,0.4)' }}>
                             ↺ Yeni Bölüm

@@ -27,6 +27,7 @@ const MOLE_TYPES = [
 ];
 
 interface ActiveMole {
+  id: number;
   type: typeof MOLE_TYPES[0];
   state: 'rising' | 'up' | 'hit' | 'falling';
   hitTime?: number;
@@ -63,6 +64,7 @@ const WhackAMoleGame = () => {
   const spawnMoleRef = useRef<() => void>(() => { });
   const lastHoleRef = useRef<number | null>(null);
   const floatIdRef = useRef(0);
+  const moleIdRef = useRef(0);
   const lastWhackRef = useRef(0);
   const scoreRef = useRef(0);
   const comboRef = useRef(0);
@@ -165,7 +167,7 @@ const WhackAMoleGame = () => {
     else if (rand < 0.48) type = MOLE_TYPES[1];  // tavşan
     else type = MOLE_TYPES[0];                    // hamster
 
-    const mole: ActiveMole = { type, state: 'rising' };
+    const mole: ActiveMole = { id: moleIdRef.current++, type, state: 'rising' };
     updateHoles(m => m.set(hole, mole));
 
     // Rising → up
@@ -222,7 +224,7 @@ const WhackAMoleGame = () => {
 
         const hole = available[Math.floor(Math.random() * available.length)];
         const type = MOLE_TYPES[Math.floor(Math.random() * 3)];
-        const mole: ActiveMole = { type, state: 'up' };
+        const mole: ActiveMole = { id: moleIdRef.current++, type, state: 'up' };
 
         updateHoles(m => m.set(hole, mole));
 
@@ -593,8 +595,11 @@ const WhackAMoleGame = () => {
                     <AnimatePresence>
                       {moleData && (
                         <motion.button
-                          key={`mole-${i}-${moleData.state}`}
-                          onPointerDown={(e) => {
+                          key={`mole-${i}-${moleData.id}`}
+                          type="button"
+                          aria-label={`${moleData.type.name} yakala (${i + 1}. delik)`}
+                          disabled={moleData.state === 'hit' || moleData.state === 'falling'}
+                          onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             handleWhack(i, e);
