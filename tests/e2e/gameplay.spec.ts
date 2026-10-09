@@ -241,7 +241,19 @@ test('counting awards a counted answer once and starts another round',async({pag
   await expect(page.getByText('✓ 1',{exact:true})).toBeVisible();
 });
 
-test('memory mismatch closes and a matching pair increases completion',async({page})=>{
+test('memory cards reveal their face through pointer input',async({page,isMobile})=>{
+  await page.goto('/games/memory');
+  const card=page.getByRole('button',{name:'Kart 1',exact:true});
+  await expect(card).toBeEnabled();
+  if(isMobile)await card.tap();else await card.click();
+  const revealed=page.locator('.garden-memory-card').first();
+  await expect(revealed).toHaveAttribute('aria-pressed','true');
+  await expect(revealed).not.toHaveAttribute('aria-label','Kart 1');
+  await expect(revealed).toBeDisabled();
+  await expect(page.getByText('⚡ 0 hamle',{exact:true})).toBeVisible();
+});
+
+test('memory hint, keyboard mismatch and matching pair update completion',async({page})=>{
   await page.goto('/games/memory');
   const cards=page.locator('.garden-memory-card');
   await expect(cards).toHaveCount(16);
@@ -252,12 +264,16 @@ test('memory mismatch closes and a matching pair increases completion',async({pa
   const different=faces.findIndex(face=>face!==faces[0]);
   expect(match).toBeGreaterThan(0); expect(different).toBeGreaterThan(0);
   await expect(cards.first()).toHaveAttribute('aria-label','Kart 1');
-  await cards.first().click(); await cards.nth(different).click();
+  // Native button keyboard activation exercises matching while avoiding the
+  // pointer stability wait that stalled in CI after the hint closed.
+  await expect(cards.first()).toBeEnabled();
+  await cards.first().press('Enter'); await cards.nth(different).press('Enter');
   await expect(page.getByText('⚡ 1 hamle',{exact:true})).toBeVisible();
   await expect(cards.first()).toHaveAttribute('aria-label','Kart 1');
   await expect(cards.nth(different)).toHaveAttribute('aria-label','Kart '+(different+1));
   await expect(page.getByText('✓ 0/8',{exact:true})).toBeVisible();
-  await cards.first().click(); await cards.nth(match).click();
+  await expect(cards.first()).toBeEnabled();
+  await cards.first().press('Enter'); await cards.nth(match).press('Enter');
   await expect(page.getByText('✓ 1/8',{exact:true})).toBeVisible();
   await expect(page.getByText('⚡ 2 hamle',{exact:true})).toBeVisible();
   await expect(cards.first()).toBeDisabled(); await expect(cards.nth(match)).toBeDisabled();

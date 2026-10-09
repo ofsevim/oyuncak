@@ -84,3 +84,11 @@ Birim testleri tüm kataloğun sayfa hedeflerini, ulaşılabilirliğini, döngü
 
 
 9 Ekim 2026 son doğrulaması: güncel kaynaklardan temiz izole derleme ile altı profil ve tek işçide **360 geçti, 1 beklenen masaüstü dokunmatik testi atlandı, 0 başarısız, 0 flaky**. Yeni sekiz hikâye senaryosunun 48 tarayıcı örneği tam koşuya dahildir. Koşu 25.5 dakika sürdü; yeniden deneme veya süre sınırı genişletme kullanılmadı. Lint, TypeScript, 29 birim/regresyon test dosyası, Functions sözdizimi ve üretim derlemesi geçti. Gerçek önizlemede 320px telefon, 768px tablet ve 1280px masaüstü yerleşimi görsel olarak incelendi; tarayıcı hata kaydı boştu. 4184 sunucusunun güncel üretim çıktısını sunduğu içerik özetiyle doğrulandı. Bunlar yerel Windows sonuçlarıdır; yeni bir GitHub CI koşusu veya dağıtım yapılmadı.
+
+## Hafıza Oyunu CI tıklama beklemesi
+
+9 Ekim 2026: [CI #94](https://github.com/ofsevim/oyuncak/actions/runs/37845780675) iki işçide 359 başarılı, bir beklenen atlama ve bir iPhone/WebKit hatası verdi. İpucu kapandıktan sonra ilk kartın `click()` çağrısı, Playwright'ın görünürlük/etkinlik/kararlılık beklemesinde 60 saniye takıldı; oyun sonucu kontrolüne ulaşılmadı. Aynı senaryo Windows/WebKit'te 23 tekrarda geçti. Linux'ta benzer sentetik tıklama takılması [Playwright #33057](https://github.com/microsoft/playwright/issues/33057) kaydında da bulunur; bu benzerlik tek başına aynı kök nedenin kanıtı değildir.
+
+İpucu, yanlış çiftin kapanması ve doğru çiftin tamamlanması artık gerçek düğmelerin Enter girdisiyle doğrulanır. Ayrı senaryo masaüstünde fareyle, mobil profillerde dokunmayla kart yüzünün açılmasını ve açık kartın devre dışı kalmasını kontrol eder. İpucundan sonra fare/dokunmayla çift tamamlama bu senaryoların kapsamında değildir. Zorlanmış tıklama, DOM üzerinden olay gönderme, platform atlaması, yeniden deneme veya süre sınırı genişletme eklenmedi; oyun kodu değişmedi.
+
+Değişiklikten sonra bu iki senaryonun masaüstü Chromium, Android Chromium ve iPhone/WebKit profillerinde üçer tekrarı, iki işçide **18/18 geçti**. Lint ve diff kontrolü geçti; lint, Functions sözdizimi, 29 birim dosyası, TypeScript ve üretim derlemesini içeren `npm run check` de geçti. Bunlar yerel Windows sonuçlarıdır. Linux CI hatası yerelde tekrar üretilemedi; yeni GitHub koşusu ve tam tarayıcı paketi bu değişiklikten sonra henüz çalıştırılmadı.
