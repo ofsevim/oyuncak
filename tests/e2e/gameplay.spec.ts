@@ -193,8 +193,12 @@ test('regression: coding turtle commits a solved level once before allowing anot
   }
   await page.getByRole('button', { name: /Çalıştır/ }).click();
   for (const destination of [5, 10, 15, 20, 21, 22, 23, 24]) {
-    await page.clock.runFor(450);
-    await expect(cells.nth(destination).getByText('🐇', { exact: true })).toHaveCount(1);
+    // React schedules the next step in a passive effect after the DOM update.
+    // Keep advancing the paused clock until that step actually appears.
+    await expect.poll(async () => {
+      await page.clock.runFor(50);
+      return cells.nth(destination).getByText('🐇', { exact: true }).count();
+    }, { intervals: [0, 50, 100] }).toBe(1);
   }
   await expect(page.getByText('⭐ 17', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /Sıfırla/ })).toBeDisabled();
@@ -347,11 +351,14 @@ test('word search accepts a visible word and ignores selecting it again',async({
   await expect(page.getByText('1/5 kelime',{exact:true})).toBeVisible();
 });
 
-test('piano records a note once per pointer press',async({page})=>{
+test('piano records a note once per pointer press',async({page,isMobile})=>{
   await page.goto('/games/piano');
-  await page.getByRole('button',{name:/Kaydet/}).click();
-  await page.getByRole('button',{name:'Do notası',exact:true}).click();
-  await page.getByRole('button',{name:/Durdur/}).click();
+  await page.getByRole('button',{name:/Kaydet/}).press('Enter');
+  const note=page.getByRole('button',{name:'Do notası',exact:true});
+  if(isMobile)await note.tap();else await note.click();
+  // Keep real pointer input on the note; native keyboard activation of the
+  // pulsing stop control avoids the pointer stability wait that stalled in CI.
+  await page.getByRole('button',{name:/Durdur/}).press('Enter');
   await expect(page.getByRole('button',{name:'▶️ Kaydı Çal (1 nota)',exact:true})).toBeVisible();
 });
 

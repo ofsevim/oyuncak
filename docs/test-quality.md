@@ -92,3 +92,13 @@ Birim testleri tüm kataloğun sayfa hedeflerini, ulaşılabilirliğini, döngü
 İpucu, yanlış çiftin kapanması ve doğru çiftin tamamlanması artık gerçek düğmelerin Enter girdisiyle doğrulanır. Ayrı senaryo masaüstünde fareyle, mobil profillerde dokunmayla kart yüzünün açılmasını ve açık kartın devre dışı kalmasını kontrol eder. İpucundan sonra fare/dokunmayla çift tamamlama bu senaryoların kapsamında değildir. Zorlanmış tıklama, DOM üzerinden olay gönderme, platform atlaması, yeniden deneme veya süre sınırı genişletme eklenmedi; oyun kodu değişmedi.
 
 Değişiklikten sonra bu iki senaryonun masaüstü Chromium, Android Chromium ve iPhone/WebKit profillerinde üçer tekrarı, iki işçide **18/18 geçti**. Lint ve diff kontrolü geçti; lint, Functions sözdizimi, 29 birim dosyası, TypeScript ve üretim derlemesini içeren `npm run check` de geçti. Bunlar yerel Windows sonuçlarıdır. Linux CI hatası yerelde tekrar üretilemedi; yeni GitHub koşusu ve tam tarayıcı paketi bu değişiklikten sonra henüz çalıştırılmadı.
+
+## Kodlama hareketleri ve piyano kayıt kontrolü CI düzeltmesi
+
+Sonraki Linux CI koşusunda 364 senaryodan 361'i geçti, biri beklenen atlamaydı. Hafıza senaryoları geçti; iPhone/WebKit'te Kodlama Tavşanı'nın üçüncü adımı ve piyanonun kaydı durdurma tıklaması başarısız oldu.
+
+Kodlama testi artık saati bir defada 450 ms ilerletip sonraki zamanlayıcının kurulmuş olduğunu varsaymaz. Hareketin görünür hücresini gözlerken sanal saati 50 ms adımlarla ilerletir; böylece React'in DOM güncellemesinden sonra çalışan pasif efektine sonraki hareketi kurma fırsatı verir. Sekiz hücre, 17 puan, tek bölüm geçişi, kilitli sıfırla/yeni bölüm ve kalan tur kontrolleri korunur. Son bölüm geçişinde 17 puanın görünmesi aynı efektteki 1500 ms zamanlayıcının kurulduğunu doğruladığı için mevcut saat ilerletmesi korunur.
+
+Piyano testi kayıt düğmelerini gerçek Enter girdisiyle çalıştırır; notayı masaüstünde fare, mobil profillerde dokunma girdisiyle çalar. Görünür kayıtta tam bir nota aranır. Kayıt düğmelerinin fare/dokunmayla çalışması bu senaryonun kapsamında değildir. Üretim kodu, süre sınırları ve platform kapsamı değiştirilmedi.
+
+Yerel Windows doğrulaması: iki senaryo, üç profil, üçer tekrar ve iki işçiyle **18/18 geçti** (2,7 dakika). 29 birim/regresyon dosyası, lint ve diff kontrolü geçti. İlk denemede sonraki bölümü de 50 ms adımlarla ilerletmek yerel 5 saniyelik assertion sınırını aştı; bu gereksiz değişiklik geri alındı ve son koşu geçti. Yeni Linux CI koşusu ve bütün tarayıcı paketi henüz doğrulanmadı.
