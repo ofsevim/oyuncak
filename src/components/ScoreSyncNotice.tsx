@@ -21,7 +21,8 @@ export default function ScoreSyncNotice() {
       const { detail } = event as CustomEvent<ScoreSyncStatus>;
       setStatus(detail);
       setRetrying(false);
-      if (detail.pending > 0) setDismissed(false);
+      // Automatic retries belong to the same pending batch the player dismissed.
+      if (detail.pending === 0) setDismissed(false);
     };
     window.addEventListener(SCORE_SYNC_STATUS_EVENT, onStatus);
     return () => window.removeEventListener(SCORE_SYNC_STATUS_EVENT, onStatus);

@@ -21,3 +21,24 @@ for(const attempts of [0,1]) {
     expect(pending).toEqual([{gameId:'math',score:25,attempts,nextAttemptAt:expect.any(Number)}]);
   });
 }
+
+test('dismissed delivery failures stay closed during automatic retries', async ({ page, context }) => {
+  await context.route(/googleapis\.com|firebaseio\.com/, route => route.abort());
+  await page.addInitScript(() => {
+    localStorage.setItem('oyuncak.nickname.asked', '1');
+    localStorage.setItem('oyuncak.score-sync-queue.v1', JSON.stringify([{ gameId: 'math', score: 25, attempts: 1, nextAttemptAt: Date.now() + 60_000 }]));
+  });
+  await page.goto('/games');
+  const announce = (state: string) => page.evaluate(state => {
+    window.dispatchEvent(new CustomEvent('oyuncak:score-sync-status', { detail: { state, pending: 1 } }));
+  }, state);
+  const notice = page.getByText('Skor sunucuya gönderilemedi', { exact: true });
+  await expect(notice).toBeVisible();
+  await page.getByRole('button', { name: 'Senkronizasyon bildirimini kapat' }).click();
+  await announce('syncing');
+  await announce('retry_scheduled');
+  await expect(notice).toHaveCount(0);
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('oyuncak:score-sync-status', { detail: { state: 'synced', pending: 0 } })));
+  await announce('retry_scheduled');
+  await expect(notice).toBeVisible();
+});

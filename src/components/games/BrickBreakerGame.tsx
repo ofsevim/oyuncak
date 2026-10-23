@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
-import { isGamePaused } from '@/utils/gameActivity';
+import { GAME_ACTIVITY_EVENT, isGamePaused } from '@/utils/gameActivity';
 import {
   playPopSound,
   playSuccessSound,
@@ -14,6 +14,7 @@ import { getHighScore, saveHighScoreObj } from '@/utils/highScores';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import { IS_MOBILE } from '@/utils/platform';
 import Leaderboard from '@/components/Leaderboard';
+import { planPhysicsFrame } from './runner/runnerTiming';
 
 /* ═══════════════════════════════════════════
    TYPES
@@ -87,13 +88,13 @@ interface FloatingText {
 /* ═══════════════════════════════════════════
    CONSTANTS & CONFIG
    ═══════════════════════════════════════════ */
-const CW = 460;
-const CH = 620;
-const PADDLE_H = 14;
-const PADDLE_Y = CH - 42;
-const BASE_PADDLE_W = 84;
-const WIDE_PADDLE_W = 126;
-const BALL_BASE_RADIUS = 7;
+const CW = 400;
+const CH = 500;
+const PADDLE_H = 13;
+const PADDLE_Y = 448;
+const BASE_PADDLE_W = 76;
+const WIDE_PADDLE_W = 114;
+const BALL_BASE_RADIUS = 6.5;
 const MAX_PARTICLES = IS_MOBILE ? 80 : 140;
 const CANVAS_DPR_CAP = IS_MOBILE ? 1.5 : 2;
 
@@ -108,18 +109,15 @@ const POWER_UP_CONFIG: Record<PowerUpType, { label: string; icon: string; color:
 };
 
 const DIFF_SETTINGS: Record<Difficulty, { label: string; initialLives: number; baseSpeed: number; speedInc: number }> = {
-  easy: { label: '🌟 Kolay', initialLives: 4, baseSpeed: 5.2, speedInc: 0.15 },
-  normal: { label: '⭐ Normal', initialLives: 3, baseSpeed: 6.2, speedInc: 0.25 },
-  hard: { label: '🔥 Zor', initialLives: 2, baseSpeed: 7.2, speedInc: 0.35 },
+  easy: { label: '🌟 Kolay', initialLives: 4, baseSpeed: 5.0, speedInc: 0.15 },
+  normal: { label: '⭐ Normal', initialLives: 3, baseSpeed: 5.8, speedInc: 0.22 },
+  hard: { label: '🔥 Zor', initialLives: 2, baseSpeed: 6.8, speedInc: 0.30 },
 };
 
 const pill: React.CSSProperties = {
-  background: 'rgba(15, 23, 42, 0.75)',
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
-  border: '1px solid rgba(255, 255, 255, 0.12)',
+  background: 'hsl(var(--card))',
+  border: '1px solid hsl(var(--border))',
   borderRadius: 14,
-  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
 };
 
 /* ═══════════════════════════════════════════
@@ -128,12 +126,12 @@ const pill: React.CSSProperties = {
 function createBricksForLevel(level: number): Brick[] {
   const bricks: Brick[] = [];
   const cols = 8;
-  const paddingX = 22;
-  const gapX = 6;
-  const gapY = 8;
-  const brickW = (CW - paddingX * 2 - (cols - 1) * gapX) / cols;
-  const brickH = 20;
-  const startY = 65;
+  const paddingX = 14;
+  const gapX = 5;
+  const gapY = 6;
+  const brickW = 42;
+  const brickH = 18;
+  const startY = 40;
 
   const rowColors = [
     { color: '#f87171', points: 30 }, // Kırmızı
@@ -356,6 +354,13 @@ const BrickBreakerGame = () => {
   const [level, setLevel] = useState(1);
   const [canvasScale, setCanvasScale] = useState(1);
   const [activePowerUpName, setActivePowerUpName] = useState<string | null>(null);
+  const scoreRef = useRef(0);
+  const livesRef = useRef(3);
+
+  const addScore = useCallback((points: number) => {
+    scoreRef.current += points;
+    setScore(scoreRef.current);
+  }, []);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { safeTimeout } = useSafeTimeouts();
@@ -395,6 +400,7 @@ const BrickBreakerGame = () => {
   const nextPowerUpId = useRef(1);
   const nextBallId = useRef(2);
   const nextTextId = useRef(1);
+  const physicsTiming = useRef<{ timestamp: number | null; accumulator: number }>({ timestamp: null, accumulator: 0 });
 
   // Yüksek skoru oku
   useEffect(() => {
@@ -404,8 +410,13 @@ const BrickBreakerGame = () => {
   // Tuval boyutunu ekrana göre ölçeklendir
   useEffect(() => {
     const updateScale = () => {
-      const containerWidth = Math.min(window.innerWidth - 32, 480);
-      setCanvasScale(Math.min(1, containerWidth / CW));
+      const maxW = Math.min(window.innerWidth - 32, 440);
+      const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const headerSpace = window.innerWidth < 768 ? 130 : 160;
+      const controlsSpace = isTouch ? 130 : 90;
+      const maxH = Math.max(300, window.innerHeight - headerSpace - controlsSpace);
+      const scale = Math.min(1, maxW / CW, maxH / CH);
+      setCanvasScale(scale);
     };
     updateScale();
     window.addEventListener('resize', updateScale);
@@ -414,7 +425,7 @@ const BrickBreakerGame = () => {
 
   // Topu fırlatma
   const launchBall = useCallback(() => {
-    if (!ballStuckRef.current) return;
+    if (phase !== 'playing' || isGamePaused() || !ballStuckRef.current) return;
     ballStuckRef.current = false;
     const speed = DIFF_SETTINGS[diff].baseSpeed + (level - 1) * DIFF_SETTINGS[diff].speedInc;
     // Hafif rastgele açıyla yukarı doğru fırlat (-45 ile +45 derece)
@@ -424,12 +435,22 @@ const BrickBreakerGame = () => {
       b.vy = -speed * Math.cos(angle);
     });
     playPopSound();
-  }, [diff, level]);
+  }, [diff, level, phase]);
 
   // Klavye olayları
   useEffect(() => {
+    const clearInput = () => {
+      keysRef.current.clear();
+      touchXRef.current = null;
+      paddleRef.current.targetX = paddleRef.current.x;
+    };
+    clearInput();
+    if (phase !== 'playing') return;
     const onKeyDown = (e: KeyboardEvent) => {
+      if (isGamePaused()) return;
+      if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select, [contenteditable="true"], button')) return;
       if (['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD', 'Space', 'ArrowUp'].includes(e.code)) {
+        e.preventDefault();
         keysRef.current.add(e.code);
         if (e.code === 'Space' || e.code === 'ArrowUp') {
           launchBall();
@@ -442,11 +463,18 @@ const BrickBreakerGame = () => {
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', clearInput);
+    window.addEventListener(GAME_ACTIVITY_EVENT, clearInput);
+    document.addEventListener('visibilitychange', clearInput);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', clearInput);
+      window.removeEventListener(GAME_ACTIVITY_EVENT, clearInput);
+      document.removeEventListener('visibilitychange', clearInput);
+      clearInput();
     };
-  }, [launchBall]);
+  }, [launchBall, phase]);
 
   // Yeni Top Oluşturucu
   const createBall = useCallback(
@@ -499,6 +527,7 @@ const BrickBreakerGame = () => {
   // Seviye Hazırla
   const initLevel = useCallback(
     (lvl: number) => {
+      physicsTiming.current = { timestamp: null, accumulator: 0 };
       paddleRef.current.x = CW / 2;
       paddleRef.current.targetX = CW / 2;
       paddleRef.current.w = BASE_PADDLE_W;
@@ -523,6 +552,8 @@ const BrickBreakerGame = () => {
   // Oyunu Başlat
   const startGame = useCallback(() => {
     const initialLives = DIFF_SETTINGS[diff].initialLives;
+    livesRef.current = initialLives;
+    scoreRef.current = 0;
     setLives(initialLives);
     setScore(0);
     setLevel(1);
@@ -540,31 +571,29 @@ const BrickBreakerGame = () => {
     playLevelUpSound();
     // Seviye bonusu
     const levelBonus = 200 * level;
-    setScore((prev) => prev + levelBonus);
+    addScore(levelBonus);
     addFloatingText(`SEVİYE TAMAMLANDI! +${levelBonus}`, CW / 2, CH / 2, '#4ade80');
 
     safeTimeout(() => {
-      setLevel((prevLvl) => {
-        const nextLvl = prevLvl + 1;
-        initLevel(nextLvl);
-        setPhase('playing');
-        return nextLvl;
-      });
+      const nextLvl = level + 1;
+      initLevel(nextLvl);
+      setLevel(nextLvl);
+      setPhase('playing');
     }, 1800);
-  }, [level, addFloatingText, safeTimeout, initLevel]);
+  }, [level, addScore, addFloatingText, safeTimeout, initLevel]);
 
   // Oyun Bitti
   const handleGameOver = useCallback(() => {
     setPhase('gameover');
     playErrorSound();
-    const finalScore = score;
+    const finalScore = scoreRef.current;
     const isNew = saveHighScoreObj('brick-breaker', finalScore);
     if (isNew && finalScore > 0) {
       setIsNewRecord(true);
       setHighScore(finalScore);
       playNewRecordSound();
     }
-  }, [score]);
+  }, []);
 
   // Güçlendirme Uygula
   const applyPowerUp = useCallback(
@@ -614,7 +643,8 @@ const BrickBreakerGame = () => {
           });
           break;
         case 'life':
-          setLives((l) => Math.min(5, l + 1));
+          livesRef.current = Math.min(5, livesRef.current + 1);
+          setLives(livesRef.current);
           break;
       }
     },
@@ -657,11 +687,11 @@ const BrickBreakerGame = () => {
       });
 
       if (additionalPoints > 0) {
-        setScore((s) => s + Math.floor(additionalPoints));
+        addScore(Math.floor(additionalPoints));
         addFloatingText(`BOMBA KOMBO! +${Math.floor(additionalPoints)}`, tntCenterX, tntCenterY, '#ef4444');
       }
     },
-    [addFloatingText, spawnParticles]
+    [addScore, addFloatingText, spawnParticles]
   );
 
   /* ═══════════════════════════════════════════
@@ -672,8 +702,9 @@ const BrickBreakerGame = () => {
 
     let animId: number;
 
-    const gameLoop = () => {
+    const gameLoop = (timestamp: number) => {
       if (isGamePaused()) {
+        physicsTiming.current = { timestamp: null, accumulator: 0 };
         animId = requestAnimationFrame(gameLoop);
         return;
       }
@@ -684,6 +715,12 @@ const BrickBreakerGame = () => {
       if (!ctx) return;
 
       const p = paddleRef.current;
+      const timing = physicsTiming.current;
+      const plan = planPhysicsFrame(timing.timestamp === null ? 0 : timestamp - timing.timestamp, timing.accumulator);
+      timing.timestamp = timestamp;
+      timing.accumulator = plan.accumulator;
+
+      for (let step = 0; step < plan.steps; step++) {
 
       // 1. RAKET HAREKETİ VE KONTROLLER
       const paddleSpeed = 8.5;
@@ -765,7 +802,7 @@ const BrickBreakerGame = () => {
             hit = true;
             spawnParticles(l.x, l.y, '#ef4444', 4);
             if (b.hp <= 0) {
-              setScore((s) => s + b.points);
+              addScore(b.points);
               spawnParticles(b.x + b.w / 2, b.y + b.h / 2, b.color, 12);
               if (b.type === 'tnt') triggerTntExplosion(b);
               if (b.powerUp) {
@@ -850,6 +887,9 @@ const BrickBreakerGame = () => {
 
             ball.vx = newSpeed * Math.sin(bounceAngle);
             ball.vy = -newSpeed * Math.cos(bounceAngle);
+            if (Math.abs(ball.vy) < 2.2) {
+              ball.vy = -2.2;
+            }
             ball.y = paddleTop - ball.radius - 1;
 
             comboRef.current = 0; // Kombo sıfırlanır
@@ -874,7 +914,7 @@ const BrickBreakerGame = () => {
               comboRef.current++;
               const comboBonus = Math.min(comboRef.current, 8);
               const pointsEarned = b.points * (1 + (comboBonus - 1) * 0.25);
-              setScore((s) => s + Math.floor(pointsEarned));
+              addScore(Math.floor(pointsEarned));
 
               if (comboBonus >= 3) {
                 playComboSound(comboBonus);
@@ -937,19 +977,17 @@ const BrickBreakerGame = () => {
 
         // Eğer sahnedeki tüm toplar düştüyse can kaybedilir
         if (activeBalls.length === 0) {
-          setLives((prevLives) => {
-            const nextLives = prevLives - 1;
-            if (nextLives <= 0) {
-              handleGameOver();
-            } else {
-              // Yeni topu rakete yapıştır
-              playErrorSound();
-              ballStuckRef.current = true;
-              isFireballRef.current = false;
-              ballsRef.current = [createBall(p.x, p.y - BALL_BASE_RADIUS - 2)];
-            }
-            return nextLives;
-          });
+          // Commit simulation state immediately; React may batch several frames.
+          livesRef.current -= 1;
+          setLives(livesRef.current);
+          if (livesRef.current <= 0) {
+            handleGameOver();
+            return;
+          }
+          playErrorSound();
+          ballStuckRef.current = true;
+          isFireballRef.current = false;
+          ballsRef.current = [createBall(p.x, p.y - BALL_BASE_RADIUS - 2)];
         }
       }
 
@@ -995,6 +1033,7 @@ const BrickBreakerGame = () => {
         handleLevelClear();
         return;
       }
+      }
 
       // 7. EKRAN SARSINTISI
       let shakeOffsetX = 0;
@@ -1009,28 +1048,30 @@ const BrickBreakerGame = () => {
       // ═══════════════════════════════════════════
       // ÇİZİM İŞLEMLERİ (CANVAS RENDER)
       // ═══════════════════════════════════════════
+      const dpr = Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP);
       ctx.save();
-      ctx.clearRect(0, 0, CW, CH);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(dpr, dpr);
       ctx.translate(shakeOffsetX, shakeOffsetY);
 
       // A) Arka Plan (Derin Kozmik Mor-Mavi Gradyan)
       const bgGrad = ctx.createLinearGradient(0, 0, 0, CH);
-      bgGrad.addColorStop(0, '#090d16');
-      bgGrad.addColorStop(0.5, '#0f172a');
-      bgGrad.addColorStop(1, '#080d1a');
+      bgGrad.addColorStop(0, '#0c1020');
+      bgGrad.addColorStop(0.5, '#11172e');
+      bgGrad.addColorStop(1, '#090c18');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, CW, CH);
 
       // B) İnce Arka Plan Izgarası
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
       ctx.lineWidth = 1;
-      for (let gx = 0; gx < CW; gx += 40) {
+      for (let gx = 0; gx < CW; gx += 32) {
         ctx.beginPath();
         ctx.moveTo(gx, 0);
         ctx.lineTo(gx, CH);
         ctx.stroke();
       }
-      for (let gy = 0; gy < CH; gy += 40) {
+      for (let gy = 0; gy < CH; gy += 32) {
         ctx.beginPath();
         ctx.moveTo(0, gy);
         ctx.lineTo(CW, gy);
@@ -1219,7 +1260,7 @@ const BrickBreakerGame = () => {
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('FIRLATMAK İÇİN DOKUN YA DA BOŞLUĞA BAS', CW / 2, PADDLE_Y - 45);
+        ctx.fillText('FIRLATMAK İÇİN DOKUN YA DA BOŞLUĞA BAS', CW / 2, PADDLE_Y - 32);
         ctx.restore();
       }
 
@@ -1283,7 +1324,7 @@ const BrickBreakerGame = () => {
 
     animId = requestAnimationFrame(gameLoop);
     return () => cancelAnimationFrame(animId);
-  }, [phase, handleGameOver, handleLevelClear, applyPowerUp, triggerTntExplosion, spawnParticles, addFloatingText, createBall]);
+  }, [phase, handleGameOver, handleLevelClear, applyPowerUp, triggerTntExplosion, spawnParticles, addFloatingText, addScore, createBall]);
 
   // Renk Tonlama Yardımcısı
   function shadeColor(color: string, percent: number) {
@@ -1314,6 +1355,7 @@ const BrickBreakerGame = () => {
 
   // Dokunmatik / Fare Etkileşimleri
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (phase !== 'playing' || isGamePaused()) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     updatePointerX(e);
     if (ballStuckRef.current) {
@@ -1337,6 +1379,7 @@ const BrickBreakerGame = () => {
   };
 
   const updatePointerX = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (phase !== 'playing' || isGamePaused()) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -1483,15 +1526,24 @@ const BrickBreakerGame = () => {
   }
 
   /* OYUN ALANI (CANVAS + HUD + KONTROLLER) */
+  const displayW = Math.round(CW * canvasScale);
+  const displayH = Math.round(CH * canvasScale);
+
   return (
-    <div className="flex flex-col items-center gap-3 p-2 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))] mx-auto w-full max-w-lg select-none">
+    <div className="flex flex-col items-center gap-2 p-2 pb-[calc(1.5rem+env(safe-area-inset-bottom,6rem))] mx-auto w-full select-none">
       {/* Üst Bilgi Çubuğu (HUD) */}
-      <div className="flex items-center justify-between w-full px-2" style={pill}>
-        <div className="flex items-center gap-1.5 py-1.5 px-2">
+      <div
+        className="flex items-center justify-between px-3 py-1.5"
+        style={{
+          ...pill,
+          width: displayW,
+        }}
+      >
+        <div className="flex items-center gap-1.5 py-1">
           <span className="text-base font-black text-amber-400">⭐ {score}</span>
         </div>
 
-        <div className="flex items-center gap-1 py-1.5 px-2">
+        <div className="flex items-center gap-1 py-1">
           {Array.from({ length: 5 }, (_, i) => (
             <span
               key={i}
@@ -1502,7 +1554,7 @@ const BrickBreakerGame = () => {
           ))}
         </div>
 
-        <div className="flex items-center gap-2 py-1.5 px-2">
+        <div className="flex items-center gap-2 py-1">
           <span className="text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full">
             Seviye {level}
           </span>
@@ -1524,19 +1576,26 @@ const BrickBreakerGame = () => {
       </AnimatePresence>
 
       {/* Oyun Tuvali */}
-      <div className="relative rounded-2xl overflow-hidden border-2 border-slate-700/60 shadow-2xl bg-slate-950 touch-none">
+      <div
+        className="relative rounded-2xl overflow-hidden border border-border/80 shadow-md touch-none flex items-center justify-center"
+        style={{
+          width: displayW,
+          height: displayH,
+          background: '#0a0d18',
+        }}
+      >
         <canvas
           ref={canvasRef}
-          width={CW * Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP)}
-          height={CH * Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP)}
+          width={Math.round(CW * Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP))}
+          height={Math.round(CH * Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP))}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           className="block touch-none cursor-pointer"
           style={{
-            width: CW * canvasScale,
-            height: CH * canvasScale,
+            width: displayW,
+            height: displayH,
           }}
         />
 
