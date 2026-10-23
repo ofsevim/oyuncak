@@ -12,6 +12,7 @@ const activeSelectors: Record<string,string> = {
   counting:'.garden-game-content button.relative.touch-manipulation', math:'.garden-answer', codingturtle:'.garden-game-content button.w-14',
   spaceshooter:'.garden-game-content canvas', 'connect-four':'button[aria-label="1. sütuna taş bırak"]',
   'word-search':'button[aria-label^="1. satır"]', 'color-sort':'button[aria-label^="1. tüp:"]',
+  'brick-breaker':'.garden-game-content canvas',
 };
 
 test.beforeEach(async ({ context }) => {

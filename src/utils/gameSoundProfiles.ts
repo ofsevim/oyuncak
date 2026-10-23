@@ -36,6 +36,7 @@ export const GAME_SOUND_PROFILES = {
   'connect-four': { root: 262, wave: 'triangle', accent: 1.52, brightness: 0.7, gain: 0.9 },
   'word-search': { root: 587, wave: 'sine', accent: 2.22, brightness: 1.16, gain: 0.86 },
   'color-sort': { root: 436, wave: 'sine', accent: 1.66, brightness: 1.3, gain: 0.84 },
+  'brick-breaker': { root: 520, wave: 'sine', accent: 1.84, brightness: 1.32, gain: 0.86 },
 } as const satisfies Record<string, GameSoundProfile>;
 
 export type GameSoundProfileId = keyof typeof GAME_SOUND_PROFILES;

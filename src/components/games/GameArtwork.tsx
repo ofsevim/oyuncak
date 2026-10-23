@@ -22,6 +22,7 @@ const routeOrder: GameRouteId[] = [
   "connect-four",
   "word-search",
   "color-sort",
+  "brick-breaker",
 ];
 const Tiles = ({ values }: { values: string[] }) => (
   <>
@@ -300,6 +301,49 @@ export default function GameArtwork({
               ))}
             </g>
           ))}
+        </>
+      );
+      break;
+    case "brick-breaker":
+      art = (
+        <>
+          {[
+            { x: 55, y: 35, color: "#f87171" },
+            { x: 102, y: 35, color: "#fb923c" },
+            { x: 149, y: 35, color: "#facc15" },
+            { x: 196, y: 35, color: "#4ade80" },
+            { x: 78, y: 56, color: "#38bdf8" },
+            { x: 125, y: 56, color: "#a855f7" },
+            { x: 172, y: 56, color: "#f43f5e" },
+            { x: 102, y: 77, color: "#fbbf24" },
+            { x: 149, y: 77, color: "#34d399" },
+          ].map((b, i) => (
+            <rect
+              key={i}
+              x={b.x}
+              y={b.y}
+              width="43"
+              height="16"
+              rx="5"
+              fill={b.color}
+              stroke="#34314d"
+              strokeWidth="2"
+            />
+          ))}
+          <circle cx="165" cy="116" r="3" fill="#fff" opacity=".5" />
+          <circle cx="170" cy="119" r="5" fill="#facc15" opacity=".7" />
+          <circle cx="176" cy="123" r="8" fill="#facc15" stroke="#34314d" strokeWidth="2" />
+          <rect
+            x="110"
+            y="148"
+            width="80"
+            height="14"
+            rx="7"
+            fill="#38bdf8"
+            stroke="#34314d"
+            strokeWidth="2.5"
+          />
+          <rect x="125" y="151" width="50" height="4" rx="2" fill="#fff" opacity=".6" />
         </>
       );
       break;

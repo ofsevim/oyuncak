@@ -11,6 +11,7 @@ export function run() {
   assert.equal(isValidGameId('connect-four'), true);
   assert.equal(isValidGameId('word-search'), true);
   assert.equal(isValidGameId('color-sort'), true);
+  assert.equal(isValidGameId('brick-breaker'), true);
   assert.equal(isValidGameId('unknown-game'), false);
   assert.equal(isValidScore(0), true);
   assert.equal(isValidScore(MAX_SCORE), true);

@@ -5,7 +5,7 @@ export const SCORE_GAME_IDS = new Set([
   'balloon-pop', 'basketball', 'piano', 'math', 'counting', 'oddoneout',
   'shapematch', 'simonsays', 'codingturtle', 'spaceshooter',
   'memory-3x3', 'memory-4x4', 'memory-5x5', 'memory-6x6',
-  'connect-four', 'word-search', 'color-sort',
+  'connect-four', 'word-search', 'color-sort', 'brick-breaker',
 ]);
 
 export function isValidGameId(gameId) {
