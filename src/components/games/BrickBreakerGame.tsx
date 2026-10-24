@@ -88,12 +88,18 @@ interface FloatingText {
 /* ═══════════════════════════════════════════
    CONSTANTS & CONFIG
    ═══════════════════════════════════════════ */
-const CW = 400;
+// Masaüstünde daha geniş oyun alanı: mobil/tablette dikey 400×500 kalır,
+// geniş ekranlarda (lg+) yatay 640×500 tahta ile satır başına daha fazla tuğla düşer.
+const IS_DESKTOP_WIDE =
+  typeof window !== 'undefined' && !IS_MOBILE && window.innerWidth >= 1024;
+const CW = IS_DESKTOP_WIDE ? 640 : 400;
 const CH = 500;
 const PADDLE_H = 13;
 const PADDLE_Y = 448;
-const BASE_PADDLE_W = 76;
-const WIDE_PADDLE_W = 114;
+// Raket genişliği tahta ile aynı oranda ölçeklenir (400 taban)
+const BOARD_SCALE = CW / 400;
+const BASE_PADDLE_W = Math.round(76 * BOARD_SCALE);
+const WIDE_PADDLE_W = Math.round(114 * BOARD_SCALE);
 const BALL_BASE_RADIUS = 6.5;
 const MAX_PARTICLES = IS_MOBILE ? 80 : 140;
 const CANVAS_DPR_CAP = IS_MOBILE ? 1.5 : 2;
@@ -125,13 +131,19 @@ const pill: React.CSSProperties = {
    ═══════════════════════════════════════════ */
 function createBricksForLevel(level: number): Brick[] {
   const bricks: Brick[] = [];
-  const cols = 8;
-  const paddingX = 14;
-  const gapX = 5;
-  const gapY = 6;
   const brickW = 42;
   const brickH = 18;
+  const gapX = 5;
+  const gapY = 6;
   const startY = 40;
+
+  // Sütun sayısı tahta genişliğine göre; kenar boşlukları simetrik hesaplanır
+  const cols = Math.floor((CW + gapX) / (brickW + gapX));
+  const rowWidth = cols * brickW + (cols - 1) * gapX;
+  const paddingX = (CW - rowWidth) / 2;
+  // Simetrik özellik konumları için merkez sütunları (8 sütunda 3 ve 4)
+  const centerL = Math.floor(cols / 2) - 1;
+  const centerR = Math.floor(cols / 2);
 
   const rowColors = [
     { color: '#f87171', points: 30 }, // Kırmızı
@@ -156,7 +168,7 @@ function createBricksForLevel(level: number): Brick[] {
         let powerUp: PowerUpType | undefined;
 
         // Belli noktalara ödül ve yıldız tuğlası
-        if ((r === 1 && (c === 2 || c === 5)) || (r === 3 && c === 3)) {
+        if ((r === 1 && (c === centerL - 1 || c === centerR + 1)) || (r === 3 && c === centerL)) {
           type = 'star';
           powerUp = c % 2 === 0 ? 'wide' : 'multiball';
         }
@@ -185,8 +197,8 @@ function createBricksForLevel(level: number): Brick[] {
   if (level === 2) {
     const totalRows = 6;
     for (let r = 0; r < totalRows; r++) {
-      const minCol = Math.max(0, 3 - r);
-      const maxCol = Math.min(cols - 1, 4 + r);
+      const minCol = Math.max(0, centerL - r);
+      const maxCol = Math.min(cols - 1, centerR + r);
       for (let c = minCol; c <= maxCol; c++) {
         const x = paddingX + c * (brickW + gapX);
         const y = startY + r * (brickH + gapY);
@@ -194,15 +206,15 @@ function createBricksForLevel(level: number): Brick[] {
         let hp = 1;
         let powerUp: PowerUpType | undefined;
 
-        if (r === 2 && (c === 3 || c === 4)) {
+        if (r === 2 && (c === centerL || c === centerR)) {
           type = 'tnt';
-        } else if (r === 4 && (c === 1 || c === 6)) {
+        } else if (r === 4 && (c === centerL - 2 || c === centerR + 2)) {
           type = 'reinforced';
           hp = 2;
-        } else if (r === 0 && (c === 3 || c === 4)) {
+        } else if (r === 0 && (c === centerL || c === centerR)) {
           type = 'star';
           powerUp = 'fireball';
-        } else if (r === 3 && (c === 2 || c === 5)) {
+        } else if (r === 3 && (c === centerL - 1 || c === centerR + 1)) {
           powerUp = Math.random() < 0.5 ? 'laser' : 'shield';
         }
 
@@ -239,7 +251,7 @@ function createBricksForLevel(level: number): Brick[] {
     for (let r = 0; r < totalRows; r++) {
       for (let c = 0; c < cols; c++) {
         // Boşluklu kule yapısı
-        if (r > 1 && r < 5 && (c === 2 || c === 5)) continue;
+        if (r > 1 && r < 5 && (c === centerL - 1 || c === centerR + 1)) continue;
 
         const x = paddingX + c * (brickW + gapX);
         const y = startY + r * (brickH + gapY);
@@ -247,12 +259,12 @@ function createBricksForLevel(level: number): Brick[] {
         let hp = 1;
         let powerUp: PowerUpType | undefined;
 
-        if (r === 3 && (c === 3 || c === 4)) {
+        if (r === 3 && (c === centerL || c === centerR)) {
           type = 'tnt';
-        } else if ((c === 0 || c === 7) && r % 2 === 1) {
+        } else if ((c === 0 || c === cols - 1) && r % 2 === 1) {
           type = 'reinforced';
           hp = 2;
-        } else if (r === 1 && (c === 1 || c === 6)) {
+        } else if (r === 1 && (c === centerL - 2 || c === centerR + 2)) {
           type = 'star';
           powerUp = 'multiball';
         } else if (Math.random() < 0.25) {
@@ -300,12 +312,12 @@ function createBricksForLevel(level: number): Brick[] {
       let hp = 1;
       let powerUp: PowerUpType | undefined;
 
-      if ((r === 1 || r === totalRows - 2) && (c === 2 || c === 5)) {
+      if ((r === 1 || r === totalRows - 2) && (c === centerL - 1 || c === centerR + 1)) {
         type = 'tnt';
-      } else if (r % 2 === 0 && (c === 0 || c === cols - 1 || c === 3 || c === 4)) {
+      } else if (r % 2 === 0 && (c === 0 || c === cols - 1 || c === centerL || c === centerR)) {
         type = 'reinforced';
         hp = 2;
-      } else if ((r === 0 || r === 2) && (c === 1 || c === 6)) {
+      } else if ((r === 0 || r === 2) && (c === centerL - 2 || c === centerR + 2)) {
         type = 'star';
         powerUp = Math.random() < 0.5 ? 'multiball' : 'fireball';
       } else if (Math.random() < 0.3) {
@@ -410,7 +422,9 @@ const BrickBreakerGame = () => {
   // Tuval boyutunu ekrana göre ölçeklendir
   useEffect(() => {
     const updateScale = () => {
-      const maxW = Math.min(window.innerWidth - 32, 440);
+      // lg ve üzeri genişliklerde yan panel (~224px) + boşluk için yer ayır
+      const asideSpace = window.innerWidth >= 1024 && CW > 400 ? 244 : 0;
+      const maxW = Math.min(window.innerWidth - 32 - asideSpace, CW);
       const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       const headerSpace = window.innerWidth < 768 ? 130 : 160;
       const controlsSpace = isTouch ? 130 : 90;
@@ -449,7 +463,7 @@ const BrickBreakerGame = () => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isGamePaused()) return;
       if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select, [contenteditable="true"], button')) return;
-      if (['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD', 'Space', 'ArrowUp'].includes(e.code)) {
+      if (['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD', 'Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
         e.preventDefault();
         keysRef.current.add(e.code);
         if (e.code === 'Space' || e.code === 'ArrowUp') {
@@ -1397,7 +1411,7 @@ const BrickBreakerGame = () => {
   if (phase === 'menu') {
     return (
       <motion.div
-        className="flex flex-col items-center gap-6 p-4 max-w-md mx-auto text-center"
+        className="flex flex-col items-center gap-6 p-4 max-w-md lg:max-w-lg mx-auto text-center"
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -1468,7 +1482,7 @@ const BrickBreakerGame = () => {
   if (phase === 'gameover') {
     return (
       <motion.div
-        className="flex flex-col items-center gap-6 p-4 max-w-md mx-auto text-center"
+        className="flex flex-col items-center gap-6 p-4 max-w-md lg:max-w-lg mx-auto text-center"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
       >
@@ -1530,7 +1544,10 @@ const BrickBreakerGame = () => {
   const displayH = Math.round(CH * canvasScale);
 
   return (
-    <div className="flex flex-col items-center gap-2 p-2 pb-[calc(1.5rem+env(safe-area-inset-bottom,6rem))] mx-auto w-full select-none">
+    <div className="flex flex-col items-center gap-2 p-2 pb-[calc(1.5rem+env(safe-area-inset-bottom,6rem))] mx-auto w-full max-w-[940px] select-none">
+      {/* Oyun sütunu + masaüstü yan paneli */}
+      <div className="flex w-full items-start justify-center gap-5">
+        <div className="flex flex-col items-center gap-2 min-w-0">
       {/* Üst Bilgi Çubuğu (HUD) */}
       <div
         className="flex items-center justify-between px-3 py-1.5"
@@ -1561,20 +1578,6 @@ const BrickBreakerGame = () => {
         </div>
       </div>
 
-      {/* Aktif Güçlendirme Bildirimi */}
-      <AnimatePresence>
-        {activePowerUpName && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="text-xs font-black px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/30 to-orange-500/30 border border-amber-500/40 text-amber-300 shadow-sm"
-          >
-            {activePowerUpName}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Oyun Tuvali */}
       <div
         className="relative rounded-2xl overflow-hidden border border-border/80 shadow-md touch-none flex items-center justify-center"
@@ -1598,6 +1601,22 @@ const BrickBreakerGame = () => {
             height: displayH,
           }}
         />
+
+        {/* Aktif Güçlendirme Bildirimi — tuval içinde katman olarak çizilir, sayfa düzenini kaydırmaz */}
+        <AnimatePresence>
+          {activePowerUpName && (
+            <div className="absolute inset-x-0 top-2 z-30 flex justify-center pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.9 }}
+                className="whitespace-nowrap text-xs font-black px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/40 to-orange-500/40 border border-amber-500/50 text-amber-200 shadow-lg"
+              >
+                {activePowerUpName}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Seviye Geçiş Banner'ı */}
         <AnimatePresence>
@@ -1681,6 +1700,65 @@ const BrickBreakerGame = () => {
         >
           ← Menü
         </button>
+      </div>
+        </div>
+
+        {/* Masaüstü Yan Paneli: Güçlendirme ve Tuğla Rehberi */}
+        <aside className="hidden lg:flex flex-col gap-3 w-56 shrink-0 select-none">
+          <div className="p-3 space-y-2" style={pill}>
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+              Güçlendirmeler
+            </p>
+            <ul className="space-y-1.5">
+              {(Object.keys(POWER_UP_CONFIG) as PowerUpType[]).map((key) => {
+                const cfg = POWER_UP_CONFIG[key];
+                return (
+                  <li key={key} className="flex items-center gap-2 text-xs font-semibold">
+                    <span
+                      className="w-6 h-5 rounded-full flex items-center justify-center text-[11px] shrink-0"
+                      style={{ background: `${cfg.color}26`, border: `1px solid ${cfg.color}55` }}
+                    >
+                      {cfg.icon}
+                    </span>
+                    <span className="flex-1">{cfg.label}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground">
+                      {cfg.duration > 0 ? `${cfg.duration} sn` : 'Anlık'}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div className="p-3 space-y-2" style={pill}>
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+              Özel Tuğlalar
+            </p>
+            <ul className="space-y-1.5 text-xs font-semibold">
+              <li className="flex items-center gap-2">
+                <span className="w-6 text-center">💣</span> Patlayınca çevreyi yakar
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-6 text-center">🛡️</span> 2 vuruşluk zırh
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-6 text-center">⭐</span> Ödül düşürür
+              </li>
+            </ul>
+          </div>
+
+          <div className="p-3 space-y-2" style={pill}>
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+              Kontroller
+            </p>
+            <ul className="space-y-1.5 text-xs font-semibold text-muted-foreground">
+              <li>🖱️ Fare ile raketi sürükle</li>
+              <li>⬅️➡️ / A·D ile hareket</li>
+              <li>Boşluk veya ⬆️ ile topu fırlat</li>
+              <li>Peş peşe kırma = kombo puanı 🎯</li>
+            </ul>
+          </div>
+        </aside>
       </div>
     </div>
   );
