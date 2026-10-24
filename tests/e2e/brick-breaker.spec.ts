@@ -12,9 +12,12 @@ test.beforeEach(async ({ context }) => {
 });
 
 async function start(page: import('@playwright/test').Page, frameMs?: number) {
+  await page.clock.install();
+  // The clock stays paused across navigation. Let async startup finish before
+  // waiting for the menu, including when the refresh-rate test starts its next run.
+  await page.clock.resume();
   await page.goto('/games/brick-breaker');
   await page.getByRole('button', { name: 'Oyunu Başlat', exact: true }).waitFor();
-  await page.clock.install();
   await page.clock.pauseAt(new Date(Date.now() + 500));
   if (frameMs) await page.evaluate(frameMs => {
     window.requestAnimationFrame = callback => window.setTimeout(() => callback(performance.now()), frameMs);
