@@ -5,11 +5,10 @@ import { logger } from '@/lib/logger';
 let currentUser: User | null = null;
 let authPromise: Promise<User> | null = null;
 
-const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+// Uygulama ömrü boyunca geçerli dinleyici; oturum değiştiğinde currentUser güncellenir.
+onAuthStateChanged(auth, (user) => {
   currentUser = user;
 });
-
-export { unsubscribeAuth };
 
 /** 8 saniyelik timeout ile promise yarışı; timer sızıntısını önlemek için finally'de temizlenir */
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {

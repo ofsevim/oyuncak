@@ -1,6 +1,6 @@
 # Oyun davranışı kapsamı
 
-20 oyunun masaüstü/mobil açılışı, oyun yüzeyine geçişi ve görünür kontrollerin içerik/adları test edilir. Altı ekran profilinde sayfa yerleşimleri denetlenir. Bu kontroller her oyun kuralının doğru olduğunu tek başına kanıtlamaz. Aşağıdaki tablo, oynama sırasında ayrıca sınanan davranışları ve henüz kapsam dışındaki önemli durumları ayırır.
+21 oyunun masaüstü/mobil açılışı, oyun yüzeyine geçişi ve görünür kontrollerin içerik/adları test edilir. Altı ekran profilinde sayfa yerleşimleri denetlenir. Bu kontroller her oyun kuralının doğru olduğunu tek başına kanıtlamaz. Aşağıdaki tablo, oynama sırasında ayrıca sınanan davranışları ve henüz kapsam dışındaki önemli durumları ayırır.
 
 | Oyun | Mevcut davranış doğrulaması | Genişletilecek önemli durumlar |
 | --- | --- | --- |
@@ -24,5 +24,6 @@
 | Dört taş | Oyuncu/bilgisayar sırası, kazanma ve yeniden oynama; sonuç birim testleri | Dolu sütun, beraberlik ve diğer zorluklar |
 | Kelime bulma | Görünür kelimenin seçimi ve tekrar ödülün engellenmesi | Yanlış/çapraz seçim, bütün kelimeler, tekrar üretim |
 | Renk sıralama | Uygun taşıma, geri alma, sıfırlama | Yasak taşıma, tamamlanma ve yeni bulmaca |
+| Tuğla Kırıcı | Cihaz piksel yoğunluğunda tam sahne çizimi, 30/60/120 Hz'te eşit top hızı, dar ekranda taşma yok, molada başlatma ve basılı hareket girişinin yok sayılması, tuşlarla sayfa kaydırmanın engellenmesi, can kaybı/skor kaydı/yeniden oynama | Güçlendirme türleri, bölüm geçişleri ve bütün bölümlerin bitirilmesi |
 
 Son çalıştırmanın sayıları ve hata öncesi/sonrası kanıtları [test kalitesi belgesinde](test-quality.md) tutulur. Öncelikli sonraki kapsam; çarpışma/can kaybı içeren oyunlar, bulmacaların tamamlanması ve yeniden başlatmada eski zamanlayıcıların iptalidir. Oyun koduna test için özel durum yükleme API'leri eklenmez; kullanıcı kontrolleri, görünen tahta ve gerçek üretim mantığı kullanılır.

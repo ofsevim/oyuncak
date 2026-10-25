@@ -10,7 +10,7 @@
 | Firestore kuralları | Gerçek yerel emülatörde 23 skor kimliği için sahip yazması/silmesi ve yabancı yazmanın reddi; veri biçimi, yazma aralığı, özel profil ve silme sınırları |
 | Skor entegrasyonu | Üretimdeki skor servisi, kalıcı kuyruk ve gerçek Firestore SDK'sı birlikte çalışır. İlk yazma, düşük skor koruması, hızlı rekorlar, zamanlayıcının en yüksek bekleyen skoru otomatik göndermesi, çevrimdışı kayıt ve izin hatasından sonra kurtarma denetlenir. Kimlik sınırında emülatörün test kullanıcısı kullanılır. |
 | Oyun davranışı | Matematikte doğru/yanlış cevap ve yerel rekor; saymada tek ödül; hafızada yanlış çiftin kapanması/doğru çift; dört taşta sıra, kazanma ve yeniden oynama; renk sıralamada taşıma/geri alma/sıfırlama; görünür şekil seçenekleri; kelime bulma/tekrar seçme; tek piyano notası; Tetris tutma ve sert düşüş |
-| Tarayıcı / ekran | 20 oyunun gerçek oyun yüzeyine geçişi, görünür kontrollerin adları, altı ekran/tarayıcı profilinde yerleşim; yılanın üç tam yatay tur boyunca her parçasının en az %95 görünmesi; klavye ve dokunmatik tuşlarda iki hızlı dönüş |
+| Tarayıcı / ekran | 21 oyunun gerçek oyun yüzeyine geçişi, görünür kontrollerin adları, altı ekran/tarayıcı profilinde yerleşim; yılanın üç tam yatay tur boyunca her parçasının en az %95 görünmesi; klavye ve dokunmatik tuşlarda iki hızlı dönüş |
 | Bildirim | Normal sunucu yazma aralığı beklenirken yanlış hata gösterilmemesi; gerçek başarısız denemenin bildirimi ve kuyruğun korunması |
 | Derleme | Vite eklentilerinin seçilen çıktı klasörünü kullanması; rota metadatası, servis çalışanı sürümü ve önbellek manifestinin temiz bir test klasörüne yazılması |
 

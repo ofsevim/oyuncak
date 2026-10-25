@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile, access } from "node:fs/promises";
 import path from "node:path";
+import { loadTsModule } from "./helpers/load-ts-module.mjs";
 
 /**
  * Üretim hazırlığı için kritik dosyaların varlığını ve temel içeriğini doğrular.
@@ -28,10 +29,21 @@ export async function run() {
   const robots = await readFile(path.join(root, "public/robots.txt"), "utf8");
   assert.match(robots, /Sitemap:\s*https?:\/\//, "robots.txt Sitemap satırı eksik");
 
-  // sitemap.xml geçerli urlset olmalı
+  // sitemap.xml geçerli urlset olmalı ve tüm rotaları içermeli.
+  // Build, dist içinde sitemap'i VITE_PUBLIC_URL ile yeniden üretir; buradaki
+  // kopya rota tamlığı açısından doğrulanır (domainden bağımsız).
   const sitemap = await readFile(path.join(root, "public/sitemap.xml"), "utf8");
   assert.match(sitemap, /<urlset/, "sitemap.xml urlset etiketi eksik");
   assert.match(sitemap, /<loc>/, "sitemap.xml en az bir loc içermeli");
+  const { PAGE_ROUTES } = await loadTsModule("src/data/pageMetadata.ts");
+  const sitemapPaths = [...sitemap.matchAll(/<loc>([^<]*)<\/loc>/g)]
+    .map((match) => new URL(match[1]).pathname);
+  for (const route of PAGE_ROUTES) {
+    assert.ok(
+      sitemapPaths.includes(route),
+      `sitemap.xml rotayı içermeli: ${route}`,
+    );
+  }
 
   // manifest temel alanları
   const manifest = JSON.parse(await readFile(path.join(root, "public/manifest.json"), "utf8"));

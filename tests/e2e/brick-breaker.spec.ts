@@ -18,7 +18,11 @@ async function start(page: import('@playwright/test').Page, frameMs?: number) {
   await page.clock.resume();
   await page.goto('/games/brick-breaker');
   await page.getByRole('button', { name: 'Oyunu Başlat', exact: true }).waitFor();
-  await page.clock.pauseAt(new Date(Date.now() + 500));
+  // Node tarafındaki Date.now()+500 hedefi sahte saatin gerisinde kalabilir
+  // ("Cannot fast-forward to the past"). Mutlak zaman yerine saatin şimdiki
+  // anında dur ve 500 ms'lik başlangıç zamanlayıcılarını elle ilerlet.
+  await page.clock.pause();
+  await page.clock.runFor(500);
   if (frameMs) await page.evaluate(frameMs => {
     window.requestAnimationFrame = callback => window.setTimeout(() => callback(performance.now()), frameMs);
     window.cancelAnimationFrame = id => window.clearTimeout(id);

@@ -100,6 +100,9 @@ export const updateScoreNickname = onCall(CALLABLE_OPTIONS, async (request) => {
   const batch = db.batch();
   let updated = 0;
 
+  // Keep parity with the web client, which also upserts the profile document.
+  batch.set(db.doc(`profiles/${uid}`), { name, updatedAt: FieldValue.serverTimestamp() });
+
   for (const snapshot of snapshots) {
     if (!snapshot.exists) continue;
     batch.update(snapshot.ref, { name, updatedAt: FieldValue.serverTimestamp() });
