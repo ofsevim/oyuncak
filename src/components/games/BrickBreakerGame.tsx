@@ -90,17 +90,32 @@ interface FloatingText {
    ═══════════════════════════════════════════ */
 // Masaüstünde daha geniş oyun alanı: mobil/tablette dikey 400×500 kalır,
 // geniş ekranlarda (lg+) yatay 640×500 tahta ile satır başına daha fazla tuğla düşer.
-const IS_DESKTOP_WIDE =
+// Tahta genişliği sabit değil: pencere yeniden boyutlandığında refreshBoardMetrics
+// değerleri günceller, böylece daraltılmış masaüstü penceresinde tahta taşmaz.
+const DESKTOP_BOARD_W = 640;
+const MOBILE_BOARD_W = 400;
+const isDesktopWide = () =>
   typeof window !== 'undefined' && !IS_MOBILE && window.innerWidth >= 1024;
-const CW = IS_DESKTOP_WIDE ? 640 : 400;
+let CW = isDesktopWide() ? DESKTOP_BOARD_W : MOBILE_BOARD_W;
 const CH = 500;
 const PADDLE_H = 13;
 const PADDLE_Y = 448;
 // Raket genişliği tahta ile aynı oranda ölçeklenir (400 taban)
-const BOARD_SCALE = CW / 400;
-const BASE_PADDLE_W = Math.round(76 * BOARD_SCALE);
-const WIDE_PADDLE_W = Math.round(114 * BOARD_SCALE);
+let BOARD_SCALE = CW / MOBILE_BOARD_W;
+let BASE_PADDLE_W = Math.round(76 * BOARD_SCALE);
+let WIDE_PADDLE_W = Math.round(114 * BOARD_SCALE);
 const BALL_BASE_RADIUS = 6.5;
+
+/** Tahta ölçülerini pencere genişliğine göre tazeler; genişlik değiştiyse true döner. */
+function refreshBoardMetrics(): boolean {
+  const next = isDesktopWide() ? DESKTOP_BOARD_W : MOBILE_BOARD_W;
+  if (next === CW) return false;
+  CW = next;
+  BOARD_SCALE = CW / MOBILE_BOARD_W;
+  BASE_PADDLE_W = Math.round(76 * BOARD_SCALE);
+  WIDE_PADDLE_W = Math.round(114 * BOARD_SCALE);
+  return true;
+}
 const MAX_PARTICLES = IS_MOBILE ? 80 : 140;
 const CANVAS_DPR_CAP = IS_MOBILE ? 1.5 : 2;
 
@@ -365,9 +380,12 @@ const BrickBreakerGame = () => {
   const [lives, setLives] = useState(3);
   const [level, setLevel] = useState(1);
   const [canvasScale, setCanvasScale] = useState(1);
+  // Tahta genişliği yeniden boyutlandırmada değişebilir; render&apos;ı tetiklemek için state.
+  const [boardWidth, setBoardWidth] = useState(CW);
   const [activePowerUpName, setActivePowerUpName] = useState<string | null>(null);
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
+  const levelRef = useRef(1);
 
   const addScore = useCallback((points: number) => {
     scoreRef.current += points;
@@ -422,6 +440,18 @@ const BrickBreakerGame = () => {
   // Tuval boyutunu ekrana göre ölçeklendir
   useEffect(() => {
     const updateScale = () => {
+      // Tahta genişliği değiştiyse (masaüstü <-> mobil eşiği) ölçüleri tazele
+      if (refreshBoardMetrics()) {
+        paddleRef.current.x = CW / 2;
+        paddleRef.current.targetX = CW / 2;
+        paddleRef.current.w = paddleRef.current.isWide ? WIDE_PADDLE_W : BASE_PADDLE_W;
+        ballsRef.current = ballsRef.current.map((ball) => ({
+          ...ball,
+          x: Math.max(ball.radius, Math.min(CW - ball.radius, ball.x)),
+        }));
+        bricksRef.current = createBricksForLevel(levelRef.current);
+        setBoardWidth(CW);
+      }
       // lg ve üzeri genişliklerde yan panel (~224px) + boşluk için yer ayır
       const asideSpace = window.innerWidth >= 1024 && CW > 400 ? 244 : 0;
       const maxW = Math.min(window.innerWidth - 32 - asideSpace, CW);
@@ -570,6 +600,7 @@ const BrickBreakerGame = () => {
     scoreRef.current = 0;
     setLives(initialLives);
     setScore(0);
+    levelRef.current = 1;
     setLevel(1);
     setIsNewRecord(false);
     setActivePowerUpName(null);
@@ -591,6 +622,7 @@ const BrickBreakerGame = () => {
     safeTimeout(() => {
       const nextLvl = level + 1;
       initLevel(nextLvl);
+      levelRef.current = nextLvl;
       setLevel(nextLvl);
       setPhase('playing');
     }, 1800);
@@ -1540,7 +1572,7 @@ const BrickBreakerGame = () => {
   }
 
   /* OYUN ALANI (CANVAS + HUD + KONTROLLER) */
-  const displayW = Math.round(CW * canvasScale);
+  const displayW = Math.round(boardWidth * canvasScale);
   const displayH = Math.round(CH * canvasScale);
 
   return (
@@ -1589,7 +1621,7 @@ const BrickBreakerGame = () => {
       >
         <canvas
           ref={canvasRef}
-          width={Math.round(CW * Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP))}
+          width={Math.round(boardWidth * Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP))}
           height={Math.round(CH * Math.min(window.devicePixelRatio || 1, CANVAS_DPR_CAP))}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}

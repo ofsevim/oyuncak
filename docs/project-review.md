@@ -2,7 +2,7 @@
 7 Ekim 2026
 
 ## Uygulanan tasarım
-20 oyun, 32 hikâye ve yerel çizim atölyesi için onaylanan Gece Bahçesi tasarımı uygulandı. Özgün SVG karakter ve her oyuna özel yerel vektör kapaklar, serif başlıklar, lavanta/nane/şeftali renkleri ve sade keşif akışları kullanıldı. Bu tasarım Awwwards estetiğini hedefler; ödül kazanıldığı iddia edilmez.
+21 oyun, 32 hikâye ve yerel çizim atölyesi için onaylanan Gece Bahçesi tasarımı uygulandı. Özgün SVG karakter ve her oyuna özel yerel vektör kapaklar, serif başlıklar, lavanta/nane/şeftali renkleri ve sade keşif akışları kullanıldı. Bu tasarım Awwwards estetiğini hedefler; ödül kazanıldığı iddia edilmez.
 
 Masaüstünde üst, telefonda güvenli alanı dikkate alan alt gezinme bulunur. Açık/koyu tema tercihi kalıcıdır. Kategori, yaş ve favori filtreleri korunur. Çizim ve hikâye ekranları ortak temaya taşındı. Hafıza kartları yeni yüzeyler ve erişilebilir isimler kullanıyor. Oyun sahnelerinde sabit koyu panellere uygun renkler uygulanır; dış açık temada da skorlar okunabilir. Klavye odakları, 44px temel hedefler ve azaltılmış hareket desteği korunur.
 
@@ -53,7 +53,7 @@ Skorlar istemciden Firestore'a yazılır. Kurallar kimlik/sahiplik ve veri biçi
 Önceki Playwright 1.63 doğrulamasında WebKit'in zorunlu çevrimdışı gezinme sınırlaması nedeniyle bir senaryo Windows'ta atlandı. Gerçek cihazda Safari11 doğrulaması yapılmadı. İlk geniş çalıştırma makine kaynakları/PowerShell çıktı yönlendirmesine takıldı. Bu çalışma doğrudan dosya çıktısı ve tek işçi kullandı; başarısız testler başarılı sayılmadı.
 
 ## Oyun içi tasarımın tamamlanması
-Ana sayfa ve katalogdan sonra kalan eski oyun arayüzleri de Gece Bahçesi'ne taşındı. 20 oyun ortak başlık, kapak, geri dönüş ve oyun bilgisi çerçevesini kullanır. Başlangıç, zorluk/karakter seçimi, skor yüzeyleri, yön tuşları, yeniden oynama ve mola penceresi ortak bileşen stillerini kullanır. Başlat/tekrar ikonları ve ses/duraklat kontrolleri SVG'dir. Seçim butonları aria-pressed ile durumlarını bildirir; yalnızca ikon taşıyan yeniden başlat kontrolünün erişilebilir adı vardır.
+Ana sayfa ve katalogdan sonra kalan eski oyun arayüzleri de Gece Bahçesi'ne taşındı. 21 oyun ortak başlık, kapak, geri dönüş ve oyun bilgisi çerçevesini kullanır. Başlangıç, zorluk/karakter seçimi, skor yüzeyleri, yön tuşları, yeniden oynama ve mola penceresi ortak bileşen stillerini kullanır. Başlat/tekrar ikonları ve ses/duraklat kontrolleri SVG'dir. Seçim butonları aria-pressed ile durumlarını bildirir; yalnızca ikon taşıyan yeniden başlat kontrolünün erişilebilir adı vardır.
 
 Tetris ve 2048 blokları, piyano tuşları ve müzikal hafıza pedleri daha sakin ve ayırt edilebilir renklerle güncellendi. Basket sahnesinin gökyüzü, denizi ve zemini bahçenin paletine uyarlandı. Oyun parçalarının, notaların ve renk bulmacalarının anlamları korunur. Matematikte doğru cevabın rengi ve halkası ortak buton stili tarafından bastırılmaz.
 
@@ -93,7 +93,7 @@ Playwright ve iki bağlı paketi 1.63.0'dan 1.64.0'a yükseltildi; kilit dosyas�
 
 Bağımsız inceleme, köstebeğin durum değişiminde basılı Space'i kaybetmesi ve kodlamada ödül sonrası sıfırlamanın tur geçişini iptal etmesi için ek regresyonlar getirdi. Her köstebek görünümünün kimliği sabit kaldı; kodlama ödülü ve bölüm geçişi tek kez işlenir, geçiş sırasında sıfırlama kilitlenir. React state updater içindeki bölüm/oyun bitişi yan etkileri normal geçiş callback'ine taşındı.
 
-On yeni davranış senaryosu masaüstü, mobil Chromium ve iPhone/WebKit üzerinde çalışır. [20 oyunun kapsam tablosu](gameplay-coverage.md), test edilmiş davranışlarla henüz sınanmayan önemli durumları ayrı gösterir. Testlerin geçmesi bütün oyunların bütün olası durumlarında hatasız olduğu iddiasına dönüştürülmez.
+On yeni davranış senaryosu masaüstü, mobil Chromium ve iPhone/WebKit üzerinde çalışır. [21 oyunun kapsam tablosu](gameplay-coverage.md), test edilmiş davranışlarla henüz sınanmayan önemli durumları ayrı gösterir. Testlerin geçmesi bütün oyunların bütün olası durumlarında hatasız olduğu iddiasına dönüştürülmez.
 
 Son yerel doğrulama: altı profilin tam koşusunda **312 geçti, 1 beklenen atlama, 0 başarısız ve 0 flaky**. On yeni senaryonun 30 tarayıcı örneği tam koşuya dahildir. Lint, TypeScript, 27 birim/regresyon test dosyası, Functions sözdizimi ve üretim derlemesi geçti. Üretim önizlemesi yeniden başlatıldı; 4184'te güncel derlemenin sunulduğu doğrulandı.
 

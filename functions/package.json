@@ -7,7 +7,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "check": "node --check index.js"
+    "check": "node --check index.js &amp;&amp; node --check scoreValidation.js"
   },
   "dependencies": {
     "firebase-admin": "^14.5.0",

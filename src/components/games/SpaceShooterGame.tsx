@@ -1,5 +1,4 @@
 import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
-import {  } from 'lucide-react';
 import { isGamePaused } from '@/utils/gameActivity';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';

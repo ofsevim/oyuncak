@@ -32,6 +32,9 @@ try {
   await assertFails(updateDoc(score(owner), { score: 49, updatedAt: serverTimestamp() }));
   await assertFails(updateDoc(score(owner), { score: 60, updatedAt: serverTimestamp() }));
   await assertSucceeds(updateDoc(score(owner), { name: 'Yeni Rumuz', updatedAt: serverTimestamp() }));
+  // Aynı skor + aynı ad pencereyi atlatamaz; ad değişince geçer.
+  await assertFails(updateDoc(score(owner), { name: 'Yeni Rumuz', updatedAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(score(owner), { name: 'Başka Rumuz', updatedAt: serverTimestamp() }));
   await env.withSecurityRulesDisabled(async (context) => {
     await updateDoc(score(context.firestore()), { updatedAt: Timestamp.fromMillis(Date.now() - 20_000) });
   });

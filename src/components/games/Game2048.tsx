@@ -1,5 +1,4 @@
 import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
-import {  } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound, playErrorSound, playComboSound, playNewRecordSound } from '@/utils/soundEffects';
@@ -155,8 +154,10 @@ const Game2048 = () => {
 
     const withNew = addRandomTile(newGrid);
     setGrid(withNew);
-    // Use scoreRef (kept in sync via useEffect) to avoid setState side-effects in the updater
-    const newScore = scoreRef.current + gained;
+    // Skoru ref üzerinden ilerlet ve ref'i hemen güncelle: iki hamle tek render
+    // aralığında gelirse ikincisi eskimiş değeri okumamalı.
+    const newScore = currentScore + gained;
+    scoreRef.current = newScore;
     setScore(newScore);
     const isNew = saveHighScoreObj('2048', newScore);
     if (isNew) { setBestScore(newScore); setIsNewRecord(true); }

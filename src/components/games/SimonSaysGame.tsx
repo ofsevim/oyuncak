@@ -1,5 +1,4 @@
 import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
-import {  } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playLevelUpSound, playNewRecordSound } from '@/utils/soundEffects';

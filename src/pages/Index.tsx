@@ -4,7 +4,6 @@ import Navigation from '@/components/Navigation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Home from '@/components/home/Home';
 import PWAInstall from '@/components/PWAInstall';
-import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 import { isGameRouteId } from '@/constants/gameIds';
 
 type Tab = 'home' | 'draw' | 'games' | 'story';
@@ -17,7 +16,6 @@ const Index = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { gameId } = useParams();
-  const [, setPreferredGameId] = useLocalStorageState<string | null>("oyuncak.preferredGameId", null);
 
   let activeTab: Tab = 'home';
   if (pathname.startsWith('/draw')) activeTab = 'draw';
@@ -34,10 +32,6 @@ const Index = () => {
   const handleGoDraw = useCallback(() => setActiveTab('draw'), [setActiveTab]);
   const handleGoGames = useCallback(() => setActiveTab('games'), [setActiveTab]);
   const handleGoStories = useCallback(() => setActiveTab('story'), [setActiveTab]);
-  const handleGoFeaturedGame = useCallback((id: string) => {
-    setPreferredGameId(id);
-    navigate(`/games/${id}`);
-  }, [setPreferredGameId, navigate]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -53,7 +47,6 @@ const Index = () => {
             onGoDraw={handleGoDraw}
             onGoGames={handleGoGames}
             onGoStories={handleGoStories}
-            onGoFeaturedGame={handleGoFeaturedGame}
           />
         );
     }

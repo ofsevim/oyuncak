@@ -4,4 +4,5 @@
 
 [build.environment]
   NODE_VERSION = "22"
-  VITE_PUBLIC_URL = "https://adenerva.netlify.app"
+  # Canonical alan adı; index.html, robots.txt ve sitemap.xml ile aynı olmalı.
+  VITE_PUBLIC_URL = "https://oyuncak.app"

@@ -1,5 +1,4 @@
 import { Play as GardenPlay, RotateCcw as GardenRestart } from 'lucide-react';
-import {  } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {

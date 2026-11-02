@@ -1,5 +1,4 @@
 import { Play as GardenPlay } from 'lucide-react';
-import {  } from 'lucide-react';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playComboSound } from '@/utils/soundEffects';

@@ -1,5 +1,4 @@
 import { Play as GardenPlay } from 'lucide-react';
-import {  } from 'lucide-react';
 import { GAME_ACTIVITY_EVENT, isGamePaused } from '@/utils/gameActivity';
 import { isMuted } from '@/utils/soundEffects';
 import { useState, useCallback, useRef, useEffect } from 'react';

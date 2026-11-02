@@ -50,6 +50,9 @@ jobs:
       - name: Firestore rules tests
         run: npm run test:rules
 
+      - name: Score service integration test
+        run: npm run test:integration
+
       - name: Install test browser
         run: npx playwright install --with-deps chromium webkit
 

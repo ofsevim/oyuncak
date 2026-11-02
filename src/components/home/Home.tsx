@@ -9,7 +9,6 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { GAME_CATALOG } from "@/data/gameCatalog";
 import { STORIES } from "@/data/stories";
-import type { FeaturedGameRouteId } from "@/constants/gameIds";
 import { useGameLibrary } from "@/hooks/useGameLibrary";
 import GardenCharacter from "@/components/GardenCharacter";
 import GameArtwork from "@/components/games/GameArtwork";
@@ -18,7 +17,6 @@ type Props = {
   onGoDraw: () => void;
   onGoGames: () => void;
   onGoStories: () => void;
-  onGoFeaturedGame?: (id: FeaturedGameRouteId) => void;
 };
 export default function Home({ onGoDraw, onGoGames, onGoStories }: Props) {
   const navigate = useNavigate();

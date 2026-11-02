@@ -1,5 +1,4 @@
 import { RotateCcw as GardenRestart } from 'lucide-react';
-import {  } from 'lucide-react';
 import { isGamePaused } from '@/utils/gameActivity';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';

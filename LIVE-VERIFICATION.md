@@ -6,7 +6,7 @@ Sonuç: Kontrol edilen canlı akışlar tamamlandı. İlk tarayıcı skor gönde
 
 ## HTTP ve dağıtım
 
-- 27 rota (ana sayfalar ve katalogdaki 20 oyun) HTTP 200, HTML içerik, rotaya özgü başlık ve doğru canlı canonical adresi döndürdü.
+- 28 rota (ana sayfalar ve katalogdaki 21 oyun) HTTP 200, HTML içerik, rotaya özgü başlık ve doğru canlı canonical adresi döndürdü.
 - 10 temel dosya HTTP 200 ve uygun içerik türü döndürdü: ana JavaScript/CSS, React, legacy dosyaları, ikon, manifest, service worker, sitemap ve robots.txt.
 - Ana sayfa Cache-Control: no-cache döndürdü.
 - Makine tarafından okunabilen sonuçlar: [live-verification.json](live-verification.json).
@@ -36,7 +36,7 @@ Sitede yayımlanan herkese açık Firebase yapılandırması kullanıldı. Kimli
 
 ## Kapsam sınırları
 
-- 20 oyun rotasının HTTP yanıtı kontrol edildi; bütün oyunlar baştan sona oynanmadı.
+- 21 oyun rotasının HTTP yanıtı kontrol edildi; bütün oyunlar baştan sona oynanmadı.
 - Canlı PWA'nın zorlanmış çevrimdışı yeniden yüklemesi, gerçek Safari/iPhone, uzun süreli oyun, yük testi ve bütün güvenlik kuralları kombinasyonları bu kontrolün kapsamında değildi.
 - İlk geçici anonim giriş hatası tekrar sıklığı açısından ölçülmedi. Yeniden deneme akışı bu olayda skoru başarıyla gönderdi.
 - Uygulama kaynak kodu veya canlı dağıtım ayarları değiştirilmedi.

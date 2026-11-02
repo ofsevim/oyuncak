@@ -96,6 +96,20 @@ src/
 - CSP ve XSS önlemleri mevcuttur
 - Takma ad istemcide temizlenir; Firestore kuralları sahiplik, alanlar, türler ve sınırları doğrular. İstemci skorunun gerçek oyundan geldiğini kanıtlamaz.
 
+## Dağıtım
+
+İki hedef de yapılandırılmıştır ve ikisi de aynı `dist` çıktısını kullanır.
+
+**Netlify** — birincil hedef. `netlify.toml` derleme komutunu ve yayın dizinini tanımlar; `public/_redirects` SPA yönlendirmesini, `public/_headers` güvenlik ve cache başlıklarını taşır.
+
+**Firebase Hosting** — `firebase.json` içindeki `hosting` bloğu aynı SPA yönlendirmesini (`**` → `/index.html`) ve aynı güvenlik/cache başlıklarını tanımlar, çünkü Firebase `_headers` ve `_redirects` dosyalarını okumaz.
+
+```bash
+npx firebase-tools@15.29.0 deploy --only hosting --project <proje-kimliği>
+```
+
+Canonical alan adı tek bir yerden yönetilir: `VITE_PUBLIC_URL`. `index.html`, `public/robots.txt` ve `public/sitemap.xml` içindeki `https://oyuncak.app` değerleri derlemede bu değişkenle değiştirilir, bu yüzden üçü ile `netlify.toml` ve dağıtım ortamı aynı değeri taşımalıdır.
+
 ## Skor altyapısını dağıtma
 
 Skorlar Spark planında Firestore güvenlik kuralları üzerinden çalışır. Kuralları dağıtın:

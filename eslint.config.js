@@ -9,7 +9,7 @@ export default tseslint.config(
     ignores: [
       "dist/**",
       ".cache/**",
-      ".superpowers/**",
+      "docs/superpowers/**",
       ".npm-cache/**",
       "test-results/**",
       "playwright-report/**",

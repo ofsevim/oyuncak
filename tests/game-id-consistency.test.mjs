@@ -13,14 +13,12 @@ function extractMatches(source, pattern) {
 
 export async function run() {
   const root = process.cwd();
-  const [{ GAME_ROUTE_IDS, FEATURED_GAME_ROUTE_IDS, ALL_GAME_IDS }, gamesMenuSource, featuredSource] = await Promise.all([
+  const [{ GAME_ROUTE_IDS, ALL_GAME_IDS }, gamesMenuSource] = await Promise.all([
     loadTsModule("src/constants/gameIds.ts"),
     readFile(path.join(root, "src/components/games/GamesMenu.tsx"), "utf8"),
-    readFile(path.join(root, "src/data/featured.ts"), "utf8"),
   ]);
 
   assert.ok(Array.isArray(GAME_ROUTE_IDS), "GAME_ROUTE_IDS tanımlı olmalı");
-  assert.ok(Array.isArray(FEATURED_GAME_ROUTE_IDS), "FEATURED_GAME_ROUTE_IDS tanımlı olmalı");
   assert.ok(Array.isArray(ALL_GAME_IDS), "ALL_GAME_IDS tanımlı olmalı");
 
   const { GAME_CATALOG } = await loadTsModule('src/data/gameCatalog.ts');
@@ -31,26 +29,11 @@ export async function run() {
     await readFile(path.join(root, 'src/components/games', `${game.component}.tsx`));
     assert.ok(game.minAge >= 4 && game.duration && game.skill);
   }
-  const featuredRouteIds = extractMatches(featuredSource, /gameId:\s*"([^"]+)"/g);
-
   assert.deepEqual(
     sortValues(menuRouteIds),
     sortValues(GAME_ROUTE_IDS),
     "GamesMenu rota ID'leri ortak sözlük ile aynı olmalı",
   );
-
-  assert.deepEqual(
-    sortValues(featuredRouteIds),
-    sortValues(FEATURED_GAME_ROUTE_IDS),
-    "Öne çıkan oyun ID'leri ortak featured sözlüğü ile aynı olmalı",
-  );
-
-  for (const routeId of featuredRouteIds) {
-    assert.ok(
-      GAME_ROUTE_IDS.includes(routeId),
-      `Öne çıkan kart geçersiz rota ID'si kullanıyor: ${routeId}`,
-    );
-  }
 
   const scoreIdSources = await Promise.all(
     [
@@ -87,6 +70,31 @@ export async function run() {
       `Skor kimliği ortak skor sözlüğünde tanımlı değil: ${scoreId}`,
     );
   }
+
+  // Sunucu doğrulaması ve Firestore kuralı da aynı listeyi taşır; biri
+  // güncellenmezse yeni oyun sessizce reddedilir. İkisini de karşılaştır.
+  const scoreValidationSource = await readFile(
+    path.join(root, "functions/scoreValidation.js"),
+    "utf8",
+  );
+  const validationBlock = scoreValidationSource.match(/SCORE_GAME_IDS = new Set\(\[[\s\S]*?\]\)/);
+  assert.ok(validationBlock, "functions/scoreValidation.js SCORE_GAME_IDS bulunmalı");
+  const validationIds = extractMatches(validationBlock[0], /'([a-z0-9-]+)'/g);
+  assert.deepEqual(
+    sortValues(validationIds),
+    sortValues(ALL_GAME_IDS),
+    "functions/scoreValidation.js skor ID'leri ortak sözlük ile aynı olmalı",
+  );
+
+  const rulesSource = await readFile(path.join(root, "firestore.rules"), "utf8");
+  const supportedBlock = rulesSource.match(/function isSupportedGame[\s\S]*?\];/);
+  assert.ok(supportedBlock, "firestore.rules isSupportedGame bulunmalı");
+  const ruleIds = extractMatches(supportedBlock[0], /'([a-z0-9-]+)'/g);
+  assert.deepEqual(
+    sortValues(ruleIds),
+    sortValues(ALL_GAME_IDS),
+    "firestore.rules oyun ID'leri ortak sözlük ile aynı olmalı",
+  );
 }
 
 export default run;
