@@ -1,6 +1,6 @@
 # Oyun davranışı kapsamı
 
-21 oyunun masaüstü/mobil açılışı, oyun yüzeyine geçişi ve görünür kontrollerin içerik/adları test edilir. Altı ekran profilinde sayfa yerleşimleri denetlenir. Bu kontroller her oyun kuralının doğru olduğunu tek başına kanıtlamaz. Aşağıdaki tablo, oynama sırasında ayrıca sınanan davranışları ve henüz kapsam dışındaki önemli durumları ayırır.
+22 oyunun masaüstü/mobil açılışı, oyun yüzeyine geçişi ve görünür kontrollerin içerik/adları test edilir. Altı ekran profilinde sayfa yerleşimleri denetlenir. Bu kontroller her oyun kuralının doğru olduğunu tek başına kanıtlamaz. Aşağıdaki tablo, oynama sırasında ayrıca sınanan davranışları ve henüz kapsam dışındaki önemli durumları ayırır.
 
 | Oyun | Mevcut davranış doğrulaması | Genişletilecek önemli durumlar |
 | --- | --- | --- |
@@ -25,5 +25,6 @@
 | Kelime bulma | Görünür kelimenin seçimi ve tekrar ödülün engellenmesi | Yanlış/çapraz seçim, bütün kelimeler, tekrar üretim |
 | Renk sıralama | Uygun taşıma, geri alma, sıfırlama | Yasak taşıma, tamamlanma ve yeni bulmaca |
 | Tuğla Kırıcı | Cihaz piksel yoğunluğunda tam sahne çizimi, 30/60/120 Hz'te eşit top hızı, dar ekranda taşma yok, molada başlatma ve basılı hareket girişinin yok sayılması, tuşlarla sayfa kaydırmanın engellenmesi, can kaybı/skor kaydı/yeniden oynama | Güçlendirme türleri, bölüm geçişleri ve bütün bölümlerin bitirilmesi |
+| Labirent Kaçış | Labirent üretimi/çözülebilirlik/yol bulma birim testleri, duvar engelleme, yıldız toplama, süre bitişi ve bölüm geçişi | Kaydırma kontrolleriyle oynama, ipucu geri bildirimi ve beş bölümün bitirilmesi |
 
 Son çalıştırmanın sayıları ve hata öncesi/sonrası kanıtları [test kalitesi belgesinde](test-quality.md) tutulur. Öncelikli sonraki kapsam; çarpışma/can kaybı içeren oyunlar, bulmacaların tamamlanması ve yeniden başlatmada eski zamanlayıcıların iptalidir. Oyun koduna test için özel durum yükleme API'leri eklenmez; kullanıcı kontrolleri, görünen tahta ve gerçek üretim mantığı kullanılır.

@@ -4,8 +4,8 @@ export const SCORE_GAME_IDS = new Set([
   'runner', 'snake', 'tetris', 'tank-arena', '2048', 'whack-a-mole',
   'balloon-pop', 'basketball', 'piano', 'math', 'counting', 'oddoneout',
   'shapematch', 'simonsays', 'codingturtle', 'spaceshooter',
-  'memory-3x3', 'memory-4x4', 'memory-5x5', 'memory-6x6',
-  'connect-four', 'word-search', 'color-sort', 'brick-breaker',
+  'memory-3x3', 'memory-4x4', 'memory-5x5', 'memory-6x6',  'connect-four', 'word-search', 'color-sort', 'brick-breaker',
+  'maze',
 ]);
 
 export function isValidGameId(gameId) {

@@ -23,6 +23,7 @@ const routeOrder: GameRouteId[] = [
   "word-search",
   "color-sort",
   "brick-breaker",
+  "maze",
 ];
 const Tiles = ({ values }: { values: string[] }) => (
   <>
@@ -503,6 +504,35 @@ export default function GameArtwork({
           <circle cx="139" cy="97" r="4" fill="#34314d" />
           <circle cx="160" cy="97" r="4" fill="#34314d" />
           <path d="m179 128 20-12-10 26Z" fill="#e89769" />
+        </>
+      );
+      break;
+    case "maze":
+      art = (
+        <>
+          {Array.from({ length: 9 }, (_, i) => {
+            const cells = [0, 1, 2, 3, 5, 6, 8];
+            const x = 88 + (i % 3) * 42;
+            const y = 40 + Math.floor(i / 3) * 42;
+            const wall = cells.includes(i);
+            return (
+              <rect
+                key={i}
+                x={x}
+                y={y}
+                width="38"
+                height="38"
+                rx="7"
+                fill={wall ? "#34314d" : "#fffdf4"}
+                opacity={wall ? ".9" : ".92"}
+              />
+            );
+          })}
+          <text x="150" y="163" textAnchor="middle" fontSize="20" fill="#34314d">
+            🧭
+          </text>
+          <circle cx="231" cy="57" r="13" fill="#f6d486" stroke="#34314d" strokeWidth="2.5" />
+          <path d="m231 50 3 7 7 0-5.5 4.5 2 7-6.5-4-6.5 4 2-7L220 57l7 0Z" fill="#34314d" />
         </>
       );
       break;

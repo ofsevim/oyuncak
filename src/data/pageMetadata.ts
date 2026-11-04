@@ -1,7 +1,7 @@
 import { GAME_CATALOG } from './gameCatalog.ts';
 
 const STATIC_PAGES: Record<string, { title: string; description: string }> = {
-  '/': { title: 'Oyuncak - Oyun Dünyası', description: '21 ücretsiz oyun, çizim atölyesi ve interaktif hikâyeler. Reklamsız oyun ve yaratıcılık alanı.' },
+  '/': { title: 'Oyuncak - Oyun Dünyası', description: '22 ücretsiz oyun, çizim atölyesi ve interaktif hikâyeler. Reklamsız oyun ve yaratıcılık alanı.' },
   '/games': { title: 'Ücretsiz Çocuk Oyunları | Oyuncak', description: 'Yaşa ve beceriye göre oyun seç; hafıza, matematik, müzik ve refleks oyunlarını keşfet.' },
   '/draw': { title: 'Çizim Atölyesi | Oyuncak', description: 'Serbest çizim yap, sticker ekle ve resimlerini kendi cihazındaki galeride sakla.' },
   '/story': { title: 'İnteraktif Hikâyeler | Oyuncak', description: 'Çocuklar için interaktif hikâyeleri keşfet ve okumaya kaldığın sayfadan devam et.' },
