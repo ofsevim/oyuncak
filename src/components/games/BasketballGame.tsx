@@ -695,11 +695,9 @@ const BasketballGame = () => {
                 </AnimatePresence>
             </div>
 
-            {phase === 'aim' && (
-                <p className="text-xs text-muted-foreground/50 mt-2 text-center">
-                    🖱️ Sürükle → bırak &nbsp;|&nbsp; 📱 Sürükle → parmağını kaldır
-                </p>
-            )}
+            <p className={`text-xs text-muted-foreground/50 mt-2 text-center transition-opacity ${phase === 'aim' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} aria-hidden={phase !== 'aim'}>
+                🖱️ Sürükle → bırak &nbsp;|&nbsp; 📱 Sürükle → parmağını kaldır
+            </p>
 
             {/* Game over */}
             <AnimatePresence>

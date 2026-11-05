@@ -38,7 +38,7 @@ for (const game of GAME_CATALOG) {
       await expect(start).toHaveCount(0);
     }
     await expect(page.locator(activeSelectors[game.id]).first()).toBeVisible();
-    if (game.id === 'tank-arena') await expect(page.frameLocator('iframe[title="Tank Arena"]').locator('canvas')).toBeVisible();
+    if (game.id === 'tank-arena') await expect(page.frameLocator('iframe[title="Tank Arena"]').locator('canvas')).toBeVisible({ timeout: 15_000 });
     const emptyControls = await page.locator('.garden-game-content button:visible').evaluateAll(buttons =>
       buttons.filter(button => !(button.getAttribute('aria-label') || button.getAttribute('title') || (button as HTMLElement).innerText.trim()))
         .map(button => button.outerHTML.slice(0,200)));

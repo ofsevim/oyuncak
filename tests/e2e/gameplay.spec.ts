@@ -71,7 +71,8 @@ test('regression: whack keyboard activation scores a mole once', async ({ page }
   await page.goto('/games/whack');
   await page.getByRole('button', { name: /Kolay/ }).click();
   await page.clock.install();
-  await page.clock.pauseAt(new Date(Date.now() + 500));
+  const now = Date.now(); await page.clock.setFixedTime(now); await page.clock.pauseAt(now); await page.clock.setSystemTime(now);
+  await page.clock.runFor(500);
   await page.getByRole('button', { name: /BAŞLA/ }).click();
   await page.clock.runFor(850);
   const mole = page.getByRole('button', { name: /🐹|Hamster yakala/ }).first();
@@ -91,7 +92,8 @@ test('regression: whack preserves a held Space press across the rising transitio
   await page.goto('/games/whack');
   await page.getByRole('button', { name: /Kolay/ }).click();
   await page.clock.install();
-  await page.clock.pauseAt(new Date(Date.now() + 500));
+  const now = Date.now(); await page.clock.setFixedTime(now); await page.clock.pauseAt(now); await page.clock.setSystemTime(now);
+  await page.clock.runFor(500);
   await page.getByRole('button', { name: /BAŞLA/ }).click();
   await page.clock.runFor(750);
   const mole = page.getByRole('button', { name: /Hamster yakala/ }).first();
@@ -108,7 +110,8 @@ test('regression: whack pointer input awards points and penalties never make sco
   await page.goto('/games/whack');
   await page.getByRole('button', { name: /Kolay/ }).click();
   await page.clock.install();
-  await page.clock.pauseAt(new Date(Date.now() + 500));
+  const now = Date.now(); await page.clock.setFixedTime(now); await page.clock.pauseAt(now); await page.clock.setSystemTime(now);
+  await page.clock.runFor(500);
   await page.getByRole('button', { name: /BAŞLA/ }).click();
   await page.clock.runFor(850);
   const hamster = page.getByRole('button', { name: /Hamster yakala/ }).first();
@@ -148,7 +151,8 @@ test('regression: coding turtle reset cancels a queued movement', async ({ page 
   await page.goto('/games/codingturtle');
   await page.getByRole('button', { name: /BAŞLA/ }).waitFor();
   await page.clock.install();
-  await page.clock.pauseAt(new Date(Date.now() + 500));
+  const now = Date.now(); await page.clock.setFixedTime(now); await page.clock.pauseAt(now); await page.clock.setSystemTime(now);
+  await page.clock.runFor(500);
   await page.getByRole('button', { name: /BAŞLA/ }).click();
   const board = page.locator('.garden-game-content .grid[style*="grid-template-columns"]');
   const cells = board.locator(':scope > div');
@@ -179,7 +183,8 @@ test('regression: coding turtle commits a solved level once before allowing anot
   await page.goto('/games/codingturtle');
   await page.getByRole('button', { name: /BAŞLA/ }).waitFor();
   await page.clock.install();
-  await page.clock.pauseAt(new Date(Date.now() + 500));
+  const now = Date.now(); await page.clock.setFixedTime(now); await page.clock.pauseAt(now); await page.clock.setSystemTime(now);
+  await page.clock.runFor(500);
   await page.getByRole('button', { name: /BAŞLA/ }).click();
   const cells = page.locator('.garden-game-content .grid[style*="grid-template-columns"]').locator(':scope > div');
   await expect(cells).toHaveCount(25);

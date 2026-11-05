@@ -21,7 +21,7 @@ async function start(page: import('@playwright/test').Page, frameMs?: number) {
   // Node tarafındaki Date.now()+500 hedefi sahte saatin gerisinde kalabilir
   // ("Cannot fast-forward to the past"). Mutlak zaman yerine saatin şimdiki
   // anında dur ve 500 ms'lik başlangıç zamanlayıcılarını elle ilerlet.
-  await page.clock.pause();
+  const now = Date.now(); await page.clock.setFixedTime(now); await page.clock.pauseAt(now); await page.clock.setSystemTime(now);
   await page.clock.runFor(500);
   if (frameMs) await page.evaluate(frameMs => {
     window.requestAnimationFrame = callback => window.setTimeout(() => callback(performance.now()), frameMs);

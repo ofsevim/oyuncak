@@ -322,19 +322,19 @@ const CountingGame = () => {
         {/* ── HUD ── */}
         <motion.div className="flex flex-wrap justify-center gap-2"
           initial={{ y: -15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-          <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-black text-primary">⭐ {score}</span></div>
+          <div className="garden-panel px-3 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" style={pill}><span className="text-sm font-black text-primary">⭐ {score}</span></div>
           {streak >= 3 && (
             <motion.div key={streak} initial={{ scale: 0.5 }} animate={{ scale: [0.5, 1.2, 1] }}
-              className="garden-panel px-4 py-2" style={{ ...pill, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)' }}>
+              className="garden-panel px-3 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" style={{ ...pill, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)' }}>
               <span className="text-sm font-black text-yellow-400">🔥 x{Math.min(streak, 5)}</span>
             </motion.div>
           )}
           {config.timer > 0 && (
-            <div className="garden-panel px-4 py-2" style={pill}>
+            <div className="garden-panel px-3 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" style={pill}>
               <span className={`text-sm font-black ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-orange-400'}`}>⏱️ {timeLeft}s</span>
             </div>
           )}
-          <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-bold text-muted-foreground">✓ {total}</span></div>
+          <div className="garden-panel px-3 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" style={pill}><span className="text-sm font-bold text-muted-foreground">✓ {total}</span></div>
         </motion.div>
 
         {/* ── Item Field ── */}

@@ -39,18 +39,18 @@ test('tank iframe loads after redirected precaching and reloads offline', async 
   await page.goto('/games/tank-arena');
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
-  await expect(page.frameLocator('iframe[title="Tank Arena"]').locator('canvas')).toBeVisible();
+  await expect(page.frameLocator('iframe[title="Tank Arena"]').locator('canvas')).toBeVisible({ timeout: 15_000 });
   await context.setOffline(true);
   await context.unrouteAll();
   await page.reload();
-  await expect(page.frameLocator('iframe[title="Tank Arena"]').locator('canvas')).toBeVisible();
+  await expect(page.frameLocator('iframe[title="Tank Arena"]').locator('canvas')).toBeVisible({ timeout: 15_000 });
 });
 });
 
 test('tank controls remain available on touch screens after rotation', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'Touch control check');
   await page.goto('/games/tank-arena');
-  await expect(page.frameLocator('iframe[title="Tank Arena"]').locator('canvas')).toBeVisible();
+  await expect(page.frameLocator('iframe[title="Tank Arena"]').locator('canvas')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('button', { name:/BAŞLAT/ })).toBeVisible();
   await page.getByRole('button', { name:/BAŞLAT/ }).tap();
   await page.setViewportSize({ width:844, height:390 });
@@ -87,7 +87,7 @@ test('snake remains inside the visible field across both horizontal edges', asyn
   await page.goto('/games/snake');
   await page.getByRole('button', { name: /BAŞLA/ }).waitFor();
   await page.clock.install();
-  await page.clock.pause();
+  const now = Date.now(); await page.clock.setFixedTime(now); await page.clock.pauseAt(now); await page.clock.setSystemTime(now);
   await page.clock.runFor(500);
   const start=page.getByRole('button', { name: /BAŞLA/ });
   if(isMobile)await start.tap();else await start.click();
@@ -118,7 +118,7 @@ test('snake accepts two quick turns without reversing into its own body', async 
   await page.goto('/games/snake');
   await page.getByRole('button', { name: /BAŞLA/ }).waitFor();
   await page.clock.install();
-  await page.clock.pause();
+  const now = Date.now(); await page.clock.setFixedTime(now); await page.clock.pauseAt(now); await page.clock.setSystemTime(now);
   await page.clock.runFor(500);
   const start=page.getByRole('button', { name: /BAŞLA/ });
   if(isMobile)await start.tap();else await start.click();

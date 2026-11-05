@@ -527,55 +527,59 @@ const PianoGame = () => {
       
 
       
-          {/* Başarı mesajı */}
-      <AnimatePresence>
-        {showSuccess && (
-          <motion.div
-            className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-black text-lg"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-          >
-            🎉 Harika! Melodiyi tamamladın!
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Melodi modu göstergesi */}
-      {currentMelody && !showSuccess && (
-        <div className="glass-card p-3 rounded-xl text-center w-full max-w-md neon-border">
-          <p className="font-bold text-sm">{currentMelody.name}</p>
-
-          <div className="flex justify-center gap-2 mt-1">
-            <span className="bg-primary/20 px-2 py-0.5 rounded-full text-xs font-bold text-primary">
-              {playedNotes}/{totalPlayableNotes}
-            </span>
-          </div>
-
-          {/* İlerleme çubuğu */}
-          <div className="w-full h-2 bg-white/10 rounded-full mt-2 overflow-hidden">
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400"
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercent}%` }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            />
-          </div>
-
-          {nextNoteData && (
-            <div className="mt-2 flex items-center justify-center gap-2">
-              <span className="text-xs text-muted-foreground">Sıradaki:</span>
+      {/* Melodi modu ve başarı göstergesi — sabit yükseklik ile piyano tuşlarının kaymasını önler */}
+      {(currentMelody || showSuccess) && (
+        <div className="glass-card p-3 rounded-xl text-center w-full max-w-md neon-border min-h-[124px] flex flex-col items-center justify-center">
+          <AnimatePresence mode="wait">
+            {showSuccess ? (
               <motion.div
-                key={melodyIndex}
-                className="px-4 py-2 rounded-lg text-white font-black text-lg shadow-lg"
-                style={{ backgroundColor: COLORS[nextNoteData.note] || '#666' }}
-                initial={{ scale: 0.5, opacity: 0 }}
+                key="melody-success"
+                className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-black text-lg"
+                initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.85, opacity: 0 }}
               >
-                {nextNoteData.label}
+                🎉 Harika! Melodiyi tamamladın!
               </motion.div>
-            </div>
-          )}
+            ) : currentMelody ? (
+              <motion.div key={currentMelody.name} className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <p className="font-bold text-sm">{currentMelody.name}</p>
+
+                <div className="flex justify-center gap-2 mt-1">
+                  <span className="bg-primary/20 px-2 py-0.5 rounded-full text-xs font-bold text-primary">
+                    {playedNotes}/{totalPlayableNotes}
+                  </span>
+                </div>
+
+                {/* İlerleme çubuğu */}
+                <div className="w-full h-2 bg-white/10 rounded-full mt-2 overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPercent}%` }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  />
+                </div>
+
+                <div className="mt-2 min-h-[44px] flex items-center justify-center gap-2">
+                  {nextNoteData && (
+                    <>
+                      <span className="text-xs text-muted-foreground">Sıradaki:</span>
+                      <motion.div
+                        key={melodyIndex}
+                        className="px-4 py-2 rounded-lg text-white font-black text-lg shadow-lg"
+                        style={{ backgroundColor: COLORS[nextNoteData.note] || '#666' }}
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                      >
+                        {nextNoteData.label}
+                      </motion.div>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
       )}
 

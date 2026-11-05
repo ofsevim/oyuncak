@@ -178,12 +178,12 @@ const MathGame = () => {
   return (
     <motion.div className="flex flex-col items-center gap-5 p-4 pb-[calc(2rem+env(safe-area-inset-bottom,8rem))]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <div className="flex flex-wrap justify-center gap-2">
-        <div className="glass-card px-3 py-1.5 border border-primary/20 rounded-xl"><span className="text-sm font-black text-primary">⭐ {score}</span></div>
-        {streak >= 3 && <motion.div key={streak} initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="glass-card px-3 py-1.5 border border-yellow-500/20 rounded-xl"><span className="text-sm font-black text-yellow-400">🔥 x{Math.min(streak, 5)}</span></motion.div>}
-        <div className={`glass-card px-3 py-1.5 rounded-xl ${timeLeft <= 5 ? 'border border-red-500/30' : ''}`}>
+        <div className="glass-card px-2.5 sm:px-3 py-1.5 border border-primary/20 rounded-xl whitespace-nowrap"><span className="text-sm font-black text-primary">⭐ {score}</span></div>
+        {streak >= 3 && <motion.div key={streak} initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="glass-card px-2.5 sm:px-3 py-1.5 border border-yellow-500/20 rounded-xl whitespace-nowrap"><span className="text-sm font-black text-yellow-400">🔥 x{Math.min(streak, 5)}</span></motion.div>}
+        <div className={`glass-card px-2.5 sm:px-3 py-1.5 rounded-xl whitespace-nowrap ${timeLeft <= 5 ? 'border border-red-500/30' : ''}`}>
           <span className={`text-sm font-black ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-orange-400'}`}>⏱️ {timeLeft}s</span>
         </div>
-        <div className="glass-card px-3 py-1.5 rounded-xl"><span className="text-sm font-bold text-muted-foreground">✓ {correctCount}/{totalQuestions}</span></div>
+        <div className="glass-card px-2.5 sm:px-3 py-1.5 rounded-xl whitespace-nowrap"><span className="text-sm font-bold text-muted-foreground">✓ {correctCount}/{totalQuestions}</span></div>
       </div>
 
       {question && (
@@ -202,11 +202,13 @@ const MathGame = () => {
                 </button>
               ))}
             </div>
-            {showResult && (
-              <motion.p className={`text-xl font-black ${showResult === 'correct' ? 'text-green-400' : 'text-red-400'}`} initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                {showResult === 'correct' ? '🎉 Doğru!' : `😅 Cevap: ${question.answer}`}
-              </motion.p>
-            )}
+            <div className="min-h-7 flex items-center justify-center">
+              {showResult && (
+                <motion.p className={`text-xl font-black ${showResult === 'correct' ? 'text-green-400' : 'text-red-400'}`} initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                  {showResult === 'correct' ? '🎉 Doğru!' : `😅 Cevap: ${question.answer}`}
+                </motion.p>
+              )}
+            </div>
           </motion.div>
         </AnimatePresence>
       )}

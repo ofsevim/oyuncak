@@ -404,15 +404,15 @@ const SnakeGame = () => {
       {/* ── HUD ── */}
       <motion.div className="flex gap-2 items-center flex-wrap justify-center"
         initial={{ y: -15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-        <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-black text-primary">⭐ {score}</span></div>
-        <div className="garden-panel px-4 py-2" style={pill}><span className="text-sm font-bold text-muted-foreground">📏 {snake.length}</span></div>
+        <div className="garden-panel px-3 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" style={pill}><span className="text-sm font-black text-primary">⭐ {score}</span></div>
+        <div className="garden-panel px-3 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" style={pill}><span className="text-sm font-bold text-muted-foreground">📏 {snake.length}</span></div>
         {combo > 1 && (
           <motion.div key={combo} initial={{ scale: 0.5 }} animate={{ scale: [0.5, 1.2, 1] }}
-            className="garden-panel px-4 py-2" style={{ ...pill, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)' }}>
+            className="garden-panel px-3 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" style={{ ...pill, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)' }}>
             <span className="text-sm font-black text-yellow-400">🔥 x{combo}</span>
           </motion.div>
         )}
-        <div className="garden-panel px-4 py-2" style={pill}><span className="text-xs font-bold text-muted-foreground">🏆 {highScore}</span></div>
+        <div className="garden-panel px-3 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" style={pill}><span className="text-xs font-bold text-muted-foreground">🏆 {highScore}</span></div>
       </motion.div>
 
       {/* ── Game Field ── */}

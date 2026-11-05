@@ -422,24 +422,25 @@ const MazeEscapeGame = () => {
         </div>
       </div>
 
-      {/* ── İpucu ── */}
-      <AnimatePresence>
-        {hint && (
-          <motion.p
-            key={hint}
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="text-xs font-bold text-yellow-400 text-center"
-            role="status"
-          >
-            {hint}
-          </motion.p>
-        )}
-      </AnimatePresence>
-
       {/* ── Tahta ── */}
-      <div style={{ width: (boardPx + 16) * boardScale, height: (boardPx + 16) * boardScale, overflow: 'hidden' }}>
+      <div className="relative" style={{ width: (boardPx + 16) * boardScale, height: (boardPx + 16) * boardScale, overflow: 'hidden' }}>
+        {/* ── İpucu — tahta içinde katman olarak çizilir, sayfa düzenini kaydırmaz ── */}
+        <AnimatePresence>
+          {hint && (
+            <div className="absolute inset-x-0 top-2 z-30 flex justify-center pointer-events-none">
+              <motion.p
+                key={hint}
+                initial={{ opacity: 0, y: -8, scale: 0.92 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.92 }}
+                className="whitespace-nowrap text-xs font-bold px-3 py-1 rounded-full bg-slate-950/85 border border-yellow-400/40 text-yellow-300 shadow-lg text-center"
+                role="status"
+              >
+                {hint}
+              </motion.p>
+            </div>
+          )}
+        </AnimatePresence>
         <div
           ref={boardRef}
           role="application"

@@ -243,12 +243,13 @@ const Game2048 = () => {
         </div>
       </div>
 
-      {isNewRecord && gameState === 'playing' && (
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-xs font-black text-yellow-400 animate-pulse">🏆 Yeni Rekor!</motion.div>
-      )}
-
-      {/* Max tile indicator */}
-      <div className="text-xs text-muted-foreground">En büyük: <span className="font-black text-primary">{getMaxTile(grid)}</span></div>
+      {/* Max tile & new record indicator — sabit satır yüksekliği ile tahta kaymasını önler */}
+      <div className="min-h-5 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+        <span>En büyük: <span className="font-black text-primary">{getMaxTile(grid)}</span></span>
+        {isNewRecord && gameState === 'playing' && (
+          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="font-black text-yellow-400 animate-pulse">🏆 Yeni Rekor!</motion.span>
+        )}
+      </div>
 
       {/* Grid */}
       <div className="glass-card p-2.5 neon-border relative" style={{ touchAction: 'none' }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
