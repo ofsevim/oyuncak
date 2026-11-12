@@ -86,5 +86,13 @@
       "uuid": "^11.1.1"
     },
     "postcss-selector-parser": "^7.1.6"
+  },
+  "allowScripts": {
+    "@swc/core@1.16.13": true,
+    "esbuild@0.28.2": true,
+    "@firebase/util@1.15.3": true,
+    "protobufjs@7.6.6": true,
+    "core-js@3.50.0": true,
+    "canvas@3.2.3": true
   }
 }

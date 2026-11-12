@@ -145,7 +145,18 @@ export default function Leaderboard({ gameId, compact = false }: Props) {
                 <div className="flex items-center justify-center py-6">
                   <div className="w-6 h-6 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
                 </div>
-              ) : error ? (<p role="status" className="text-center text-sm text-amber-300 py-4">{error}</p>) : entries.length === 0 ? (
+              ) : error ? (
+                <p role="status" className="text-center text-sm text-amber-300 py-4">
+                  {error}{' '}
+                  <button
+                    type="button"
+                    onClick={() => setRefresh((value) => value + 1)}
+                    className="underline"
+                  >
+                    Tekrar dene
+                  </button>
+                </p>
+              ) : entries.length === 0 ? (
                 <p className="text-center text-sm text-white/30 py-4">Henüz skor yok — ilk rekoru sen kır!</p>
               ) : (
                 <>

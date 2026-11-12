@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import type { GameDefinition } from '@/data/gameCatalog';
 import GameArtwork from './GameArtwork';
@@ -17,7 +18,7 @@ export default function GameWorkspace({ game, onBack, children }: Props) {
         <button type="button" onClick={onBack} className="garden-play-back" aria-label="Oyunlara Dön">
           <ArrowLeft size={16} aria-hidden="true" /><span>Oyunlara Dön</span>
         </button>
-        <a href="/" className="garden-play-wordmark" aria-label="Oyuncak ana sayfa">oyuncak<span>.</span></a>
+        <Link to="/" className="garden-play-wordmark" aria-label="Oyuncak ana sayfa">oyuncak<span>.</span></Link>
       </header>
       <div className="garden-play-intro">
         <div className="garden-play-art" aria-hidden="true"><GameArtwork id={game.id} /></div>

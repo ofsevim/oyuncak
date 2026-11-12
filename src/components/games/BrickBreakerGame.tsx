@@ -440,16 +440,32 @@ const BrickBreakerGame = () => {
   // Tuval boyutunu ekrana göre ölçeklendir
   useEffect(() => {
     const updateScale = () => {
+      const prevCW = CW;
       // Tahta genişliği değiştiyse (masaüstü <-> mobil eşiği) ölçüleri tazele
       if (refreshBoardMetrics()) {
-        paddleRef.current.x = CW / 2;
-        paddleRef.current.targetX = CW / 2;
-        paddleRef.current.w = paddleRef.current.isWide ? WIDE_PADDLE_W : BASE_PADDLE_W;
+        const ratio = CW / prevCW;
+        const paddleWidth = paddleRef.current.isWide ? WIDE_PADDLE_W : BASE_PADDLE_W;
+        const halfPaddle = paddleWidth / 2;
+        paddleRef.current.w = paddleWidth;
+        paddleRef.current.x = Math.max(halfPaddle, Math.min(CW - halfPaddle, paddleRef.current.x * ratio));
+        paddleRef.current.targetX = Math.max(halfPaddle, Math.min(CW - halfPaddle, paddleRef.current.targetX * ratio));
         ballsRef.current = ballsRef.current.map((ball) => ({
           ...ball,
-          x: Math.max(ball.radius, Math.min(CW - ball.radius, ball.x)),
+          x: Math.max(ball.radius, Math.min(CW - ball.radius, ball.x * ratio)),
         }));
-        bricksRef.current = createBricksForLevel(levelRef.current);
+        bricksRef.current = bricksRef.current.map((brick) => ({
+          ...brick,
+          x: brick.x * ratio,
+          w: brick.w * ratio,
+        }));
+        powerUpsRef.current = powerUpsRef.current.map((powerUp) => ({
+          ...powerUp,
+          x: Math.max(12, Math.min(CW - 12, powerUp.x * ratio)),
+        }));
+        lasersRef.current = lasersRef.current.map((laser) => ({
+          ...laser,
+          x: Math.max(2, Math.min(CW - 2, laser.x * ratio)),
+        }));
         setBoardWidth(CW);
       }
       // lg ve üzeri genişliklerde yan panel (~224px) + boşluk için yer ayır

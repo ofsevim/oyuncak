@@ -36,31 +36,18 @@ export async function run() {
   );
 
   const scoreIdSources = await Promise.all(
-    [
-      "src/components/games/BalloonPopGame.tsx",
-      "src/components/games/WhackAMoleGame.tsx",
-      "src/components/games/OddOneOutGame.tsx",
-      "src/components/games/MemoryFlipGame.tsx",
-      "src/components/games/RunnerGame.tsx",
-      "src/components/games/SnakeGame.tsx",
-      "src/components/games/TetrisGame.tsx",
-      "src/components/games/BasketballGame.tsx",
-      "src/components/games/PianoGame.tsx",
-      "src/components/games/MathGame.tsx",
-      "src/components/games/CountingGame.tsx",
-      "src/components/games/ShapeMatchGame.tsx",
-      "src/components/games/SimonSaysGame.tsx",
-      "src/components/games/CodingTurtleGame.tsx",
-      "src/components/games/SpaceShooterGame.tsx",
-      "src/components/games/Game2048.tsx",
-    ].map((relativePath) => readFile(path.join(root, relativePath), "utf8")),
+    GAME_CATALOG.map((game) =>
+      readFile(path.join(root, "src/components/games", `${game.component}.tsx`), "utf8"),
+    ),
   );
 
   const scoreIds = sortValues(
     scoreIdSources.flatMap((source) => [
-      ...extractMatches(source, /Leaderboard gameId="([^"]+)"/g),
+      ...extractMatches(source, /Leaderboard\s+gameId="([^"]+)"/g),
       ...extractMatches(source, /getHighScore\('([^']+)'\)/g),
-      ...extractMatches(source, /saveHighScoreObj\('([^']+)'\)/g),
+      ...extractMatches(source, /saveHighScoreObj\('([^']+)'/g),
+      ...extractMatches(source, /useHighScore\('([^']+)'\)/g),
+      ...extractMatches(source, /const\s+GAME_ID\s*=\s*'([^']+)'/g),
     ]),
   );
 

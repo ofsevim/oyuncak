@@ -12,7 +12,12 @@ import GameWorkspace from './GameWorkspace';
 import GameArtwork from './GameArtwork';
 import { isGameRouteId, type GameRouteId } from '@/constants/gameIds';
 
-const modules = import.meta.glob('./*.tsx');
+const modules = import.meta.glob([
+  './*.tsx',
+  '!./GamesMenu.tsx',
+  '!./GameWorkspace.tsx',
+  '!./GameArtwork.tsx',
+]);
 const gameComponents = Object.fromEntries(GAME_CATALOG.map((game) => [
   game.id, lazy(modules['./' + game.component + '.tsx'] as () => Promise<{ default: ComponentType }>),
 ])) as Record<GameRouteId, LazyExoticComponent<ComponentType>>;

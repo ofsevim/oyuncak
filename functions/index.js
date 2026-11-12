@@ -109,6 +109,7 @@ export const updateScoreNickname = onCall(CALLABLE_OPTIONS, async (request) => {
     updated += 1;
   }
 
-  if (updated > 0) await batch.commit();
+  // Always commit so profiles/${uid} is updated even before the player has leaderboard entries.
+  await batch.commit();
   return { updated };
 });
