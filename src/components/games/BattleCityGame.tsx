@@ -5,6 +5,7 @@ import useHighScore from '@/hooks/useHighScore';
 import Leaderboard from '@/components/Leaderboard';
 import { GAME_ACTIVITY_EVENT, isGamePaused } from '@/utils/gameActivity';
 import { isMuted } from '@/utils/soundEffects';
+import { extractBattleCityGameOverScore, isTrustedBattleCityMessage } from './battleCityLogic';
 
 interface BattleCityGameProps {
     onActiveGameChange?: (active: boolean) => void;
@@ -46,12 +47,9 @@ const BattleCityGame = ({ onActiveGameChange }: BattleCityGameProps) => {
     /* ── Skor köprüsü: iframe oyun sonunda skoru bildirir → kaydet + rekoru duyur ── */
     useEffect(() => {
         const onMessage = (e: MessageEvent) => {
-            if (e.source !== iframeRef.current?.contentWindow) return;
-            if (e.origin !== getBattleCityOrigin()) return;
-            const data = e.data;
-            if (!data || data.type !== 'battlecity:gameover') return;
-            const score = typeof data.score === 'number' ? Math.floor(data.score) : 0;
-            if (score <= 0) return;
+            if (!isTrustedBattleCityMessage(e.source, iframeRef.current?.contentWindow, e.origin, getBattleCityOrigin())) return;
+            const score = extractBattleCityGameOverScore(e.data);
+            if (score === null) return;
             const isNewRecord = checkAndSave(score);
             if (isNewRecord) {
                 toast.success(`🏆 Yeni rekor: ${score} puan!`);

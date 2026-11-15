@@ -10,7 +10,7 @@ test.beforeEach(async ({ context }) => {
   await context.route(/googleapis\.com|firebaseio\.com/, route => route.abort());
 });
 
-test('capture brick-breaker playing screenshot', async ({ page }) => {
+test('capture brick-breaker playing screenshot', async ({ page }, testInfo) => {
   await page.goto('/games/brick-breaker');
   const startBtn = page.getByRole('button', { name: /Oyunu Başlat|BAŞLA|Başlat|Oyna/ }).first();
   // Oyun paketi lazy yüklenir; tam süit yükü altında varsayılan 5 sn yetmeyebilir.
@@ -18,5 +18,5 @@ test('capture brick-breaker playing screenshot', async ({ page }) => {
   await startBtn.click();
   await expect(page.locator('.garden-game-content canvas')).toBeVisible();
   await page.waitForTimeout(600);
-  await page.screenshot({ path: 'test-results/brick-breaker-playing.png' });
+  await page.screenshot({ path: testInfo.outputPath('brick-breaker-playing.png') });
 });

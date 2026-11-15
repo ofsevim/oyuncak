@@ -90,11 +90,20 @@ try {
   console.log('PASS real permission failure preserves local score and later retry delivers it');
 
   const beforeRename = (await getDoc(ref('counting'))).data();
+  const profileRef = doc(db, 'profiles', 'integration-owner');
+  let nicknameEvents = 0;
+  globalThis.window.addEventListener('oyuncak:nickname-changed', () => { nicknameEvents += 1; });
   await service.updateNicknameInScores('Gece Oyuncusu');
-  assert.equal((await getDoc(doc(db,'profiles','integration-owner'))).data().name,'Gece Oyuncusu');
+  const renamedProfile = (await getDoc(profileRef)).data();
+  assert.equal(renamedProfile.name,'Gece Oyuncusu');
   for (const game of ['math','snake','counting']) {
-    assert.equal((await getDoc(ref(game))).data().name,'Gece Oyuncusu','nickname reaches every existing leaderboard immediately after scoring');
+    const renamedScore = (await getDoc(ref(game))).data();
+    assert.equal(renamedScore.name,'Gece Oyuncusu','nickname reaches every existing leaderboard immediately after scoring');
+    assert.ok(renamedScore.updatedAt.isEqual(renamedProfile.updatedAt), 'profile and leaderboards are written in one commit');
   }
+  assert.equal(nicknameEvents, 1, 'leaderboards refresh once after the commit');
+  await service.updateNicknameInScores('Gece Oyuncusu');
+  assert.equal(nicknameEvents, 1, 'saving only an avatar does not write or refresh an unchanged nickname');
   const afterRename = (await getDoc(ref('counting'))).data();
   for (const key of ['uid','gameId','score','date']) assert.equal(afterRename[key],beforeRename[key],'renaming preserves score metadata');
   assert.equal((await getDoc(ref('runner'))).exists(),false,'renaming never creates a score');
@@ -103,7 +112,11 @@ try {
 
   const legacy = {uid:'integration-owner',name:'Eski Oyuncu',score:123,date:'2025-01-01',updatedAt:Timestamp.fromMillis(0)};
   await environment.withSecurityRulesDisabled(async context => {
-    await setDoc(doc(context.firestore(),'scores','runner','leaderboard','integration-owner'),legacy);
+    const adminDb = context.firestore();
+    const past = Timestamp.fromMillis(Date.now() - 5_000);
+    await setDoc(doc(adminDb, 'scores', 'runner', 'leaderboard', 'integration-owner'), legacy);
+    await setDoc(doc(adminDb, 'profiles', 'integration-owner'), { updatedAt: past }, { merge: true });
+    await Promise.all(['math', 'snake', 'counting'].map(game => setDoc(doc(adminDb, 'scores', game, 'leaderboard', 'integration-owner'), { updatedAt: past }, { merge: true })));
   });
   await service.updateNicknameInScores('Yeni Oyuncu');
   const migrated = (await getDoc(ref('runner'))).data();
@@ -124,6 +137,12 @@ try {
   await assert.rejects(service.updateNicknameInScores('Başka Kullanıcı'),error=>error.code==='permission-denied');
   assert.equal((await getDoc(ref('runner'))).data().name,'Yeni Oyuncu','failed or unauthorized renames never overwrite the owner');
   globalThis.__scoreIntegration.uid='integration-owner';
+  await environment.withSecurityRulesDisabled(async context => {
+    const adminDb = context.firestore();
+    const past = Timestamp.fromMillis(Date.now() - 5_000);
+    await setDoc(doc(adminDb, 'profiles', 'integration-owner'), { updatedAt: past }, { merge: true });
+    await Promise.all(['math', 'snake', 'counting', 'runner'].map(game => setDoc(doc(adminDb, 'scores', game, 'leaderboard', 'integration-owner'), { updatedAt: past }, { merge: true })));
+  });
   await service.updateNicknameInScores('Son Oyuncu');
   assert.equal((await getDoc(ref('runner'))).data().name,'Son Oyuncu','retry after a real failure updates the existing record');
   service.setPlayerPreferences({shareScores:false});

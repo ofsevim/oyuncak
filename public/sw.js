@@ -17,6 +17,7 @@ const OFFLINE_URL = new URL('offline.html', BASE).pathname;
 const ASSETS_TO_CACHE = [
     BASE,
     new URL('index.html', BASE).pathname,
+    new URL('bootstrap.js', BASE).pathname,
     new URL('manifest.json', BASE).pathname,
     new URL('favicon.png', BASE).pathname,
     new URL('icon-192.png', BASE).pathname,

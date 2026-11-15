@@ -47,19 +47,19 @@
       margin: 0 0 1.5rem 0;
     }
 
-    button {
+    .retry {
+      display: inline-block;
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
       color: #fff;
-      border: none;
       padding: 0.75rem 2rem;
       border-radius: 999px;
       font-size: 1rem;
       font-weight: 600;
-      cursor: pointer;
+      text-decoration: none;
       box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
     }
 
-    button:hover {
+    .retry:hover {
       transform: translateY(-1px);
     }
   </style>
@@ -70,7 +70,7 @@
     <div class="icon" aria-hidden="true">📡</div>
     <h1>Çevrimdışısın</h1>
     <p>İnternet bağlantın şu anda yok. Bağlantı sağlanınca Oyuncak tekrar hazır olacak.</p>
-    <button type="button" onclick="location.reload()">Tekrar Dene</button>
+    <a class="retry" href="">Tekrar Dene</a>
   </main>
 </body>
 

@@ -16,6 +16,27 @@ import { IS_MOBILE } from '@/utils/platform';
 import Leaderboard from '@/components/Leaderboard';
 import { planPhysicsFrame } from './runner/runnerTiming';
 
+function safeRoundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, w, h, r);
+    return;
+  }
+  const radius = Math.max(0, Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2));
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+}
+
 /* ═══════════════════════════════════════════
    TYPES
    ═══════════════════════════════════════════ */
@@ -1183,13 +1204,13 @@ const BrickBreakerGame = () => {
 
         // Yuvarlatılmış dikdörtgen
         ctx.beginPath();
-        ctx.roundRect(0, 0, b.w, b.h, 5);
+        safeRoundRect(ctx, 0, 0, b.w, b.h, 5);
         ctx.fill();
 
         // Üst parlama çizgisi
         ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
         ctx.beginPath();
-        ctx.roundRect(3, 2, b.w - 6, 4, 2);
+        safeRoundRect(ctx, 3, 2, b.w - 6, 4, 2);
         ctx.fill();
 
         // Özel ikonlar / çatlaklar
@@ -1227,7 +1248,7 @@ const BrickBreakerGame = () => {
         ctx.shadowColor = cfg.color;
         ctx.shadowBlur = 10;
         ctx.beginPath();
-        ctx.roundRect(-14, -10, 28, 20, 10);
+        safeRoundRect(ctx, -14, -10, 28, 20, 10);
         ctx.fill();
 
         // İç ikon
@@ -1349,13 +1370,13 @@ const BrickBreakerGame = () => {
 
       ctx.fillStyle = pGrad;
       ctx.beginPath();
-      ctx.roundRect(pLeft, p.y, p.w, p.h, 7);
+      safeRoundRect(ctx, pLeft, p.y, p.w, p.h, 7);
       ctx.fill();
 
       // Raket üzerindeki parlak orta şerit
       ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.beginPath();
-      ctx.roundRect(pLeft + p.w * 0.2, p.y + 2, p.w * 0.6, 3, 2);
+      safeRoundRect(ctx, pLeft + p.w * 0.2, p.y + 2, p.w * 0.6, 3, 2);
       ctx.fill();
 
       // Lazer namluları

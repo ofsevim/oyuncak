@@ -69,6 +69,7 @@ const BasketballGame = () => {
     const [selectedBall, setSelectedBall] = useState('basketball');
     const [highScore, setHighScore] = useState(() => getHighScore('basketball'));
     const [isNewRecord, setIsNewRecord] = useState(false);
+    const isNewRecordRef = useRef(false);
 
     const floatMsgsRef = useRef<FloatMsg[]>([]);
 
@@ -96,7 +97,7 @@ const BasketballGame = () => {
         lastTimeRef.current = 0;
         lastRenderTimeRef.current = 0;
         physicsAccumulatorRef.current = 0;
-        setScore(0); setBallsLeft(BALLS_PER_ROUND); setCombo(0); setLevel(1); setIsNewRecord(false);
+        setScore(0); setBallsLeft(BALLS_PER_ROUND); setCombo(0); setLevel(1); isNewRecordRef.current = false; setIsNewRecord(false);
         resetBall(); phaseRef.current = 'aim'; setPhase('aim');
     }, [resetBall]);
 
@@ -488,7 +489,7 @@ const BasketballGame = () => {
                 if (scoreRef.current >= target) {
                     const currentTotal = scoreRef.current;
                     const isNew = saveHighScoreObj('basketball', currentTotal);
-                    if (isNew) { setHighScore(currentTotal); setIsNewRecord(true); }
+                    if (isNew) { isNewRecordRef.current = true; setHighScore(currentTotal); setIsNewRecord(true); }
 
                     const nextLevel = levelRef.current + 1;
                     levelRef.current = nextLevel;
@@ -507,15 +508,20 @@ const BasketballGame = () => {
                     }, 2200);
                 } else {
                     // Başarısız: Baraj geçilemedi, OYUN BİTTİ
-                    setIsNewRecord(false);
                     const finalTotal = scoreRef.current;
                     const isNew = saveHighScoreObj('basketball', finalTotal);
                     if (isNew) {
+                        isNewRecordRef.current = true;
                         setHighScore(finalTotal);
                         setIsNewRecord(true);
                         playNewRecordSound();
                         fireConfetti({ particleCount: 150, spread: 90 });
+                    } else if (isNewRecordRef.current) {
+                        setHighScore((prev) => Math.max(prev, finalTotal));
+                        setIsNewRecord(true);
+                        playNewRecordSound();
                     } else {
+                        setIsNewRecord(false);
                         playErrorSound();
                     }
                     phaseRef.current = 'gameover';

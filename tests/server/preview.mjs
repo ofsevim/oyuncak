@@ -2,6 +2,9 @@ import http from 'node:http';
 import path from 'node:path';
 import { readFile, stat } from 'node:fs/promises';
 const root = path.resolve(process.env.PREVIEW_ROOT || 'dist');
+const headers = await readFile(path.join(root, '_headers'), 'utf8');
+const csp = headers.match(/^\s*Content-Security-Policy: (.+)$/m)?.[1];
+if (!csp) throw new Error('Missing production Content-Security-Policy');
 const mime = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.json':'application/json', '.png':'image/png', '.webp':'image/webp', '.svg':'image/svg+xml', '.ico':'image/x-icon', '.ogg':'audio/ogg', '.ttf':'font/ttf', '.woff2':'font/woff2' };
 http.createServer(async (req, res) => {
   try {
@@ -17,7 +20,11 @@ http.createServer(async (req, res) => {
     if (info?.isDirectory()) { file = path.join(file, 'index.html'); info = await stat(file).catch(() => null); }
     if (!info) file = path.join(root, 'index.html');
     const body = await readFile(file);
-    res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
+    res.writeHead(200, {
+      'Content-Type': mime[path.extname(file)] || 'application/octet-stream',
+      'Cache-Control': 'no-cache',
+      'Content-Security-Policy': csp,
+    });
     res.end(body);
   } catch { res.writeHead(500); res.end(); }
 }).listen(Number(process.env.PORT || 4173), '127.0.0.1');

@@ -57,7 +57,7 @@
       "url": "/games",
       "icons": [
         {
-          "src": "/favicon.png",
+          "src": "/icon-192.png",
           "sizes": "192x192"
         }
       ]
@@ -67,7 +67,7 @@
       "url": "/draw",
       "icons": [
         {
-          "src": "/favicon.png",
+          "src": "/icon-192.png",
           "sizes": "192x192"
         }
       ]

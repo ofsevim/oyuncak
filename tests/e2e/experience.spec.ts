@@ -24,6 +24,30 @@ test('home, discovery and parent links work without bootstrap errors', async ({ 
   expect(errors).toEqual([]);
 });
 
+test('production CSP allows the screen font stylesheet', async ({ page, context }) => {
+  await context.route('https://fonts.googleapis.com/**', (route) => route.fulfill({ contentType: 'text/css', body: 'body {}' }));
+  await page.goto('/');
+  await expect(page.locator('#google-fonts-css')).toHaveAttribute('media', 'all');
+});
+
+test('production CSP allows the external legacy entry', async ({ page, request }) => {
+  await page.goto('/');
+  const legacyEntry = page.locator('script#vite-legacy-entry[nomodule][data-src]');
+  await expect(legacyEntry).toHaveAttribute('src', /\/assets\/.+\.js$/);
+  const legacyScript = await request.get((await legacyEntry.getAttribute('src'))!);
+  expect(legacyScript.ok()).toBe(true);
+  expect(await legacyScript.text()).toContain('System.import(');
+});
+
+test('production CSP allows retrying an offline document', async ({ page }) => {
+  await page.goto('/offline.html?from=game');
+  const originalUrl = page.url();
+  await Promise.all([
+    page.waitForRequest((request) => request.isNavigationRequest() && request.url() === originalUrl, { timeout: 5000 }),
+    page.getByText('Tekrar Dene', { exact: true }).click(),
+  ]);
+});
+
 test('game pauses, resumes and appears in recent games', async ({ page }) => {
   await page.goto('/games/math');
   await expect(page.getByRole('heading', { name: /Matematik/ }).first()).toBeVisible();
@@ -66,14 +90,20 @@ test('favorites and parent preferences persist after reload', async ({ page }, t
   await page.reload();
   await expect(page.getByRole('button', { name: 'Matematik favorilerden çıkar' })).toHaveAttribute('aria-pressed', 'true');
   await page.goto('/parents');
-  await page.getByLabel('Ayarları açmak için: 7 × 3 kaç eder?').fill('21');
-  await page.getByRole('button', { name: 'Ayarları aç', exact: true }).click();
+  const unlockParents = async () => {
+    const input = page.getByLabel(/Ayarları açmak için:/);
+    const labelText = await page.locator('label[for="parent-answer"]').textContent();
+    const match = labelText?.match(/(\d+)\s*×\s*(\d+)/);
+    const expected = match ? String(Number(match[1]) * Number(match[2])) : '21';
+    await input.fill(expected);
+    await page.getByRole('button', { name: 'Ayarları aç', exact: true }).click();
+  };
+  await unlockParents();
   await page.getByLabel('Animasyonları azalt').check();
   await page.getByRole('combobox', { name: 'Mola hatırlatıcısı' }).selectOption('15');
   await page.reload();
   await expect(page.locator('html')).toHaveClass(/reduced-motion/);
-  await page.getByLabel('Ayarları açmak için: 7 × 3 kaç eder?').fill('21');
-  await page.getByRole('button', { name: 'Ayarları aç', exact: true }).click();
+  await unlockParents();
   await expect(page.getByRole('combobox', { name: 'Mola hatırlatıcısı' })).toHaveValue('15');
   await expect(page.getByLabel('Global skor paylaşımı')).not.toBeChecked();
 });

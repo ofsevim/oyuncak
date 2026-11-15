@@ -3,26 +3,16 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSuccessSound, playErrorSound, playComboSound } from '@/utils/soundEffects';
 import { fireConfetti } from '@/utils/confettiUtil';
-import { shuffleArray } from '@/utils/shuffle';
 import { useHighScore } from '@/hooks/useHighScore';
 import { useSafeTimeouts } from '@/hooks/useSafeTimeouts';
 import Leaderboard from '@/components/Leaderboard';
-
-type Operation = '+' | '-' | '×';
-type Difficulty = 'easy' | 'medium' | 'hard';
-type QuestionType = 'normal' | 'reverse' | 'compare';
-
-interface Question {
-  display: string;
-  answer: number;
-  type: QuestionType;
-}
-
-const DIFFICULTIES: { id: Difficulty; label: string; range: [number, number]; ops: Operation[]; types: QuestionType[]; timer: number }[] = [
-  { id: 'easy', label: '🌟 Kolay (1-10)', range: [1, 10], ops: ['+'], types: ['normal'], timer: 20 },
-  { id: 'medium', label: '⭐ Orta (1-20)', range: [1, 20], ops: ['+', '-'], types: ['normal', 'reverse'], timer: 15 },
-  { id: 'hard', label: '🔥 Zor (1-50)', range: [1, 50], ops: ['+', '-', '×'], types: ['normal', 'reverse', 'compare'], timer: 12 },
-];
+import {
+  type Difficulty,
+  type Question,
+  DIFFICULTIES,
+  getDifficultyConfig,
+  generateMathQuestion,
+} from './mathLogic';
 
 const MathGame = () => {
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
@@ -43,64 +33,15 @@ const MathGame = () => {
   const timeLeftRef = useRef<number>(15);
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
-  const getDiffConfig = useCallback(() => DIFFICULTIES.find(d => d.id === difficulty) ?? DIFFICULTIES[0], [difficulty]);
+  const getDiffConfig = useCallback(() => getDifficultyConfig(difficulty), [difficulty]);
 
   const generateQuestion = useCallback(() => {
-    const config = getDiffConfig();
-    const [min, max] = config.range;
-    const operation = config.ops[Math.floor(Math.random() * config.ops.length)];
-    const qType = config.types[Math.floor(Math.random() * config.types.length)];
-
-    let num1 = Math.floor(Math.random() * (max - min + 1)) + min;
-    let num2 = Math.floor(Math.random() * (max - min + 1)) + min;
-    let answer: number;
-    let display: string;
-
-    if (operation === '×') {
-      num1 = Math.floor(Math.random() * 10) + 1;
-      num2 = Math.floor(Math.random() * 10) + 1;
-    }
-    if (operation === '-' && num2 > num1) [num1, num2] = [num2, num1];
-
-    answer = operation === '+' ? num1 + num2 : operation === '-' ? num1 - num2 : num1 * num2;
-
-    if (qType === 'reverse') {
-      // ? op num2 = answer format
-      display = `? ${operation} ${num2} = ${answer}`;
-      answer = num1;
-    } else if (qType === 'compare') {
-      // Compare: doğru cevap gerçek sonuç, farklı görünüm
-      display = `${num1} ${operation} ${num2} = 🔍?`;
-      // answer zaten satır 61'de doğru hesaplandı
-      // Simplified: compare type shows result vs a close number
-      const offset = Math.floor(Math.random() * 4) + 1;
-      const wrongAnswers2: number[] = [answer + offset, answer - offset, answer + offset * 2].filter(w => w !== answer && w >= 0);
-      let fillAttempts = 0;
-      while (wrongAnswers2.length < 3 && fillAttempts < 10) {
-        wrongAnswers2.push(answer + wrongAnswers2.length + 1 + fillAttempts);
-        fillAttempts++;
-      }
-      setQuestion({ display, answer, type: qType });
-      setOptions(shuffleArray([answer, ...wrongAnswers2.slice(0, 3)]));
-      setShowResult(null);
-      setTimeLeft(config.timer);
-      return;
-    } else {
-      display = `${num1} ${operation} ${num2} = ?`;
-    }
-
-    const wrongAnswers: number[] = [];
-    while (wrongAnswers.length < 3) {
-      const offset = Math.floor(Math.random() * 10) - 5;
-      const wrong = answer + offset;
-      if (wrong !== answer && wrong >= 0 && !wrongAnswers.includes(wrong)) wrongAnswers.push(wrong);
-    }
-
-    setQuestion({ display, answer, type: qType });
-    setOptions(shuffleArray([answer, ...wrongAnswers]));
+    const generated = generateMathQuestion(difficulty);
+    setQuestion(generated.question);
+    setOptions(generated.options);
     setShowResult(null);
-    setTimeLeft(config.timer);
-  }, [getDiffConfig]);
+    setTimeLeft(generated.timer);
+  }, [difficulty]);
 
   const startGame = () => {
     setGameStarted(true); setScore(0); setStreak(0);

@@ -12,38 +12,31 @@ interface SuccessPopupProps {
 
 const SuccessPopup = ({ isOpen, onClose, message = 'Tebrikler!', level }: SuccessPopupProps) => {
   useEffect(() => {
-    if (isOpen) {
-      const duration = 2000;
-      const animationEnd = Date.now() + duration;
-      const colors = ['#4FC3F7', '#FFD54F', '#81C784', '#F48FB1', '#B39DDB'];
+    if (!isOpen) return;
 
-      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+    fireConfetti({
+      particleCount: 55,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#4FC3F7', '#FFD54F', '#81C784', '#F48FB1', '#B39DDB'],
+    });
 
-      const interval = setInterval(() => {
-        const timeLeft = animationEnd - Date.now();
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          return;
-        }
-
-        fireConfetti({
-          particleCount: 4,
-          angle: randomInRange(55, 125),
-          spread: randomInRange(50, 70),
-          origin: { x: randomInRange(0.1, 0.9), y: randomInRange(0.1, 0.5) },
-          colors: colors,
-        });
-      }, 50);
-
-      const timeout = setTimeout(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
         onClose();
-      }, 3000);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
 
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
-      };
-    }
+    const timeout = setTimeout(() => {
+      onClose();
+    }, 3000);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      clearTimeout(timeout);
+    };
   }, [isOpen, onClose]);
 
   return (
@@ -57,6 +50,9 @@ const SuccessPopup = ({ isOpen, onClose, message = 'Tebrikler!', level }: Succes
           onClick={onClose}
         >
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="success-popup-title"
             className="card-playful p-8 md:p-12 text-center max-w-md mx-4 max-h-[90vh] overflow-y-auto"
             initial={{ scale: 0.3, opacity: 0, y: 50 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -77,6 +73,7 @@ const SuccessPopup = ({ isOpen, onClose, message = 'Tebrikler!', level }: Succes
             </div>
 
             <motion.h2
+              id="success-popup-title"
               className="text-3xl md:text-4xl font-extrabold text-foreground mb-4"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { playPopSound, playSuccessSound } from '@/utils/soundEffects';
 import DrawingGallery from './DrawingGallery';
 import { saveDrawing } from '@/utils/drawingStore';
+import { triggerFileDownload } from '@/utils/download';
 import { fireConfetti } from '@/utils/confettiUtil';
 import { toast } from 'sonner';
 import { BRUSHES, COLORS, RAINBOW, SPACING, STAMP_FN, STICKERS, type BrushId } from './drawing/brushes';
@@ -448,10 +449,7 @@ const DrawingCanvas = () => {
 
   const handleDownload = useCallback(() => {
     const dataUrl = getMergedDataUrl();
-    const link = document.createElement('a');
-    link.download = 'benim-resmim.png';
-    link.href = dataUrl;
-    link.click();
+    triggerFileDownload(dataUrl, 'benim-resmim.png');
   }, [getMergedDataUrl]);
 
   /* ═══════════════════════════════════════════

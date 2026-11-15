@@ -2,13 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { sanitizeNickname, MAX_NICKNAME_LENGTH } from '@/lib/utils';
+import { AVATARS, useProfile } from '@/contexts/ProfileContext';
 
 const NICKNAME_KEY = 'oyuncak.nickname';
 const ASKED_KEY = 'oyuncak.nickname.asked';
 
 export default function NicknameModal() {
+  const { profile, updateProfile } = useProfile();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
+  const [avatarId, setAvatarId] = useState(profile?.avatarId || AVATARS[0].id);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -79,16 +82,22 @@ export default function NicknameModal() {
 
   useEffect(() => {
     const handleOpenRequest = () => {
-      try { setName(localStorage.getItem(NICKNAME_KEY) || ''); } catch { setName(''); }
+      try {
+        setName(profile?.name || localStorage.getItem(NICKNAME_KEY) || '');
+      } catch {
+        setName(profile?.name || '');
+      }
+      setAvatarId(profile?.avatarId || AVATARS[0].id);
       setOpen(true);
     };
     window.addEventListener('oyuncak:open-nickname-modal', handleOpenRequest);
     return () => window.removeEventListener('oyuncak:open-nickname-modal', handleOpenRequest);
-  }, []);
+  }, [profile]);
 
   const syncName = async (safeName: string) => {
     try {
       const { updateNicknameInScores } = await import('@/services/scoreService');
+      if (localStorage.getItem(NICKNAME_KEY) !== safeName) return;
       await updateNicknameInScores(safeName);
     } catch {
       toast.error('Takma adın cihazda kaydedildi; bulut güncellenemedi.', {
@@ -106,7 +115,7 @@ export default function NicknameModal() {
       toast.error('Takma ad kaydedilemedi. Tarayıcı depolama iznini kontrol edebilirsin.');
       return;
     }
-    window.dispatchEvent(new CustomEvent('oyuncak:nickname-changed', { detail: safeName }));
+    updateProfile(safeName, avatarId);
     setOpen(false);
     await syncName(safeName);
   };
@@ -147,9 +156,30 @@ export default function NicknameModal() {
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.8, y: 30 }}
           >
-            <span className="text-5xl block mb-3" aria-hidden="true">🎮</span>
+            <span className="text-5xl block mb-3" aria-hidden="true">
+              {(AVATARS.find((a) => a.id === avatarId) ?? AVATARS[0]).emoji}
+            </span>
             <h2 id="nickname-title" className="text-xl font-black text-white mb-1">Takma Adını Seç!</h2>
-            <p id="nickname-desc" className="text-sm text-white/50 mb-5">Gerçek adın yerine eğlenceli bir takma ad seç. Skor paylaşımı açıksa bu ad herkese görünür.</p>
+            <p id="nickname-desc" className="text-sm text-white/50 mb-4">Gerçek adın yerine eğlenceli bir takma ad seç. Skor paylaşımı açıksa bu ad herkese görünür.</p>
+            <div className="flex flex-wrap justify-center gap-1.5 mb-4" role="radiogroup" aria-label="Avatar seçimi">
+              {AVATARS.map((avatar) => (
+                <button
+                  key={avatar.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={avatarId === avatar.id}
+                  aria-label={avatar.name}
+                  onClick={() => setAvatarId(avatar.id)}
+                  className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all ${
+                    avatarId === avatar.id
+                      ? 'bg-purple-500/40 ring-2 ring-purple-400 scale-110'
+                      : 'bg-white/5 hover:bg-white/10'
+                  }`}
+                >
+                  {avatar.emoji}
+                </button>
+              ))}
+            </div>
             <input
               ref={inputRef}
               type="text"

@@ -31,14 +31,27 @@ try {
   await assertSucceeds(getDoc(score(guest)));
   await assertFails(updateDoc(score(owner), { score: 49, updatedAt: serverTimestamp() }));
   await assertFails(updateDoc(score(owner), { score: 60, updatedAt: serverTimestamp() }));
-  await assertSucceeds(updateDoc(score(owner), { name: 'Yeni Rumuz', updatedAt: serverTimestamp() }));
-  // Aynı skor + aynı ad pencereyi atlatamaz; ad değişince geçer.
+  // 3s cooldown applies to name-only updates immediately after create.
   await assertFails(updateDoc(score(owner), { name: 'Yeni Rumuz', updatedAt: serverTimestamp() }));
+  await env.withSecurityRulesDisabled(async (context) => {
+    await updateDoc(score(context.firestore()), { updatedAt: Timestamp.fromMillis(Date.now() - 5_000) });
+  });
+  await assertSucceeds(updateDoc(score(owner), { name: 'Yeni Rumuz', updatedAt: serverTimestamp() }));
+  // Same name or rapid rename within 3s must fail; whitespace-only name and invalid date must fail.
+  await assertFails(updateDoc(score(owner), { name: 'Yeni Rumuz', updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(score(owner), { name: 'Başka Rumuz', updatedAt: serverTimestamp() }));
+  await env.withSecurityRulesDisabled(async (context) => {
+    await updateDoc(score(context.firestore()), { updatedAt: Timestamp.fromMillis(Date.now() - 5_000) });
+  });
+  await assertFails(updateDoc(score(owner), { name: '   ', updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(score(owner), { name: 'Başka Rumuz', date: '1.1', updatedAt: serverTimestamp() }));
   await assertSucceeds(updateDoc(score(owner), { name: 'Başka Rumuz', updatedAt: serverTimestamp() }));
   await env.withSecurityRulesDisabled(async (context) => {
     await updateDoc(score(context.firestore()), { updatedAt: Timestamp.fromMillis(Date.now() - 20_000) });
   });
+  await assertFails(updateDoc(score(owner), { score: 10_000_000, updatedAt: serverTimestamp() }));
   await assertSucceeds(updateDoc(score(owner), { score: 60, updatedAt: serverTimestamp() }));
+  await assertFails(setDoc(score(owner, 'connect-four'), { ...valid, gameId: 'connect-four', score: 2001 }));
   await assertFails(deleteDoc(score(stranger)));
   await assertSucceeds(deleteDoc(score(owner)));
   const profile = (db) => doc(db, 'profiles', 'owner');
@@ -47,7 +60,12 @@ try {
   await assertFails(getDoc(profile(guest)));
   await assertFails(getDoc(profile(stranger)));
   await assertFails(setDoc(profile(stranger), { name: 'Başka', updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(profile(owner), { name: 'Hızlı Güncelleme', updatedAt: serverTimestamp() }));
+  await env.withSecurityRulesDisabled(async (context) => {
+    await updateDoc(profile(context.firestore()), { updatedAt: Timestamp.fromMillis(Date.now() - 5_000) });
+  });
   await assertFails(updateDoc(profile(owner), { name: 'x'.repeat(31), updatedAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(profile(owner), { name: 'Güncel Rumuz', updatedAt: serverTimestamp() }));
   await assertSucceeds(deleteDoc(profile(owner)));
   console.log('PASS Firestore emulator: ownership, score validation, cadence, private profiles and deletion');
 } finally { await env.cleanup(); }

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { GAME_CATALOG } from '../../src/data/gameCatalog';
+import { GAME_CATALOG } from '@/data/gameCatalog';
 test.use({ serviceWorkers:'block' });
 
 const activeSelectors: Record<string,string> = {
@@ -51,19 +51,26 @@ for (const game of GAME_CATALOG) {
 test('balloon runs its countdown, pauses, finishes and restarts', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
+  await page.clock.install();
   await page.goto('/games/balloon');
+  await page.clock.resume();
   await page.getByRole('button', { name: /Kolay/ }).click();
   await page.getByRole('button', { name: /BAŞLA/ }).click();
+  await page.clock.pauseAt(Date.now());
+  await page.clock.runFor(50);
   await expect(page.getByRole('button', { name: / balon$/ }).first()).toBeAttached();
+  await page.clock.runFor(1050);
   await expect(page.getByText('⏱️ 44s', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Oyunu duraklat' }).click();
   const timer = page.getByText(/⏱️ \d+s/);
   const pausedTime = await timer.textContent();
-  await page.waitForTimeout(1500);
+  await page.clock.runFor(2000);
   await expect(timer).toHaveText(pausedTime!);
   await page.getByRole('button', { name: 'Devam et', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Süre Doldu!' })).toBeVisible({ timeout: 50_000 });
+  await page.clock.runFor(45_000);
+  await expect(page.getByRole('heading', { name: 'Süre Doldu!' })).toBeVisible();
   await page.getByRole('button', { name: /Tekrar Oyna/ }).click();
+  await page.clock.runFor(100);
   await expect(page.getByRole('button', { name: / balon$/ }).first()).toBeAttached();
   expect(errors).toEqual([]);
 });

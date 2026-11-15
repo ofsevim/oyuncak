@@ -4,6 +4,7 @@ import { Trash2, Download, X, Image } from 'lucide-react';
 import { toast } from 'sonner';
 import { playPopSound } from '@/utils/soundEffects';
 import { getDrawings, deleteDrawing, getDrawingRecoveryWarning, getLegacyDrawingBackup, type SavedDrawing } from '@/utils/drawingStore';
+import { triggerFileDownload } from '@/utils/download';
 import { useDialogFocus } from '@/hooks/useDialogFocus';
 
 interface DrawingPreview extends SavedDrawing { dataUrl: string; thumbnailUrl: string }
@@ -71,20 +72,15 @@ export default function DrawingGallery({ onClose }: DrawingGalleryProps) {
   };
 
   const handleDownload = (drawing: DrawingPreview) => {
-    const link = document.createElement('a');
-    link.download = drawing.name + (drawing.blob.type === 'image/webp' ? '.webp' : drawing.blob.type === 'image/jpeg' ? '.jpg' : '.png');
-    link.href = drawing.dataUrl;
-    link.click();
+    const extension = drawing.blob.type === 'image/webp' ? '.webp' : drawing.blob.type === 'image/jpeg' ? '.jpg' : '.png';
+    triggerFileDownload(drawing.dataUrl, drawing.name + extension);
   };
 
   const downloadRecovery = () => {
     const raw = getLegacyDrawingBackup();
     if (!raw) return;
     const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
-    const link = document.createElement('a');
-    link.download = 'oyuncak-eski-cizimler-yedek.json';
-    link.href = url;
-    link.click();
+    triggerFileDownload(url, 'oyuncak-eski-cizimler-yedek.json');
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 

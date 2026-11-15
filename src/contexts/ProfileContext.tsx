@@ -25,6 +25,7 @@ export interface Profile {
 interface ProfileContextType {
   profile: Profile | null;
   setProfile: (profile: Profile) => void;
+  updateProfile: (name: string, avatarId?: string) => void;
   clearProfile: () => void;
   getAvatar: () => typeof AVATARS[0] | undefined;
 }
@@ -32,47 +33,84 @@ interface ProfileContextType {
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'oyuncak-profile';
+const NICKNAME_KEY = 'oyuncak.nickname';
+const DEFAULT_AVATAR_ID = AVATARS[0].id;
+
+function readInitialProfile(): Profile | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed: unknown = JSON.parse(stored);
+      if (
+        typeof parsed === 'object' && parsed !== null &&
+        typeof (parsed as Profile).name === 'string' &&
+        typeof (parsed as Profile).avatarId === 'string' &&
+        typeof (parsed as Profile).createdAt === 'number'
+      ) {
+        return parsed as Profile;
+      }
+      localStorage.removeItem(STORAGE_KEY);
+    }
+    const legacyNickname = localStorage.getItem(NICKNAME_KEY)?.trim();
+    if (legacyNickname) {
+      return { name: legacyNickname, avatarId: DEFAULT_AVATAR_ID, createdAt: Date.now() };
+    }
+  } catch { /* localStorage kullanılamıyor olabilir */ }
+  return null;
+}
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfileState] = useState<Profile | null>(null);
+  const [profile, setProfileState] = useState<Profile | null>(readInitialProfile);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed: unknown = JSON.parse(stored);
-        if (
-          typeof parsed === 'object' && parsed !== null &&
-          typeof (parsed as Profile).name === 'string' &&
-          typeof (parsed as Profile).avatarId === 'string' &&
-          typeof (parsed as Profile).createdAt === 'number'
-        ) {
-          setProfileState(parsed as Profile);
-        } else {
-          localStorage.removeItem(STORAGE_KEY);
-        }
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key === STORAGE_KEY || event.key === NICKNAME_KEY) {
+        setProfileState(readInitialProfile());
       }
-    } catch { /* localStorage kullanılamıyor olabilir */ }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   const setProfile = useCallback((newProfile: Profile) => {
     setProfileState(newProfile);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
+      localStorage.setItem(NICKNAME_KEY, newProfile.name);
+    } catch { /* ignore */ }
+  }, []);
+
+  const updateProfile = useCallback((name: string, avatarId?: string) => {
+    setProfileState((prev) => {
+      const next: Profile = {
+        name,
+        avatarId: avatarId ?? prev?.avatarId ?? DEFAULT_AVATAR_ID,
+        createdAt: prev?.createdAt ?? Date.now(),
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        localStorage.setItem(NICKNAME_KEY, name);
+      } catch { /* ignore */ }
+      return next;
+    });
   }, []);
 
   const clearProfile = useCallback(() => {
     setProfileState(null);
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(NICKNAME_KEY);
+    } catch { /* ignore */ }
   }, []);
 
   const getAvatar = useCallback(() => {
     if (!profile) return undefined;
-    return AVATARS.find(a => a.id === profile.avatarId);
+    return AVATARS.find((a) => a.id === profile.avatarId);
   }, [profile]);
 
   const value = useMemo(
-    () => ({ profile, setProfile, clearProfile, getAvatar }),
-    [profile, setProfile, clearProfile, getAvatar],
+    () => ({ profile, setProfile, updateProfile, clearProfile, getAvatar }),
+    [profile, setProfile, updateProfile, clearProfile, getAvatar],
   );
 
   return (
@@ -89,5 +127,3 @@ export function useProfile() {
   }
   return context;
 }
-
-

@@ -45,40 +45,6 @@ export function getHighScore(gameId: string): number {
   }
 }
 
-export function setHighScore(gameId: string, score: number): boolean {
-  const current = getHighScore(gameId);
-  const isNew = score > current;
-  if (isNew) {
-    try {
-      localStorage.setItem(PREFIX + gameId, String(score));
-    } catch { /* ignore */ }
-  }
-  if (isNew && score > 0) {
-    enqueueScoreSync(gameId, score);
-  }
-  return isNew;
-}
-
-export function getHighScoreObj(gameId: string): { score: number; date: string } | null {
-  try {
-    const raw = localStorage.getItem(PREFIX + gameId + '.obj');
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      typeof parsed.score === 'number' &&
-      typeof parsed.date === 'string' &&
-      !isNaN(parsed.score)
-    ) {
-      return parsed as { score: number; date: string };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * localStorage'a kaydeder + arkaplanda Firebase'e senkronize eder.
  * Firebase hata verirse localStorage yeterlidir.
@@ -89,7 +55,6 @@ export function saveHighScoreObj(gameId: string, score: number): boolean {
   if (isNew) {
     try {
       localStorage.setItem(PREFIX + gameId, String(score));
-      localStorage.setItem(PREFIX + gameId + '.obj', JSON.stringify({ score, date: new Date().toISOString() }));
     } catch { /* ignore */ }
   }
   if (isNew && score > 0) {

@@ -8,6 +8,11 @@ import { withTimeout } from '@/utils/promiseTimeout';
 
 export default function Parents() {
   const [preferences, setPreferences] = useState(getPlayerPreferences);
+  const [gateChallenge] = useState(() => {
+    const a = Math.floor(Math.random() * 6) + 4;
+    const b = Math.floor(Math.random() * 6) + 3;
+    return { question: `${a} × ${b}`, expected: a * b };
+  });
   const [answer, setAnswer] = useState('');
   const [unlocked, setUnlocked] = useState(false);
   const [confirm, setConfirm] = useState<'local' | 'cloud' | null>(null);
@@ -58,9 +63,9 @@ export default function Parents() {
       <p>İlk oyunu birlikte seçin. Takma ad olarak gerçek ad, okul, telefon veya adres kullanmayın. Çizimleri düzenli olarak indirerek yedekleyin; tarayıcı verileri temizlendiğinde cihazdaki kayıtlar kaybolabilir.</p>
       <Link to="/privacy" className="inline-block text-primary underline">Veriler nasıl kullanılıyor?</Link>
     </section>
-    {!unlocked ? <form className="rounded-2xl border border-border bg-card p-6 space-y-4" onSubmit={(event) => { event.preventDefault(); if (answer.trim() === '21') { setUnlocked(true); setError(''); } else setError('Yanıtı kontrol edip tekrar deneyin.'); }}>
+    {!unlocked ? <form className="rounded-2xl border border-border bg-card p-6 space-y-4" onSubmit={(event) => { event.preventDefault(); if (Number.parseInt(answer.trim(), 10) === gateChallenge.expected) { setUnlocked(true); setError(''); } else setError('Yanıtı kontrol edip tekrar deneyin.'); }}>
       <h2 className="text-xl font-bold">Yetişkin ayarları</h2>
-      <label className="block" htmlFor="parent-answer">Ayarları açmak için: 7 × 3 kaç eder?</label>
+      <label className="block" htmlFor="parent-answer">Ayarları açmak için: {gateChallenge.question} kaç eder?</label>
       <input id="parent-answer" inputMode="numeric" value={answer} onChange={(event) => setAnswer(event.target.value)} className="w-28 rounded-xl border border-border bg-background p-3" />
       <button className="ml-3 rounded-xl bg-primary text-primary-foreground px-5 py-3 font-bold">Ayarları aç</button>
     </form> : <section className="rounded-2xl border border-border bg-card p-6 space-y-6">

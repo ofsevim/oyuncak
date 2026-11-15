@@ -17,10 +17,18 @@ function readLibrary(): Library {
 export function useGameLibrary() {
   const [library, setLibrary] = useState(readLibrary);
   useEffect(() => {
-    const update = (event: Event) => { if (event.type === 'storage') session = undefined; setLibrary(readLibrary()); };
-    window.addEventListener(EVENT, update);
-    window.addEventListener('storage', update);
-    return () => { window.removeEventListener(EVENT, update); window.removeEventListener('storage', update); };
+    const onLocalChange = () => setLibrary(readLibrary());
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== KEY) return;
+      session = undefined;
+      setLibrary(readLibrary());
+    };
+    window.addEventListener(EVENT, onLocalChange);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener(EVENT, onLocalChange);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
   const update = useCallback((change: (previous: Library) => Library) => {
     const next = change(readLibrary());

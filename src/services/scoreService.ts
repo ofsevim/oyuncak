@@ -8,7 +8,6 @@ import {
   query,
   runTransaction,
   serverTimestamp,
-  setDoc,
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -20,7 +19,9 @@ import { sanitizeNickname } from '@/lib/utils';
 import { withTimeout } from '@/utils/promiseTimeout';
 
 const NICKNAME_KEY = 'oyuncak.nickname';
+const NICKNAME_RETRY_DELAY_MS = 3_250;
 let pendingDeletion: Promise<void> | null = null;
+let latestNicknameUpdate = 0;
 
 function checkPendingDeletion(): void {
   if (pendingDeletion) throw new Error('Önceki skor silme isteğinin tamamlanması bekleniyor.');
@@ -127,18 +128,15 @@ export async function getUserScore(gameId: string): Promise<number> {
   }
 }
 
-/** Restores a nickname from previously saved scores. */
+/** Restores a nickname from the profile or the top score records. */
 export async function getNicknameFromExistingScores(): Promise<string | null> {
   try {
     const user = await getExistingUser();
     if (!user) return null;
     const profile = await getDoc(doc(db, 'profiles', user.uid));
     if (profile.exists() && typeof profile.data().name === 'string') return sanitizeNickname(profile.data().name);
-    const snapshots = await Promise.all(
-      SCORE_GAME_IDS.map((gameId) => getDoc(doc(db, 'scores', gameId, 'leaderboard', user.uid))),
-    );
-
-    for (const snapshot of snapshots) {
+    for (const gameId of SCORE_GAME_IDS.slice(0, 3)) {
+      const snapshot = await getDoc(doc(db, 'scores', gameId, 'leaderboard', user.uid));
       if (!snapshot.exists()) continue;
       const name = snapshot.data().name;
       if (typeof name === 'string' && name.trim()) return sanitizeNickname(name);
@@ -156,28 +154,46 @@ export async function updateNicknameInScores(newName: string): Promise<void> {
     if (!getPlayerPreferences().shareScores) return;
     checkPendingDeletion();
     if (!navigator.onLine) throw new Error('Takma adı güncellemek için internet bağlantısı gerekli.');
+    const updateId = ++latestNicknameUpdate;
     const user = await getExistingUser();
     if (!user) return;
-    checkPendingDeletion();
     const safeName = sanitizeNickname(newName);
-    await setDoc(doc(db, 'profiles', user.uid), { name: safeName, updatedAt: serverTimestamp() });
+    const profileRef = doc(db, 'profiles', user.uid);
     const refs = SCORE_GAME_IDS.map((gameId) =>
       doc(db, 'scores', gameId, 'leaderboard', user.uid),
     );
-    const snapshots = await Promise.all(refs.map((scoreRef) => getDoc(scoreRef)));
-    const batch = writeBatch(db);
-    let updated = 0;
+    const isCurrent = () => updateId === latestNicknameUpdate && getPlayerPreferences().shareScores;
+    const rename = () => runTransaction(db, async (transaction) => {
+      if (!isCurrent()) return false;
+      checkPendingDeletion();
+      const [profile, ...scores] = await Promise.all([profileRef, ...refs].map((ref) => transaction.get(ref)));
+      if (!isCurrent()) return false;
+      checkPendingDeletion();
 
-    snapshots.forEach((snapshot, index) => {
-      if (!snapshot.exists()) return;
-      // Scores saved before gameId became required must also pass today's rules.
-      // Updating only these fields preserves any concurrent personal-best write.
-      batch.update(refs[index], { gameId: SCORE_GAME_IDS[index], name: safeName, updatedAt: serverTimestamp() });
-      updated += 1;
+      let changed = profile.data()?.name !== safeName;
+      if (changed) transaction.set(profileRef, { name: safeName, updatedAt: serverTimestamp() });
+      scores.forEach((snapshot, index) => {
+        if (!snapshot.exists() || snapshot.data().name === safeName) return;
+        // Include gameId to migrate records saved before it was required.
+        transaction.update(refs[index], { gameId: SCORE_GAME_IDS[index], name: safeName, updatedAt: serverTimestamp() });
+        changed = true;
+      });
+      return changed;
     });
 
-    if (updated > 0) await batch.commit();
-    window.dispatchEvent(new Event('oyuncak:nickname-changed'));
+    let changed: boolean;
+    try {
+      changed = await rename();
+    } catch (error) {
+      if (!error || typeof error !== 'object' || !('code' in error) || error.code !== 'permission-denied') throw error;
+      if (!isCurrent()) return;
+      // A recent score or profile write can trigger the server's three-second cooldown.
+      await new Promise((resolve) => setTimeout(resolve, NICKNAME_RETRY_DELAY_MS));
+      changed = await rename();
+    }
+    if (changed && isCurrent()) {
+      window.dispatchEvent(new CustomEvent('oyuncak:nickname-changed', { detail: safeName }));
+    }
   } catch (err) {
     logger.warn('Nickname update failed', { err: String(err) });
     throw err;
@@ -188,6 +204,7 @@ export async function updateNicknameInScores(newName: string): Promise<void> {
 export function deleteCloudScores(): Promise<void> {
   // Retrying after a UI timeout waits for the same write instead of submitting another batch.
   if (pendingDeletion) return pendingDeletion;
+  latestNicknameUpdate += 1;
   pendingDeletion = (async () => {
     if (!navigator.onLine) throw new Error('Global skorları silmek için internet bağlantısı gerekli.');
     const user = await getExistingUser();

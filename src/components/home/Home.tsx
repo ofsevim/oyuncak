@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -10,6 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { GAME_CATALOG } from "@/data/gameCatalog";
 import { STORIES } from "@/data/stories";
 import { useGameLibrary } from "@/hooks/useGameLibrary";
+import { useProfile } from "@/contexts/ProfileContext";
 import GardenCharacter from "@/components/GardenCharacter";
 import GameArtwork from "@/components/games/GameArtwork";
 
@@ -21,24 +21,9 @@ type Props = {
 export default function Home({ onGoDraw, onGoGames, onGoStories }: Props) {
   const navigate = useNavigate();
   const { recent } = useGameLibrary();
-  const [nickname, setNickname] = useState(() => {
-    try {
-      return localStorage.getItem("oyuncak.nickname") || "";
-    } catch {
-      return "";
-    }
-  });
-  useEffect(() => {
-    const update = () => {
-      try {
-        setNickname(localStorage.getItem("oyuncak.nickname") || "");
-      } catch {
-        /* storage may be unavailable */
-      }
-    };
-    window.addEventListener("oyuncak:nickname-changed", update);
-    return () => window.removeEventListener("oyuncak:nickname-changed", update);
-  }, []);
+  const { profile, getAvatar } = useProfile();
+  const nickname = profile?.name ?? "";
+  const avatar = getAvatar();
   const picks = ["memory", "runner", "basketball"] as const;
   return (
     <div className="garden-home">
@@ -170,7 +155,7 @@ export default function Home({ onGoDraw, onGoGames, onGoStories }: Props) {
             window.dispatchEvent(new CustomEvent("oyuncak:open-nickname-modal"))
           }
         >
-          {nickname || "Rumuzunu seç"} <ArrowUpRight size={14} />
+          {avatar ? `${avatar.emoji} ` : ""}{nickname || "Rumuzunu seç"} <ArrowUpRight size={14} />
         </button>
       </footer>
     </div>

@@ -17,8 +17,15 @@ export function isValidScore(score) {
 }
 
 export function sanitizeName(name) {
-  const sanitized = typeof name === 'string'
-    ? name.replace(/[<>\n\r\t]/g, '').trim().slice(0, 30)
-    : '';
+  if (typeof name !== 'string') return 'Anonim Oyuncu';
+  let out = '';
+  for (const ch of name) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (code < 32 || code === 127) continue;
+    if (ch === '<' || ch === '>') continue;
+    out += ch;
+  }
+  const trimmed = out.replace(/\s+/g, ' ').trim();
+  const sanitized = [...trimmed].slice(0, 30).join('');
   return sanitized || 'Anonim Oyuncu';
 }

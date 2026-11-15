@@ -19,6 +19,8 @@ export function useLocalStorageState<T>(key: string, defaultValue: T) {
   });
 
   const prevKeyRef = useRef(key);
+  const defaultValueRef = useRef(defaultValue);
+  defaultValueRef.current = defaultValue;
   const isFirstRender = useRef(true);
 
   useEffect(() => {
@@ -27,10 +29,10 @@ export function useLocalStorageState<T>(key: string, defaultValue: T) {
       try {
         if (typeof window !== "undefined") {
           const raw = window.localStorage.getItem(key);
-          setValue(raw === null ? defaultValue : (JSON.parse(raw) as T));
+          setValue(raw === null ? defaultValueRef.current : (JSON.parse(raw) as T));
         }
       } catch {
-        setValue(defaultValue);
+        setValue(defaultValueRef.current);
       }
       return;
     }
@@ -45,7 +47,7 @@ export function useLocalStorageState<T>(key: string, defaultValue: T) {
     } catch {
       // ignore
     }
-  }, [key, value, defaultValue]);
+  }, [key, value]);
 
   return [value, setValue] as const;
 }

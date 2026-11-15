@@ -1,7 +1,8 @@
 import { defineConfig, loadEnv, type Plugin } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import path from "path";
 import fs from "fs";
+import { createHash } from "node:crypto";
 import legacy from "@vitejs/plugin-legacy";
 import { PAGE_ROUTES, getPageMetadata } from './src/data/pageMetadata.ts';
 import { REQUIRED_FIREBASE_KEYS } from './src/lib/envKeys.ts';
@@ -111,6 +112,62 @@ function precacheManifestPlugin(): Plugin {
 }
 
 // https://vitejs.dev/config/
+function legacyCspPlugin(): Plugin {
+  let outDir = 'dist';
+  let assetsDir = 'assets';
+  let base = '/';
+  const emitted: Array<{ fileName: string; source: string }> = [];
+
+  const stripDataUrlGuard = (code: string) =>
+    code.replace(
+      /import'data:text\/javascript,[^']+';/g,
+      'if(!import.meta.resolve)throw Error("import.meta.resolve not supported");',
+    );
+
+  return {
+    name: 'legacy-csp',
+    apply: 'build',
+    configResolved(resolved) {
+      outDir = path.resolve(resolved.root, resolved.build.outDir);
+      assetsDir = resolved.build.assetsDir.replace(/^\/+|\/+$/g, '') || 'assets';
+      base = resolved.base.endsWith('/') ? resolved.base : `${resolved.base}/`;
+    },
+    generateBundle(_options, bundle) {
+      for (const chunk of Object.values(bundle)) {
+        if (chunk.type === 'chunk' && chunk.code.includes('data:text/javascript')) {
+          chunk.code = stripDataUrlGuard(chunk.code);
+        }
+      }
+    },
+    transformIndexHtml: {
+      order: 'post',
+      handler(html) {
+        let index = 0;
+        return html.replace(
+          /<script\b([^>]*)>([\s\S]*?)<\/script>/gi,
+          (full, attrs: string, body: string) => {
+            if (!body.trim() || /(?:^|\s)src\s*=/i.test(attrs) || /type\s*=\s*["']application\/ld\+json["']/i.test(attrs)) {
+              return full;
+            }
+            const cleanBody = stripDataUrlGuard(body);
+            const hash = createHash('sha256').update(cleanBody).digest('hex').slice(0, 8);
+            const fileName = `${assetsDir}/inline-legacy-${++index}-${hash}.js`;
+            emitted.push({ fileName, source: cleanBody });
+            return `<script${attrs} src="${base}${fileName}"></script>`;
+          },
+        );
+      },
+    },
+    closeBundle() {
+      for (const { fileName, source } of emitted) {
+        const dest = path.join(outDir, fileName);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, source, 'utf8');
+      }
+    },
+  };
+}
+
 export default defineConfig(({ mode, command }) => {
   const values = { ...loadEnv(mode, process.cwd(), 'VITE_'), ...process.env };
   if (command === 'build' && mode !== 'development') {
@@ -176,6 +233,7 @@ export default defineConfig(({ mode, command }) => {
   },
   plugins: [
     react(),
+    legacyCspPlugin(),
     swVersionPlugin(),
     precacheManifestPlugin(),
     routeMetadataPlugin(publicUrl),

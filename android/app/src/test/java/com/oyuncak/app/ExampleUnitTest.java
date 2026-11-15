@@ -1,4 +1,4 @@
-package com.getcapacitor.myapp;
+package com.oyuncak.app;
 
 import static org.junit.Assert.*;
 

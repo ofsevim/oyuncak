@@ -1,5 +1,27 @@
 rules_version = '2';
 
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: /scores/{gameId}/leaderboard/{userId}
+// Document ID: {userId} (Firebase Auth UID)
+// Fields:
+//   - uid: string (required, must equal userId)
+//   - gameId: string (required, must equal supported gameId)
+//   - name: string (required, trimmed non-empty, max 30 chars)
+//   - score: int (required, 0 <= score <= maxAllowedScore(gameId) <= 9999999, monotonic on update)
+//   - date: string (required, ISO date string 10..35 chars)
+//   - updatedAt: timestamp (required, must equal request.time)
+//
+// Collection: /profiles/{userId}
+// Document ID: {userId} (Firebase Auth UID)
+// Fields:
+//   - name: string (required, trimmed non-empty, max 30 chars)
+//   - updatedAt: timestamp (required, must equal request.time)
+//
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedInUser(userId) {
@@ -11,9 +33,19 @@ service cloud.firestore {
         'runner', 'snake', 'tetris', 'tank-arena', '2048', 'whack-a-mole',
         'balloon-pop', 'basketball', 'piano', 'math', 'counting', 'oddoneout',
         'shapematch', 'simonsays', 'codingturtle', 'spaceshooter',
-        'memory-3x3', 'memory-4x4', 'memory-5x5', 'memory-6x6',        'connect-four', 'word-search', 'color-sort', 'brick-breaker',
+        'memory-3x3', 'memory-4x4', 'memory-5x5', 'memory-6x6',
+        'connect-four', 'word-search', 'color-sort', 'brick-breaker',
         'maze'
       ];
+    }
+
+    function maxAllowedScore(gameId) {
+      return gameId in ['connect-four', 'word-search'] ? 2000 :
+        gameId == 'color-sort' ? 5000 :
+        gameId in ['memory-3x3', 'memory-4x4', 'memory-5x5', 'memory-6x6'] ? 10000 :
+        gameId == 'maze' ? 25000 :
+        gameId == '2048' ? 500000 :
+        9999999;
     }
 
     function hasValidScoreData(gameId, userId) {
@@ -23,12 +55,23 @@ service cloud.firestore {
         && request.resource.data.uid == userId
         && request.resource.data.gameId == gameId
         && request.resource.data.name is string
-        && request.resource.data.name.size() > 0
+        && request.resource.data.name.trim().size() > 0
         && request.resource.data.name.size() <= 30
         && request.resource.data.score is int
         && request.resource.data.score >= 0
         && request.resource.data.score <= 9999999
+        && request.resource.data.score <= maxAllowedScore(gameId)
         && request.resource.data.date is string
+        && request.resource.data.date.size() >= 10
+        && request.resource.data.date.size() <= 35
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function hasValidProfileData() {
+      return request.resource.data.keys().hasOnly(['name', 'updatedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.trim().size() > 0
+        && request.resource.data.name.size() <= 30
         && request.resource.data.updatedAt == request.time;
     }
 
@@ -41,23 +84,27 @@ service cloud.firestore {
         && isSupportedGame(gameId)
         && hasValidScoreData(gameId, userId)
         && request.resource.data.score >= resource.data.score
-        // Aynı skorla sınırsız yazıp updatedAt'i tazelemek 10 sn penceresini
-        // atlatıyordu. Aynı skora yalnızca takma ad değiştiğinde izin verilir;
-        // gerçek skor artışları her zaman pencereyi beklemek zorunda.
-        && (request.time >= resource.data.updatedAt + duration.value(10, 's')
+        && ((request.resource.data.score > resource.data.score
+            && (!('updatedAt' in resource.data)
+              || resource.data.updatedAt == null
+              || request.time >= resource.data.updatedAt + duration.value(10, 's')))
           || (request.resource.data.score == resource.data.score
-            && request.resource.data.name != resource.data.name));
+            && request.resource.data.name != resource.data.name
+            && (!('updatedAt' in resource.data)
+              || resource.data.updatedAt == null
+              || request.time >= resource.data.updatedAt + duration.value(3, 's'))));
       allow delete: if isSignedInUser(userId);
     }
 
     match /profiles/{userId} {
       allow read, delete: if isSignedInUser(userId);
-      allow create, update: if isSignedInUser(userId)
-        && request.resource.data.keys().hasOnly(['name', 'updatedAt'])
-        && request.resource.data.name is string
-        && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() <= 30
-        && request.resource.data.updatedAt == request.time;
+      allow create: if isSignedInUser(userId)
+        && hasValidProfileData();
+      allow update: if isSignedInUser(userId)
+        && hasValidProfileData()
+        && (!('updatedAt' in resource.data)
+          || resource.data.updatedAt == null
+          || request.time >= resource.data.updatedAt + duration.value(3, 's'));
     }
   }
 }

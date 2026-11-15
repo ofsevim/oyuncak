@@ -13,6 +13,7 @@ const db = getFirestore();
 
 const REGION = 'europe-west1';
 const MIN_UPDATE_INTERVAL_MS = 10_000;
+const MIN_NICKNAME_UPDATE_INTERVAL_MS = 5_000;
 const CALLABLE_OPTIONS = {
   region: REGION,
   // Callable endpoints must remain publicly reachable so browser preflight
@@ -94,6 +95,16 @@ export const submitScore = onCall(CALLABLE_OPTIONS, async (request) => {
 export const updateScoreNickname = onCall(CALLABLE_OPTIONS, async (request) => {
   const uid = requireUser(request);
   const name = sanitizeName(request.data?.name);
+  const profileRef = db.doc(`profiles/${uid}`);
+  const profileSnap = await profileRef.get();
+  const lastUpdatedAt = profileSnap.data()?.updatedAt;
+  if (
+    lastUpdatedAt instanceof Timestamp
+    && Date.now() - lastUpdatedAt.toMillis() < MIN_NICKNAME_UPDATE_INTERVAL_MS
+  ) {
+    throw new HttpsError('resource-exhausted', 'Takma ad çok sık güncelleniyor.');
+  }
+
   const refs = [...SCORE_GAME_IDS].map((gameId) =>
     db.doc(`scores/${gameId}/leaderboard/${uid}`));
   const snapshots = await db.getAll(...refs);
@@ -101,7 +112,7 @@ export const updateScoreNickname = onCall(CALLABLE_OPTIONS, async (request) => {
   let updated = 0;
 
   // Keep parity with the web client, which also upserts the profile document.
-  batch.set(db.doc(`profiles/${uid}`), { name, updatedAt: FieldValue.serverTimestamp() });
+  batch.set(profileRef, { name, updatedAt: FieldValue.serverTimestamp() });
 
   for (const snapshot of snapshots) {
     if (!snapshot.exists) continue;
